@@ -1,0 +1,11 @@
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&display=swap");
+@import "tailwindcss";
+
+:root {
+  font-family: "Atkinson Hyperlegible Next", sans-serif;
+  background: oklch(92.2% 0 0);
+}
+
+body {
+  min-height: 100vh;
+}

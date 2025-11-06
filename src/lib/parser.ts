@@ -26,6 +26,13 @@ export interface AnimationFrame {
   time: number;
   nodePositions: Map<string, [number, number, number]>;
   averageDisplacement: [number, number, number];
+  stories: Map<
+    string,
+    {
+      nodeIds: string[];
+      averageDisplacement: [number, number, number];
+    }
+  >;
 }
 
 export interface BuildingAnimationData {
@@ -35,6 +42,9 @@ export interface BuildingAnimationData {
   frameRate: number;
   minCoord: [number, number, number];
   maxCoord: [number, number, number];
+  maxAverageDisplacement: [number, number, number];
+  maxDisplacement: [number, number, number];
+  minDisplacement: [number, number, number];
 }
 
 type Directions = "H1" | "H2" | "V";
@@ -170,7 +180,7 @@ export class BuildingDataParser {
     }
 
     // Pre-calculate frame data
-    const frames = this.calculateFrames(nodeData, timeSteps);
+    const { frames, maxAverageDisplacement, maxDisplacement, minDisplacement } = this.calculateFrames(nodeData, timeSteps);
 
     return {
       nodes: nodeData,
@@ -185,15 +195,28 @@ export class BuildingDataParser {
       // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
       minCoord: [this.minCoord[0], this.minCoord[2], this.minCoord[1]],
       maxCoord: [this.maxCoord[0], this.maxCoord[2], this.maxCoord[1]],
+      maxAverageDisplacement,
+      maxDisplacement,
+      minDisplacement,
     };
   }
 
-  private calculateFrames(nodeData: Map<string, NodeData>, timeSteps: number[]): AnimationFrame[] {
+  private calculateFrames(nodeData: Map<string, NodeData>, timeSteps: number[]): { frames: AnimationFrame[]; maxAverageDisplacement: [number, number, number]; maxDisplacement: [number, number, number]; minDisplacement: [number, number, number] } {
     const frames: AnimationFrame[] = [];
+
+    const maxAverageDisplacement: [number, number, number] = [0, 0, 0];
+    const maxDisplacement: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
+    const minDisplacement: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
 
     for (let tIdx = 0; tIdx < timeSteps.length; tIdx++) {
       const nodePositions = new Map<string, [number, number, number]>();
-      const nodeDisplacements = new Map<string, [number, number, number]>();
+      const stories = new Map<
+        string,
+        {
+          nodeIds: string[];
+          averageDisplacement: [number, number, number];
+        }
+      >();
 
       let averageDisplacement: [number, number, number] = [0, 0, 0];
 
@@ -209,6 +232,18 @@ export class BuildingDataParser {
         averageDisplacement[0] += dx;
         averageDisplacement[1] += dy;
         averageDisplacement[2] += dz;
+
+        if (Math.hypot(dx, dy, dz) > Math.hypot(...maxDisplacement)) {
+          maxDisplacement[0] = dx;
+          maxDisplacement[1] = dy;
+          maxDisplacement[2] = dz;
+        }
+
+        if (Math.hypot(dx, dy, dz) < Math.hypot(...minDisplacement)) {
+          minDisplacement[0] = dx;
+          minDisplacement[1] = dy;
+          minDisplacement[2] = dz;
+        }
 
         // const finalX = (ix + dx * this.DISPLACEMENT_SCALE) * this.INCH_TO_METER;
         // const finalY = (iy + dy * this.DISPLACEMENT_SCALE) * this.INCH_TO_METER;
@@ -227,20 +262,54 @@ export class BuildingDataParser {
         // ! Swap the Y and Z axes
         // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
         nodePositions.set(nodeId, [finalX, finalZ, finalY]);
+
+        //* Floor
+
+        const storyId = node.story;
+        const story = stories.get(storyId) ?? {
+          nodeIds: [],
+          averageDisplacement: [0, 0, 0],
+        };
+        story.nodeIds.push(nodeId);
+        story.averageDisplacement[0] += dx;
+        story.averageDisplacement[1] += dy;
+        story.averageDisplacement[2] += dz;
+        stories.set(storyId, story);
       }
 
-      averageDisplacement[0] /= nodePositions.size;
-      averageDisplacement[1] /= nodePositions.size;
-      averageDisplacement[2] /= nodePositions.size;
+      averageDisplacement[0] = (averageDisplacement[0] / nodePositions.size) * this.INCH_TO_METER;
+      averageDisplacement[1] = (averageDisplacement[1] / nodePositions.size) * this.INCH_TO_METER;
+      averageDisplacement[2] = (averageDisplacement[2] / nodePositions.size) * this.INCH_TO_METER;
+
+      if (Math.hypot(...averageDisplacement) > Math.hypot(...maxAverageDisplacement)) {
+        maxAverageDisplacement[0] = averageDisplacement[0];
+        maxAverageDisplacement[1] = averageDisplacement[1];
+        maxAverageDisplacement[2] = averageDisplacement[2];
+      }
+
+      for (const [storyId, story] of stories.entries()) {
+        story.averageDisplacement[0] = (story.averageDisplacement[0] / story.nodeIds.length) * this.INCH_TO_METER;
+        story.averageDisplacement[1] = (story.averageDisplacement[1] / story.nodeIds.length) * this.INCH_TO_METER;
+        story.averageDisplacement[2] = (story.averageDisplacement[2] / story.nodeIds.length) * this.INCH_TO_METER;
+      }
+
+      maxDisplacement[0] *= this.INCH_TO_METER;
+      maxDisplacement[1] *= this.INCH_TO_METER;
+      maxDisplacement[2] *= this.INCH_TO_METER;
+
+      minDisplacement[0] *= this.INCH_TO_METER;
+      minDisplacement[1] *= this.INCH_TO_METER;
+      minDisplacement[2] *= this.INCH_TO_METER;
 
       frames.push({
         frame: tIdx + 1,
         time: timeSteps[tIdx],
         nodePositions,
         averageDisplacement,
+        stories,
       });
     }
 
-    return frames;
+    return { frames, maxAverageDisplacement, maxDisplacement, minDisplacement };
   }
 }

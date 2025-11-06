@@ -2,8 +2,16 @@ import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 import React, { useEffect, useRef, useState, type MouseEvent } from "react";
-import type { BuildingAnimationData } from "../../utils/parser";
+import type { BuildingAnimationData } from "../../lib/parser";
 import { useAnimationData } from "../../hooks/nodeDataHook";
+import { DoubleSide } from "three";
+import { converter, interpolate } from "culori";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
+
+const amber400 = "oklch(82.8% 0.189 84.429)";
+const red700 = "oklch(50.5% 0.213 27.518)";
+const colorMap = interpolate([amber400, red700], "oklab");
+const rgbConverter = converter("rgb");
 
 function BuildingScene({ animationData, frameIndex, scale, displacementScale }: { animationData: BuildingAnimationData; frameIndex: number; scale: number; displacementScale: number }) {
   const frame = animationData.frames[frameIndex];
@@ -14,26 +22,64 @@ function BuildingScene({ animationData, frameIndex, scale, displacementScale }: 
   const offsetY = -animationData.minCoord[1];
   const offsetZ = (animationData.maxCoord[2] + animationData.minCoord[2]) / -2;
 
+  const maxDisplacement = Math.hypot(...animationData.maxDisplacement);
+
   return (
     <>
       <ambientLight intensity={2} />
       <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
-      {Array.from(frame.nodePositions.entries()).map(([nodeId, position]) => {
-        const initalPos = initalPositions.get(nodeId)!;
+      {Array.from(frame.stories.entries()).map(([storyId, story]) => {
+        const nodePositions = story.nodeIds.map((nodeId) => {
+          const initalPos = initalPositions.get(nodeId)!;
+          const position = frame.nodePositions.get(nodeId)!;
 
-        const posX = initalPos[0] + (position[0] - initalPos[0]) * displacementScale + offsetX;
-        const posY = position[1] + offsetY;
-        const posZ = initalPos[2] + (position[2] - initalPos[2]) * displacementScale + offsetZ;
+          const displacementX = position[0] - initalPos[0];
+          const displacementY = position[1] - initalPos[1];
+          const displacementZ = position[2] - initalPos[2];
 
-        const finalPosX = posX * scale;
-        const finalPosY = posY * scale;
-        const finalPosZ = posZ * scale;
+          const posX = initalPos[0] + displacementX * displacementScale + offsetX;
+          const posY = position[1] + offsetY;
+          const posZ = initalPos[2] + displacementZ * displacementScale + offsetZ;
+
+          const finalPosX = posX * scale;
+          const finalPosY = posY * scale;
+          const finalPosZ = posZ * scale;
+          return { pos: [finalPosX, finalPosY, finalPosZ], disp: [displacementX, displacementY, displacementZ] };
+        });
+
+        const floorQuadPositions = new Float32Array([
+          // Triangle 1
+          ...nodePositions[1].pos,
+          ...nodePositions[0].pos,
+          ...nodePositions[2].pos,
+          // Triangle 2
+          ...nodePositions[1].pos,
+          ...nodePositions[2].pos,
+          ...nodePositions[3].pos,
+        ]);
+
+        const avgDisp = Math.hypot(...story.averageDisplacement);
+        const floorColor = rgbConverter(colorMap(avgDisp / maxDisplacement));
 
         return (
-          <mesh key={nodeId} position={[finalPosX, finalPosY, finalPosZ]} scale={[2, 1, 2]}>
-            <boxGeometry args={[2, 2, 2]} />
-            <meshStandardMaterial color="#FD9A00" />
-          </mesh>
+          <React.Fragment key={storyId}>
+            {nodePositions.map(({ pos, disp }, i) => {
+              const displacement = Math.hypot(...disp);
+              const color = rgbConverter(colorMap(displacement / maxDisplacement));
+              return (
+                <mesh key={i} position={[pos[0], pos[1], pos[2]]} scale={[2, 1, 2]}>
+                  <boxGeometry args={[2, 2, 2]} />
+                  <meshStandardMaterial color={[color.r, color.g, color.b]} />
+                </mesh>
+              );
+            })}
+            <mesh>
+              <bufferGeometry>
+                <bufferAttribute attach="attributes-position" args={[floorQuadPositions, 3]} />
+              </bufferGeometry>
+              <meshStandardMaterial color={[floorColor.r, floorColor.g, floorColor.b]} opacity={0.3} transparent side={DoubleSide} />
+            </mesh>
+          </React.Fragment>
         );
       })}
 
@@ -64,6 +110,10 @@ export function View3d() {
     lastDisplayedFrameTimeRef.current = 0;
     playbackStartFrameRef.current = frameIndex;
     playbackStartTimeRef.current = performance.now();
+    if (frameIndex === animationData.frames.length - 1) {
+      setFrameIndex(0);
+      playbackStartFrameRef.current = 0;
+    }
   }
 
   useEffect(() => {
@@ -107,14 +157,14 @@ export function View3d() {
 
   useEffect(() => {
     function windowKeydown(e: KeyboardEvent) {
-      if (e.key === " ") setPlaying((prev) => !prev);
+      if (e.key === " ") handlePlayPause();
     }
     window.addEventListener("keydown", windowKeydown);
 
     return () => {
       window.removeEventListener("keydown", windowKeydown);
     };
-  }, []);
+  }, [handlePlayPause]);
 
   function timelineFrameChange(frameIndex: number | ((prevState: number) => number)) {
     if (typeof frameIndex === "number") {
@@ -149,42 +199,49 @@ export function View3d() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <Canvas className="flex-1" camera={{ position: [50, 50, 50], fov: 75 }}>
-        <BuildingScene animationData={animationData} frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
-      </Canvas>
+      <ResizablePanelGroup direction="vertical">
+        <ResizablePanel className="flex flex-col flex-1 min-h-0">
+          <Canvas camera={{ position: [50, 50, 50], fov: 75 }}>
+            <BuildingScene animationData={animationData} frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
+          </Canvas>
 
-      <div className="flex justify-between bg-neutral-200 w-full border-t-2 border-neutral-300">
-        <div className="flex items-center gap-2">
-          <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(0)}>
-            <SkipBackIcon />
-          </button>
-          <div className="w-px h-1/2 bg-neutral-300" />
-          <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={handlePlayPause}>
-            {playing ? <PauseIcon /> : <PlayIcon />}
-          </button>
-          <div className="w-px h-1/2 bg-neutral-300" />
-          <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(animationData.frames.length - 1)}>
-            <SkipForwardIcon />
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="flex gap-2 whitespace-nowrap">
-            <input type="range" min="0" max={1} step={0.1} value={scale} onChange={handleScaleChange} className="w-full" />
-            Scale: {scale.toFixed(2)}
-          </label>
-          <label className="flex gap-2 whitespace-nowrap">
-            <input type="range" min="0" max={20} step={0.1} value={displacementScale} onChange={handleDisplacementScaleChange} className="w-full" />
-            XZ: {displacementScale.toFixed(2)}
-          </label>
-        </div>
-      </div>
+          <div className="flex justify-between bg-neutral-200 w-full border-t-2 border-neutral-300">
+            <div className="flex items-center gap-2">
+              <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(0)}>
+                <SkipBackIcon />
+              </button>
+              <div className="w-px h-1/2 bg-neutral-300" />
+              <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={handlePlayPause}>
+                {playing ? <PauseIcon /> : <PlayIcon />}
+              </button>
+              <div className="w-px h-1/2 bg-neutral-300" />
+              <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(animationData.frames.length - 1)}>
+                <SkipForwardIcon />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="flex gap-2 whitespace-nowrap">
+                <input type="range" min="0" max={1} step={0.1} value={scale} onChange={handleScaleChange} className="w-full" />
+                Scale: {scale.toFixed(2)}
+              </label>
+              <label className="flex gap-2 whitespace-nowrap">
+                <input type="range" min="0" max={20} step={0.1} value={displacementScale} onChange={handleDisplacementScaleChange} className="w-full" />
+                XZ: {displacementScale.toFixed(2)}
+              </label>
+            </div>
+          </div>
+        </ResizablePanel>
 
-      <MyTimeline animationData={animationData} frameIndex={frameIndex} onFrameChange={timelineFrameChange} />
+        <ResizableHandle withHandle />
+        <ResizablePanel>
+          <Timeline animationData={animationData} frameIndex={frameIndex} onFrameChange={timelineFrameChange} />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }
 
-function MyTimeline({ animationData, frameIndex, onFrameChange }: { animationData: BuildingAnimationData; frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
+function Timeline({ animationData, frameIndex, onFrameChange }: { animationData: BuildingAnimationData; frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const maxFrame = animationData.frames.length - 1;
@@ -213,8 +270,36 @@ function MyTimeline({ animationData, frameIndex, onFrameChange }: { animationDat
   const argMinDisp = avgDisplacements.indexOf(minDisp);
 
   const displacementRange = maxDisp - minDisp;
-  const aspectRatio = 0.3;
+  const [aspectRatio, setAspectRatio] = useState(0.3);
+
+  /**
+   * Resize observer for the aspect ratio of the canvas
+   */
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!panelRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      console.log(entry);
+      setAspectRatio(entry.contentRect.height / entry.contentRect.width);
+    });
+
+    resizeObserver.observe(panelRef.current);
+
+    const rect = panelRef.current.getBoundingClientRect();
+    setAspectRatio(rect.height / rect.width);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   const verticalPadding = 3;
+  const viewBoxHeight = aspectRatio * 100;
+  const chartHeight = viewBoxHeight - verticalPadding * 2;
   const [scrubbing, setScrubbing] = useState(false);
 
   function handleMouseDown() {
@@ -244,7 +329,7 @@ function MyTimeline({ animationData, frameIndex, onFrameChange }: { animationDat
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
-  const linePoints = avgDisplacements.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minDisp) / displacementRange) * aspectRatio * 100 + verticalPadding}`).join(" ");
+  const linePoints = avgDisplacements.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minDisp) / displacementRange) * chartHeight + verticalPadding}`).join(" ");
   let strokeColor;
   let fillColor;
   switch (selectedDisplacementView) {
@@ -303,7 +388,7 @@ function MyTimeline({ animationData, frameIndex, onFrameChange }: { animationDat
   }, [argMinDisp, argMaxDisp]);
 
   return (
-    <div className="flex flex-col border-t-2 border-neutral-300 relative">
+    <div ref={panelRef} className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full">
       <div className="absolute top-0 inset-x-0 flex justify-between">
         <div>
           Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {animationData.timeSteps[frameIndex]?.toFixed(3)}s | Avg Displacement: {avgDisplacements[frameIndex]?.toFixed(2)}m
@@ -318,19 +403,19 @@ function MyTimeline({ animationData, frameIndex, onFrameChange }: { animationDat
         </div>
       </div>
 
-      <svg ref={svgRef} className="select-none" width="100%" viewBox={`0 0 100 ${aspectRatio * 100 + verticalPadding + verticalPadding}`} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
+      <svg ref={svgRef} className="select-none" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
         <line transform={playheadTransform} x1={0} y1="-100" x2={0} y2="100" className="stroke-neutral-300" strokeWidth="0.2" />
         <polyline points={linePoints} fill="none" className={strokeColor} strokeWidth="0.2" />
-        <polygon points={linePoints + ` 100,${(1 - (0 - minDisp) / displacementRange) * aspectRatio * 100 + verticalPadding} 0,${(1 - (0 - minDisp) / displacementRange) * aspectRatio * 100 + verticalPadding}`} className={fillColor} opacity={0.2} />
+        <polygon points={linePoints + ` 100,${(1 - (0 - minDisp) / displacementRange) * chartHeight + verticalPadding} 0,${(1 - (0 - minDisp) / displacementRange) * chartHeight + verticalPadding}`} className={fillColor} opacity={0.2} />
 
         <g>
           {/* x labels */}
           {Array.from({ length: 16 }).map((_, i) => (
             <React.Fragment key={i}>
-              <text x={(i / 15) * 100} y={aspectRatio * 100 + 1.5 + verticalPadding} textAnchor="middle" className="text-neutral-300" fontSize={1}>
+              <text x={(i / 15) * 100} y={chartHeight + 1.5 + verticalPadding} textAnchor="middle" className="text-neutral-300" fontSize={1}>
                 {(i * maxFrame) / 15}
               </text>
-              <line x1={(i / 15) * 100} y1={aspectRatio * 100 + verticalPadding} x2={(i / 15) * 100} y2={0} className="stroke-neutral-300" strokeWidth="0.1" />
+              <line x1={(i / 15) * 100} y1={chartHeight + verticalPadding} x2={(i / 15) * 100} y2={0} className="stroke-neutral-300" strokeWidth="0.1" />
             </React.Fragment>
           ))}
         </g>

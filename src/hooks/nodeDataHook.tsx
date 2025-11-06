@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
-import D_H1_Grid_11 from "../utils/data/D_H1_Grid_11.txt?raw";
-import D_H1_Grid_36 from "../utils/data/D_H1_Grid_36.txt?raw";
-import D_H2_Grid_11 from "../utils/data/D_H2_Grid_11.txt?raw";
-import D_H2_Grid_36 from "../utils/data/D_H2_Grid_36.txt?raw";
-import D_V_Grid_11 from "../utils/data/D_V_Grid_11.txt?raw";
-import D_V_Grid_36 from "../utils/data/D_V_Grid_36.txt?raw";
-import nodeMappingCsv from "../utils/data/node_mapping.txt?raw";
-import { BuildingDataParser, type BuildingAnimationData } from "../utils/parser";
+import D_H1_Grid_11 from "../lib/data/D_H1_Grid_11.txt?raw";
+import D_H1_Grid_36 from "../lib/data/D_H1_Grid_36.txt?raw";
+import D_H2_Grid_11 from "../lib/data/D_H2_Grid_11.txt?raw";
+import D_H2_Grid_36 from "../lib/data/D_H2_Grid_36.txt?raw";
+import D_V_Grid_11 from "../lib/data/D_V_Grid_11.txt?raw";
+import D_V_Grid_36 from "../lib/data/D_V_Grid_36.txt?raw";
+import nodeMappingCsv from "../lib/data/node_mapping.txt?raw";
+import { BuildingDataParser, type BuildingAnimationData } from "../lib/parser";
 
 const dataFiles = {
   D_H1_Grid_11: D_H1_Grid_11,

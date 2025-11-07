@@ -269,7 +269,7 @@ export function View3d() {
             <BuildingScene animationData={animationData} frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
           </Canvas>
 
-          <div className="flex justify-between bg-neutral-200 w-full border-t-2 border-neutral-300">
+          <div className="flex justify-between w-full border-t-2 border-neutral-300">
             <div className="flex items-center gap-2">
               <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(0)}>
                 <SkipBackIcon />

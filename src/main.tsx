@@ -29,7 +29,7 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AnimationDataProvider>
-      <div className="h-screen flex flex-col">
+      <div className="h-screen flex flex-col bg-neutral-200">
         <RouterProvider router={router} />
       </div>
     </AnimationDataProvider>

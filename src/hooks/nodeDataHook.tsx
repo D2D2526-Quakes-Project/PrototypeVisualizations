@@ -72,7 +72,9 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       }
     }
 
-    load();
+    setTimeout(() => {
+      load();
+    }, 10);
 
     return () => {
       cancelled = true;

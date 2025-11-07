@@ -40,19 +40,20 @@ export interface BuildingAnimationData {
   timeSteps: number[];
   frames: AnimationFrame[];
   frameRate: number;
-  minCoord: [number, number, number];
-  maxCoord: [number, number, number];
-  maxAverageDisplacement: [number, number, number];
-  maxDisplacement: [number, number, number];
-  minDisplacement: [number, number, number];
+  minPos: [number, number, number]; // meters
+  maxPos: [number, number, number]; // meters
+  minInitialPos: [number, number, number]; // meters
+  maxInitialPos: [number, number, number]; // meters
+  maxAverageDisplacement: [number, number, number]; // meters
+  maxAverageStoryDisplacement: [number, number, number]; // meters
+  maxDisplacement: [number, number, number]; // meters
+  minDisplacement: [number, number, number]; // meters
 }
 
 type Directions = "H1" | "H2" | "V";
 
 export class BuildingDataParser {
   private INCH_TO_METER = 0.0254;
-  private minCoord: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
-  private maxCoord: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
 
   parseNodeMapping(csvData: string): Map<string, NodeData> {
     const nodes = new Map<string, NodeData>();
@@ -154,6 +155,11 @@ export class BuildingDataParser {
     const nodeData = this.parseNodeMapping(nodeMappingCsv);
     let timeSteps: number[] = [];
 
+    /* Z UP COORDINATE SYSTEM */
+    const minInitialPos: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+    /* Z UP COORDINATE SYSTEM */
+    const maxInitialPos: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
+
     // Parse displacement files
     for (const [filename, content] of Object.entries(dataFiles)) {
       const parts = filename.split("_");
@@ -175,12 +181,26 @@ export class BuildingDataParser {
           const key: `disp_${Directions}` = `disp_${direction}`;
           node[key] = displacements;
           node.initial_pos = nodeCoords[nodeId];
+          if (node.initial_pos[0] < minInitialPos[0]) minInitialPos[0] = node.initial_pos[0];
+          if (node.initial_pos[1] < minInitialPos[1]) minInitialPos[1] = node.initial_pos[1];
+          if (node.initial_pos[2] < minInitialPos[2]) minInitialPos[2] = node.initial_pos[2];
+          if (node.initial_pos[0] > maxInitialPos[0]) maxInitialPos[0] = node.initial_pos[0];
+          if (node.initial_pos[1] > maxInitialPos[1]) maxInitialPos[1] = node.initial_pos[1];
+          if (node.initial_pos[2] > maxInitialPos[2]) maxInitialPos[2] = node.initial_pos[2];
         }
       }
     }
 
+    minInitialPos[0] *= this.INCH_TO_METER;
+    minInitialPos[1] *= this.INCH_TO_METER;
+    minInitialPos[2] *= this.INCH_TO_METER;
+
+    maxInitialPos[0] *= this.INCH_TO_METER;
+    maxInitialPos[1] *= this.INCH_TO_METER;
+    maxInitialPos[2] *= this.INCH_TO_METER;
+
     // Pre-calculate frame data
-    const { frames, maxAverageDisplacement, maxDisplacement, minDisplacement } = this.calculateFrames(nodeData, timeSteps);
+    const { frames, maxAverageDisplacement, maxAverageStoryDisplacement, maxDisplacement, minDisplacement, minPos, maxPos } = this.calculateFrames(nodeData, timeSteps);
 
     return {
       nodes: nodeData,
@@ -193,20 +213,33 @@ export class BuildingDataParser {
       // },
       // ! Swap the Y and Z axes
       // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
-      minCoord: [this.minCoord[0], this.minCoord[2], this.minCoord[1]],
-      maxCoord: [this.maxCoord[0], this.maxCoord[2], this.maxCoord[1]],
-      maxAverageDisplacement,
-      maxDisplacement,
-      minDisplacement,
+      minPos: [minPos[0], minPos[2], minPos[1]],
+      maxPos: [maxPos[0], maxPos[2], maxPos[1]],
+      minInitialPos: [minInitialPos[0], minInitialPos[2], minInitialPos[1]],
+      maxInitialPos: [maxInitialPos[0], maxInitialPos[2], maxInitialPos[1]],
+      maxAverageDisplacement: [maxAverageDisplacement[0], maxAverageDisplacement[2], maxAverageDisplacement[1]],
+      maxAverageStoryDisplacement: [maxAverageStoryDisplacement[0], maxAverageStoryDisplacement[2], maxAverageStoryDisplacement[1]],
+      maxDisplacement: [maxDisplacement[0], maxDisplacement[2], maxDisplacement[1]],
+      minDisplacement: [minDisplacement[0], minDisplacement[2], minDisplacement[1]],
     };
   }
 
-  private calculateFrames(nodeData: Map<string, NodeData>, timeSteps: number[]): { frames: AnimationFrame[]; maxAverageDisplacement: [number, number, number]; maxDisplacement: [number, number, number]; minDisplacement: [number, number, number] } {
+  /* RETURNS Z UP COORDINATE SYSTEM */
+  private calculateFrames(nodeData: Map<string, NodeData>, timeSteps: number[]) {
     const frames: AnimationFrame[] = [];
 
+    /* Z UP COORDINATE SYSTEM */
     const maxAverageDisplacement: [number, number, number] = [0, 0, 0];
+    /* Z UP COORDINATE SYSTEM */
+    const maxAverageStoryDisplacement: [number, number, number] = [0, 0, 0];
+    /* Z UP COORDINATE SYSTEM */
     const maxDisplacement: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
+    /* Z UP COORDINATE SYSTEM */
     const minDisplacement: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+    /* Z UP COORDINATE SYSTEM */
+    const minPos: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+    /* Z UP COORDINATE SYSTEM */
+    const maxPos: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
 
     for (let tIdx = 0; tIdx < timeSteps.length; tIdx++) {
       const nodePositions = new Map<string, [number, number, number]>();
@@ -252,12 +285,12 @@ export class BuildingDataParser {
         const finalY = (iy + dy) * this.INCH_TO_METER;
         const finalZ = (iz + dz) * this.INCH_TO_METER;
 
-        if (finalX < this.minCoord[0]) this.minCoord[0] = finalX;
-        if (finalY < this.minCoord[1]) this.minCoord[1] = finalY;
-        if (finalZ < this.minCoord[2]) this.minCoord[2] = finalZ;
-        if (finalX > this.maxCoord[0]) this.maxCoord[0] = finalX;
-        if (finalY > this.maxCoord[1]) this.maxCoord[1] = finalY;
-        if (finalZ > this.maxCoord[2]) this.maxCoord[2] = finalZ;
+        if (finalX < minPos[0]) minPos[0] = finalX;
+        if (finalY < minPos[1]) minPos[1] = finalY;
+        if (finalZ < minPos[2]) minPos[2] = finalZ;
+        if (finalX > maxPos[0]) maxPos[0] = finalX;
+        if (finalY > maxPos[1]) maxPos[1] = finalY;
+        if (finalZ > maxPos[2]) maxPos[2] = finalZ;
 
         // ! Swap the Y and Z axes
         // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
@@ -291,6 +324,12 @@ export class BuildingDataParser {
         story.averageDisplacement[0] = (story.averageDisplacement[0] / story.nodeIds.length) * this.INCH_TO_METER;
         story.averageDisplacement[1] = (story.averageDisplacement[1] / story.nodeIds.length) * this.INCH_TO_METER;
         story.averageDisplacement[2] = (story.averageDisplacement[2] / story.nodeIds.length) * this.INCH_TO_METER;
+
+        if (Math.hypot(...story.averageDisplacement) > Math.hypot(...maxAverageStoryDisplacement)) {
+          maxAverageStoryDisplacement[0] = story.averageDisplacement[0];
+          maxAverageStoryDisplacement[1] = story.averageDisplacement[1];
+          maxAverageStoryDisplacement[2] = story.averageDisplacement[2];
+        }
       }
 
       maxDisplacement[0] *= this.INCH_TO_METER;
@@ -310,6 +349,6 @@ export class BuildingDataParser {
       });
     }
 
-    return { frames, maxAverageDisplacement, maxDisplacement, minDisplacement };
+    return { frames, maxAverageDisplacement, maxAverageStoryDisplacement, maxDisplacement, minDisplacement, minPos, maxPos };
   }
 }

@@ -1,4 +1,4 @@
-import { OrbitControls } from "@react-three/drei";
+import { Html, Line, OrbitControls, Text3D } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 import React, { useEffect, useRef, useState, type MouseEvent } from "react";
@@ -18,9 +18,9 @@ function BuildingScene({ animationData, frameIndex, scale, displacementScale }: 
 
   const initalPositions = animationData.frames[0].nodePositions;
 
-  const offsetX = (animationData.maxCoord[0] + animationData.minCoord[0]) / -2;
-  const offsetY = -animationData.minCoord[1];
-  const offsetZ = (animationData.maxCoord[2] + animationData.minCoord[2]) / -2;
+  const offsetX = (animationData.maxInitialPos[0] + animationData.minInitialPos[0]) / -2;
+  const offsetY = -animationData.minInitialPos[1];
+  const offsetZ = (animationData.maxInitialPos[2] + animationData.minInitialPos[2]) / -2;
 
   const maxDisplacement = Math.hypot(...animationData.maxDisplacement);
 
@@ -83,10 +83,74 @@ function BuildingScene({ animationData, frameIndex, scale, displacementScale }: 
         );
       })}
 
+      <InSceneGraph frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
+
       <OrbitControls />
+      <axesHelper args={[75]} />
 
       <gridHelper rotateY={Math.PI / 2} args={[100, 100]} />
     </>
+  );
+}
+
+function InSceneGraph({ frameIndex, scale, displacementScale }: { frameIndex: number; scale: number; displacementScale: number }) {
+  const animationData = useAnimationData();
+  const maxAvgDisp = Math.hypot(...animationData.maxAverageStoryDisplacement);
+
+  const width = 20;
+  const padding = 8;
+
+  const offsetX = animationData.maxInitialPos[0] + (animationData.maxInitialPos[0] + animationData.minInitialPos[0]) / -2;
+  const offsetY = animationData.minInitialPos[1] + -animationData.minInitialPos[1];
+  const offsetZ = animationData.maxInitialPos[2] + (animationData.maxInitialPos[2] + animationData.minInitialPos[2]) / -2;
+
+  const frame = animationData.frames[frameIndex];
+  const stories = Array.from(animationData.frames[frameIndex].stories.values());
+  const numStories = stories.length;
+
+  const displacementPoints: [number, number, number][] = new Array(numStories);
+  const displacementPointsColors: [number, number, number][] = new Array(numStories);
+  const interStoryDriftPoints: [number, number, number][] = new Array(numStories);
+  const interStoryDriftPointsColors: [number, number, number][] = new Array(numStories);
+
+  const minY = animationData.minInitialPos[1];
+  const getY = (nodeId: string) => frame.nodePositions.get(nodeId)![1];
+
+  for (let i = 0; i < numStories; i++) {
+    const story = stories[i];
+    const nodeZero = story.nodeIds[0];
+    const storyHeight = getY(nodeZero);
+
+    // displacement point
+    const displacement = Math.hypot(...story.averageDisplacement);
+    const xDisp = (displacement / maxAvgDisp) * width;
+    displacementPoints[i] = [xDisp, storyHeight - minY, 0];
+    const c = rgbConverter(colorMap(displacement / maxAvgDisp));
+    displacementPointsColors[i] = [c.r, c.g, c.b];
+
+    // inter-story drift point
+    if (i === 0) {
+      interStoryDriftPoints[i] = [0, storyHeight - minY, 0];
+      interStoryDriftPointsColors[i] = [0, 0, 0];
+    } else {
+      const prev = stories[i - 1];
+      const prevHeight = getY(prev.nodeIds[0]);
+      const prevDisp = Math.hypot(...prev.averageDisplacement);
+      const drift = displacement - prevDisp;
+      const ratio = drift / (storyHeight - prevHeight);
+      interStoryDriftPoints[i] = [ratio * width * width, storyHeight - minY, 0];
+      interStoryDriftPointsColors[i] = [0, 0, 0];
+    }
+  }
+
+  return (
+    <mesh position={[offsetX + padding, offsetY, offsetZ]}>
+      {/* <mesh position={[width / 2, height / 2, 0]}>
+        <planeGeometry args={[width, height]} />
+      </mesh> */}
+      <Line points={displacementPoints} vertexColors={displacementPointsColors} lineWidth={2} />
+      <Line position={[0, 0, -1]} points={interStoryDriftPoints} vertexColors={interStoryDriftPointsColors} lineWidth={2} />
+    </mesh>
   );
 }
 
@@ -244,6 +308,10 @@ export function View3d() {
 function Timeline({ animationData, frameIndex, onFrameChange }: { animationData: BuildingAnimationData; frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
   const svgRef = useRef<SVGSVGElement>(null);
 
+  /**
+   * Displacement Data
+   */
+
   const maxFrame = animationData.frames.length - 1;
   const [selectedDisplacementView, setSelectedDisplacementView] = useState("all");
   const avgDisplacements = animationData.frames.map((frame) => {
@@ -257,12 +325,7 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
       default:
         return Math.hypot(...frame.averageDisplacement);
     }
-    return 0;
   });
-  // const avgXDisplacements = avgDisplacements.map((d) => d[0]);
-  // const avgYDisplacements = avgDisplacements.map((d) => d[1]);
-  // const avgZDisplacements = avgDisplacements.map((d) => d[2]);
-  // const avgAllDisplacements = avgDisplacements.map((d) => d[3]);
 
   const maxDisp = Math.max(...avgDisplacements);
   const minDisp = Math.min(...avgDisplacements);
@@ -270,11 +333,11 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
   const argMinDisp = avgDisplacements.indexOf(minDisp);
 
   const displacementRange = maxDisp - minDisp;
-  const [aspectRatio, setAspectRatio] = useState(0.3);
 
   /**
    * Resize observer for the aspect ratio of the canvas
    */
+  const [aspectRatio, setAspectRatio] = useState(0.3);
 
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -283,7 +346,6 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
 
     const resizeObserver = new ResizeObserver((entries) => {
       const entry = entries[0];
-      console.log(entry);
       setAspectRatio(entry.contentRect.height / entry.contentRect.width);
     });
 
@@ -297,10 +359,18 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
     };
   }, []);
 
+  /**
+   * Constants
+   */
+
   const verticalPadding = 3;
   const viewBoxHeight = aspectRatio * 100;
   const chartHeight = viewBoxHeight - verticalPadding * 2;
   const [scrubbing, setScrubbing] = useState(false);
+
+  /**
+   * Mouse input
+   */
 
   function handleMouseDown() {
     setScrubbing(true);
@@ -324,8 +394,12 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
     onFrameChange(newFrame);
   }
 
+  /**
+   * Graph data
+   */
+
   const playheadX = (frameIndex / maxFrame) * 100;
-  const playheadY = (1 - (avgDisplacements[frameIndex] - minDisp) / displacementRange) * aspectRatio * 100 + verticalPadding;
+  const playheadY = (1 - (avgDisplacements[frameIndex] - minDisp) / displacementRange) * chartHeight + verticalPadding;
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
@@ -350,6 +424,10 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
       fillColor = "fill-amber-400";
       break;
   }
+
+  /**
+   * Keyboard input
+   */
 
   useEffect(() => {
     function windowKeydown(e: KeyboardEvent) {

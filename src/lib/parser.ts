@@ -320,7 +320,7 @@ export class BuildingDataParser {
         maxAverageDisplacement[2] = averageDisplacement[2];
       }
 
-      for (const [storyId, story] of stories.entries()) {
+      for (const [_storyId, story] of stories.entries()) {
         story.averageDisplacement[0] = (story.averageDisplacement[0] / story.nodeIds.length) * this.INCH_TO_METER;
         story.averageDisplacement[1] = (story.averageDisplacement[1] / story.nodeIds.length) * this.INCH_TO_METER;
         story.averageDisplacement[2] = (story.averageDisplacement[2] / story.nodeIds.length) * this.INCH_TO_METER;

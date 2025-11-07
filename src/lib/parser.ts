@@ -81,7 +81,7 @@ export class BuildingDataParser {
     return nodes;
   }
 
-  parseDisplacementFile(fileContent: string, direction: Directions): ParsedDisplacementFile {
+  parseDisplacementFile(fileContent: string, _direction: Directions): ParsedDisplacementFile {
     const lines = fileContent.trim().split("\n");
 
     const colToNode: { [colIdx: number]: string } = {};

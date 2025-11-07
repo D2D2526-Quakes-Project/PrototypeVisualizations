@@ -1,12 +1,12 @@
-import { Html, Line, OrbitControls, Text3D } from "@react-three/drei";
+import { Line, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import { converter, interpolate } from "culori";
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 import React, { useEffect, useRef, useState, type MouseEvent } from "react";
-import type { BuildingAnimationData } from "../../lib/parser";
-import { useAnimationData } from "../../hooks/nodeDataHook";
 import { DoubleSide } from "three";
-import { converter, interpolate } from "culori";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
+import { useAnimationData } from "../../hooks/nodeDataHook";
+import type { BuildingAnimationData } from "../../lib/parser";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
@@ -93,7 +93,7 @@ function BuildingScene({ animationData, frameIndex, scale, displacementScale }: 
   );
 }
 
-function InSceneGraph({ frameIndex, scale, displacementScale }: { frameIndex: number; scale: number; displacementScale: number }) {
+function InSceneGraph({ frameIndex }: { frameIndex: number; scale: number; displacementScale: number }) {
   const animationData = useAnimationData();
   const maxAvgDisp = Math.hypot(...animationData.maxAverageStoryDisplacement);
 

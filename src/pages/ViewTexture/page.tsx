@@ -1,6 +1,6 @@
+import { converter, formatRgb, interpolate } from "culori";
 import { useEffect, useRef, useState } from "react";
 import { useAnimationData } from "../../hooks/nodeDataHook";
-import { converter, formatRgb, interpolate } from "culori";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
@@ -15,8 +15,6 @@ export function ViewTexture() {
   const maxDisp = Math.hypot(...animationData.maxAverageStoryDisplacement);
   const frame = animationData.frames[frameIndex];
   const stories = Array.from(animationData.frames[frameIndex].stories.values());
-
-  const totalDisplacementForFrame = stories.reduce((acc, story) => acc + Math.hypot(...story.averageDisplacement), 0);
 
   /**
    * Frame playback and animation controls

@@ -1,7 +1,7 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { converter, interpolate } from "culori";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BufferAttribute, Color, PlaneGeometry } from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
@@ -14,8 +14,8 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
   const animationData = useAnimationData();
   const { invalidate } = useThree();
 
-  const { geometry, maxMetricValue } = useMemo(() => {
-    const { frames, timeSteps } = animationData;
+  const { geometry } = useMemo(() => {
+    const { frames } = animationData;
     const numFrames = frames.length;
     if (numFrames === 0) return { geometry: new PlaneGeometry(), maxMetricValue: 1 };
 
@@ -25,7 +25,7 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
       return yA - yB;
     });
     const numStories = firstFrameStories.length;
-    const storyIds = firstFrameStories.map((s) => s.nodeIds[0].slice(0, -2)); // Assuming story ID is consistent
+    // const storyIds = firstFrameStories.map((s) => s.nodeIds[0].slice(0, -2)); // Assuming story ID is consistent
 
     const heightData = Array.from({ length: numStories }, () => new Float32Array(numFrames));
     let maxMetricValue = 0;
@@ -91,7 +91,7 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
     return { geometry: geom, maxMetricValue };
   }, [animationData, metric, invalidate]);
 
-  const yAxisLabel = metric === "displacement" ? "Avg. Displacement (m)" : "Inter-story Drift Ratio";
+  // const yAxisLabel = metric === "displacement" ? "Avg. Displacement (m)" : "Inter-story Drift Ratio";
 
   return (
     <>
@@ -118,7 +118,7 @@ export function ViewSurface() {
   const [metric, setMetric] = useState<"displacement" | "drift">("displacement");
 
   return (
-    <div className="flex-grow flex flex-col relative min-h-0">
+    <div className="grow flex flex-col relative min-h-0">
       <div className="absolute top-2 left-2 z-10 bg-white/80 p-2 rounded">
         <label className="flex items-center gap-2">
           <span className="font-bold">Metric:</span>

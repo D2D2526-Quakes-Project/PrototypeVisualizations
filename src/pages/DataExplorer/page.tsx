@@ -1,5 +1,5 @@
 import { PauseIcon, PlayIcon } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
 export function ViewDataExplorer() {
@@ -81,7 +81,7 @@ export function ViewDataExplorer() {
           {playing ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
           <span>{playing ? "Pause" : "Play"}</span>
         </button>
-        <div className="flex-grow">
+        <div className="grow">
           <input type="range" min="0" max={animationData.frames.length - 1} value={frameIndex} onChange={(e) => setFrameIndex(parseInt(e.target.value))} className="w-full" />
         </div>
       </div>
@@ -90,7 +90,7 @@ export function ViewDataExplorer() {
           Frame: {frameIndex + 1} / {animationData.frames.length} | Time: {animationData.timeSteps[frameIndex]?.toFixed(3)}s | Avg Building Displacement: {Math.hypot(...frame.averageDisplacement)?.toFixed(3)}m
         </span>
       </div>
-      <div className="flex-grow overflow-auto border-2 border-neutral-300 rounded-lg">
+      <div className="grow overflow-auto border-2 border-neutral-300 rounded-lg">
         <table className="w-full text-left table-auto border-collapse">
           <thead className="sticky top-0 bg-neutral-200">
             <tr>

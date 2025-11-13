@@ -1,6 +1,6 @@
 import { converter, formatRgb, interpolate } from "culori";
 import { PauseIcon, PlayIcon } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
 // Color scale for drift

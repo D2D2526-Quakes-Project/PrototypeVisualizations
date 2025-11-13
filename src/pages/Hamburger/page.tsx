@@ -12,7 +12,7 @@ export function ViewHamburger() {
   const [frameIndex, setFrameIndex] = useState(0);
   const [displacementScale, setDisplacementScale] = useState(1);
 
-  const maxDisp = Math.hypot(...animationData.maxAverageStoryDisplacement);
+  const maxDisp = animationData.maxAverageStoryDisplacement;
   const frame = animationData.frames[frameIndex];
   const stories = Array.from(animationData.frames[frameIndex].stories.values());
 

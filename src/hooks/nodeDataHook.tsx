@@ -54,6 +54,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
             setProgress(p);
           }
         });
+        console.log(built);
 
         const elapsed = Date.now() - start;
         const remaining = Math.max(0, minVisibleMs - elapsed);

@@ -1,7 +1,7 @@
 export interface NodeData {
   story: string;
   corner: string;
-  initial_pos: [number, number, number];
+  initial_pos: [number, number, number]; // meters
   disp_H1: number[];
   disp_H2: number[];
   disp_V: number[];
@@ -44,10 +44,10 @@ export interface BuildingAnimationData {
   maxPos: [number, number, number]; // meters
   minInitialPos: [number, number, number]; // meters
   maxInitialPos: [number, number, number]; // meters
-  maxAverageDisplacement: [number, number, number]; // meters
-  maxAverageStoryDisplacement: [number, number, number]; // meters
-  maxDisplacement: [number, number, number]; // meters
-  minDisplacement: [number, number, number]; // meters
+  maxAverageDisplacement: number; // meters
+  maxAverageStoryDisplacement: number; // meters
+  maxDisplacement: number; // meters
+  minDisplacement: number; // meters
 }
 
 type Directions = "H1" | "H2" | "V";
@@ -185,8 +185,8 @@ export class BuildingDataParser {
           // disp_H2
           // disp_V
           const key: `disp_${Directions}` = `disp_${direction}`;
-          node[key] = displacements;
-          node.initial_pos = nodeCoords[nodeId];
+          node[key] = displacements.map((d) => d * this.INCH_TO_METER);
+          node.initial_pos = [nodeCoords[nodeId][0] * this.INCH_TO_METER, nodeCoords[nodeId][1] * this.INCH_TO_METER, nodeCoords[nodeId][2] * this.INCH_TO_METER];
           if (node.initial_pos[0] < minInitialPos[0]) minInitialPos[0] = node.initial_pos[0];
           if (node.initial_pos[1] < minInitialPos[1]) minInitialPos[1] = node.initial_pos[1];
           if (node.initial_pos[2] < minInitialPos[2]) minInitialPos[2] = node.initial_pos[2];
@@ -198,17 +198,16 @@ export class BuildingDataParser {
       onProgress(5 + ((i + 1) / fileEntries.length) * 45);
     }
 
-    minInitialPos[0] *= this.INCH_TO_METER;
-    minInitialPos[1] *= this.INCH_TO_METER;
-    minInitialPos[2] *= this.INCH_TO_METER;
-
-    maxInitialPos[0] *= this.INCH_TO_METER;
-    maxInitialPos[1] *= this.INCH_TO_METER;
-    maxInitialPos[2] *= this.INCH_TO_METER;
-
     // Pre-calculate frame data
     onProgress(50);
     const { frames, maxAverageDisplacement, maxAverageStoryDisplacement, maxDisplacement, minDisplacement, minPos, maxPos } = this.calculateFrames(nodeData, timeSteps, onProgress);
+
+    // ! Swap the Y and Z axes
+    // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
+    nodeData.forEach((node) => {
+      node.initial_pos = [node.initial_pos[0], node.initial_pos[2], node.initial_pos[1]];
+    });
+
     onProgress(100);
 
     return {
@@ -216,20 +215,16 @@ export class BuildingDataParser {
       timeSteps,
       frames,
       frameRate: 100, // TODO: Calculate this from the data
-      // constants: {
-      //   INCH_TO_METER: this.INCH_TO_METER,
-      //   DISPLACEMENT_SCALE: this.DISPLACEMENT_SCALE,
-      // },
       // ! Swap the Y and Z axes
       // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
       minPos: [minPos[0], minPos[2], minPos[1]],
       maxPos: [maxPos[0], maxPos[2], maxPos[1]],
       minInitialPos: [minInitialPos[0], minInitialPos[2], minInitialPos[1]],
       maxInitialPos: [maxInitialPos[0], maxInitialPos[2], maxInitialPos[1]],
-      maxAverageDisplacement: [maxAverageDisplacement[0], maxAverageDisplacement[2], maxAverageDisplacement[1]],
-      maxAverageStoryDisplacement: [maxAverageStoryDisplacement[0], maxAverageStoryDisplacement[2], maxAverageStoryDisplacement[1]],
-      maxDisplacement: [maxDisplacement[0], maxDisplacement[2], maxDisplacement[1]],
-      minDisplacement: [minDisplacement[0], minDisplacement[2], minDisplacement[1]],
+      maxAverageDisplacement: maxAverageDisplacement,
+      maxAverageStoryDisplacement: maxAverageStoryDisplacement,
+      maxDisplacement: maxDisplacement,
+      minDisplacement: minDisplacement,
     };
   }
 
@@ -238,13 +233,13 @@ export class BuildingDataParser {
     const frames: AnimationFrame[] = [];
 
     /* Z UP COORDINATE SYSTEM */
-    const maxAverageDisplacement: [number, number, number] = [0, 0, 0];
+    let maxAverageDisplacement: number = 0;
     /* Z UP COORDINATE SYSTEM */
-    const maxAverageStoryDisplacement: [number, number, number] = [0, 0, 0];
+    let maxAverageStoryDisplacement: number = 0;
     /* Z UP COORDINATE SYSTEM */
-    const maxDisplacement: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
+    let maxDisplacement: number = Number.MIN_VALUE;
     /* Z UP COORDINATE SYSTEM */
-    const minDisplacement: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+    let minDisplacement: number = Number.MAX_VALUE;
     /* Z UP COORDINATE SYSTEM */
     const minPos: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
     /* Z UP COORDINATE SYSTEM */
@@ -275,24 +270,18 @@ export class BuildingDataParser {
         averageDisplacement[1] += dy;
         averageDisplacement[2] += dz;
 
-        if (Math.hypot(dx, dy, dz) > Math.hypot(...maxDisplacement)) {
-          maxDisplacement[0] = dx;
-          maxDisplacement[1] = dy;
-          maxDisplacement[2] = dz;
+        const displacementDistance = Math.hypot(dx, dy, dz);
+        if (displacementDistance > maxDisplacement) {
+          maxDisplacement = displacementDistance;
         }
 
-        if (Math.hypot(dx, dy, dz) < Math.hypot(...minDisplacement)) {
-          minDisplacement[0] = dx;
-          minDisplacement[1] = dy;
-          minDisplacement[2] = dz;
+        if (displacementDistance < minDisplacement) {
+          minDisplacement = displacementDistance;
         }
 
-        // const finalX = (ix + dx * this.DISPLACEMENT_SCALE) * this.INCH_TO_METER;
-        // const finalY = (iy + dy * this.DISPLACEMENT_SCALE) * this.INCH_TO_METER;
-        // const finalZ = (iz + dz * this.DISPLACEMENT_SCALE) * this.INCH_TO_METER;
-        const finalX = (ix + dx) * this.INCH_TO_METER;
-        const finalY = (iy + dy) * this.INCH_TO_METER;
-        const finalZ = (iz + dz) * this.INCH_TO_METER;
+        const finalX = ix + dx;
+        const finalY = iy + dy;
+        const finalZ = iz + dz;
 
         if (finalX < minPos[0]) minPos[0] = finalX;
         if (finalY < minPos[1]) minPos[1] = finalY;
@@ -319,35 +308,23 @@ export class BuildingDataParser {
         stories.set(storyId, story);
       }
 
-      averageDisplacement[0] = (averageDisplacement[0] / nodePositions.size) * this.INCH_TO_METER;
-      averageDisplacement[1] = (averageDisplacement[1] / nodePositions.size) * this.INCH_TO_METER;
-      averageDisplacement[2] = (averageDisplacement[2] / nodePositions.size) * this.INCH_TO_METER;
+      averageDisplacement[0] = averageDisplacement[0] / nodePositions.size;
+      averageDisplacement[1] = averageDisplacement[1] / nodePositions.size;
+      averageDisplacement[2] = averageDisplacement[2] / nodePositions.size;
 
-      if (Math.hypot(...averageDisplacement) > Math.hypot(...maxAverageDisplacement)) {
-        maxAverageDisplacement[0] = averageDisplacement[0];
-        maxAverageDisplacement[1] = averageDisplacement[1];
-        maxAverageDisplacement[2] = averageDisplacement[2];
+      if (Math.hypot(...averageDisplacement) > maxAverageDisplacement) {
+        maxAverageDisplacement = Math.hypot(...averageDisplacement);
       }
 
       for (const [_storyId, story] of stories.entries()) {
-        story.averageDisplacement[0] = (story.averageDisplacement[0] / story.nodeIds.length) * this.INCH_TO_METER;
-        story.averageDisplacement[1] = (story.averageDisplacement[1] / story.nodeIds.length) * this.INCH_TO_METER;
-        story.averageDisplacement[2] = (story.averageDisplacement[2] / story.nodeIds.length) * this.INCH_TO_METER;
+        story.averageDisplacement[0] = story.averageDisplacement[0] / story.nodeIds.length;
+        story.averageDisplacement[1] = story.averageDisplacement[1] / story.nodeIds.length;
+        story.averageDisplacement[2] = story.averageDisplacement[2] / story.nodeIds.length;
 
-        if (Math.hypot(...story.averageDisplacement) > Math.hypot(...maxAverageStoryDisplacement)) {
-          maxAverageStoryDisplacement[0] = story.averageDisplacement[0];
-          maxAverageStoryDisplacement[1] = story.averageDisplacement[1];
-          maxAverageStoryDisplacement[2] = story.averageDisplacement[2];
+        if (Math.hypot(...story.averageDisplacement) > maxAverageStoryDisplacement) {
+          maxAverageStoryDisplacement = Math.hypot(...story.averageDisplacement);
         }
       }
-
-      maxDisplacement[0] *= this.INCH_TO_METER;
-      maxDisplacement[1] *= this.INCH_TO_METER;
-      maxDisplacement[2] *= this.INCH_TO_METER;
-
-      minDisplacement[0] *= this.INCH_TO_METER;
-      minDisplacement[1] *= this.INCH_TO_METER;
-      minDisplacement[2] *= this.INCH_TO_METER;
 
       frames.push({
         frame: tIdx + 1,

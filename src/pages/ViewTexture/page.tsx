@@ -12,7 +12,7 @@ export function ViewTexture() {
   const [frameIndex, setFrameIndex] = useState(0);
   const [curveResolution, setCurveResolution] = useState(100);
 
-  const maxDisp = Math.hypot(...animationData.maxAverageStoryDisplacement);
+  const maxDisp = animationData.maxAverageStoryDisplacement;
   const frame = animationData.frames[frameIndex];
   const stories = Array.from(animationData.frames[frameIndex].stories.values());
 

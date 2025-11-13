@@ -4,9 +4,9 @@ export function NavigationBar({ routes }: { routes: { path: string; label: strin
   const location = useLocation();
 
   return (
-    <div className="p-4 px-6 flex gap-6 border-b-2 border-neutral-300">
+    <div className="p-4 px-6 flex gap-6 border-b-2 border-neutral-300 max-w-full overflow-x-auto relative skinny-scrollbar">
       {routes.map((route) => (
-        <a key={route.path} href={route.path} className={`text-xl ${location.pathname === route.path ? "font-bold" : "font-normal"}`}>
+        <a key={route.path} href={route.path} className={`text-xl whitespace-nowrap ${location.pathname === route.path ? "font-bold" : "font-normal"}`}>
           {route.label}
         </a>
       ))}

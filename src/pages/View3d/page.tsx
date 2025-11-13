@@ -7,13 +7,16 @@ import { DoubleSide } from "three";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 import type { BuildingAnimationData } from "../../lib/parser";
+import { Timeline } from "../../components/Timeline";
+import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 const rgbConverter = converter("rgb");
 
-function BuildingScene({ animationData, frameIndex, scale, displacementScale }: { animationData: BuildingAnimationData; frameIndex: number; scale: number; displacementScale: number }) {
+function BuildingScene({ frameIndex, scale, displacementScale }: { frameIndex: number; scale: number; displacementScale: number }) {
+  const animationData = useAnimationData();
   const frame = animationData.frames[frameIndex];
 
   const initalPositions = animationData.frames[0].nodePositions;
@@ -22,7 +25,7 @@ function BuildingScene({ animationData, frameIndex, scale, displacementScale }: 
   const offsetY = -animationData.minInitialPos[1];
   const offsetZ = (animationData.maxInitialPos[2] + animationData.minInitialPos[2]) / -2;
 
-  const maxDisplacement = Math.hypot(...animationData.maxDisplacement);
+  const maxDisplacement = animationData.maxDisplacement;
 
   return (
     <>
@@ -95,7 +98,7 @@ function BuildingScene({ animationData, frameIndex, scale, displacementScale }: 
 
 function InSceneGraph({ frameIndex }: { frameIndex: number; scale: number; displacementScale: number }) {
   const animationData = useAnimationData();
-  const maxAvgDisp = Math.hypot(...animationData.maxAverageStoryDisplacement);
+  const maxAvgDisp = animationData.maxAverageStoryDisplacement;
 
   const width = 20;
   const padding = 8;
@@ -155,98 +158,10 @@ function InSceneGraph({ frameIndex }: { frameIndex: number; scale: number; displ
 }
 
 export function View3d() {
-  const animationData = useAnimationData();
-
   /**
    * Frame playback and animation controls
    */
-  const [frameIndex, setFrameIndex] = useState(0);
-
-  const requestedAnimationFrameRef = useRef<number>(null);
-  const lastDisplayedFrameTimeRef = useRef<number>(0);
-  const playbackStartFrameRef = useRef<number>(0);
-  const playbackStartTimeRef = useRef<number>(0);
-
-  const [playing, setPlaying] = useState(false);
-
-  function handlePlayPause() {
-    setPlaying(!playing);
-    lastDisplayedFrameTimeRef.current = 0;
-    playbackStartFrameRef.current = frameIndex;
-    playbackStartTimeRef.current = performance.now();
-    if (frameIndex === animationData.frames.length - 1) {
-      setFrameIndex(0);
-      playbackStartFrameRef.current = 0;
-    }
-  }
-
-  useEffect(() => {
-    if (!playing) {
-      if (requestedAnimationFrameRef.current) {
-        cancelAnimationFrame(requestedAnimationFrameRef.current);
-      }
-      return;
-    }
-
-    const animate = (currentTime: number) => {
-      if (lastDisplayedFrameTimeRef.current === 0) {
-        lastDisplayedFrameTimeRef.current = currentTime;
-      }
-
-      const deltaTime = currentTime - lastDisplayedFrameTimeRef.current;
-
-      if (deltaTime >= 1000 / 30) {
-        const expectedFrame = playbackStartFrameRef.current + ((currentTime - playbackStartTimeRef.current) / 1000) * animationData.frameRate;
-        const frameIndex = Math.round(expectedFrame);
-        if (frameIndex >= 0 && frameIndex < animationData.frames.length) {
-          setFrameIndex(frameIndex);
-        } else {
-          setFrameIndex(animationData.frames.length - 1);
-          setPlaying(false);
-        }
-        lastDisplayedFrameTimeRef.current = currentTime;
-      }
-
-      requestedAnimationFrameRef.current = requestAnimationFrame(animate);
-    };
-
-    requestedAnimationFrameRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (requestedAnimationFrameRef.current) {
-        cancelAnimationFrame(requestedAnimationFrameRef.current);
-      }
-    };
-  }, [playing, animationData.frames.length, frameIndex]);
-
-  useEffect(() => {
-    function windowKeydown(e: KeyboardEvent) {
-      if (e.key === " ") handlePlayPause();
-    }
-    window.addEventListener("keydown", windowKeydown);
-
-    return () => {
-      window.removeEventListener("keydown", windowKeydown);
-    };
-  }, [handlePlayPause]);
-
-  function timelineFrameChange(frameIndex: number | ((prevState: number) => number)) {
-    if (typeof frameIndex === "number") {
-      setFrameIndex(frameIndex);
-
-      lastDisplayedFrameTimeRef.current = 0;
-      playbackStartFrameRef.current = frameIndex;
-      playbackStartTimeRef.current = performance.now();
-    } else {
-      setFrameIndex((prev) => {
-        const newFrame = frameIndex(prev);
-        lastDisplayedFrameTimeRef.current = 0;
-        playbackStartFrameRef.current = newFrame;
-        playbackStartTimeRef.current = performance.now();
-        return newFrame;
-      });
-    }
-  }
+  const playback = usePlaybackControl();
 
   /**
    * Displacement scales
@@ -267,23 +182,11 @@ export function View3d() {
         <ResizablePanel className="flex flex-col flex-1 min-h-0">
           <div className="relative w-full h-full">
             <Canvas camera={{ position: [50, 50, 50], fov: 75 }}>
-              <BuildingScene animationData={animationData} frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
+              <BuildingScene frameIndex={playback.frameIndex} scale={scale} displacementScale={displacementScale} />
             </Canvas>
 
             <div className="absolute bottom-0 left-0 right-0 flex justify-between w-full border-t-2 border-neutral-300 bg-neutral-200/80 backdrop-blur-sm p-2">
-              <div className="flex items-center gap-2">
-                <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(0)}>
-                  <SkipBackIcon />
-                </button>
-                <div className="w-px h-1/2 bg-neutral-300" />
-                <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={handlePlayPause}>
-                  {playing ? <PauseIcon /> : <PlayIcon />}
-                </button>
-                <div className="w-px h-1/2 bg-neutral-300" />
-                <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(animationData.frames.length - 1)}>
-                  <SkipForwardIcon />
-                </button>
-              </div>
+              <PlaybackControls playback={playback} />
               <div className="flex items-center gap-2">
                 <label className="flex gap-2 whitespace-nowrap">
                   <input type="range" min="0" max={1} step={0.1} value={scale} onChange={handleScaleChange} className="w-full" />
@@ -302,11 +205,11 @@ export function View3d() {
         <ResizablePanel defaultSize={30} minSize={20}>
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={50}>
-              <Timeline animationData={animationData} frameIndex={frameIndex} onFrameChange={timelineFrameChange} />
+              <Timeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={50}>
-              <InterstoryDriftChart animationData={animationData} frameIndex={frameIndex} />
+              <InterstoryDriftChart frameIndex={playback.frameIndex} />
             </ResizablePanel>
           </ResizablePanelGroup>
         </ResizablePanel>
@@ -315,207 +218,8 @@ export function View3d() {
   );
 }
 
-function Timeline({ animationData, frameIndex, onFrameChange }: { animationData: BuildingAnimationData; frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
-  const svgRef = useRef<SVGSVGElement>(null);
-
-  /**
-   * Displacement Data
-   */
-
-  const maxFrame = animationData.frames.length - 1;
-  const [selectedDisplacementView, setSelectedDisplacementView] = useState("all");
-  const avgDisplacements = animationData.frames.map((frame) => {
-    switch (selectedDisplacementView) {
-      case "x":
-        return frame.averageDisplacement[0];
-      case "y":
-        return frame.averageDisplacement[1];
-      case "z":
-        return frame.averageDisplacement[2];
-      default:
-        return Math.hypot(...frame.averageDisplacement);
-    }
-  });
-
-  const maxDisp = Math.max(...avgDisplacements);
-  const minDisp = Math.min(...avgDisplacements);
-  const argMaxDisp = avgDisplacements.indexOf(maxDisp);
-  const argMinDisp = avgDisplacements.indexOf(minDisp);
-
-  const displacementRange = maxDisp - minDisp;
-
-  /**
-   * Resize observer for the aspect ratio of the canvas
-   */
-  const [aspectRatio, setAspectRatio] = useState(0.3);
-
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!panelRef.current) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      setAspectRatio(entry.contentRect.height / entry.contentRect.width);
-    });
-
-    resizeObserver.observe(panelRef.current);
-
-    const rect = panelRef.current.getBoundingClientRect();
-    setAspectRatio(rect.height / rect.width);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  /**
-   * Constants
-   */
-
-  const verticalPadding = 3;
-  const viewBoxHeight = aspectRatio * 100;
-  const chartHeight = viewBoxHeight - verticalPadding * 2;
-  const [scrubbing, setScrubbing] = useState(false);
-
-  /**
-   * Mouse input
-   */
-
-  function handleMouseDown() {
-    setScrubbing(true);
-  }
-  function handleMouseUp() {
-    setScrubbing(false);
-  }
-
-  function handleMouseMove(e: MouseEvent<SVGSVGElement>) {
-    if (!scrubbing) return;
-
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    const rect = svg.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const relativeX = Math.max(0, Math.min(x, rect.width));
-    const framePos = relativeX / rect.width;
-    const newFrame = Math.round(framePos * (maxFrame + 1));
-
-    onFrameChange(newFrame);
-  }
-
-  /**
-   * Graph data
-   */
-
-  const playheadX = (frameIndex / maxFrame) * 100;
-  const playheadY = (1 - (avgDisplacements[frameIndex] - minDisp) / displacementRange) * chartHeight + verticalPadding;
-
-  const playheadTransform = `translate(${playheadX}, ${playheadY})`;
-
-  const linePoints = avgDisplacements.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minDisp) / displacementRange) * chartHeight + verticalPadding}`).join(" ");
-  let strokeColor;
-  let fillColor;
-  switch (selectedDisplacementView) {
-    case "x":
-      strokeColor = "stroke-red-400";
-      fillColor = "fill-red-400";
-      break;
-    case "y":
-      strokeColor = "stroke-green-400";
-      fillColor = "fill-green-400";
-      break;
-    case "z":
-      strokeColor = "stroke-blue-400";
-      fillColor = "fill-blue-400";
-      break;
-    default:
-      strokeColor = "stroke-amber-400";
-      fillColor = "fill-amber-400";
-      break;
-  }
-
-  /**
-   * Keyboard input
-   */
-
-  useEffect(() => {
-    function windowKeydown(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft" && e.shiftKey) {
-        onFrameChange((prev) => {
-          if (argMaxDisp > argMinDisp) {
-            if (prev > argMaxDisp) return argMaxDisp;
-            else if (prev > argMinDisp) return argMinDisp;
-          } else {
-            // argMaxDisp < argMinDisp
-            if (prev > argMinDisp) return argMinDisp;
-            else if (prev > argMaxDisp) return argMaxDisp;
-          }
-          return 0;
-        });
-      } else if (e.key === "ArrowLeft") onFrameChange((prev) => Math.max(0, prev - 1));
-      else if (e.key === "ArrowRight" && e.shiftKey) {
-        onFrameChange((prev) => {
-          if (argMaxDisp > argMinDisp) {
-            if (prev < argMinDisp) return argMinDisp;
-            else if (prev < argMaxDisp) return argMaxDisp;
-          } else {
-            // argMaxDisp < argMinDisp
-            if (prev < argMaxDisp) return argMaxDisp;
-            else if (prev < argMinDisp) return argMinDisp;
-          }
-          return animationData.frames.length - 1;
-        });
-      } else if (e.key === "ArrowRight") onFrameChange((prev) => Math.min(animationData.frames.length - 1, prev + 1));
-    }
-    window.addEventListener("keydown", windowKeydown);
-
-    return () => {
-      window.removeEventListener("keydown", windowKeydown);
-    };
-  }, [argMinDisp, argMaxDisp]);
-
-  return (
-    <div ref={panelRef} className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full">
-      <div className="absolute top-0 inset-x-0 flex justify-between p-1">
-        <div>
-          Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {animationData.timeSteps[frameIndex]?.toFixed(3)}s | Avg Displacement: {avgDisplacements[frameIndex]?.toFixed(2)}m
-        </div>
-        <div>
-          <select className="bg-neutral-200 rounded-md p-1" value={selectedDisplacementView} onChange={(e) => setSelectedDisplacementView(e.target.value)}>
-            <option value="all">All</option>
-            <option value="x">X</option>
-            <option value="y">Y</option>
-            <option value="z">Z</option>
-          </select>
-        </div>
-      </div>
-
-      <svg ref={svgRef} className="select-none" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
-        <line transform={playheadTransform} x1={0} y1="-100" x2={0} y2="100" className="stroke-neutral-300" strokeWidth="0.2" />
-        <polyline points={linePoints} fill="none" className={strokeColor} strokeWidth="0.2" />
-        <polygon points={linePoints + ` 100,${(1 - (0 - minDisp) / displacementRange) * chartHeight + verticalPadding} 0,${(1 - (0 - minDisp) / displacementRange) * chartHeight + verticalPadding}`} className={fillColor} opacity={0.2} />
-
-        <g>
-          {/* x labels */}
-          {Array.from({ length: 16 }).map((_, i) => (
-            <React.Fragment key={i}>
-              <text x={(i / 15) * 100} y={chartHeight + 1.5 + verticalPadding} textAnchor="middle" className="text-neutral-300" fontSize={1}>
-                {(i * maxFrame) / 15 / animationData.frameRate}
-              </text>
-              <line x1={(i / 15) * 100} y1={chartHeight + verticalPadding} x2={(i / 15) * 100} y2={0} className="stroke-neutral-300" strokeWidth="0.1" />
-            </React.Fragment>
-          ))}
-        </g>
-
-        {/* <circle transform={playheadTransform} r="0.3" className="fill-amber-500" /> */}
-        <polygon transform={playheadTransform} points="-1,-1.4 1,-1.4 0,0" className="fill-amber-500" />
-      </svg>
-    </div>
-  );
-}
-
-function InterstoryDriftChart({ animationData, frameIndex }: { animationData: BuildingAnimationData; frameIndex: number }) {
+function InterstoryDriftChart({ frameIndex }: { frameIndex: number }) {
+  const animationData = useAnimationData();
   const panelRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 1, height: 1 });
   useEffect(() => {

@@ -63,7 +63,7 @@ export function ViewNodeGrid() {
   }, [playing, animationData.frames.length, animationData.frameRate, frameIndex]);
 
   // Find the maximum displacement of any node across the entire animation for normalization
-  const maxNodeDisplacement = useMemo(() => Math.hypot(...animationData.maxDisplacement), [animationData.maxDisplacement]);
+  const maxNodeDisplacement = animationData.maxDisplacement;
 
   // Find the maximum inter-story drift ratio across the entire animation for normalization
   const maxInterStoryDrift = useMemo(() => {

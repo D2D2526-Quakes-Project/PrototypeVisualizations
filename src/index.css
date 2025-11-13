@@ -4,6 +4,23 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer utilities {
+  .skinny-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .skinny-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .skinny-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+  .skinny-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.4);
+  }
+}
+
 :root {
   font-family: "Atkinson Hyperlegible Next", sans-serif;
   background: oklch(92.2% 0 0);

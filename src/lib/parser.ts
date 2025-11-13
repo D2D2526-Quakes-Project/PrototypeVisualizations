@@ -1,10 +1,11 @@
 export interface NodeData {
   story: string;
-  corner: string;
+  corner: Corner;
   initial_pos: [number, number, number]; // meters
   disp_H1: number[];
   disp_H2: number[];
   disp_V: number[];
+  nodeId: string;
 }
 
 interface NodeCoordinates {
@@ -50,7 +51,8 @@ export interface BuildingAnimationData {
   minDisplacement: number; // meters
 }
 
-type Directions = "H1" | "H2" | "V";
+export type Directions = "H1" | "H2" | "V";
+export type Corner = "NW" | "NE" | "SW" | "SE";
 
 export class BuildingDataParser {
   private INCH_TO_METER = 0.0254;
@@ -70,11 +72,12 @@ export class BuildingDataParser {
       const [nodeId, story, corner] = row;
       nodes.set(nodeId, {
         story,
-        corner,
+        corner: corner as Corner,
         initial_pos: [0, 0, 0],
         disp_H1: [],
         disp_H2: [],
         disp_V: [],
+        nodeId,
       });
     }
 

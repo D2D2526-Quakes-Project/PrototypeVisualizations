@@ -1,6 +1,6 @@
 import { Line, OrbitControls, Sphere } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { converter, interpolate } from "culori";
+import { converter, formatHex, interpolate } from "culori";
 import React, { useEffect, useMemo, useState } from "react";
 import { Color, Vector3 } from "three";
 import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
@@ -28,8 +28,6 @@ function MotionRibbons({ ribbonData, visibleStories, frameIndex, xzScale, viewMo
 
   return (
     <>
-      <ambientLight intensity={1.5} />
-      <directionalLight position={[100, 100, 50]} intensity={2} />
       {Array.from(ribbonData.entries()).map(([id, { path, colors, position }]) => {
         if (viewMode === "storyCenters" && !visibleStories[id]) {
           return null;
@@ -37,10 +35,10 @@ function MotionRibbons({ ribbonData, visibleStories, frameIndex, xzScale, viewMo
 
         return (
           <React.Fragment key={id}>
-            <group scale={[xzScale, xzScale, xzScale]} position={position}>
-              <Line points={path} vertexColors={colors} lineWidth={1} />
+            <group scale={[xzScale, viewMode === "storyCenters" ? 1 : xzScale, xzScale]} position={position}>
+              <Line points={path} vertexColors={colors} lineWidth={2} fog={false} toneMapped={false} />
               <Sphere args={[0.5 / xzScale]} position={path[frameIndex]}>
-                <meshStandardMaterial color={colors[frameIndex]} />
+                <meshBasicMaterial color={formatHex({ r: colors[frameIndex].r, g: colors[frameIndex].g, b: colors[frameIndex].b, mode: "rgb" })} fog={false} toneMapped={false} />
               </Sphere>
             </group>
           </React.Fragment>
@@ -200,7 +198,7 @@ export function ViewTemporalRibbons() {
         <Canvas camera={{ position: [80, 80, 80], fov: 50 }}>{<MotionRibbons ribbonData={currentRibbonData} visibleStories={visibleStories} frameIndex={playback.frameIndex} xzScale={xzScale} viewMode={viewMode} />}</Canvas>
         <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
           <PlaybackControls playback={playback} />
-          <SmallTimeline animationData={animationData} frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
+          <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
         </div>
       </div>
     </div>

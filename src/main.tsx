@@ -1,17 +1,20 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
 import { createBrowserRouter, Outlet, RouterProvider, useRouteError } from "react-router";
+import * as THREE from "three";
 import { NavigationBar } from "./components/NavigationBar";
-import { View3d } from "./pages/View3d/page";
 import { AnimationDataProvider } from "./hooks/nodeDataHook";
-import { ViewHamburger } from "./pages/Hamburger/page";
-import { ViewTexture } from "./pages/ViewTexture/page";
-import { ViewDataExplorer } from "./pages/DataExplorer/page";
-import { ViewSurface } from "./pages/Surface/page";
-import { ViewNodeGrid } from "./pages/NodeGrid/page";
+import "./index.css";
 import { ViewDamageThreshold } from "./pages/DamageThreshold/page";
+import { ViewDataExplorer } from "./pages/DataExplorer/page";
+import { ElevationSlice } from "./pages/ElevationSlice/page";
+import { FloorPlanTorsion } from "./pages/FloorPlanTorsion/page";
+import { ViewHamburger } from "./pages/Hamburger/page";
+import { ViewNodeGrid } from "./pages/NodeGrid/page";
+import { ViewSurface } from "./pages/Surface/page";
 import { ViewTemporalRibbons } from "./pages/TemporalRibbons/page";
+import { View3d } from "./pages/View3d/page";
+import { ViewTexture } from "./pages/ViewTexture/page";
 
 const routes = [
   { path: "/", label: "3D View", element: <View3d /> },
@@ -22,6 +25,8 @@ const routes = [
   { path: "/nodegrid", label: "Node Grid", element: <ViewNodeGrid /> },
   { path: "/ribbons", label: "Ribbons", element: <ViewTemporalRibbons /> },
   { path: "/threshold", label: "Thresholds", element: <ViewDamageThreshold /> },
+  { path: "/slice", label: "Elevation Slice", element: <ElevationSlice /> },
+  { path: "/torsion", label: "Floor Torsion", element: <FloorPlanTorsion /> },
 ];
 
 const router = createBrowserRouter([
@@ -36,6 +41,8 @@ const router = createBrowserRouter([
     children: routes,
   },
 ]);
+
+THREE.ColorManagement.enabled = true;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -63,6 +70,9 @@ function ErrorPage() {
       <a href="/" className="bg-neutral-300 px-4 py-2 rounded-md">
         Go back home
       </a>
+      <button className="bg-neutral-300 px-4 py-2 rounded-md" onClick={() => window.location.reload()}>
+        Reload
+      </button>
     </div>
   );
 }

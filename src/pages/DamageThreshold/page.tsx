@@ -1,18 +1,17 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { PauseIcon, PlayIcon } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { DoubleSide } from "three";
-import { useAnimationData } from "../../hooks/nodeDataHook";
-import type { BuildingAnimationData } from "../../lib/parser";
 import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
-import { Timeline } from "../../components/Timeline";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
 import { SmallTimeline } from "../../components/SmallTimeline";
+import { useAnimationData } from "../../hooks/nodeDataHook";
+import type { BuildingAnimationData } from "../../lib/parser";
+import { formatHex } from "culori";
 
-const green: [number, number, number] = [0.2, 0.8, 0.3];
-const yellow: [number, number, number] = [0.9, 0.8, 0.2];
-const red: [number, number, number] = [0.9, 0.2, 0.2];
+const red500 = formatHex("oklch(63.7% 0.237 25.331)")!;
+const amber400 = formatHex("oklch(82.8% 0.189 84.429)")!;
+const green500 = formatHex("oklch(72.3% 0.219 149.579)")!;
 
 function ThresholdBuilding({ frameIndex, warningThreshold, criticalThreshold, animationData }: { frameIndex: number; warningThreshold: number; criticalThreshold: number; animationData: BuildingAnimationData }) {
   const frame = animationData.frames[frameIndex];
@@ -30,7 +29,7 @@ function ThresholdBuilding({ frameIndex, warningThreshold, criticalThreshold, an
   });
 
   const driftColors = useMemo(() => {
-    const colors = new Map<string, number[]>();
+    const colors = new Map<string, string>();
     for (let i = 0; i < stories.length; i++) {
       const [storyId, story] = stories[i];
       const displacement = Math.hypot(...story.averageDisplacement);
@@ -49,17 +48,15 @@ function ThresholdBuilding({ frameIndex, warningThreshold, criticalThreshold, an
         ratio = interStoryHeight > 0 ? drift / interStoryHeight : 0;
       }
 
-      if (ratio >= criticalThreshold) colors.set(storyId, red);
-      else if (ratio >= warningThreshold) colors.set(storyId, yellow);
-      else colors.set(storyId, green);
+      if (ratio >= criticalThreshold) colors.set(storyId, red500);
+      else if (ratio >= warningThreshold) colors.set(storyId, amber400);
+      else colors.set(storyId, green500);
     }
     return colors;
   }, [frame, initialFrame, warningThreshold, criticalThreshold, stories]);
 
   return (
     <>
-      <ambientLight intensity={1.5} />
-      <directionalLight position={[100, 100, 50]} intensity={2} />
       {stories.map(([storyId, story]) => {
         const nodePositions = story.nodeIds.map((nodeId) => {
           const pos = frame.nodePositions.get(nodeId)!;
@@ -67,14 +64,14 @@ function ThresholdBuilding({ frameIndex, warningThreshold, criticalThreshold, an
         });
 
         const floorQuadPositions = new Float32Array([...nodePositions[1].pos, ...nodePositions[0].pos, ...nodePositions[2].pos, ...nodePositions[1].pos, ...nodePositions[2].pos, ...nodePositions[3].pos]);
-        const floorColor = (driftColors.get(storyId) as [number, number, number]) || green;
+        const floorColor = driftColors.get(storyId) || green500;
 
         return (
           <mesh key={storyId}>
             <bufferGeometry>
               <bufferAttribute attach="attributes-position" args={[floorQuadPositions, 3]} />
             </bufferGeometry>
-            <meshStandardMaterial color={floorColor} opacity={0.6} transparent side={DoubleSide} />
+            <meshBasicMaterial color={floorColor} opacity={0.6} transparent side={DoubleSide} fog={false} toneMapped={false} />
           </mesh>
         );
       })}
@@ -190,10 +187,9 @@ export function ViewDamageThreshold() {
                     <div className="w-full flex items-center">
                       <div className="grow bg-neutral-200 h-4 rounded">
                         <div
-                          className="h-full rounded"
+                          className={`h-full rounded ${data.peakDrift > criticalThreshold ? "bg-red-500" : data.peakDrift > warningThreshold ? "bg-amber-400" : "bg-green-500"}`}
                           style={{
                             width: `${(data.peakDrift / maxPeakDrift) * 100}%`,
-                            backgroundColor: data.peakDrift > criticalThreshold ? "#e53e3e" : data.peakDrift > warningThreshold ? "#f6e05e" : "#48bb78",
                           }}
                         />
                       </div>
@@ -215,7 +211,7 @@ export function ViewDamageThreshold() {
             </Canvas>
             <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
               <PlaybackControls playback={playback} />
-              <SmallTimeline animationData={animationData} frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
+              <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
             </div>
           </div>
         </ResizablePanel>

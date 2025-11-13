@@ -4,15 +4,18 @@ import { converter, interpolate } from "culori";
 import { useMemo, useState } from "react";
 import { BufferAttribute, Color, PlaneGeometry } from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
+import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
+import { SmallTimeline } from "../../components/SmallTimeline";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 const rgbConverter = converter("rgb");
 
-function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
+function SurfacePlot({ metric, frameIndex }: { metric: "displacement" | "drift"; frameIndex: number }) {
   const animationData = useAnimationData();
   const { invalidate } = useThree();
+  const meshLength = 2000;
 
   const { geometry } = useMemo(() => {
     const { frames } = animationData;
@@ -64,7 +67,7 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
       }
     }
 
-    const geom = new PlaneGeometry(2000, 100, numFrames - 1, numStories - 1);
+    const geom = new PlaneGeometry(meshLength, 100, numFrames - 1, numStories - 1);
     const positions = geom.attributes.position;
     const colors = new Float32Array(positions.count * 3);
 
@@ -95,7 +98,7 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
 
   return (
     <>
-      <mesh geometry={geometry}>
+      <mesh geometry={geometry} position={[-meshLength / 2 + (frameIndex / animationData.frames.length) * meshLength, 0, 50]} scale={[-1, 1, -2]}>
         <meshStandardMaterial vertexColors side={2} />
       </mesh>
       <axesHelper args={[60]} />
@@ -117,6 +120,8 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
 export function ViewSurface() {
   const [metric, setMetric] = useState<"displacement" | "drift">("displacement");
 
+  const playback = usePlaybackControl();
+
   return (
     <div className="grow flex flex-col relative min-h-0">
       <div className="absolute top-2 left-2 z-10 bg-white/80 p-2 rounded">
@@ -128,12 +133,17 @@ export function ViewSurface() {
           </select>
         </label>
       </div>
+
       <Canvas camera={{ position: [80, 80, 80], fov: 50 }}>
         <ambientLight intensity={1.5} />
         <directionalLight position={[100, 100, 50]} intensity={2} />
-        <SurfacePlot metric={metric} />
+        <SurfacePlot metric={metric} frameIndex={playback.frameIndex} />
         <OrbitControls />
       </Canvas>
+      <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
+        <PlaybackControls playback={playback} />
+        <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
+      </div>
     </div>
   );
 }

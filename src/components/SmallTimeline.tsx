@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import type { BuildingAnimationData } from "../lib/parser";
+import { useAnimationData } from "../hooks/nodeDataHook";
 
-export function SmallTimeline({ animationData, frameIndex, onFrameChange }: { animationData: BuildingAnimationData; frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
+export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const animationData = useAnimationData();
 
   /**
    * Displacement Data
@@ -53,8 +54,19 @@ export function SmallTimeline({ animationData, frameIndex, onFrameChange }: { an
    * Mouse input
    */
 
-  function handleMouseDown() {
+  function handleMouseDown(e: MouseEvent<SVGSVGElement>) {
     setScrubbing(true);
+
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const relativeX = Math.max(0, Math.min(x, rect.width));
+    const framePos = relativeX / rect.width;
+    const newFrame = Math.round(framePos * (maxFrame + 1));
+
+    onFrameChange(newFrame);
   }
   function handleMouseUp() {
     setScrubbing(false);

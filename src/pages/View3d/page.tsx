@@ -2,7 +2,7 @@ import { Line, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { converter, interpolate } from "culori";
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
-import React, { useEffect, useRef, useState, type MouseEvent } from "react";
+import React, { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { DoubleSide } from "three";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
 import { useAnimationData } from "../../hooks/nodeDataHook";
@@ -88,7 +88,7 @@ function BuildingScene({ animationData, frameIndex, scale, displacementScale }: 
       <OrbitControls />
       <axesHelper args={[75]} />
 
-      <gridHelper rotateY={Math.PI / 2} args={[100, 100]} />
+      <gridHelper rotateY={Math.PI / 2} args={[200, 20]} />
     </>
   );
 }
@@ -137,7 +137,7 @@ function InSceneGraph({ frameIndex }: { frameIndex: number; scale: number; displ
       const prevHeight = getY(prev.nodeIds[0]);
       const prevDisp = Math.hypot(...prev.averageDisplacement);
       const drift = displacement - prevDisp;
-      const ratio = drift / (storyHeight - prevHeight);
+      const ratio = drift / Math.abs(storyHeight - prevHeight);
       interStoryDriftPoints[i] = [ratio * width * width, storyHeight - minY, 0];
       interStoryDriftPointsColors[i] = [0, 0, 0];
     }
@@ -265,40 +265,50 @@ export function View3d() {
     <div className="flex flex-col flex-1 min-h-0">
       <ResizablePanelGroup direction="vertical">
         <ResizablePanel className="flex flex-col flex-1 min-h-0">
-          <Canvas camera={{ position: [50, 50, 50], fov: 75 }}>
-            <BuildingScene animationData={animationData} frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
-          </Canvas>
+          <div className="relative w-full h-full">
+            <Canvas camera={{ position: [50, 50, 50], fov: 75 }}>
+              <BuildingScene animationData={animationData} frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
+            </Canvas>
 
-          <div className="flex justify-between w-full border-t-2 border-neutral-300">
-            <div className="flex items-center gap-2">
-              <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(0)}>
-                <SkipBackIcon />
-              </button>
-              <div className="w-px h-1/2 bg-neutral-300" />
-              <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={handlePlayPause}>
-                {playing ? <PauseIcon /> : <PlayIcon />}
-              </button>
-              <div className="w-px h-1/2 bg-neutral-300" />
-              <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(animationData.frames.length - 1)}>
-                <SkipForwardIcon />
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="flex gap-2 whitespace-nowrap">
-                <input type="range" min="0" max={1} step={0.1} value={scale} onChange={handleScaleChange} className="w-full" />
-                Scale: {scale.toFixed(2)}
-              </label>
-              <label className="flex gap-2 whitespace-nowrap">
-                <input type="range" min="0" max={20} step={0.1} value={displacementScale} onChange={handleDisplacementScaleChange} className="w-full" />
-                XZ: {displacementScale.toFixed(2)}
-              </label>
+            <div className="absolute bottom-0 left-0 right-0 flex justify-between w-full border-t-2 border-neutral-300 bg-neutral-200/80 backdrop-blur-sm p-2">
+              <div className="flex items-center gap-2">
+                <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(0)}>
+                  <SkipBackIcon />
+                </button>
+                <div className="w-px h-1/2 bg-neutral-300" />
+                <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={handlePlayPause}>
+                  {playing ? <PauseIcon /> : <PlayIcon />}
+                </button>
+                <div className="w-px h-1/2 bg-neutral-300" />
+                <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={() => setFrameIndex(animationData.frames.length - 1)}>
+                  <SkipForwardIcon />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="flex gap-2 whitespace-nowrap">
+                  <input type="range" min="0" max={1} step={0.1} value={scale} onChange={handleScaleChange} className="w-full" />
+                  Scale: {scale.toFixed(2)}
+                </label>
+                <label className="flex gap-2 whitespace-nowrap">
+                  <input type="range" min="0" max={20} step={0.1} value={displacementScale} onChange={handleDisplacementScaleChange} className="w-full" />
+                  XZ: {displacementScale.toFixed(2)}
+                </label>
+              </div>
             </div>
           </div>
         </ResizablePanel>
 
         <ResizableHandle withHandle />
-        <ResizablePanel>
-          <Timeline animationData={animationData} frameIndex={frameIndex} onFrameChange={timelineFrameChange} />
+        <ResizablePanel defaultSize={30} minSize={20}>
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel defaultSize={50}>
+              <Timeline animationData={animationData} frameIndex={frameIndex} onFrameChange={timelineFrameChange} />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={50}>
+              <InterstoryDriftChart animationData={animationData} frameIndex={frameIndex} />
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -467,7 +477,7 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
 
   return (
     <div ref={panelRef} className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full">
-      <div className="absolute top-0 inset-x-0 flex justify-between">
+      <div className="absolute top-0 inset-x-0 flex justify-between p-1">
         <div>
           Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {animationData.timeSteps[frameIndex]?.toFixed(3)}s | Avg Displacement: {avgDisplacements[frameIndex]?.toFixed(2)}m
         </div>
@@ -491,7 +501,7 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
           {Array.from({ length: 16 }).map((_, i) => (
             <React.Fragment key={i}>
               <text x={(i / 15) * 100} y={chartHeight + 1.5 + verticalPadding} textAnchor="middle" className="text-neutral-300" fontSize={1}>
-                {(i * maxFrame) / 15}
+                {(i * maxFrame) / 15 / animationData.frameRate}
               </text>
               <line x1={(i / 15) * 100} y1={chartHeight + verticalPadding} x2={(i / 15) * 100} y2={0} className="stroke-neutral-300" strokeWidth="0.1" />
             </React.Fragment>
@@ -500,6 +510,98 @@ function Timeline({ animationData, frameIndex, onFrameChange }: { animationData:
 
         {/* <circle transform={playheadTransform} r="0.3" className="fill-amber-500" /> */}
         <polygon transform={playheadTransform} points="-1,-1.4 1,-1.4 0,0" className="fill-amber-500" />
+      </svg>
+    </div>
+  );
+}
+
+function InterstoryDriftChart({ animationData, frameIndex }: { animationData: BuildingAnimationData; frameIndex: number }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 1, height: 1 });
+  useEffect(() => {
+    if (!panelRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => setSize({ width: entries[0].contentRect.width, height: entries[0].contentRect.height }));
+    resizeObserver.observe(panelRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const frame = animationData.frames[frameIndex];
+  const stories = Array.from(frame.stories.values()).sort((a, b) => {
+    const yA = frame.nodePositions.get(a.nodeIds[0])![1];
+    const yB = frame.nodePositions.get(b.nodeIds[0])![1];
+    return yA - yB;
+  });
+  const initialFrame = animationData.frames[0];
+
+  const drifts = useMemo(() => {
+    return stories.map((story, i) => {
+      const storyHeight = frame.nodePositions.get(story.nodeIds[0])![1] - animationData.minPos[1];
+      const displacement = Math.hypot(...story.averageDisplacement);
+
+      if (i === 0) {
+        return { ratio: 0, height: storyHeight };
+      } else {
+        const prevStory = stories[i - 1];
+        const prevHeight = frame.nodePositions.get(prevStory.nodeIds[0])![1];
+        const prevDisp = Math.hypot(...prevStory.averageDisplacement);
+        const drift = Math.abs(displacement - prevDisp);
+        const interStoryHeight = Math.abs(storyHeight - prevHeight);
+        return { ratio: drift / interStoryHeight, height: storyHeight };
+      }
+    });
+  }, [frame, stories, initialFrame]);
+
+  const maxRatio = Math.max(...drifts.map((d) => d.ratio), 0.002);
+  const maxHeight = Math.max(...drifts.map((d) => d.height));
+
+  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const chartWidth = size.width - padding.left - padding.right;
+  const chartHeight = size.height - padding.top - padding.bottom;
+
+  return (
+    <div ref={panelRef} className="h-full w-full relative">
+      <div className="absolute top-0 inset-x-0">Inter-story Drift Ratio</div>
+      <svg width="100%" height="100%">
+        <g transform={`translate(${padding.left}, ${padding.top})`}>
+          <line x1="0" y1="0" x2="0" y2={chartHeight} stroke="black" />
+          {Array.from({ length: 5 }).map((_, i) => {
+            const y = chartHeight - (i / 4) * chartHeight;
+            const height = (i / 4) * maxHeight;
+            return (
+              <g key={i}>
+                <line x1="-5" y1={y} x2="0" y2={y} stroke="black" />
+                <text x="-8" y={y + 3} textAnchor="end" fontSize="10">
+                  {height.toFixed(1)}m
+                </text>
+              </g>
+            );
+          })}
+
+          {/* X Axis (Drift Ratio) */}
+          <line x1="0" y1={chartHeight} x2={chartWidth} y2={chartHeight} stroke="black" />
+          {Array.from({ length: 5 }).map((_, i) => {
+            const x = (i / 4) * chartWidth;
+            const ratio = (i / 4) * maxRatio;
+            return (
+              <g key={i}>
+                <line x1={x} y1={chartHeight} x2={x} y2={chartHeight + 5} stroke="black" />
+                <text x={x} y={chartHeight + 15} textAnchor="middle" fontSize="10">
+                  {ratio.toFixed(3)}
+                </text>
+              </g>
+            );
+          })}
+          <text x={chartWidth / 2} y={size.height - padding.top} textAnchor="middle" fontSize="12">
+            Drift Ratio (m/m)
+          </text>
+
+          {drifts.map((drift, i) => {
+            const barY = chartHeight - (drift.height / maxHeight) * chartHeight;
+            const barWidth = (drift.ratio / maxRatio) * chartWidth;
+            const color = rgbConverter(colorMap(drift.ratio / maxRatio));
+            return <rect key={i} x="0" y={barY} width={barWidth} height={chartHeight / drifts.length - 2} fill={`rgb(${color.r * 255},${color.g * 255},${color.b * 255})`} />;
+          })}
+        </g>
       </svg>
     </div>
   );

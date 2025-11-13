@@ -44,13 +44,16 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
     async function load() {
       try {
-        // slight tick so UI can mount loader first (optional)
+        // slight tick so UI can mount loader first
         await new Promise((r) => setTimeout(r, 0));
 
-        // TODO: call setProgress(...) from parser.buildAnimationData
         const parser = new BuildingDataParser();
 
-        const built = parser.buildAnimationData(nodeMappingCsv, dataFiles);
+        const built = parser.buildAnimationData(nodeMappingCsv, dataFiles, (p) => {
+          if (!cancelled) {
+            setProgress(p);
+          }
+        });
 
         const elapsed = Date.now() - start;
         const remaining = Math.max(0, minVisibleMs - elapsed);

@@ -150,10 +150,14 @@ export class BuildingDataParser {
     };
   }
 
-  buildAnimationData(nodeMappingCsv: string, dataFiles: { [filename: string]: string }): BuildingAnimationData {
+  buildAnimationData(nodeMappingCsv: string, dataFiles: { [filename: string]: string }, onProgress: (progress: number) => void): BuildingAnimationData {
+    onProgress(0);
+
     // Parse node mapping
     const nodeData = this.parseNodeMapping(nodeMappingCsv);
     let timeSteps: number[] = [];
+
+    onProgress(5);
 
     /* Z UP COORDINATE SYSTEM */
     const minInitialPos: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
@@ -161,7 +165,9 @@ export class BuildingDataParser {
     const maxInitialPos: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
 
     // Parse displacement files
-    for (const [filename, content] of Object.entries(dataFiles)) {
+    const fileEntries = Object.entries(dataFiles);
+    for (let i = 0; i < fileEntries.length; i++) {
+      const [filename, content] = fileEntries[i];
       const parts = filename.split("_");
       const direction = parts[1] as Directions; // H1, H2, or V
 
@@ -189,6 +195,7 @@ export class BuildingDataParser {
           if (node.initial_pos[2] > maxInitialPos[2]) maxInitialPos[2] = node.initial_pos[2];
         }
       }
+      onProgress(5 + ((i + 1) / fileEntries.length) * 45);
     }
 
     minInitialPos[0] *= this.INCH_TO_METER;
@@ -200,7 +207,9 @@ export class BuildingDataParser {
     maxInitialPos[2] *= this.INCH_TO_METER;
 
     // Pre-calculate frame data
-    const { frames, maxAverageDisplacement, maxAverageStoryDisplacement, maxDisplacement, minDisplacement, minPos, maxPos } = this.calculateFrames(nodeData, timeSteps);
+    onProgress(50);
+    const { frames, maxAverageDisplacement, maxAverageStoryDisplacement, maxDisplacement, minDisplacement, minPos, maxPos } = this.calculateFrames(nodeData, timeSteps, onProgress);
+    onProgress(100);
 
     return {
       nodes: nodeData,
@@ -225,7 +234,7 @@ export class BuildingDataParser {
   }
 
   /* RETURNS Z UP COORDINATE SYSTEM */
-  private calculateFrames(nodeData: Map<string, NodeData>, timeSteps: number[]) {
+  private calculateFrames(nodeData: Map<string, NodeData>, timeSteps: number[], onProgress: (progress: number) => void) {
     const frames: AnimationFrame[] = [];
 
     /* Z UP COORDINATE SYSTEM */
@@ -347,6 +356,10 @@ export class BuildingDataParser {
         averageDisplacement,
         stories,
       });
+
+      if (tIdx % 100 === 0) {
+        onProgress(50 + (tIdx / timeSteps.length) * 50);
+      }
     }
 
     return { frames, maxAverageDisplacement, maxAverageStoryDisplacement, maxDisplacement, minDisplacement, minPos, maxPos };

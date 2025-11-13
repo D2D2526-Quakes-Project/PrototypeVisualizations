@@ -7,11 +7,17 @@ import { View3d } from "./pages/View3d/page";
 import { AnimationDataProvider } from "./hooks/nodeDataHook";
 import { ViewHamburger } from "./pages/Hamburger/page";
 import { ViewTexture } from "./pages/ViewTexture/page";
+import { ViewDataExplorer } from "./pages/DataExplorer/page";
+import { ViewSurface } from "./pages/Surface/page";
+import { ViewNodeGrid } from "./pages/NodeGrid/page";
 
 const routes = [
   { path: "/", label: "3D View", element: <View3d /> },
+  { path: "/explorer", label: "Data Explorer", element: <ViewDataExplorer /> },
   { path: "/hamburger", label: "Hamburger", element: <ViewHamburger /> },
   { path: "/texture", label: "Texture", element: <ViewTexture /> },
+  { path: "/surface", label: "Surface", element: <ViewSurface /> },
+  { path: "/nodegrid", label: "Node Grid", element: <ViewNodeGrid /> },
 ];
 
 const router = createBrowserRouter([

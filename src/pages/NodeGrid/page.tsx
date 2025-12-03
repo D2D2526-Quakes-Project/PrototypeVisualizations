@@ -10,7 +10,7 @@ const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 
 export function ViewNodeGrid() {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const playback = usePlaybackControl();
 
   // Find the maximum displacement of any node across the entire animation for normalization

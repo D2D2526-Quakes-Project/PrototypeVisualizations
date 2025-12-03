@@ -1,2 +1,7 @@
 # Prevents merge conflicts in Ottotime files
 .ottotime merge=union
+# Adds all files from data/ to git
+public/data/** filter=lfs diff=lfs merge=lfs -text
+# except for the index.ts & index.json file
+public/data/index.ts !filter !diff !merge -text
+public/data/index.json !filter !diff !merge -text

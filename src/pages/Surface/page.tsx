@@ -13,7 +13,7 @@ const colorMap = interpolate([amber400, red700], "oklab");
 const rgbConverter = converter("rgb");
 
 function SurfacePlot({ metric, frameIndex }: { metric: "displacement" | "drift"; frameIndex: number }) {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const { invalidate } = useThree();
   const meshLength = 2000;
 

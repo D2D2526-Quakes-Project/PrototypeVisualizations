@@ -8,7 +8,7 @@ const colorMap = interpolate([amber400, red700], "oklab");
 const rgbConverter = converter("rgb");
 
 export function InterstoryDriftChart({ frameIndex }: { frameIndex: number }) {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const panelRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 1, height: 1 });
   useEffect(() => {
@@ -90,7 +90,7 @@ export function InterstoryDriftChart({ frameIndex }: { frameIndex: number }) {
 
           {drifts.map((drift, i) => {
             const barY = chartHeight - (drift.height / maxHeight) * chartHeight;
-            const barWidth = (drift.ratio / maxRatio) * chartWidth;
+            const barWidth = Math.max(0, (drift.ratio / maxRatio) * chartWidth);
             const color = rgbConverter(colorMap(drift.ratio / maxRatio));
             return <rect key={i} x="0" y={barY} width={barWidth} height={chartHeight / drifts.length - 2} fill={`rgb(${color.r * 255},${color.g * 255},${color.b * 255})`} />;
           })}

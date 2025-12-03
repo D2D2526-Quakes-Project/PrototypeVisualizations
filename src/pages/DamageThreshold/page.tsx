@@ -82,7 +82,7 @@ function ThresholdBuilding({ frameIndex, warningThreshold, criticalThreshold, an
 }
 
 export function ViewDamageThreshold() {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
 
   const playback = usePlaybackControl();
 

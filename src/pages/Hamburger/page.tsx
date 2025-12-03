@@ -9,7 +9,7 @@ const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 
 export function ViewHamburger() {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
 
   const playback = usePlaybackControl();
 

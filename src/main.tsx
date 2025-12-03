@@ -20,7 +20,7 @@ const routes = [
   { path: "/", label: "3D View", element: <View3d /> },
   { path: "/explorer", label: "Data Explorer", element: <ViewDataExplorer /> },
   { path: "/hamburger", label: "Hamburger", element: <ViewHamburger /> },
-  { path: "/texture", label: "Texture", element: <ViewTexture /> },
+  // { path: "/texture", label: "Texture", element: <ViewTexture /> },
   { path: "/surface", label: "Surface", element: <ViewSurface /> },
   { path: "/nodegrid", label: "Node Grid", element: <ViewNodeGrid /> },
   { path: "/ribbons", label: "Ribbons", element: <ViewTemporalRibbons /> },
@@ -33,8 +33,10 @@ const router = createBrowserRouter([
   {
     element: (
       <>
-        <NavigationBar routes={routes} />
-        <Outlet />
+        <AnimationDataProvider>
+          <NavigationBar routes={routes} />
+          <Outlet />
+        </AnimationDataProvider>
       </>
     ),
     errorElement: <ErrorPage />,
@@ -46,11 +48,9 @@ THREE.ColorManagement.enabled = true;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AnimationDataProvider>
-      <div className="h-screen flex flex-col bg-neutral-200">
-        <RouterProvider router={router} />
-      </div>
-    </AnimationDataProvider>
+    <div className="h-screen flex flex-col bg-neutral-200">
+      <RouterProvider router={router} />
+    </div>
   </StrictMode>
 );
 

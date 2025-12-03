@@ -51,7 +51,7 @@ function MotionRibbons({ ribbonData, visibleStories, frameIndex, xzScale, viewMo
 }
 
 export function ViewTemporalRibbons() {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const [computedRibbons, setComputedRibbons] = useState<ComputedRibbonData | null>(null);
 
   const storyIds = useMemo(

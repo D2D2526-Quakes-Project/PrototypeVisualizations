@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
 
 export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
 
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -11,24 +11,33 @@ export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; on
    */
 
   const maxFrame = animationData.frames.length - 1;
-  const [selectedDisplacementView, setSelectedDisplacementView] = useState("all");
-  const avgDisplacements = animationData.frames.map((frame) => {
+  const [selectedDisplacementView, setSelectedDisplacementView] = useState("Ground Motion");
+  const graphData = animationData.frames.map((frame) => {
     switch (selectedDisplacementView) {
-      case "x":
+      case "Avg. X Displacement":
         return frame.averageDisplacement[0];
-      case "y":
+      case "Avg. Y Displacement":
         return frame.averageDisplacement[1];
-      case "z":
+      case "Avg. Z Displacement":
         return frame.averageDisplacement[2];
-      default:
+      case "Avg. Displacement":
         return Math.hypot(...frame.averageDisplacement);
+      case "X Ground Motion":
+        return frame.groundMotion[0];
+      case "Y Ground Motion":
+        return frame.groundMotion[1];
+      case "Z Ground Motion":
+        return frame.groundMotion[2];
+      // case "Ground Motion":
+      default:
+        return Math.hypot(...frame.groundMotion);
     }
   });
 
-  const maxDisp = Math.max(...avgDisplacements);
-  const minDisp = Math.min(...avgDisplacements);
+  const maxGraphData = Math.max(...graphData);
+  const minGraphData = Math.min(...graphData);
 
-  const displacementRange = maxDisp - minDisp;
+  const graphRange = maxGraphData - minGraphData;
 
   /**
    * Resize observer for the aspect ratio of the canvas
@@ -106,23 +115,27 @@ export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; on
    */
 
   const playheadX = (frameIndex / maxFrame) * 100;
-  const playheadY = (1 - (avgDisplacements[frameIndex] - minDisp) / displacementRange) * chartHeight + verticalPadding;
+  const playheadY = (1 - (graphData[frameIndex] - minGraphData) / graphRange) * chartHeight + verticalPadding;
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
-  const linePoints = avgDisplacements.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minDisp) / displacementRange) * chartHeight + verticalPadding}`).join(" ");
+  const linePoints = graphData.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minGraphData) / graphRange) * chartHeight + verticalPadding}`).join(" ");
+  // const linePoints = avgDisplacements.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minDisp) / displacementRange) * chartHeight + verticalPadding}`).join(" ");
   let strokeColor;
   let fillColor;
   switch (selectedDisplacementView) {
-    case "x":
+    case "X Ground Motion":
+    case "Avg. X Displacement":
       strokeColor = "stroke-red-400";
       fillColor = "fill-red-400";
       break;
-    case "y":
+    case "Y Ground Motion":
+    case "Avg. Y Displacement":
       strokeColor = "stroke-green-400";
       fillColor = "fill-green-400";
       break;
-    case "z":
+    case "Z Ground Motion":
+    case "Avg. Z Displacement":
       strokeColor = "stroke-blue-400";
       fillColor = "fill-blue-400";
       break;
@@ -136,14 +149,22 @@ export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; on
     <div ref={panelRef} className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full">
       <div className="absolute top-0 inset-x-0 flex justify-between p-1">
         <div>
-          Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {animationData.timeSteps[frameIndex]?.toFixed(3)}s | Avg Displacement: {avgDisplacements[frameIndex]?.toFixed(2)}m
+          Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {animationData.timeSteps[frameIndex]?.toFixed(3)}s | Value: {graphData[frameIndex]?.toFixed(2)}
         </div>
         <div>
           <select className="bg-neutral-200 rounded-md p-1" value={selectedDisplacementView} onChange={(e) => setSelectedDisplacementView(e.target.value)}>
-            <option value="all">All</option>
-            <option value="x">X</option>
-            <option value="y">Y</option>
-            <option value="z">Z</option>
+            <optgroup label="Ground Motion">
+              <option value="Ground Motion">Ground Motion</option>
+              <option value="X Ground Motion">X Ground Motion</option>
+              <option value="Y Ground Motion">Y Ground Motion</option>
+              <option value="Z Ground Motion">Z Ground Motion</option>
+            </optgroup>
+            <optgroup label="Displacement">
+              <option value="Avg. Displacement">Avg. Displacement</option>
+              <option value="Avg. X Displacement">Avg. X Displacement</option>
+              <option value="Avg. Y Displacement">Avg. Y Displacement</option>
+              <option value="Avg. Z Displacement">Avg. Z Displacement</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -151,7 +172,7 @@ export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; on
       <svg ref={svgRef} className="select-none" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
         <line transform={playheadTransform} x1={0} y1="-100" x2={0} y2="100" className="stroke-neutral-300" strokeWidth="0.2" />
         <polyline points={linePoints} fill="none" className={strokeColor} strokeWidth="0.2" />
-        <polygon points={linePoints + ` 100,${(1 - (0 - minDisp) / displacementRange) * chartHeight + verticalPadding} 0,${(1 - (0 - minDisp) / displacementRange) * chartHeight + verticalPadding}`} className={fillColor} opacity={0.2} />
+        <polygon points={linePoints + ` 100,${(1 - (0 - minGraphData) / graphRange) * chartHeight + verticalPadding} 0,${(1 - (0 - minGraphData) / graphRange) * chartHeight + verticalPadding}`} className={fillColor} opacity={0.2} />
 
         <g>
           {/* x labels */}

@@ -3,7 +3,7 @@ import { useAnimationData } from "../hooks/nodeDataHook";
 
 export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
 
   /**
    * Displacement Data

@@ -14,7 +14,7 @@ const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 
 function PlaneShapes({ frameIndex, displacementScale, anchorCorner, verticalSpacing }: { frameIndex: number; displacementScale: number; anchorCorner: boolean; verticalSpacing: number }) {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const frame = animationData.frames[frameIndex];
 
   const initalPositions = animationData.frames[0].nodePositions;
@@ -107,7 +107,7 @@ function PlaneShapes({ frameIndex, displacementScale, anchorCorner, verticalSpac
 }
 
 export function FloorPlanTorsion() {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const playback = usePlaybackControl();
 
   const stories = animationData.frames[0].stories;

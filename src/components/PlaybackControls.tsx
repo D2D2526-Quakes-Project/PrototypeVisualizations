@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
 
 export function usePlaybackControl() {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const totalFrames = animationData.frames.length;
   const frameRate = animationData.frameRate;
 

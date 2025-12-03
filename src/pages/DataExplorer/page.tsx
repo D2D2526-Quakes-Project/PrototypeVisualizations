@@ -4,7 +4,7 @@ import { SmallTimeline } from "../../components/SmallTimeline";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
 export function ViewDataExplorer() {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const playback = usePlaybackControl();
 
   const frame = animationData.frames[playback.frameIndex];

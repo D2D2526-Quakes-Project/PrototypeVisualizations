@@ -8,7 +8,7 @@ import { SmallTimeline } from "../../components/SmallTimeline";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
 function SliceView({ frameIndex }: { sliceAxis: "X" | "Z"; frameIndex: number }) {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
 
   const offsetX = (animationData.maxInitialPos[0] + animationData.minInitialPos[0]) / -2;
   const offsetY = -animationData.minInitialPos[1];

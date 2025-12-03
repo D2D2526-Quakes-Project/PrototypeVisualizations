@@ -10,7 +10,7 @@ const colorMap = interpolate([amber400, red700], "oklab");
 const rgbConverter = converter("rgb");
 
 export function BuildingScene({ frameIndex, scale, displacementScale }: { frameIndex: number; scale: number; displacementScale: number }) {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const frame = animationData.frames[frameIndex];
 
   const initalPositions = animationData.frames[0].nodePositions;
@@ -91,7 +91,7 @@ export function BuildingScene({ frameIndex, scale, displacementScale }: { frameI
 }
 
 function InSceneGraph({ frameIndex }: { frameIndex: number; scale: number; displacementScale: number }) {
-  const animationData = useAnimationData();
+  const { animationData } = useAnimationData();
   const maxAvgDisp = animationData.maxAverageStoryDisplacement;
 
   const width = 20;

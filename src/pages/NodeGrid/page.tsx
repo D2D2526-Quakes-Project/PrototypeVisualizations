@@ -16,7 +16,7 @@ export function ViewNodeGrid() {
   // Find the maximum displacement of any node across the entire animation for normalization
   const maxNodeDisplacement = animationData.maxDisplacement;
 
-  // Find the maximum inter-story drift ratio across the entire animation for normalization
+  // Find the maximum story drift ratio across the entire animation for normalization
   const maxInterStoryDrift = useMemo(() => {
     let maxDrift = 0;
     const initialFrame = animationData.frames[0];
@@ -124,7 +124,7 @@ export function ViewNodeGrid() {
           <span>
             Frame: {playback.frameIndex + 1} / {animationData.frames.length} | Time: {animationData.timeSteps[playback.frameIndex]?.toFixed(3)}s
           </span>
-          <p>Circle size represents individual node displacement. Color represents inter-story drift for the node's floor.</p>
+          <p>Circle size represents individual node displacement. Color represents the Story Drift Ratio for the node's floor.</p>
         </div>
       </div>
 
@@ -132,7 +132,7 @@ export function ViewNodeGrid() {
         <div className="flex flex-col">
           {structuredNodes.map(({ storyId, nodes }) => (
             <div key={storyId}>
-              <div className="grid grid-cols-4 w-fit gap-4 pt-2">
+              <div className="grid grid-cols-4 w-full max-w-sm mx-auto gap-4 pt-2">
                 {nodes.map(({ nodeId }) => {
                   const initialPos = initialFrame.nodePositions.get(nodeId);
                   const currentPos = frame.nodePositions.get(nodeId);
@@ -147,9 +147,9 @@ export function ViewNodeGrid() {
                   const color = formatHex(colorMap(colorRatio));
 
                   return (
-                    <div key={nodeId} className="flex flex-col items-center justify-center gap-1">
+                    <div key={nodeId} className="flex flex-col items-center justify-center gap-1 aspect-square">
                       <div
-                        className="rounded-full transition-all duration-75 ease-linear"
+                        className="rounded-full transition-all duration-[50] ease-linear"
                         style={{
                           width: `${size}px`,
                           height: `${size}px`,

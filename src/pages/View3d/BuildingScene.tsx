@@ -1,7 +1,7 @@
 import { Line, OrbitControls } from "@react-three/drei";
 import { converter, formatHex, interpolate } from "culori";
 import React from "react";
-import { DoubleSide } from "three";
+import { DoubleSide, Vector3 } from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
@@ -81,6 +81,8 @@ export function BuildingScene({ frameIndex, scale, displacementScale }: { frameI
       })}
 
       <InSceneGraph frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
+
+      <arrowHelper args={[new Vector3(...frame.groundMotion), new Vector3(0, 0, 0), Math.hypot(...frame.groundMotion) * 10000, 0xffff00]} />
 
       <OrbitControls />
       <axesHelper args={[75]} />

@@ -10,12 +10,12 @@ export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: numbe
    */
 
   const maxFrame = animationData.frames.length - 1;
-  const avgDisplacements = animationData.frames.map((frame) => Math.hypot(...frame.averageDisplacement));
+  const graphData = animationData.frames.map((f) => Math.hypot(...f.groundMotion));
 
-  const maxDisp = Math.max(...avgDisplacements);
-  const minDisp = Math.min(...avgDisplacements);
+  const maxGraphData = Math.max(...graphData);
+  const minGraphData = Math.min(...graphData);
 
-  const displacementRange = maxDisp - minDisp;
+  const displacementRange = maxGraphData - minGraphData;
 
   /**
    * Resize observer for the aspect ratio of the canvas
@@ -56,17 +56,7 @@ export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: numbe
 
   function handleMouseDown(e: MouseEvent<SVGSVGElement>) {
     setScrubbing(true);
-
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    const rect = svg.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const relativeX = Math.max(0, Math.min(x, rect.width));
-    const framePos = relativeX / rect.width;
-    const newFrame = Math.round(framePos * (maxFrame + 1));
-
-    onFrameChange(newFrame);
+    updateFrame(e);
   }
   function handleMouseUp() {
     setScrubbing(false);
@@ -74,7 +64,10 @@ export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: numbe
 
   function handleMouseMove(e: MouseEvent<SVGSVGElement>) {
     if (!scrubbing) return;
+    updateFrame(e);
+  }
 
+  function updateFrame(e: MouseEvent<SVGSVGElement>) {
     const svg = svgRef.current;
     if (!svg) return;
 
@@ -84,7 +77,7 @@ export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: numbe
     const framePos = relativeX / rect.width;
     const newFrame = Math.round(framePos * (maxFrame + 1));
 
-    onFrameChange(newFrame);
+    onFrameChange(Math.max(0, Math.min(newFrame, maxFrame)));
   }
 
   /**
@@ -92,16 +85,16 @@ export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: numbe
    */
 
   const playheadX = (frameIndex / maxFrame) * 100;
-  const playheadY = (1 - (avgDisplacements[frameIndex] - minDisp) / displacementRange) * chartHeight;
+  const playheadY = (1 - (graphData[frameIndex] - minGraphData) / displacementRange) * chartHeight;
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
-  const linePoints = avgDisplacements.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minDisp) / displacementRange) * chartHeight}`).join(" ");
+  const linePoints = graphData.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minGraphData) / displacementRange) * chartHeight}`).join(" ");
   const strokeColor = "stroke-amber-400";
 
   return (
     <div ref={panelRef} className="h-full w-full">
-      <svg ref={svgRef} className="select-none" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
+      <svg ref={svgRef} className="select-none cursor-crosshair" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
         <line transform={playheadTransform} x1={0} y1="-100" x2={0} y2="100" className="stroke-neutral-300" strokeWidth="0.2" />
         <polyline points={linePoints} fill="none" className={strokeColor} strokeWidth="0.2" />
         <circle transform={playheadTransform} r=".5" className="fill-amber-500" />

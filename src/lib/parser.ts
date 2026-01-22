@@ -43,7 +43,6 @@ export interface BuildingAnimationData {
   timeSteps: number[];
   frames: AnimationFrame[];
   frameRate: number;
-  groundMotion: [number, number, number][];
   minPos: [number, number, number]; // meters
   maxPos: [number, number, number]; // meters
   minInitialPos: [number, number, number]; // meters
@@ -266,7 +265,6 @@ export async function buildAnimationData(nodeMappingCsv: string, ground_motion: 
   return {
     nodes: nodeData,
     timeSteps,
-    groundMotion: groundMotion.displacements,
     frames,
     frameRate: 1 / (timeSteps[1] - timeSteps[0]),
     // ! Swap the Y and Z axes
@@ -382,6 +380,10 @@ async function calculateFrames(nodeData: Map<string, NodeData>, timeSteps: numbe
       }
     }
 
+    // ! Swap the Y and Z axes
+    // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
+    const motion_of_the_ground: [number, number, number] = groundMotion[tIdx] ? [groundMotion[tIdx][0] * INCH_TO_METER, groundMotion[tIdx][2] * INCH_TO_METER, groundMotion[tIdx][1] * INCH_TO_METER] : [0, 0, 0];
+
     frames.push({
       frame: tIdx + 1,
       time: timeSteps[tIdx],
@@ -389,7 +391,7 @@ async function calculateFrames(nodeData: Map<string, NodeData>, timeSteps: numbe
       nodeDisplacements,
       averageDisplacement,
       stories,
-      groundMotion: groundMotion[tIdx] ?? [0, 0, 0],
+      groundMotion: motion_of_the_ground,
     });
 
     if (tIdx % 100 === 0) {

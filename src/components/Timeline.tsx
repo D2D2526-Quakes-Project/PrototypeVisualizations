@@ -28,7 +28,7 @@ export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; on
         return frame.groundMotion[1];
       case "Z Ground Motion":
         return frame.groundMotion[2];
-      // case "Ground Motion":
+      case "Ground Motion":
       default:
         return Math.hypot(...frame.groundMotion);
     }

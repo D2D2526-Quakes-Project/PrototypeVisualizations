@@ -28,7 +28,7 @@ function SliceView({ frameIndex }: { sliceAxis: "X" | "Z"; frameIndex: number })
 
           return (
             <group key={nodeId}>
-              <Sphere args={[0.2]} position={currentPos}>
+              <Sphere args={[1]} position={currentPos}>
                 <meshBasicMaterial color="dodgerblue" fog={false} toneMapped={false} />
               </Sphere>
               <arrowHelper args={[displacement.normalize(), new Vector3(...initialPos), dispMag * 10, 0.5]} />
@@ -37,7 +37,7 @@ function SliceView({ frameIndex }: { sliceAxis: "X" | "Z"; frameIndex: number })
         })}
       </group>
 
-      {/* Inter-story Drift Gauges */}
+      {/* Story Drift Gauges */}
       {/* This is a simplified example; a real implementation would group nodes by vertical lines */}
     </>
   );

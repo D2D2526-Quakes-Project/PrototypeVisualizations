@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, Outlet, RouterProvider, useRouteError } from "react-router";
+import { createBrowserRouter, Link, Outlet, RouterProvider, useRouteError } from "react-router";
 import * as THREE from "three";
 import { NavigationBar } from "./components/NavigationBar";
 import { AnimationDataProvider } from "./hooks/nodeDataHook";
@@ -67,9 +67,9 @@ function ErrorPage() {
       <p className="text-slate-500">
         <i>{errorMessage}</i>
       </p>
-      <a href="/" className="bg-neutral-300 px-4 py-2 rounded-md">
+      <Link to="/" className="bg-neutral-300 px-4 py-2 rounded-md">
         Go back home
-      </a>
+      </Link>
       <button className="bg-neutral-300 px-4 py-2 rounded-md" onClick={() => window.location.reload()}>
         Reload
       </button>

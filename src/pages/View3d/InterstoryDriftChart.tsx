@@ -53,7 +53,7 @@ export function InterstoryDriftChart({ frameIndex }: { frameIndex: number }) {
 
   return (
     <div ref={panelRef} className="h-full w-full relative">
-      <div className="absolute top-0 inset-x-0">Inter-story Drift Ratio</div>
+      <div className="absolute top-0 inset-x-0">Story Drift Ratio</div>
       <svg width="100%" height="100%">
         <g transform={`translate(${padding.left}, ${padding.top})`}>
           <line x1="0" y1="0" x2="0" y2={chartHeight} stroke="black" />

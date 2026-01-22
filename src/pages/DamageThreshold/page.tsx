@@ -158,7 +158,7 @@ export function ViewDamageThreshold() {
           <div className="w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar border-r-2 border-neutral-300">
             <div>
               <h2 className="text-xl font-bold">Damage Thresholds</h2>
-              <p className="text-sm text-neutral-600">Set inter-story drift ratio limits to see potential damage states.</p>
+              <p className="text-sm text-neutral-600">Set Story drift ratio limits to see potential damage states.</p>
             </div>
 
             <div className="flex flex-col gap-2">

@@ -1,8 +1,8 @@
-import { OrbitControls } from "@react-three/drei";
+import { Line, OrbitControls } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { converter, interpolate } from "culori";
 import { useMemo, useState } from "react";
-import { BufferAttribute, Color, PlaneGeometry } from "three";
+import { BufferAttribute, Color, PlaneGeometry, Vector3 } from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
 import { SmallTimeline } from "../../components/SmallTimeline";
@@ -17,10 +17,14 @@ function SurfacePlot({ metric, frameIndex }: { metric: "displacement" | "drift";
   const { invalidate } = useThree();
   const meshLength = 2000;
 
-  const { geometry } = useMemo(() => {
+  const { positions, colors } = useMemo((): {
+    positions: Vector3[][];
+    colors: Color[][];
+    maxMetricValue: number;
+  } => {
     const { frames } = animationData;
     const numFrames = frames.length;
-    if (numFrames === 0) return { geometry: new PlaneGeometry(), maxMetricValue: 1 };
+    if (numFrames === 0) return { positions: [], colors: [], maxMetricValue: 1 };
 
     const firstFrameStories = Array.from(frames[0].stories.values()).sort((a, b) => {
       const yA = frames[0].nodePositions.get(a.nodeIds[0])![1];
@@ -28,7 +32,6 @@ function SurfacePlot({ metric, frameIndex }: { metric: "displacement" | "drift";
       return yA - yB;
     });
     const numStories = firstFrameStories.length;
-    // const storyIds = firstFrameStories.map((s) => s.nodeIds[0].slice(0, -2)); // Assuming story ID is consistent
 
     const heightData = Array.from({ length: numStories }, () => new Float32Array(numFrames));
     let maxMetricValue = 0;
@@ -67,40 +70,41 @@ function SurfacePlot({ metric, frameIndex }: { metric: "displacement" | "drift";
       }
     }
 
-    const geom = new PlaneGeometry(meshLength, 100, numFrames - 1, numStories - 1);
-    const positions = geom.attributes.position;
-    const colors = new Float32Array(positions.count * 3);
+    const positions: Vector3[][] = [];
+    const colors: Color[][] = [];
 
     for (let s = 0; s < numStories; s++) {
+      const storyData: Vector3[] = [];
+      const storyColor: Color[] = [];
       for (let t = 0; t < numFrames; t++) {
-        const i = s * numFrames + t;
         const height = heightData[s][t];
-        positions.setY(i, (height / maxMetricValue) * 20); // Scale height for visualization
-        positions.setZ(i, s * 5);
+        storyData.push(new Vector3((t / numFrames) * meshLength, s * 5, (height / maxMetricValue) * 20));
 
         const colorFactor = height / maxMetricValue;
         const rgbColor = rgbConverter(colorMap(colorFactor));
-        new Color(rgbColor.r, rgbColor.g, rgbColor.b).toArray(colors, i * 3);
+        storyColor.push(new Color(rgbColor.r, rgbColor.g, rgbColor.b));
       }
+      positions.push(storyData);
+      colors.push(storyColor);
     }
 
-    geom.setAttribute("color", new BufferAttribute(colors, 3));
-    geom.computeVertexNormals();
-    positions.needsUpdate = true;
-
-    // Must invalidate to force a re-render after memo finishes
     invalidate();
 
-    return { geometry: geom, maxMetricValue };
+    return { positions, colors, maxMetricValue };
   }, [animationData, metric, invalidate]);
 
-  // const yAxisLabel = metric === "displacement" ? "Avg. Displacement (m)" : "Inter-story Drift Ratio";
+  // const yAxisLabel = metric === "displacement" ? "Avg. Displacement (m)" : "Story Drift Ratio";
 
   return (
     <>
-      <mesh geometry={geometry} position={[-meshLength / 2 + (frameIndex / animationData.frames.length) * meshLength, 0, 50]} scale={[-1, 1, -2]}>
+      {/* <mesh geometry={geometry} position={[-meshLength / 2 + (frameIndex / animationData.frames.length) * meshLength, 0, 50]} scale={[-1, 1, -2]}>
         <meshStandardMaterial vertexColors side={2} />
-      </mesh>
+      </mesh> */}
+      <group position={[(frameIndex / animationData.frames.length) * meshLength, 0, 0]} scale={[-1, 1, -2]}>
+        {positions.map((pos, i) => {
+          return <Line key={i} points={pos} vertexColors={colors[i]} lineWidth={10} fog={false} toneMapped={false} />;
+        })}
+      </group>
       <axesHelper args={[60]} />
       <gridHelper args={[100, 10]} />
 
@@ -129,7 +133,7 @@ export function ViewSurface() {
           <span className="font-bold">Metric:</span>
           <select value={metric} onChange={(e) => setMetric(e.target.value as "displacement" | "drift")} className="p-1 border rounded">
             <option value="displacement">Average Displacement</option>
-            <option value="drift">Inter-story Drift</option>
+            <option value="drift">Story Drift Ratio</option>
           </select>
         </label>
       </div>

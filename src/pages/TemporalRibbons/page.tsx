@@ -23,7 +23,19 @@ type ComputedRibbonData = {
   allNodes: Map<string, Ribbon>;
 };
 
-function MotionRibbons({ ribbonData, visibleStories, frameIndex, xzScale, viewMode }: { ribbonData: Map<string, Ribbon> | null; visibleStories: Record<string, boolean>; frameIndex: number; xzScale: number; viewMode: ViewMode }) {
+function MotionRibbons({
+  ribbonData,
+  visibleStories,
+  frameIndex,
+  xzScale,
+  viewMode,
+}: {
+  ribbonData: Map<string, Ribbon> | null;
+  visibleStories: Record<string, boolean>;
+  frameIndex: number;
+  xzScale: number;
+  viewMode: ViewMode;
+}) {
   if (!ribbonData) return null;
 
   return (
@@ -38,7 +50,16 @@ function MotionRibbons({ ribbonData, visibleStories, frameIndex, xzScale, viewMo
             <group scale={[xzScale, viewMode === "storyCenters" ? 1 : xzScale, xzScale]} position={position}>
               <Line points={path} vertexColors={colors} lineWidth={2} fog={false} toneMapped={false} />
               <Sphere args={[0.5 / xzScale]} position={path[frameIndex]}>
-                <meshBasicMaterial color={formatHex({ r: colors[frameIndex].r, g: colors[frameIndex].g, b: colors[frameIndex].b, mode: "rgb" })} fog={false} toneMapped={false} />
+                <meshBasicMaterial
+                  color={formatHex({
+                    r: colors[frameIndex].r,
+                    g: colors[frameIndex].g,
+                    b: colors[frameIndex].b,
+                    mode: "rgb",
+                  })}
+                  fog={false}
+                  toneMapped={false}
+                />
               </Sphere>
             </group>
           </React.Fragment>
@@ -63,7 +84,9 @@ export function ViewTemporalRibbons() {
     [animationData.nodes]
   );
 
-  const [visibleStories, setVisibleStories] = useState<Record<string, boolean>>(() => storyIds.reduce((acc, id) => ({ ...acc, [id]: true }), {}));
+  const [visibleStories, setVisibleStories] = useState<Record<string, boolean>>(() =>
+    storyIds.reduce((acc, id) => ({ ...acc, [id]: true }), {})
+  );
   const [viewMode, setViewMode] = useState<ViewMode>("storyCenters");
   const [xzScale, setXzScale] = useState(1);
 
@@ -156,6 +179,10 @@ export function ViewTemporalRibbons() {
     setVisibleStories((prev) => ({ ...prev, [storyId]: !prev[storyId] }));
   };
 
+  const handleToggleAllStories = (visible: boolean) => {
+    storyIds.forEach((id) => setVisibleStories((prev) => ({ ...prev, [id]: visible })));
+  };
+
   const currentRibbonData = computedRibbons ? computedRibbons[viewMode] : null;
 
   return (
@@ -168,7 +195,10 @@ export function ViewTemporalRibbons() {
 
         <div>
           <h3 className="font-bold">View Mode</h3>
-          <select value={viewMode} onChange={(e) => setViewMode(e.target.value as ViewMode)} className="w-full p-2 border border-neutral-300 rounded bg-white mt-1">
+          <select
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value as ViewMode)}
+            className="w-full p-2 border border-neutral-300 rounded bg-white mt-1">
             <option value="storyCenters">Story Centers</option>
             <option value="allNodes">All Nodes</option>
           </select>
@@ -176,13 +206,33 @@ export function ViewTemporalRibbons() {
 
         <div>
           <h3 className="font-bold">XZ Scale: {xzScale.toFixed(1)}x</h3>
-          <input type="range" min="1" max="30" step="0.1" value={xzScale} onChange={(e) => setXzScale(parseFloat(e.target.value))} className="w-full mt-1" />
+          <input
+            type="range"
+            min="1"
+            max="30"
+            step="0.1"
+            value={xzScale}
+            onChange={(e) => setXzScale(parseFloat(e.target.value))}
+            className="w-full mt-1"
+          />
         </div>
 
         {viewMode === "storyCenters" && (
           <div>
             <h3 className="font-bold">Visible Floors</h3>
             <div className="flex flex-col mt-2">
+              <div className="flex gap-2">
+                <button
+                  className="flex items-center gap-2 p-1 hover:bg-neutral-100 cursor-pointer"
+                  onClick={() => handleToggleAllStories(false)}>
+                  All off
+                </button>
+                <button
+                  className="flex items-center gap-2 p-1 hover:bg-neutral-100 cursor-pointer"
+                  onClick={() => handleToggleAllStories(true)}>
+                  All on
+                </button>
+              </div>
               {storyIds.map((id) => (
                 <label key={id} className="flex items-center gap-2 p-1 hover:bg-neutral-100 rounded">
                   <input type="checkbox" checked={visibleStories[id] ?? true} onChange={() => handleToggleStory(id)} />
@@ -195,7 +245,17 @@ export function ViewTemporalRibbons() {
       </div>
 
       <div className="grow min-w-0 relative">
-        <Canvas camera={{ position: [80, 80, 80], fov: 50 }}>{<MotionRibbons ribbonData={currentRibbonData} visibleStories={visibleStories} frameIndex={playback.frameIndex} xzScale={xzScale} viewMode={viewMode} />}</Canvas>
+        <Canvas camera={{ position: [80, 80, 80], fov: 50 }}>
+          {
+            <MotionRibbons
+              ribbonData={currentRibbonData}
+              visibleStories={visibleStories}
+              frameIndex={playback.frameIndex}
+              xzScale={xzScale}
+              viewMode={viewMode}
+            />
+          }
+        </Canvas>
         <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
           <PlaybackControls playback={playback} />
           <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />

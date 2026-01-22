@@ -1,7 +1,7 @@
 import { Line, OrbitControls, Sphere } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { converter, formatHex, interpolate } from "culori";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Color, Vector3 } from "three";
 import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
 import { useAnimationData } from "../../hooks/nodeDataHook";
@@ -68,6 +68,105 @@ function MotionRibbons({
       <OrbitControls />
       <axesHelper args={[75]} />
     </>
+  );
+}
+
+function MiniRibbon({
+  ribbon,
+  storyId,
+  frameIndex,
+}: {
+  ribbon: Ribbon;
+  storyId: string;
+  frameIndex: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [aspectRatio, setAspectRatio] = useState(0.6);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      setAspectRatio(entry.contentRect.height / entry.contentRect.width);
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    const rect = containerRef.current.getBoundingClientRect();
+    setAspectRatio(rect.height / rect.width);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  const viewBoxHeight = aspectRatio * 100;
+
+  // Calculate bounds for top-down projection (XZ plane)
+  const xCoords = ribbon.path.map(p => p.x);
+  const zCoords = ribbon.path.map(p => p.z);
+  const minX = Math.min(...xCoords);
+  const maxX = Math.max(...xCoords);
+  const minZ = Math.min(...zCoords);
+  const maxZ = Math.max(...zCoords);
+
+  const xRange = maxX - minX || 1;
+  const zRange = maxZ - minZ || 1;
+
+  // Add small padding
+  const padding = 0.1;
+  const xMin = minX - xRange * padding;
+  const xMax = maxX + xRange * padding;
+  const zMin = minZ - zRange * padding;
+  const zMax = maxZ + zRange * padding;
+  const xRangePadded = xMax - xMin;
+  const zRangePadded = zMax - zMin;
+
+  // Normalize to SVG coordinates
+  const normalizeX = (x: number) => ((x - xMin) / xRangePadded) * 100;
+  const normalizeZ = (z: number) => ((z - zMin) / zRangePadded) * viewBoxHeight;
+
+  return (
+    <div ref={containerRef} className="w-full h-20 mb-3">
+      <div className="text-sm font-medium mb-1">{storyId}</div>
+      <svg 
+        className="w-full h-full border border-neutral-200 rounded" 
+        viewBox={`0 0 100 ${viewBoxHeight}`}
+      >
+        {/* Draw ribbon segments with velocity colors */}
+        {ribbon.path.slice(1).map((point, i) => {
+          const prevPoint = ribbon.path[i];
+          const x1 = normalizeX(prevPoint.x);
+          const z1 = normalizeZ(prevPoint.z);
+          const x2 = normalizeX(point.x);
+          const z2 = normalizeZ(point.z);
+          
+          const color = ribbon.colors[i + 1];
+          
+          return (
+            <line
+              key={i}
+              x1={x1} y1={z1}
+              x2={x2} y2={z2}
+              stroke={`rgb(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)})`}
+              strokeWidth="0.8"
+            />
+          );
+        })}
+        
+        {/* Current position circle */}
+        {frameIndex < ribbon.path.length && (
+          <circle
+            cx={normalizeX(ribbon.path[frameIndex].x)}
+            cy={normalizeZ(ribbon.path[frameIndex].z)}
+            r="2"
+            className="fill-amber-500 stroke-white"
+            strokeWidth="0.5"
+          />
+        )}
+      </svg>
+    </div>
   );
 }
 
@@ -261,6 +360,58 @@ export function ViewTemporalRibbons() {
           <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
         </div>
       </div>
+
+      {/* Right sidebar with mini ribbons */}
+      {viewMode === "storyCenters" && computedRibbons && (
+        <div className="w-64 p-4 border-l-2 border-neutral-300 overflow-y-auto">
+          <h3 className="font-bold mb-4">Floor Ribbons</h3>
+          
+          {/* Color Legend */}
+          <div className="mb-4 p-3 bg-neutral-50 rounded border border-neutral-200">
+            <h4 className="text-sm font-medium mb-2">Velocity Scale</h4>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: "#5e8bff" }}></div>
+              <span className="text-xs">Start</span>
+            </div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-4 h-4 rounded bg-blue-500"></div>
+              <span className="text-xs">Slow</span>
+            </div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-4 h-4 rounded bg-aquamarine-500"></div>
+              <span className="text-xs">Medium</span>
+            </div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-4 h-4 rounded bg-lime-500"></div>
+              <span className="text-xs">Fast</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-red-500"></div>
+              <span className="text-xs">Very Fast</span>
+            </div>
+            <div className="mt-2 text-xs text-neutral-600">
+              <div className="w-4 h-4 rounded fill-amber-500 stroke-white border border-white" style={{ backgroundColor: "#f59e0b" }}></div>
+              Current Time
+            </div>
+          </div>
+          
+          <div className="flex flex-col">
+            {storyIds.map((storyId) => {
+              const ribbon = computedRibbons.storyCenters.get(storyId);
+              if (!ribbon) return null;
+              
+              return (
+                <MiniRibbon
+                  key={storyId}
+                  ribbon={ribbon}
+                  storyId={storyId}
+                  frameIndex={playback.frameIndex}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

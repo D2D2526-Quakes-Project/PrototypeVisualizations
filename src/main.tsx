@@ -15,9 +15,12 @@ import { ViewSurface } from "./pages/Surface/page";
 import { ViewTemporalRibbons } from "./pages/TemporalRibbons/page";
 import { View3d } from "./pages/View3d/page";
 import { ViewTexture } from "./pages/ViewTexture/page";
+import { ViewVolumes } from "./pages/ViewVolumes/page";
+import FloorTimeVolumePage from "./pages/FloorTimeVolume/page";
 
 const routes = [
   { path: "/", label: "3D View", element: <View3d /> },
+  { path: "/volumes", label: "Volumes", element: <ViewVolumes /> },
   { path: "/explorer", label: "Data Explorer", element: <ViewDataExplorer /> },
   { path: "/hamburger", label: "Hamburger", element: <ViewHamburger /> },
   // { path: "/texture", label: "Texture", element: <ViewTexture /> },
@@ -27,6 +30,8 @@ const routes = [
   { path: "/threshold", label: "Thresholds", element: <ViewDamageThreshold /> },
   { path: "/slice", label: "Elevation Slice", element: <ElevationSlice /> },
   { path: "/torsion", label: "Floor Torsion", element: <FloorPlanTorsion /> },
+  { path: "/volumes", label: "Volumes", element: <ViewVolumes /> },
+  { path: "/timevolumes", label: "Time Volumes", element: <FloorTimeVolumePage /> },
 ];
 
 const router = createBrowserRouter([

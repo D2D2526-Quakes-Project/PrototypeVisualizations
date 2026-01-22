@@ -13,7 +13,9 @@ export function InterstoryDriftChart({ frameIndex }: { frameIndex: number }) {
   const [size, setSize] = useState({ width: 1, height: 1 });
   useEffect(() => {
     if (!panelRef.current) return;
-    const resizeObserver = new ResizeObserver((entries) => setSize({ width: entries[0].contentRect.width, height: entries[0].contentRect.height }));
+    const resizeObserver = new ResizeObserver((entries) =>
+      setSize({ width: entries[0].contentRect.width, height: entries[0].contentRect.height })
+    );
     resizeObserver.observe(panelRef.current);
     return () => resizeObserver.disconnect();
   }, []);
@@ -92,7 +94,16 @@ export function InterstoryDriftChart({ frameIndex }: { frameIndex: number }) {
             const barY = chartHeight - (drift.height / maxHeight) * chartHeight;
             const barWidth = Math.max(0, (drift.ratio / maxRatio) * chartWidth);
             const color = rgbConverter(colorMap(drift.ratio / maxRatio));
-            return <rect key={i} x="0" y={barY} width={barWidth} height={chartHeight / drifts.length - 2} fill={`rgb(${color.r * 255},${color.g * 255},${color.b * 255})`} />;
+            return (
+              <rect
+                key={i}
+                x="0"
+                y={barY}
+                width={barWidth}
+                height={chartHeight / drifts.length - 2}
+                fill={`rgb(${color.r * 255},${color.g * 255},${color.b * 255})`}
+              />
+            );
           })}
         </g>
       </svg>

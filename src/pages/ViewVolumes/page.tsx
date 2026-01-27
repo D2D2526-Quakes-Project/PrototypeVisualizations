@@ -1,5 +1,5 @@
-import { Canvas } from "@react-three/fiber";
 import React, { useState } from "react";
+import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
 import { Timeline } from "../../components/Timeline";
@@ -11,6 +11,11 @@ export function ViewVolumes() {
    * Frame playback and animation controls
    */
   const playback = usePlaybackControl();
+
+  /**
+   * Camera type control
+   */
+  // const { isOrthographic, setIsOrthographic } = useCameraType();
 
   /**
    * Displacement scales
@@ -30,19 +35,37 @@ export function ViewVolumes() {
       <ResizablePanelGroup direction="vertical">
         <ResizablePanel className="flex flex-col flex-1 min-h-0">
           <div className="relative w-full h-full">
-            <Canvas camera={{ position: [50, 50, 50], fov: 75 }}>
+            <CanvasWithControls>
               <VolumeScene frameIndex={playback.frameIndex} scale={scale} displacementScale={displacementScale} />
-            </Canvas>
+            </CanvasWithControls>
+
+            {/* <ViewControls isOrthographic={isOrthographic} setIsOrthographic={setIsOrthographic} /> */}
 
             <div className="absolute bottom-0 left-0 right-0 flex justify-between w-full border-t-2 border-neutral-300 bg-neutral-200/80 backdrop-blur-sm p-2">
               <PlaybackControls playback={playback} />
               <div className="flex items-center gap-2">
                 <label className="flex gap-2 whitespace-nowrap">
-                  <input type="range" min="0" max={1} step={0.1} value={scale} onChange={handleScaleChange} className="w-full" />
+                  <input
+                    type="range"
+                    min="0"
+                    max={1}
+                    step={0.1}
+                    value={scale}
+                    onChange={handleScaleChange}
+                    className="w-full"
+                  />
                   Scale: {scale.toFixed(2)}
                 </label>
                 <label className="flex gap-2 whitespace-nowrap">
-                  <input type="range" min="0" max={20} step={0.1} value={displacementScale} onChange={handleDisplacementScaleChange} className="w-full" />
+                  <input
+                    type="range"
+                    min="0"
+                    max={20}
+                    step={0.1}
+                    value={displacementScale}
+                    onChange={handleDisplacementScaleChange}
+                    className="w-full"
+                  />
                   XZ: {displacementScale.toFixed(2)}
                 </label>
               </div>

@@ -1,11 +1,12 @@
-import { Line, OrbitControls } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Line } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
+import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { converter, interpolate } from "culori";
 import { useMemo, useState } from "react";
-import { BufferAttribute, Color, PlaneGeometry, Vector3 } from "three";
-import { useAnimationData } from "../../hooks/nodeDataHook";
+import { Color, Vector3 } from "three";
 import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
 import { SmallTimeline } from "../../components/SmallTimeline";
+import { useAnimationData } from "../../hooks/nodeDataHook";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
@@ -131,19 +132,22 @@ export function ViewSurface() {
       <div className="absolute top-2 left-2 z-10 bg-white/80 p-2 rounded">
         <label className="flex items-center gap-2">
           <span className="font-bold">Metric:</span>
-          <select value={metric} onChange={(e) => setMetric(e.target.value as "displacement" | "drift")} className="p-1 border rounded">
+          <select
+            value={metric}
+            onChange={(e) => setMetric(e.target.value as "displacement" | "drift")}
+            className="p-1 border rounded">
             <option value="displacement">Average Displacement</option>
             <option value="drift">Story Drift Ratio</option>
           </select>
         </label>
       </div>
 
-      <Canvas camera={{ position: [80, 80, 80], fov: 50 }}>
+      <CanvasWithControls>
         <ambientLight intensity={1.5} />
         <directionalLight position={[100, 100, 50]} intensity={2} />
         <SurfacePlot metric={metric} frameIndex={playback.frameIndex} />
-        <OrbitControls />
-      </Canvas>
+      </CanvasWithControls>
+
       <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
         <PlaybackControls playback={playback} />
         <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />

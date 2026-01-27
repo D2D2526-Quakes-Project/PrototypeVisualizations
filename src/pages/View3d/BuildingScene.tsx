@@ -1,4 +1,4 @@
-import { Line, OrbitControls } from "@react-three/drei";
+import { Line } from "@react-three/drei";
 import { converter, formatHex, interpolate } from "culori";
 import React from "react";
 import { DoubleSide, Vector3 } from "three";
@@ -9,7 +9,15 @@ const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 const rgbConverter = converter("rgb");
 
-export function BuildingScene({ frameIndex, scale, displacementScale }: { frameIndex: number; scale: number; displacementScale: number }) {
+export function BuildingScene({
+  frameIndex,
+  scale,
+  displacementScale,
+}: {
+  frameIndex: number;
+  scale: number;
+  displacementScale: number;
+}) {
   const { animationData } = useAnimationData();
   const frame = animationData.frames[frameIndex];
 
@@ -74,7 +82,14 @@ export function BuildingScene({ frameIndex, scale, displacementScale }: { frameI
               <bufferGeometry>
                 <bufferAttribute attach="attributes-position" args={[floorQuadPositions, 3]} />
               </bufferGeometry>
-              <meshBasicMaterial color={floorColor} opacity={0.3} transparent side={DoubleSide} fog={false} toneMapped={false} />
+              <meshBasicMaterial
+                color={floorColor}
+                opacity={0.3}
+                transparent
+                side={DoubleSide}
+                fog={false}
+                toneMapped={false}
+              />
             </mesh>
           </React.Fragment>
         );
@@ -82,9 +97,15 @@ export function BuildingScene({ frameIndex, scale, displacementScale }: { frameI
 
       <InSceneGraph frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} />
 
-      <arrowHelper args={[new Vector3(...frame.groundMotion), new Vector3(0, 0, 0), Math.hypot(...frame.groundMotion) * 10000, 0xffff00]} />
+      <arrowHelper
+        args={[
+          new Vector3(...frame.groundMotion),
+          new Vector3(0, 0, 0),
+          Math.hypot(...frame.groundMotion) * 10000,
+          0xffff00,
+        ]}
+      />
 
-      <OrbitControls />
       <axesHelper args={[75]} />
 
       <gridHelper rotateY={Math.PI / 2} args={[200, 20]} />
@@ -99,9 +120,11 @@ function InSceneGraph({ frameIndex }: { frameIndex: number; scale: number; displ
   const width = 20;
   const padding = 8;
 
-  const offsetX = animationData.maxInitialPos[0] + (animationData.maxInitialPos[0] + animationData.minInitialPos[0]) / -2;
+  const offsetX =
+    animationData.maxInitialPos[0] + (animationData.maxInitialPos[0] + animationData.minInitialPos[0]) / -2;
   const offsetY = animationData.minInitialPos[1] + -animationData.minInitialPos[1];
-  const offsetZ = animationData.maxInitialPos[2] + (animationData.maxInitialPos[2] + animationData.minInitialPos[2]) / -2;
+  const offsetZ =
+    animationData.maxInitialPos[2] + (animationData.maxInitialPos[2] + animationData.minInitialPos[2]) / -2;
 
   const frame = animationData.frames[frameIndex];
   const stories = Array.from(animationData.frames[frameIndex].stories.values());
@@ -147,8 +170,21 @@ function InSceneGraph({ frameIndex }: { frameIndex: number; scale: number; displ
       {/* <mesh position={[width / 2, height / 2, 0]}>
         <planeGeometry args={[width, height]} />
       </mesh> */}
-      <Line points={displacementPoints} vertexColors={displacementPointsColors} lineWidth={2} fog={false} toneMapped={false} />
-      <Line position={[0, 0, -1]} points={interStoryDriftPoints} vertexColors={interStoryDriftPointsColors} lineWidth={2} fog={false} toneMapped={false} />
+      <Line
+        points={displacementPoints}
+        vertexColors={displacementPointsColors}
+        lineWidth={2}
+        fog={false}
+        toneMapped={false}
+      />
+      <Line
+        position={[0, 0, -1]}
+        points={interStoryDriftPoints}
+        vertexColors={interStoryDriftPointsColors}
+        lineWidth={2}
+        fog={false}
+        toneMapped={false}
+      />
     </mesh>
   );
 }

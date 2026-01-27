@@ -1,5 +1,4 @@
-import { OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { CanvasWithControls } from "@/components/CanvasWithControls";
 import React, { useMemo, useState } from "react";
 import { DoubleSide } from "three";
 import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
@@ -13,7 +12,17 @@ const red500 = formatHex("oklch(63.7% 0.237 25.331)")!;
 const amber400 = formatHex("oklch(82.8% 0.189 84.429)")!;
 const green500 = formatHex("oklch(72.3% 0.219 149.579)")!;
 
-function ThresholdBuilding({ frameIndex, warningThreshold, criticalThreshold, animationData }: { frameIndex: number; warningThreshold: number; criticalThreshold: number; animationData: BuildingAnimationData }) {
+function ThresholdBuilding({
+  frameIndex,
+  warningThreshold,
+  criticalThreshold,
+  animationData,
+}: {
+  frameIndex: number;
+  warningThreshold: number;
+  criticalThreshold: number;
+  animationData: BuildingAnimationData;
+}) {
   const frame = animationData.frames[frameIndex];
   const initialFrame = animationData.frames[0];
 
@@ -63,7 +72,14 @@ function ThresholdBuilding({ frameIndex, warningThreshold, criticalThreshold, an
           return { pos: [(pos[0] + offsetX) * scale, (pos[1] + offsetY) * scale, (pos[2] + offsetZ) * scale] };
         });
 
-        const floorQuadPositions = new Float32Array([...nodePositions[1].pos, ...nodePositions[0].pos, ...nodePositions[2].pos, ...nodePositions[1].pos, ...nodePositions[2].pos, ...nodePositions[3].pos]);
+        const floorQuadPositions = new Float32Array([
+          ...nodePositions[1].pos,
+          ...nodePositions[0].pos,
+          ...nodePositions[2].pos,
+          ...nodePositions[1].pos,
+          ...nodePositions[2].pos,
+          ...nodePositions[3].pos,
+        ]);
         const floorColor = driftColors.get(storyId) || green500;
 
         return (
@@ -71,11 +87,17 @@ function ThresholdBuilding({ frameIndex, warningThreshold, criticalThreshold, an
             <bufferGeometry>
               <bufferAttribute attach="attributes-position" args={[floorQuadPositions, 3]} />
             </bufferGeometry>
-            <meshBasicMaterial color={floorColor} opacity={0.6} transparent side={DoubleSide} fog={false} toneMapped={false} />
+            <meshBasicMaterial
+              color={floorColor}
+              opacity={0.6}
+              transparent
+              side={DoubleSide}
+              fog={false}
+              toneMapped={false}
+            />
           </mesh>
         );
       })}
-      <OrbitControls />
       <axesHelper args={[75]} />
     </>
   );
@@ -148,8 +170,15 @@ export function ViewDamageThreshold() {
     return { storyData };
   }, [animationData, warningThreshold, criticalThreshold]);
 
-  const sortedStories = useMemo(() => Array.from(storyData.entries()).sort((a, b) => parseInt(a[0].replace("S", "")) - parseInt(b[0].replace("S", ""))), [storyData]);
-  const maxPeakDrift = useMemo(() => Math.max(...Array.from(storyData.values()).map((d) => d.peakDrift), 0.01), [storyData]);
+  const sortedStories = useMemo(
+    () =>
+      Array.from(storyData.entries()).sort((a, b) => parseInt(a[0].replace("S", "")) - parseInt(b[0].replace("S", ""))),
+    [storyData]
+  );
+  const maxPeakDrift = useMemo(
+    () => Math.max(...Array.from(storyData.values()).map((d) => d.peakDrift), 0.01),
+    [storyData]
+  );
 
   return (
     <div className="flex h-full min-h-0">
@@ -164,11 +193,25 @@ export function ViewDamageThreshold() {
             <div className="flex flex-col gap-2">
               <label className="flex flex-col">
                 <span className="font-semibold">Warning Threshold ({warningThreshold.toFixed(3)})</span>
-                <input type="range" min="0" max="0.05" step="0.001" value={warningThreshold} onChange={(e) => setWarningThreshold(parseFloat(e.target.value))} />
+                <input
+                  type="range"
+                  min="0"
+                  max="0.05"
+                  step="0.001"
+                  value={warningThreshold}
+                  onChange={(e) => setWarningThreshold(parseFloat(e.target.value))}
+                />
               </label>
               <label className="flex flex-col">
                 <span className="font-semibold">Critical Threshold ({criticalThreshold.toFixed(3)})</span>
-                <input type="range" min="0" max="0.05" step="0.001" value={criticalThreshold} onChange={(e) => setCriticalThreshold(parseFloat(e.target.value))} />
+                <input
+                  type="range"
+                  min="0"
+                  max="0.05"
+                  step="0.001"
+                  value={criticalThreshold}
+                  onChange={(e) => setCriticalThreshold(parseFloat(e.target.value))}
+                />
               </label>
             </div>
 
@@ -187,7 +230,13 @@ export function ViewDamageThreshold() {
                     <div className="w-full flex items-center">
                       <div className="grow bg-neutral-200 h-4 rounded">
                         <div
-                          className={`h-full rounded ${data.peakDrift > criticalThreshold ? "bg-red-500" : data.peakDrift > warningThreshold ? "bg-amber-400" : "bg-green-500"}`}
+                          className={`h-full rounded ${
+                            data.peakDrift > criticalThreshold
+                              ? "bg-red-500"
+                              : data.peakDrift > warningThreshold
+                              ? "bg-amber-400"
+                              : "bg-green-500"
+                          }`}
                           style={{
                             width: `${(data.peakDrift / maxPeakDrift) * 100}%`,
                           }}
@@ -195,8 +244,13 @@ export function ViewDamageThreshold() {
                       </div>
                       <span className="w-12 font-mono text-right shrink-0">{data.peakDrift.toFixed(4)}</span>
                     </div>
-                    <div className={`w-14 font-mono text-center p-1 rounded ${data.warningTime ? "bg-yellow-200" : ""}`}>{data.warningTime?.toFixed(2) ?? "-"}</div>
-                    <div className={`w-14 font-mono text-center p-1 rounded ${data.criticalTime ? "bg-red-200" : ""}`}>{data.criticalTime?.toFixed(2) ?? "-"}</div>
+                    <div
+                      className={`w-14 font-mono text-center p-1 rounded ${data.warningTime ? "bg-yellow-200" : ""}`}>
+                      {data.warningTime?.toFixed(2) ?? "-"}
+                    </div>
+                    <div className={`w-14 font-mono text-center p-1 rounded ${data.criticalTime ? "bg-red-200" : ""}`}>
+                      {data.criticalTime?.toFixed(2) ?? "-"}
+                    </div>
                   </React.Fragment>
                 ))}
               </div>
@@ -206,9 +260,15 @@ export function ViewDamageThreshold() {
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={70} className="min-h-0 flex h-full">
           <div className="relative w-full">
-            <Canvas camera={{ position: [80, 80, 80], fov: 50 }}>
-              <ThresholdBuilding frameIndex={playback.frameIndex} warningThreshold={warningThreshold} criticalThreshold={criticalThreshold} animationData={animationData} />
-            </Canvas>
+            <CanvasWithControls>
+              <ThresholdBuilding
+                frameIndex={playback.frameIndex}
+                warningThreshold={warningThreshold}
+                criticalThreshold={criticalThreshold}
+                animationData={animationData}
+              />
+            </CanvasWithControls>
+
             <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
               <PlaybackControls playback={playback} />
               <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />

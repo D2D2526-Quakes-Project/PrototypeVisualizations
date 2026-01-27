@@ -1,5 +1,5 @@
-import { Line, OrbitControls, Sphere } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { Line, Sphere } from "@react-three/drei";
+import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { converter, formatHex, interpolate } from "culori";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Color, Vector3 } from "three";
@@ -65,21 +65,12 @@ function MotionRibbons({
           </React.Fragment>
         );
       })}
-      <OrbitControls />
       <axesHelper args={[75]} />
     </>
   );
 }
 
-function MiniRibbon({
-  ribbon,
-  storyId,
-  frameIndex,
-}: {
-  ribbon: Ribbon;
-  storyId: string;
-  frameIndex: number;
-}) {
+function MiniRibbon({ ribbon, storyId, frameIndex }: { ribbon: Ribbon; storyId: string; frameIndex: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [aspectRatio, setAspectRatio] = useState(0.6);
 
@@ -104,8 +95,8 @@ function MiniRibbon({
   const viewBoxHeight = aspectRatio * 100;
 
   // Calculate bounds for top-down projection (XZ plane)
-  const xCoords = ribbon.path.map(p => p.x);
-  const zCoords = ribbon.path.map(p => p.z);
+  const xCoords = ribbon.path.map((p) => p.x);
+  const zCoords = ribbon.path.map((p) => p.z);
   const minX = Math.min(...xCoords);
   const maxX = Math.max(...xCoords);
   const minZ = Math.min(...zCoords);
@@ -130,10 +121,7 @@ function MiniRibbon({
   return (
     <div ref={containerRef} className="w-full h-20 mb-3">
       <div className="text-sm font-medium mb-1">{storyId}</div>
-      <svg 
-        className="w-full h-full border border-neutral-200 rounded" 
-        viewBox={`0 0 100 ${viewBoxHeight}`}
-      >
+      <svg className="w-full h-full border border-neutral-200 rounded" viewBox={`0 0 100 ${viewBoxHeight}`}>
         {/* Draw ribbon segments with velocity colors */}
         {ribbon.path.slice(1).map((point, i) => {
           const prevPoint = ribbon.path[i];
@@ -141,20 +129,22 @@ function MiniRibbon({
           const z1 = normalizeZ(prevPoint.z);
           const x2 = normalizeX(point.x);
           const z2 = normalizeZ(point.z);
-          
+
           const color = ribbon.colors[i + 1];
-          
+
           return (
             <line
               key={i}
-              x1={x1} y1={z1}
-              x2={x2} y2={z2}
+              x1={x1}
+              y1={z1}
+              x2={x2}
+              y2={z2}
               stroke={`rgb(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)})`}
               strokeWidth="0.8"
             />
           );
         })}
-        
+
         {/* Current position circle */}
         {frameIndex < ribbon.path.length && (
           <circle
@@ -292,6 +282,26 @@ export function ViewTemporalRibbons() {
           <p className="text-sm text-neutral-600">Traces motion over time. Color indicates velocity.</p>
         </div>
 
+        <div className="mb-4 p-3 bg-neutral-50 rounded border border-neutral-200">
+          <h4 className="text-sm font-medium mb-2">Velocity Scale</h4>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: "blue" }}></div>
+            <span className="text-xs">Start</span>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: "aquamarine" }}></div>
+            <span className="text-xs">Slow</span>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: "lime" }}></div>
+            <span className="text-xs">Medium</span>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: "red" }}></div>
+            <span className="text-xs">Fast</span>
+          </div>
+        </div>
+
         <div>
           <h3 className="font-bold">View Mode</h3>
           <select
@@ -344,7 +354,7 @@ export function ViewTemporalRibbons() {
       </div>
 
       <div className="grow min-w-0 relative">
-        <Canvas camera={{ position: [80, 80, 80], fov: 50 }}>
+        <CanvasWithControls>
           {
             <MotionRibbons
               ribbonData={currentRibbonData}
@@ -354,7 +364,8 @@ export function ViewTemporalRibbons() {
               viewMode={viewMode}
             />
           }
-        </Canvas>
+        </CanvasWithControls>
+
         <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
           <PlaybackControls playback={playback} />
           <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
@@ -365,49 +376,13 @@ export function ViewTemporalRibbons() {
       {viewMode === "storyCenters" && computedRibbons && (
         <div className="w-64 p-4 border-l-2 border-neutral-300 overflow-y-auto">
           <h3 className="font-bold mb-4">Floor Ribbons</h3>
-          
-          {/* Color Legend */}
-          <div className="mb-4 p-3 bg-neutral-50 rounded border border-neutral-200">
-            <h4 className="text-sm font-medium mb-2">Velocity Scale</h4>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: "#5e8bff" }}></div>
-              <span className="text-xs">Start</span>
-            </div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-4 h-4 rounded bg-blue-500"></div>
-              <span className="text-xs">Slow</span>
-            </div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-4 h-4 rounded bg-aquamarine-500"></div>
-              <span className="text-xs">Medium</span>
-            </div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-4 h-4 rounded bg-lime-500"></div>
-              <span className="text-xs">Fast</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-red-500"></div>
-              <span className="text-xs">Very Fast</span>
-            </div>
-            <div className="mt-2 text-xs text-neutral-600">
-              <div className="w-4 h-4 rounded fill-amber-500 stroke-white border border-white" style={{ backgroundColor: "#f59e0b" }}></div>
-              Current Time
-            </div>
-          </div>
-          
+
           <div className="flex flex-col">
             {storyIds.map((storyId) => {
               const ribbon = computedRibbons.storyCenters.get(storyId);
               if (!ribbon) return null;
-              
-              return (
-                <MiniRibbon
-                  key={storyId}
-                  ribbon={ribbon}
-                  storyId={storyId}
-                  frameIndex={playback.frameIndex}
-                />
-              );
+
+              return <MiniRibbon key={storyId} ribbon={ribbon} storyId={storyId} frameIndex={playback.frameIndex} />;
             })}
           </div>
         </div>

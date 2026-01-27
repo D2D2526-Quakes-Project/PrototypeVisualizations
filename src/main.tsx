@@ -20,7 +20,6 @@ import FloorTimeVolumePage from "./pages/FloorTimeVolume/page";
 
 const routes = [
   { path: "/", label: "3D View", element: <View3d /> },
-  { path: "/volumes", label: "Volumes", element: <ViewVolumes /> },
   { path: "/explorer", label: "Data Explorer", element: <ViewDataExplorer /> },
   { path: "/hamburger", label: "Hamburger", element: <ViewHamburger /> },
   // { path: "/texture", label: "Texture", element: <ViewTexture /> },

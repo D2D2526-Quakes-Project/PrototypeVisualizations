@@ -1,4 +1,3 @@
-import { OrbitControls } from "@react-three/drei";
 import { formatHex, interpolate } from "culori";
 import { Vector3 } from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
@@ -163,7 +162,6 @@ export function VolumeScene({
         );
       })}
 
-      <OrbitControls />
       <axesHelper args={[75]} />
       <gridHelper rotateY={Math.PI / 2} args={[200, 20]} />
     </>

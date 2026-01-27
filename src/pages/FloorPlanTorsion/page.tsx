@@ -13,7 +13,17 @@ const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 
-function PlaneShapes({ frameIndex, displacementScale, anchorCorner, verticalSpacing }: { frameIndex: number; displacementScale: number; anchorCorner: boolean; verticalSpacing: number }) {
+function PlaneShapes({
+  frameIndex,
+  displacementScale,
+  anchorCorner,
+  verticalSpacing,
+}: {
+  frameIndex: number;
+  displacementScale: number;
+  anchorCorner: boolean;
+  verticalSpacing: number;
+}) {
   const { animationData } = useAnimationData();
   const frame = animationData.frames[frameIndex];
 
@@ -60,7 +70,11 @@ function PlaneShapes({ frameIndex, displacementScale, anchorCorner, verticalSpac
             const finalPosX = posX;
             const finalPosY = posY;
             const finalPosZ = posZ;
-            return { pos: [finalPosX, finalPosY, finalPosZ], disp: [displacementX, displacementY, displacementZ], corner };
+            return {
+              pos: [finalPosX, finalPosY, finalPosZ],
+              disp: [displacementX, displacementY, displacementZ],
+              corner,
+            };
           });
 
           const nwCorner = nodePositions.find((p) => p.corner === "NW")!;
@@ -69,7 +83,14 @@ function PlaneShapes({ frameIndex, displacementScale, anchorCorner, verticalSpac
             ? nodePositions.map((p) => {
                 const pos = p.pos;
                 const disp = p.disp;
-                return { pos: [pos[0] - nwCorner.pos[0] + shiftX, pos[1] * verticalSpacing - nwCorner.pos[1], pos[2] - nwCorner.pos[2] - shiftZ], disp };
+                return {
+                  pos: [
+                    pos[0] - nwCorner.pos[0] + shiftX,
+                    pos[1] * verticalSpacing - nwCorner.pos[1],
+                    pos[2] - nwCorner.pos[2] - shiftZ,
+                  ],
+                  disp,
+                };
               })
             : nodePositions;
 
@@ -95,8 +116,15 @@ function PlaneShapes({ frameIndex, displacementScale, anchorCorner, verticalSpac
                 </bufferGeometry>
                 <meshBasicMaterial color={floorColor} side={DoubleSide} fog={false} toneMapped={false} />
               </mesh>
-              <Html position={new Vector3(...repositionedNodePositions[3].pos).multiplyScalar(1.1)} center={false} transform scale={[50, 50, 1]} rotation={[-Math.PI / 2, 0, 0]}>
-                <div className="text-center text-xs text-black select-none translate-x-1/2 -translate-y-1/2">{storyId}</div>
+              <Html
+                position={new Vector3(...repositionedNodePositions[3].pos).multiplyScalar(1.1)}
+                center={false}
+                transform
+                scale={[50, 50, 1]}
+                rotation={[-Math.PI / 2, 0, 0]}>
+                <div className="text-center text-xs text-black select-none translate-x-1/2 -translate-y-1/2">
+                  {storyId}
+                </div>
               </Html>
             </React.Fragment>
           );
@@ -123,13 +151,22 @@ export function FloorPlanTorsion() {
           <div className="w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar border-r-2 border-neutral-300">
             <div>
               <h2 className="text-xl font-bold">Floor Torsion</h2>
-              <p className="text-sm text-neutral-600">Analyzes the top-down rotation and displacement of a single floor and its neighbors.</p>
+              <p className="text-sm text-neutral-600">
+                Analyzes the top-down rotation and displacement of a single floor and its neighbors.
+              </p>
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="flex flex-col">
                 <span className="font-semibold">Displacement Scale ({displacementScale.toFixed(1)})</span>
-                <input type="range" min="1.0" max="200.0" step="0.1" value={displacementScale} onChange={(e) => setDisplacementScale(parseFloat(e.target.value))} />
+                <input
+                  type="range"
+                  min="1.0"
+                  max="200.0"
+                  step="0.1"
+                  value={displacementScale}
+                  onChange={(e) => setDisplacementScale(parseFloat(e.target.value))}
+                />
               </label>
               <label className="flex gap-4">
                 <span className="font-semibold">Anchor Corner</span>
@@ -138,7 +175,14 @@ export function FloorPlanTorsion() {
               {anchorCorner && (
                 <label className="flex flex-col">
                   <span className="font-semibold">Vertical Spacing ({verticalSpacing.toFixed(1)})</span>
-                  <input type="range" min="1.0" max="5.0" step="0.1" value={verticalSpacing} onChange={(e) => setVerticalSpacing(parseFloat(e.target.value))} />
+                  <input
+                    type="range"
+                    min="1.0"
+                    max="5.0"
+                    step="0.1"
+                    value={verticalSpacing}
+                    onChange={(e) => setVerticalSpacing(parseFloat(e.target.value))}
+                  />
                 </label>
               )}
             </div>
@@ -173,7 +217,9 @@ export function FloorPlanTorsion() {
                   const width = maxPoint[0] - minPoint[0];
                   const height = maxPoint[1] - minPoint[1];
 
-                  const avgDisp = Math.hypot(...animationData.frames[playback.frameIndex].stories.get(storyId)!.averageDisplacement);
+                  const avgDisp = Math.hypot(
+                    ...animationData.frames[playback.frameIndex].stories.get(storyId)!.averageDisplacement
+                  );
                   const floorColor = colorMap(avgDisp / animationData.maxDisplacement);
 
                   return (
@@ -193,8 +239,13 @@ export function FloorPlanTorsion() {
         <ResizablePanel defaultSize={70} className="min-h-0 flex h-full">
           <div className="relative w-full grid grid-cols-2 grid-rows-2">
             <div className="relative size-full border-r-2 border-b-2 border-neutral-300">
-              <Canvas camera={{ position: [100, 100, 100], fov: 50 }}>
-                <PlaneShapes verticalSpacing={verticalSpacing} anchorCorner={anchorCorner} displacementScale={displacementScale} frameIndex={playback.frameIndex} />
+              <Canvas>
+                <PlaneShapes
+                  verticalSpacing={verticalSpacing}
+                  anchorCorner={anchorCorner}
+                  displacementScale={displacementScale}
+                  frameIndex={playback.frameIndex}
+                />
                 <OrbitControls />
               </Canvas>
             </div>
@@ -202,7 +253,12 @@ export function FloorPlanTorsion() {
               <div className="absolute bottom-2 left-2 font-mono text-xl">XZ Plane</div>
               <Canvas>
                 <OrthographicCamera makeDefault zoom={2} position={[0, 100, 0]} rotation={[Math.PI / 2, 0, 0]} />
-                <PlaneShapes verticalSpacing={verticalSpacing * 2} anchorCorner={anchorCorner} displacementScale={displacementScale} frameIndex={playback.frameIndex} />
+                <PlaneShapes
+                  verticalSpacing={verticalSpacing * 2}
+                  anchorCorner={anchorCorner}
+                  displacementScale={displacementScale}
+                  frameIndex={playback.frameIndex}
+                />
                 <OrbitControls enablePan={false} enableRotate={false} />
               </Canvas>
             </div>
@@ -210,7 +266,12 @@ export function FloorPlanTorsion() {
               <div className="absolute top-2 right-2 font-mono text-xl">XY Plane</div>
               <Canvas>
                 <OrthographicCamera makeDefault zoom={2} position={[0, 0, 100]} rotation={[0, 0, 0]} />
-                <PlaneShapes verticalSpacing={verticalSpacing * 2} anchorCorner={anchorCorner} displacementScale={displacementScale} frameIndex={playback.frameIndex} />
+                <PlaneShapes
+                  verticalSpacing={verticalSpacing * 2}
+                  anchorCorner={anchorCorner}
+                  displacementScale={displacementScale}
+                  frameIndex={playback.frameIndex}
+                />
                 <OrbitControls enablePan={false} enableRotate={false} />
               </Canvas>
             </div>
@@ -218,7 +279,12 @@ export function FloorPlanTorsion() {
               <div className="absolute top-2 left-2 font-mono text-xl">YZ Plane</div>
               <Canvas>
                 <OrthographicCamera makeDefault zoom={2} position={[100, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
-                <PlaneShapes verticalSpacing={verticalSpacing * 2} anchorCorner={anchorCorner} displacementScale={displacementScale} frameIndex={playback.frameIndex} />
+                <PlaneShapes
+                  verticalSpacing={verticalSpacing * 2}
+                  anchorCorner={anchorCorner}
+                  displacementScale={displacementScale}
+                  frameIndex={playback.frameIndex}
+                />
                 <OrbitControls enablePan={false} enableRotate={false} />
               </Canvas>
             </div>

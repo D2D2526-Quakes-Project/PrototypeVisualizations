@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Line } from "@react-three/drei";
+import { Line } from "@react-three/drei";
+import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import * as THREE from "three";
 import { converter, interpolate } from "culori";
@@ -259,8 +259,6 @@ function FloorVolumeScene({
 
       {/* Ground motion graph */}
       <GroundMotionGraph selectedStory={selectedStory} maxHeight={maxHeight} />
-
-      <OrbitControls />
     </>
   );
 }
@@ -360,7 +358,7 @@ function VolumeControls({
   onMaxHeightChange: (value: number) => void;
 }) {
   return (
-    <div className="absolute top-4 right-4 z-10 bg-white bg-opacity-90 rounded-md p-3 text-sm space-y-3">
+    <div className="absolute top-16 left-4 z-10 bg-white bg-opacity-90 rounded-md p-3 text-sm space-y-3">
       <div>
         <label className="block font-medium mb-2">Time Resolution</label>
         <input
@@ -425,13 +423,7 @@ export default function FloorTimeVolumePage() {
         onMaxHeightChange={setMaxHeight}
       />
 
-      <Canvas
-        camera={{
-          position: [50, 25, 50],
-          fov: 60,
-          near: 0.1,
-          far: 1000,
-        }}>
+      <CanvasWithControls>
         <ambientLight intensity={0.6} />
         <directionalLight position={[10, 10, 5]} intensity={0.8} />
 
@@ -441,7 +433,7 @@ export default function FloorTimeVolumePage() {
           displacementScale={displacementScale}
           maxHeight={maxHeight}
         />
-      </Canvas>
+      </CanvasWithControls>
 
       <div className="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-50 p-2 rounded">
         <div>Floor: {selectedStory}</div>

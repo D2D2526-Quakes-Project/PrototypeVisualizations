@@ -1,4 +1,4 @@
-import { defineConfig, type PluginOption } from "vite";
+import { defineConfig, type PluginOption, type ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -129,6 +129,24 @@ function folderStatsPlugin(options: { manifestFile: string; targetFile: string; 
   } as PluginOption;
 }
 
+function serveGzipHeaders() {
+  return {
+    name: "serve-gzip-headers",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url)
+          if (req.url.endsWith(".gz")) {
+            res.setHeader("Content-Encoding", "gzip");
+            // Explicitly set the type so it's not treated as application/gzip
+            if (req.url.endsWith(".js.gz")) res.setHeader("Content-Type", "application/javascript");
+            if (req.url.endsWith(".css.gz")) res.setHeader("Content-Type", "text/css");
+          }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     folderStatsPlugin({
@@ -142,6 +160,7 @@ export default defineConfig({
         plugins: [["babel-plugin-react-compiler"]],
       },
     }),
+    serveGzipHeaders(),
   ],
   resolve: {
     alias: {

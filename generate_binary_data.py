@@ -1,189 +1,261 @@
+# df_disp_x = pd.read_csv("/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H1T_Entire.txt", skiprows=4116, header=None)
+# df_disp_y = pd.read_csv("/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H2T_Entire.txt", skiprows=4116, header=None)
+# df_disp_z = pd.read_csv("/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_VT_Entire.txt", skiprows=4116, header=None)
 import pandas as pd
 import numpy as np
+import json
 import struct
-import os
+import gzip
 import re
+import os
+
+# --- FILE CONFIGURATION ---
+FILES = {
+    "nodes": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/node_data.csv",
+    "node_map": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/node_mapping.csv",
+    "beams": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/beam_data.csv",
+    "components": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/H_ST3138.csv",
+    "disp": {
+        "x": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H1T_Entire.txt",
+        "y": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H2T_Entire.txt",
+        "z": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_VT_Entire.txt",
+    },
+    "rot": {
+        "x": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H1R_Entire.txt",
+        "y": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H2R_Entire.txt",
+        "z": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_VR_Entire.txt",
+    },
+}
+
+OUTPUTS = {"structure": "bin/structure_data.bin.gz", "disp": "bin/displacements.bin.gz", "rot": "bin/rotations.bin.gz", "components": "bin/components.bin.gz"}
 
 
-class BuildingParser:
-    def __init__(self):
-        self.nodes = {}  # Map ID -> {x, y, z, floor, corner}
-        self.elements = []  # List of {id, n1, n2}
-        self.node_id_list = []  # Sorted list of IDs for matrix indexing
-        self.node_id_to_index = {}  # Map ID -> Index in matrix
+def parse_ladwp_txt_header(filepath):
+    """
+    Parses the complex header of the LADWP text files to map CSV columns to Node IDs.
+    Returns: (col_to_node_map, start_row_index)
+    """
+    col_map = {}
+    data_start_line = 0
 
-        # Dynamic Data
-        self.time_steps = []
-        self.displacements = None  # Will be (NumFrames, NumNodes, 6)
+    with open(filepath, "r") as f:
+        for i, line in enumerate(f):
+            # Parse lines like: "Column, 2, = node, 1, at, 5292..."
+            if "Column" in line and "= node" in line:
+                # Regex to extract Column Index and Node ID
+                # Looks for "Column, {digits}, = node, {digits}"
+                match = re.search(r"Column,\s*(\d+),\s*=\s*node,\s*(\d+)", line)
+                if match:
+                    col_idx = int(match.group(1))
+                    node_id = int(match.group(2))
+                    # In the file, Column 1 is Time. Column 2 is the first data column.
+                    # Pandas zero-indexed means Column 2 is index 1.
+                    col_map[col_idx - 1] = node_id
 
-    def parse_geometry(self, node_file, element_file):
-        """Parses Node_Data.xlsx and Beam_Element_Data.xlsx"""
-        print("Parsing Geometry...")
+            # Detect start of data (starts with a number or minus sign)
+            if re.match(r"^\s*[\d.-]+,", line):
+                data_start_line = i
+                break
 
-        # 1. Parse Nodes
-        # Assuming CSV format based on your input description
-        df_nodes = pd.read_csv(node_file)
-
-        # Clean up column names usually found in SAP2000/ETABS exports
-        df_nodes.columns = df_nodes.columns.str.strip()
-
-        for _, row in df_nodes.iterrows():
-            nid = int(row["Node ID"])
-            self.nodes[nid] = {"x": float(row["H1"]), "y": float(row["H2"]), "z": float(row["V"])}
-
-        # Create indexed mapping
-        self.node_id_list = sorted(list(self.nodes.keys()))
-        self.node_id_to_index = {nid: i for i, nid in enumerate(self.node_id_list)}
-
-        # 2. Parse Elements
-        df_elems = pd.read_csv(element_file)
-        df_elems.columns = df_elems.columns.str.strip()
-
-        for _, row in df_elems.iterrows():
-            self.elements.append({"id": int(row["Element ID"]), "n1": int(row["I-Node ID"]), "n2": int(row["J-Node ID"])})
-
-        print(f"Geometry Loaded: {len(self.nodes)} nodes, {len(self.elements)} elements.")
-
-    def parse_time_series_file(self, file_path, dof_index):
-        """
-        Parses the messy header of the Result files.
-        dof_index: 0=X, 1=Y, 2=Z, 3=Rx, 4=Ry, 5=Rz
-        """
-        print(f"Parsing time series: {os.path.basename(file_path)}")
-
-        with open(file_path, "r") as f:
-            lines = f.readlines()
-
-        # 1. Parse Header to map Column Index -> Node ID
-        col_to_node = {}
-        data_start_line = 0
-
-        # Regex to find "Column, X, = node, Y"
-        # Handling variations in spacing
-        regex = re.compile(r"Column,\s*(\d+),\s*=\s*node,\s*(\d+)")
-
-        for i, line in enumerate(lines):
-            # Check if line contains column mapping
-            match = regex.search(line)
-            if match:
-                col_idx = int(match.group(1)) - 1  # 0-based index (File implies Col 1 is time)
-                node_id = int(match.group(2))
-                col_to_node[col_idx] = node_id
-
-            # Detect start of data (starts with number)
-            # Your file usually has "0, ...." or ".01, ..."
-            if line.strip() and (line[0].isdigit() or line.strip().startswith(".") or line.strip().startswith("-")):
-                # Check if it's not the "Column" line
-                if "Column" not in line:
-                    data_start_line = i
-                    break
-
-        # 2. Parse Data Block
-        # We assume the file is comma or space separated
-        # Using pandas read_csv with skiprows is fastest
-        try:
-            # Re-read file using pandas from the data line
-            df = pd.read_csv(file_path, skiprows=data_start_line, header=None)
-
-            # Initialize main displacement matrix if first pass
-            if self.displacements is None:
-                num_frames = len(df)
-                num_nodes = len(self.node_id_list)
-                self.time_steps = df[0].values.astype(np.float32)  # Col 0 is Time
-                # Shape: [Frames, Nodes, 6 DOFs]
-                self.displacements = np.zeros((num_frames, num_nodes, 6), dtype=np.float32)
-
-            # Map file columns to global matrix columns
-            # df column 0 is time, col 1 in file corresponds to node map
-            for file_col_idx in col_to_node:
-                node_id = col_to_node[file_col_idx]
-
-                # Check if node exists in our geometry
-                if node_id in self.node_id_to_index:
-                    global_idx = self.node_id_to_index[node_id]
-
-                    # Ensure we don't go out of bounds if file col indices are offset
-                    # The file says "Column 1 = time", "Column 2 = node X".
-                    # Pandas index 0 = time, Pandas index 1 = Col 2 in text?
-                    # Usually "Column 2" in text means the 2nd column, so index 1 in pandas.
-                    pd_col_idx = file_col_idx - 1
-
-                    if pd_col_idx > 0 and pd_col_idx < len(df.columns):
-                        val = df.iloc[:, pd_col_idx].values
-                        self.displacements[:, global_idx, dof_index] = val
-
-        except Exception as e:
-            print(f"Error parsing data block: {e}")
-
-    def load_all_results(self, folder_path):
-        """Expects files named D_H1T_Entire.txt, etc."""
-        # Mapping filename patterns to DOF indices
-        # 0:Tx, 1:Ty, 2:Tz, 3:Rx, 4:Ry, 5:Rz
-        file_map = {"D_H1T": 0, "D_H2T": 1, "D_VT": 2, "D_H1R": 3, "D_H2R": 4, "D_VR": 5}  # Assuming VR is Z-rotation
-
-        for f in os.listdir(folder_path):
-            for key, dof in file_map.items():
-                if key in f and f.endswith(".txt"):
-                    self.parse_time_series_file(os.path.join(folder_path, f), dof)
-
-    def write_binary(self, output_path):
-        """Writes the optimized .bvis file"""
-        print(f"Writing binary to {output_path}...")
-
-        num_nodes = len(self.node_id_list)
-        num_elems = len(self.elements)
-        num_frames = len(self.time_steps)
-
-        with open(output_path, "wb") as f:
-            # 1. Header
-            # Magic 'BVIS', Version 1, Counts
-            f.write(b"BVIS")
-            f.write(struct.pack("<I", 1))
-            f.write(struct.pack("<I", num_nodes))
-            f.write(struct.pack("<I", num_elems))
-            f.write(struct.pack("<I", num_frames))
-
-            # 2. Nodes Block
-            # Write ID, X, Y, Z
-            for nid in self.node_id_list:
-                n = self.nodes[nid]
-                f.write(struct.pack("<Ifff", nid, n["x"], n["y"], n["z"]))
-
-            # 3. Elements Block
-            # Write ID, Node1, Node2
-            for el in self.elements:
-                f.write(struct.pack("<III", el["id"], el["n1"], el["n2"]))
-
-            # 4. Timing
-            # Flatten and write time array
-            f.write(self.time_steps.tobytes())
-
-            # 5. Motion Matrix
-            # Flatten the entire 3D numpy array
-            # Layout: Frame 1 (Node 1 DOFs, Node 2 DOFs...), Frame 2...
-            f.write(self.displacements.tobytes())
-
-        print("Write complete.")
-        file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
-        print(f"Final File Size: {file_size_mb:.2f} MB")
+    return col_map, data_start_line
 
 
-# --- Usage Example ---
+def write_gzipped_binary(filename, json_header, binary_blobs):
+    """
+    Writes a generic format: [Header Length (I)][JSON Header][Binary Data...]
+    Compressed with GZIP.
+    """
+    header_str = json.dumps(json_header)
+    header_bytes = header_str.encode("utf-8")
+
+    print(f"Writing {filename}...")
+    with gzip.open(filename, "wb") as f:
+        # Write Header Length (4 bytes)
+        f.write(struct.pack("I", len(header_bytes)))
+        # Write Header
+        f.write(header_bytes)
+        # Write Blobs
+        for blob in binary_blobs:
+            f.write(blob)
+    print(f"-> Done. Size: {os.path.getsize(filename) / 1024:.2f} KB")
+
+
+def process_structure():
+    print("--- Processing Structure (Nodes & Beams) ---")
+
+    # 1. Load Nodes
+    df_nodes = pd.read_csv(FILES["nodes"])
+    # Map Node ID (e.g. 2072) to Dense Index (0, 1, 2...)
+    unique_ids = df_nodes["Node ID"].unique()
+    id_to_index = {uid: i for i, uid in enumerate(unique_ids)}
+
+    # Create Float32 Buffer [x, y, z, x, y, z...]
+    node_buffer = np.zeros(len(unique_ids) * 3, dtype=np.float32)
+    for _, row in df_nodes.iterrows():
+        idx = id_to_index.get(row["Node ID"])
+        if idx is not None:
+            node_buffer[idx * 3 + 0] = row["H1"]  # H1
+            node_buffer[idx * 3 + 1] = row["H2"]  # H2
+            node_buffer[idx * 3 + 2] = row["V"]  # V
+
+    # 2. Load Node Metadata (Stories)
+    df_map = pd.read_csv(FILES["node_map"])
+    stories = {}
+    for _, row in df_map.iterrows():
+        n_id = row["Node"]
+        story = str(row["Story Level"])
+        if n_id in id_to_index:
+            if story not in stories:
+                stories[story] = []
+            stories[story].append(id_to_index[n_id])
+
+    # 3. Load Beams
+    df_beams = pd.read_csv(FILES["beams"])
+    beam_list = []
+    for _, row in df_beams.iterrows():
+        start = row["I-Node ID"]
+        end = row["J-Node ID"]
+        if start in id_to_index and end in id_to_index:
+            beam_list.append(id_to_index[start])
+            beam_list.append(id_to_index[end])
+
+    beam_buffer = np.array(beam_list, dtype=np.uint32)
+
+    # 4. Write Binary
+    header = {"count_nodes": len(unique_ids), "count_beams": len(beam_list) // 2, "stories": stories, "offsets": {"nodes": 0, "beams": len(node_buffer) * 4}}  # Map of StoryName -> [NodeIndices]
+
+    write_gzipped_binary(OUTPUTS["structure"], header, [node_buffer.tobytes(), beam_buffer.tobytes()])
+    return id_to_index, len(unique_ids)
+
+
+def process_time_series(file_map, id_to_index, num_nodes, output_name, result_type="displacement"):
+    print(f"--- Processing {result_type.capitalize()} ---")
+
+    # 1. Parse Headers to get mapping
+    # We assume X file governs the structure, but we check all
+    col_map_x, start_row = parse_ladwp_txt_header(file_map["x"])
+
+    # 2. Read Data (Skip header rows, read as CSV)
+    # Using 'header=None' because we handled it manually
+    print(f"Reading {file_map['x']}...")
+    df_x = pd.read_csv(file_map["x"], skiprows=start_row, header=None)
+    print(f"Reading {file_map['y']}...")
+    df_y = pd.read_csv(file_map["y"], skiprows=start_row, header=None)
+    print(f"Reading {file_map['z']}...")
+    df_z = pd.read_csv(file_map["z"], skiprows=start_row, header=None)
+
+    # Filter out footer lines (Maximum/Minimum)
+    if isinstance(df_x.iloc[-1, 0], str) and "Minimum" in df_x.iloc[-1, 0]:
+        df_x = df_x.iloc[:-2]  # Drop Max and Min rows
+        df_y = df_y.iloc[:-2]
+        df_z = df_z.iloc[:-2]
+
+    # Extract Time Vector (Column 0)
+    time_vector = df_x.iloc[:, 0].astype(np.float32).values
+    num_frames = len(time_vector)
+
+    # 3. Flatten Data [Frame0_Node0_xyz, Frame0_Node1_xyz...]
+    # Pre-allocate massive buffer
+    # Size: Frames * Nodes * 3 (Dimensions)
+    buffer_size = num_frames * num_nodes * 3
+    data_buffer = np.zeros(buffer_size, dtype=np.float32)
+
+    print("Flattening time series data (this may take a moment)...")
+
+    # Optimization: Convert DataFrames to numpy arrays first
+    # Note: Column indices in col_map_x align with df columns
+    arr_x = df_x.values
+    arr_y = df_y.values
+    arr_z = df_z.values
+
+    # Iterate over our known nodes (id_to_index) to populate buffer in strict order
+    for node_id, node_idx in id_to_index.items():
+        # Find which column in the CSV corresponds to this Node ID
+        # We need to reverse lookup the col_map
+        csv_col_idx = -1
+        for col, nid in col_map_x.items():
+            if nid == node_id:
+                csv_col_idx = col
+                break
+
+        if csv_col_idx != -1:
+            # Slicing: [All Frames, Specific Column]
+            # Mapped to: [All Frames, Specific Node Index, 0/1/2]
+
+            # X values
+            # Target indices: Frame 0 -> (0 * N * 3) + (node_idx * 3) + 0
+            # Target indices: Frame 1 -> (1 * N * 3) + (node_idx * 3) + 0
+
+            # Vectorized assignment using stride slicing
+            # data_buffer[start : end : step]
+
+            # Offset for X coord of this node across all frames
+            # Stride is (num_nodes * 3)
+
+            start_x = (node_idx * 3) + 0
+            start_y = (node_idx * 3) + 1
+            start_z = (node_idx * 3) + 2
+
+            stride = num_nodes * 3
+
+            data_buffer[start_x::stride] = arr_x[:, csv_col_idx]
+            data_buffer[start_y::stride] = arr_y[:, csv_col_idx]
+            data_buffer[start_z::stride] = arr_z[:, csv_col_idx]
+
+    # 4. Write Binary
+    header = {"type": result_type, "count_frames": num_frames, "count_nodes": num_nodes, "times": time_vector.tolist()}  # Keep time in Header for easy parsing
+
+    write_gzipped_binary(output_name, header, [data_buffer.tobytes()])
+
+
+def process_components(id_to_index):
+    print("--- Processing Component/GM Data ---")
+
+    df = pd.read_csv(FILES["components"])
+
+    # This file contains component summaries (Max/Min), not time series in the snippet.
+    # We will map "Element ID" to the beam buffer index if possible,
+    # but since elements might not map 1:1 to beams in order, we store raw data.
+
+    # We will store: ElementID, MaxPosDeform, MaxNegDeform
+    # Buffer format: [ElemID (float-cast), Max, Min, ElemID, Max, Min...]
+
+    # Filter for "Max" and "Min" rows
+    max_rows = df[df["Step Type"] == "Max"]
+    min_rows = df[df["Step Type"] == "Min"]
+
+    # Join on Element ID
+    # This is a simple representation. You can expand based on need.
+    merged = pd.merge(max_rows, min_rows, on="Element ID", suffixes=("_max", "_min"))
+
+    count = len(merged)
+    comp_buffer = np.zeros(count * 3, dtype=np.float32)
+
+    for i, row in merged.iterrows():
+        comp_buffer[i * 3 + 0] = float(row["Element ID"])
+        comp_buffer[i * 3 + 1] = float(row["Max Pos Deform DCRatio_max"])
+        comp_buffer[i * 3 + 2] = float(row["Max Neg Deform DCRatio_min"])  # Actually reading raw val
+
+    header = {"type": "components_summary", "description": "Element ID, Max DCRatio, Min DCRatio", "count": count}
+
+    write_gzipped_binary(OUTPUTS["components"], header, [comp_buffer.tobytes()])
+
+
+# --- MAIN EXECUTION ---
 if __name__ == "__main__":
-    # You would adjust paths to where your CSVs represent the files provided
-    parser = BuildingParser()
+    if not os.path.exists(FILES["nodes"]):
+        print("Error: Files not found. Run this script in the folder containing the CSVs.")
+    else:
+        # 1. Structure (Nodes/Beams)
+        node_map, num_nodes = process_structure()
 
-    # 1. Load Geometry (Using the filenames provided in prompt)
-    parser.parse_geometry("Node_Data.csv", "Beam_Element_Data.csv")
+        # 2. Displacements
+        process_time_series(FILES["disp"], node_map, num_nodes, OUTPUTS["disp"], "displacement")
 
-    # 2. Load Results (Assumes files are in current dir)
-    # Since I don't have the files on disk, I'm simulating the call
-    # parser.load_all_results('./')
+        # 3. Rotations
+        process_time_series(FILES["rot"], node_map, num_nodes, OUTPUTS["rot"], "rotation")
 
-    # Example parsing specific files from prompt logic
-    # parser.parse_time_series_file('D_H1T_Entire.txt', 0)
-    # parser.parse_time_series_file('D_H2T_Entire.txt', 1)
-    # parser.parse_time_series_file('D_VT_Entire.txt', 2)
+        # 4. Components (Ground Motion / Forces)
+        process_components(node_map)
 
-    # 3. Export
-    # parser.write_binary('simulation.bvis')
+        print("\nAll tasks complete.")

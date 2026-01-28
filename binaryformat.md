@@ -18,9 +18,9 @@ All files in this suite follow a standard "Header-Body" architecture.
 
 ## 2. File Definitions
 
-### File A: Structure Data
+### File A: Building Data
 
-**Filename:** `structure_data.bin`
+**Filename:** `building.bld`
 **Purpose:** Defines the static geometry, topology, and semantic grouping of the building.
 
 #### JSON Header Schema
@@ -28,44 +28,43 @@ All files in this suite follow a standard "Header-Body" architecture.
 ```json
 {
   "count_nodes": <integer>,
-  "count_beams": <integer>,
   "stories": {
-    "15": [ <node_idx_1>, <node_idx_2>, ... ], // Array of indices mapped to "15th Floor"
+    "15": [ <node_idx_0>, <node_idx_1>, ... ], // Array of indices mapped to "15th Floor"
     "Roof": [ ... ]
   },
-  "offsets": {
-    "nodes": 0,          // Start of Node Buffer (relative to body start)
-    "beams": <byte_pos>  // Start of Beam Buffer (relative to body start)
+  "corners": {
+    "NW": [<node_idx_0>, ...],
+    "NE": [...],
+    "SW": [...],
+    "SE": [...]
   }
 }
 ```
 
 #### Binary Body Layout
 
-| Section   | Data Type | Structure               | Size (Bytes)       | Description                               |
-| :-------- | :-------- | :---------------------- | :----------------- | :---------------------------------------- |
-| **Nodes** | `float32` | `[x, y, z]` interleaved | `count_nodes * 12` | Static rest positions. Units: **Inches**. |
-| **Beams** | `uint32`  | `[start_idx, end_idx]`  | `count_beams * 8`  | Topology pairs referencing Node Indices.  |
+| Section   | Data Type | Structure                  | Size (Bytes)                | Description                               |
+| :-------- | :-------- | :------------------------- | :-------------------------- | :---------------------------------------- |
+| **Nodes** | `float32` | `[x0, y0, z0, x1, y1, z1]` | `count_nodes * 3 * 4` bytes | Static rest positions. Units: **Inches**. |
 
 ---
 
-### File B & C: Time Series Data
+### File Simulation Time Series Data
 
-**Filenames:** `displacements.bin`, `rotations.bin`
+**Filenames:** `displacement.bld`, `velocity.bld`, `acceleration.bld`
 **Purpose:** Animation data per time-step.
 **Units:**
 
 - Displacements: **Inches** relative to rest position.
-- Rotations: **Radians**.
 
 #### JSON Header Schema
 
 ```json
 {
-  "type": "displacement" | "rotation",
+  "type": "displacement" | "velocity" | "acceleration",
   "count_frames": <integer>,
   "count_nodes": <integer>,
-  "times": [0.0, 0.01, 0.02, ... ] // Array of float time stamps
+  "dt": <float>, // Time step size (seconds) ex. 0.01
 }
 ```
 
@@ -73,14 +72,19 @@ All files in this suite follow a standard "Header-Body" architecture.
 
 The body contains a single continuous buffer. Data is ordered **Frame-Major**.
 
-**Structure:** `[Frame 0 Data] [Frame 1 Data] [Frame N Data]`
+**Structure:**
 
-Inside a specific Frame, data is ordered by Node Index:
-`[Node0_X, Node0_Y, Node0_Z, Node1_X, Node1_Y, Node1_Z, ...]`
+```
+[ Frame 0 ]
+  [ Node 0: x, y, z ]
+  [ Node 1: x, y, z ]
+[ Frame 1 ]
+  ...
+```
 
-| Data Type | Stride per Frame (Bytes) | Total Size (Bytes)                |
-| :-------- | :----------------------- | :-------------------------------- |
-| `float32` | `count_nodes * 3 * 4`    | `count_frames * count_nodes * 12` |
+| Data Type | Stride per Frame (Bytes) | Total Size (Bytes)                   |
+| :-------- | :----------------------- | :----------------------------------- |
+| `float32` | `count_nodes * 3 * 4`    | `count_frames * count_nodes * 3 * 4` |
 
 **Access Formula (Javascript):**
 To find the `y` value for `NodeIndex` at `FrameIndex`:
@@ -92,28 +96,25 @@ value = buffer[index];
 
 ---
 
-### File D: Component Data
+### File D: Ground Motion
 
-**Filename:** `components.bin`
-**Purpose:** Static analysis results (e.g., max deformation ratios) for element color coding.
+**Filename:** `ground_motion.bld`
+**Purpose:** Time series data for the ground motion.
 
 #### JSON Header Schema
 
 ```json
 {
-  "type": "components_summary",
-  "count": <integer>,
-  "description": "Element ID, Max DCRatio, Min DCRatio"
+  "count_frames": <integer>,
+  "dt": <float>, // Time step size (seconds) ex. 0.01
 }
 ```
 
 #### Binary Body Layout
 
-A flat list of tuples. Note that `Element ID` is stored as a float to keep the buffer uniform, though it represents an integer ID.
-
-| Data Type | Structure                  | Size (Bytes) | Description                                     |
-| :-------- | :------------------------- | :----------- | :---------------------------------------------- |
-| `float32` | `[ElemID, MaxVal, MinVal]` | `count * 12` | Element ID matches the ID in the original XLSX. |
+| Data Type | Structure   | Size (Bytes)           | Description                            |
+| :-------- | :---------- | :--------------------- | :------------------------------------- |
+| `float32` | `[x, y, z]` | `count_frames * 3 * 4` | Ground motion data. Units: **inches**. |
 
 ---
 
@@ -135,4 +136,3 @@ A flat list of tuples. Note that `Element ID` is stored as a float to keep the b
 
 - **Implicit ID Mapping:** The Binary arrays do _not_ store the original Node IDs (e.g., "2072"). They use a dense index `0...N`.
 - The mapping between `Node ID` and `Index` is lost in the binary file to save space.
-- **Requirement:** If the UI needs to display the original ID (e.g., "Node 2072"), the JSON Header of `structure_data.bin` should be expanded to include an `id_map`: `["2072", "2073", ...]` where the array index corresponds to the binary index.

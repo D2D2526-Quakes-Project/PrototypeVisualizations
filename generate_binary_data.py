@@ -1,6 +1,3 @@
-# df_disp_x = pd.read_csv("/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H1T_Entire.txt", skiprows=4116, header=None)
-# df_disp_y = pd.read_csv("/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H2T_Entire.txt", skiprows=4116, header=None)
-# df_disp_z = pd.read_csv("/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_VT_Entire.txt", skiprows=4116, header=None)
 import pandas as pd
 import numpy as np
 import json
@@ -9,253 +6,307 @@ import gzip
 import re
 import os
 
-# --- FILE CONFIGURATION ---
+# --- CONFIGURATION ---
+# Update these paths to match your actual file locations
 FILES = {
-    "nodes": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/node_data.csv",
-    "node_map": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/node_mapping.csv",
-    "beams": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/beam_data.csv",
-    "components": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/H_ST3138.csv",
-    "disp": {
-        "x": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H1T_Entire.txt",
-        "y": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H2T_Entire.txt",
-        "z": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_VT_Entire.txt",
+    "building": {
+        "nodes": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/node_data.csv",
+        "mapping": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/node_mapping.csv",
     },
-    "rot": {
-        "x": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H1R_Entire.txt",
-        "y": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H2R_Entire.txt",
-        "z": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_VR_Entire.txt",
+    "simulation": {
+        # Define the files for ONE simulation here
+        "displacement": {
+            "lin": [
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H1T_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H2T_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_VT_Entire.txt",
+            ],
+            "rot": [
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H1R_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_H2R_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Displacements/D_VR_Entire.txt",
+            ],
+        },
+        # Assuming similar naming for Vel/Accel. Update these filenames!
+        "velocity": {
+            "lin": [
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Velocities/V_H1T_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Velocities/V_H2T_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Velocities/V_VT_Entire.txt",
+            ],
+            "rot": [
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Velocities/V_H1R_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Velocities/V_H2R_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Velocities/V_VR_Entire.txt",
+            ],
+        },
+        "acceleration": {
+            "lin": [
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Accelerations/A_H1T_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Accelerations/A_H2T_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Accelerations/A_VT_Entire.txt",
+            ],
+            "rot": [
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Accelerations/A_H1R_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Accelerations/A_H2R_Entire.txt",
+                "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/Accelerations/A_VR_Entire.txt",
+            ],
+        },
+        "ground_motion": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/station3138Entire/ground_motion.txt",
     },
 }
 
-OUTPUTS = {"structure": "bin/structure_data.bin.gz", "disp": "bin/displacements.bin.gz", "rot": "bin/rotations.bin.gz", "components": "bin/components.bin.gz"}
+OUTPUT_DIR = "bin"
+
+# --- HELPERS ---
 
 
-def parse_ladwp_txt_header(filepath):
-    """
-    Parses the complex header of the LADWP text files to map CSV columns to Node IDs.
-    Returns: (col_to_node_map, start_row_index)
-    """
-    col_map = {}
-    data_start_line = 0
-
-    with open(filepath, "r") as f:
-        for i, line in enumerate(f):
-            # Parse lines like: "Column, 2, = node, 1, at, 5292..."
-            if "Column" in line and "= node" in line:
-                # Regex to extract Column Index and Node ID
-                # Looks for "Column, {digits}, = node, {digits}"
-                match = re.search(r"Column,\s*(\d+),\s*=\s*node,\s*(\d+)", line)
-                if match:
-                    col_idx = int(match.group(1))
-                    node_id = int(match.group(2))
-                    # In the file, Column 1 is Time. Column 2 is the first data column.
-                    # Pandas zero-indexed means Column 2 is index 1.
-                    col_map[col_idx - 1] = node_id
-
-            # Detect start of data (starts with a number or minus sign)
-            if re.match(r"^\s*[\d.-]+,", line):
-                data_start_line = i
-                break
-
-    return col_map, data_start_line
-
-
-def write_gzipped_binary(filename, json_header, binary_blobs):
-    """
-    Writes a generic format: [Header Length (I)][JSON Header][Binary Data...]
-    Compressed with GZIP.
-    """
-    header_str = json.dumps(json_header)
+def write_bld_file(filename, header, binary_data):
+    """Writes JSON Header + Binary Body to GZIP."""
+    header_str = json.dumps(header)
     header_bytes = header_str.encode("utf-8")
 
-    print(f"Writing {filename}...")
-    with gzip.open(filename, "wb") as f:
-        # Write Header Length (4 bytes)
-        f.write(struct.pack("I", len(header_bytes)))
-        # Write Header
+    # Calculate current position after writing 4-byte length + header bytes
+    current_pos = 4 + len(header_bytes)
+
+    padding_len = (4 - (current_pos % 4)) % 4
+    padding_bytes = b" " * padding_len
+
+    out_path = os.path.join(OUTPUT_DIR, filename)
+    print(f"Writing {out_path} (Header: {len(header_bytes)}b, Pad: {padding_len}b)...")
+
+    with gzip.open(out_path, "wb") as f:
+        # 1. Header Length (4 bytes)
+        f.write(struct.pack("<I", len(header_bytes)))
+        # 2. JSON Header
         f.write(header_bytes)
-        # Write Blobs
-        for blob in binary_blobs:
-            f.write(blob)
-    print(f"-> Done. Size: {os.path.getsize(filename) / 1024:.2f} KB")
+        # 3. Padding (Alignment)
+        f.write(padding_bytes)
+        # 4. Binary Body
+        f.write(binary_data)
+
+    size_kb = os.path.getsize(out_path) / 1024
+    print(f"-> Saved. Size: {size_kb:.2f} KB")
 
 
-def process_structure():
-    print("--- Processing Structure (Nodes & Beams) ---")
+def parse_ladwp_header(filepath):
+    """Extracts column-to-node mapping from LADWP text files."""
+    col_map = {}  # CSV Column Index -> Node ID
+    start_row = 0
+    with open(filepath, "r") as f:
+        for i, line in enumerate(f):
+            if "Column" in line and "= node" in line:
+                # Regex: Column, 2, = node, 1
+                m = re.search(r"Column,\s*(\d+),\s*=\s*node,\s*(\d+)", line)
+                if m:
+                    # CSV Col 2 is Index 1 in 0-based array
+                    col_map[int(m.group(1)) - 1] = int(m.group(2))
+            if re.match(r"^\s*[\d.-]+,", line):
+                start_row = i
+                break
+    return col_map, start_row
+
+
+def load_ladwp_data(filepath, col_map, num_frames_expected=None):
+    """Loads a single component file into a structured array."""
+    _, start_row = parse_ladwp_header(filepath)
+    # Read CSV, skipping footer (Min/Max rows)
+    df = pd.read_csv(filepath, skiprows=start_row, header=None)
+
+    # Simple footer check
+    if isinstance(df.iloc[-1, 0], str):
+        df = df.iloc[:-2]  # Remove Max/Min rows
+
+    vals = df.values.astype(np.float32)
+
+    if num_frames_expected and len(vals) != num_frames_expected:
+        print(f"Warning: Frame count mismatch in {filepath}")
+
+    return vals, col_map
+
+
+# --- PROCESSORS ---
+
+
+def process_building():
+    print("--- Processing Building Data ---")
 
     # 1. Load Nodes
-    df_nodes = pd.read_csv(FILES["nodes"])
-    # Map Node ID (e.g. 2072) to Dense Index (0, 1, 2...)
+    df_nodes = pd.read_csv(FILES["building"]["nodes"])
     unique_ids = df_nodes["Node ID"].unique()
     id_to_index = {uid: i for i, uid in enumerate(unique_ids)}
+    count_nodes = len(unique_ids)
 
-    # Create Float32 Buffer [x, y, z, x, y, z...]
-    node_buffer = np.zeros(len(unique_ids) * 3, dtype=np.float32)
+    # 2. Prepare Binary Buffer (Only XYZ)
+    buffer = np.zeros(count_nodes * 3, dtype=np.float32)
     for _, row in df_nodes.iterrows():
         idx = id_to_index.get(row["Node ID"])
         if idx is not None:
-            node_buffer[idx * 3 + 0] = row["H1"]  # H1
-            node_buffer[idx * 3 + 1] = row["H2"]  # H2
-            node_buffer[idx * 3 + 2] = row["V"]  # V
+            buffer[idx * 3 + 0] = row["H1"]
+            buffer[idx * 3 + 1] = row["H2"]
+            buffer[idx * 3 + 2] = row["V"]
 
-    # 2. Load Node Metadata (Stories)
-    df_map = pd.read_csv(FILES["node_map"])
+    # 3. Load Mapping (Stories & Corners)
+    df_map = pd.read_csv(FILES["building"]["mapping"])
+
     stories = {}
+    corners = {"NW": [], "NE": [], "SW": [], "SE": []}
+
     for _, row in df_map.iterrows():
-        n_id = row["Node"]
-        story = str(row["Story Level"])
-        if n_id in id_to_index:
+        nid = row["Node"]
+        if nid in id_to_index:
+            idx = id_to_index[nid]
+
+            # Stories
+            story = str(row["Story Level"])
             if story not in stories:
                 stories[story] = []
-            stories[story].append(id_to_index[n_id])
+            stories[story].append(idx)
 
-    # 3. Load Beams
-    df_beams = pd.read_csv(FILES["beams"])
-    beam_list = []
-    for _, row in df_beams.iterrows():
-        start = row["I-Node ID"]
-        end = row["J-Node ID"]
-        if start in id_to_index and end in id_to_index:
-            beam_list.append(id_to_index[start])
-            beam_list.append(id_to_index[end])
+            # Corners
+            c_tag = str(row["Corner"]).strip().upper()
+            if c_tag in corners:
+                corners[c_tag].append(idx)
 
-    beam_buffer = np.array(beam_list, dtype=np.uint32)
+    # 4. Write
+    header = {"count_nodes": count_nodes, "stories": stories, "corners": corners}
 
-    # 4. Write Binary
-    header = {"count_nodes": len(unique_ids), "count_beams": len(beam_list) // 2, "stories": stories, "offsets": {"nodes": 0, "beams": len(node_buffer) * 4}}  # Map of StoryName -> [NodeIndices]
-
-    write_gzipped_binary(OUTPUTS["structure"], header, [node_buffer.tobytes(), beam_buffer.tobytes()])
-    return id_to_index, len(unique_ids)
+    write_bld_file("building.bld", header, buffer.tobytes())
+    return id_to_index
 
 
-def process_time_series(file_map, id_to_index, num_nodes, output_name, result_type="displacement"):
-    print(f"--- Processing {result_type.capitalize()} ---")
+def process_response_file(file_key, type_name, id_to_index):
+    """
+    Generic processor for Displacement, Velocity, Acceleration.
+    Expects 6 files (Lin X, Y, Z and Rot X, Y, Z).
+    """
+    file_list = FILES["simulation"].get(file_key)
+    if not file_list:
+        print(f"Skipping {type_name}: Files not defined in config.")
+        return
 
-    # 1. Parse Headers to get mapping
-    # We assume X file governs the structure, but we check all
-    col_map_x, start_row = parse_ladwp_txt_header(file_map["x"])
+    print(f"--- Processing {type_name} ---")
 
-    # 2. Read Data (Skip header rows, read as CSV)
-    # Using 'header=None' because we handled it manually
-    print(f"Reading {file_map['x']}...")
-    df_x = pd.read_csv(file_map["x"], skiprows=start_row, header=None)
-    print(f"Reading {file_map['y']}...")
-    df_y = pd.read_csv(file_map["y"], skiprows=start_row, header=None)
-    print(f"Reading {file_map['z']}...")
-    df_z = pd.read_csv(file_map["z"], skiprows=start_row, header=None)
+    # Files
+    f_lx, f_ly, f_lz = file_list["lin"]
+    f_rx, f_ry, f_rz = file_list["rot"]
 
-    # Filter out footer lines (Maximum/Minimum)
-    if isinstance(df_x.iloc[-1, 0], str) and "Minimum" in df_x.iloc[-1, 0]:
-        df_x = df_x.iloc[:-2]  # Drop Max and Min rows
-        df_y = df_y.iloc[:-2]
-        df_z = df_z.iloc[:-2]
+    # 1. Parse Header Map (Assume X file governs)
+    col_map_x, _ = parse_ladwp_header(f_lx)
 
-    # Extract Time Vector (Column 0)
-    time_vector = df_x.iloc[:, 0].astype(np.float32).values
-    num_frames = len(time_vector)
+    # 2. Load Data
+    # Note: This loads all 6 files into memory. ensure you have RAM.
+    print(f"Loading Linear Data...")
+    d_lx, _ = load_ladwp_data(f_lx, col_map_x)
+    d_ly, _ = load_ladwp_data(f_ly, col_map_x)
+    d_lz, _ = load_ladwp_data(f_lz, col_map_x)
 
-    # 3. Flatten Data [Frame0_Node0_xyz, Frame0_Node1_xyz...]
-    # Pre-allocate massive buffer
-    # Size: Frames * Nodes * 3 (Dimensions)
-    buffer_size = num_frames * num_nodes * 3
-    data_buffer = np.zeros(buffer_size, dtype=np.float32)
+    print(f"Loading Rotational Data...")
+    d_rx, _ = load_ladwp_data(f_rx, col_map_x)
+    d_ry, _ = load_ladwp_data(f_ry, col_map_x)
+    d_rz, _ = load_ladwp_data(f_rz, col_map_x)
 
-    print("Flattening time series data (this may take a moment)...")
+    num_frames = len(d_lx)
+    num_nodes = len(id_to_index)
 
-    # Optimization: Convert DataFrames to numpy arrays first
-    # Note: Column indices in col_map_x align with df columns
-    arr_x = df_x.values
-    arr_y = df_y.values
-    arr_z = df_z.values
+    # 3. Interleave Data
+    # Target: [Node0_X, Node0_Y, Node0_Z, Node0_RX, Node0_RY, Node0_RZ, Node1_...]
+    print("Interleaving data...")
+    buffer = np.zeros(num_frames * num_nodes * 6, dtype=np.float32)
 
-    # Iterate over our known nodes (id_to_index) to populate buffer in strict order
-    for node_id, node_idx in id_to_index.items():
-        # Find which column in the CSV corresponds to this Node ID
-        # We need to reverse lookup the col_map
-        csv_col_idx = -1
-        for col, nid in col_map_x.items():
-            if nid == node_id:
-                csv_col_idx = col
-                break
+    # Values arrays (Frames x Columns)
+    # We need to map CSV Column -> Buffer Node Index
 
-        if csv_col_idx != -1:
-            # Slicing: [All Frames, Specific Column]
-            # Mapped to: [All Frames, Specific Node Index, 0/1/2]
+    # Pre-calculate column indices for every node index 0..N
+    # This avoids searching the map inside the loop
+    csv_cols = [-1] * num_nodes
+    for col, nid in col_map_x.items():
+        if nid in id_to_index:
+            csv_cols[id_to_index[nid]] = col
 
-            # X values
-            # Target indices: Frame 0 -> (0 * N * 3) + (node_idx * 3) + 0
-            # Target indices: Frame 1 -> (1 * N * 3) + (node_idx * 3) + 0
+    # Vectorized Fill
+    # buffer[start::stride] selects specific component for specific node across all frames
+    # But here we want Frame-Major.
+    # Actually, flattening (Frames * Nodes * 6) is easiest done by
+    # reshaping inputs to (Frames, Nodes) first.
 
-            # Vectorized assignment using stride slicing
-            # data_buffer[start : end : step]
+    # Create temp arrays aligned to Node Index 0..N
+    aligned_lx = np.zeros((num_frames, num_nodes), dtype=np.float32)
+    aligned_ly = np.zeros((num_frames, num_nodes), dtype=np.float32)
+    aligned_lz = np.zeros((num_frames, num_nodes), dtype=np.float32)
+    aligned_rx = np.zeros((num_frames, num_nodes), dtype=np.float32)
+    aligned_ry = np.zeros((num_frames, num_nodes), dtype=np.float32)
+    aligned_rz = np.zeros((num_frames, num_nodes), dtype=np.float32)
 
-            # Offset for X coord of this node across all frames
-            # Stride is (num_nodes * 3)
+    for n_idx, c_idx in enumerate(csv_cols):
+        if c_idx != -1:
+            aligned_lx[:, n_idx] = d_lx[:, c_idx]
+            aligned_ly[:, n_idx] = d_ly[:, c_idx]
+            aligned_lz[:, n_idx] = d_lz[:, c_idx]
+            aligned_rx[:, n_idx] = d_rx[:, c_idx]
+            aligned_ry[:, n_idx] = d_ry[:, c_idx]
+            aligned_rz[:, n_idx] = d_rz[:, c_idx]
 
-            start_x = (node_idx * 3) + 0
-            start_y = (node_idx * 3) + 1
-            start_z = (node_idx * 3) + 2
+    # Stack: (Frames, Nodes, 6)
+    # This creates the interleaved structure [x, y, z, rx, ry, rz] per node
+    stacked = np.stack([aligned_lx, aligned_ly, aligned_lz, aligned_rx, aligned_ry, aligned_rz], axis=2)
 
-            stride = num_nodes * 3
+    # Flatten: Frame 0 (Node 0..N), Frame 1...
+    buffer = stacked.flatten()
 
-            data_buffer[start_x::stride] = arr_x[:, csv_col_idx]
-            data_buffer[start_y::stride] = arr_y[:, csv_col_idx]
-            data_buffer[start_z::stride] = arr_z[:, csv_col_idx]
+    # dt = float(d_lx[1, 0] - d_lx[0, 0])
 
-    # 4. Write Binary
-    header = {"type": result_type, "count_frames": num_frames, "count_nodes": num_nodes, "times": time_vector.tolist()}  # Keep time in Header for easy parsing
+    # 4. Write
+    header = {"type": type_name, "count_frames": num_frames, "count_nodes": num_nodes, "dt": 0.01}
 
-    write_gzipped_binary(output_name, header, [data_buffer.tobytes()])
-
-
-def process_components(id_to_index):
-    print("--- Processing Component/GM Data ---")
-
-    df = pd.read_csv(FILES["components"])
-
-    # This file contains component summaries (Max/Min), not time series in the snippet.
-    # We will map "Element ID" to the beam buffer index if possible,
-    # but since elements might not map 1:1 to beams in order, we store raw data.
-
-    # We will store: ElementID, MaxPosDeform, MaxNegDeform
-    # Buffer format: [ElemID (float-cast), Max, Min, ElemID, Max, Min...]
-
-    # Filter for "Max" and "Min" rows
-    max_rows = df[df["Step Type"] == "Max"]
-    min_rows = df[df["Step Type"] == "Min"]
-
-    # Join on Element ID
-    # This is a simple representation. You can expand based on need.
-    merged = pd.merge(max_rows, min_rows, on="Element ID", suffixes=("_max", "_min"))
-
-    count = len(merged)
-    comp_buffer = np.zeros(count * 3, dtype=np.float32)
-
-    for i, row in merged.iterrows():
-        comp_buffer[i * 3 + 0] = float(row["Element ID"])
-        comp_buffer[i * 3 + 1] = float(row["Max Pos Deform DCRatio_max"])
-        comp_buffer[i * 3 + 2] = float(row["Max Neg Deform DCRatio_min"])  # Actually reading raw val
-
-    header = {"type": "components_summary", "description": "Element ID, Max DCRatio, Min DCRatio", "count": count}
-
-    write_gzipped_binary(OUTPUTS["components"], header, [comp_buffer.tobytes()])
+    write_bld_file(f"{file_key}.bld", header, buffer.tobytes())
 
 
-# --- MAIN EXECUTION ---
+def process_ground_motion():
+    print("--- Processing Ground Motion ---")
+    motion_file = FILES["simulation"]["ground_motion"]
+
+    # Check if files exist (placeholder logic)
+    if not os.path.exists(motion_file):
+        print("Ground Motion files not found, skipping.")
+        return
+
+    # Load 3 components (assuming headerless or simple CSV)
+    # Adjust parsing logic if GM files have complex headers like LADWP
+    # time, x, y, z
+    motion = pd.read_csv(motion_file, header=None, delim_whitespace=True)
+
+    num_frames = len(motion)
+
+    # time = motion.iloc[:, 0].values.astype(np.float32)
+
+    # dt = float(time[1] - time[0])
+
+    # Interleave [x, y, z, x, y, z...]
+    buffer = np.zeros(num_frames * 3, dtype=np.float32)
+    buffer[0::3] = motion.iloc[:, 1]
+    buffer[1::3] = motion.iloc[:, 2]
+    buffer[2::3] = motion.iloc[:, 3]
+
+    header = {"count_frames": num_frames, "dt": 0.01}
+
+    write_bld_file("ground_motion.bld", header, buffer.tobytes())
+
+
+# --- MAIN ---
 if __name__ == "__main__":
-    if not os.path.exists(FILES["nodes"]):
-        print("Error: Files not found. Run this script in the folder containing the CSVs.")
-    else:
-        # 1. Structure (Nodes/Beams)
-        node_map, num_nodes = process_structure()
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
 
-        # 2. Displacements
-        process_time_series(FILES["disp"], node_map, num_nodes, OUTPUTS["disp"], "displacement")
+    # 1. Building Data
+    id_map = process_building()
 
-        # 3. Rotations
-        process_time_series(FILES["rot"], node_map, num_nodes, OUTPUTS["rot"], "rotation")
+    # 2. Simulation Data
+    process_response_file("displacement", "displacement", id_map)
+    process_response_file("velocity", "velocity", id_map)
+    process_response_file("acceleration", "acceleration", id_map)
 
-        # 4. Components (Ground Motion / Forces)
-        process_components(node_map)
+    # 3. Ground Motion
+    process_ground_motion()
 
-        print("\nAll tasks complete.")
+    print("\nBatch processing complete.")

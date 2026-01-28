@@ -1,36 +1,10 @@
-import { defineConfig, type PluginOption, type ViteDevServer } from "vite";
-import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig, type PluginOption, type ViteDevServer } from "vite";
+import type { BinaryBuilding, BuildingIndex, CSVBuilding } from "./src/lib/types";
 
 import fs from "fs";
 import path from "path";
-
-type Index = {
-  size: number;
-  buildings: Building[];
-};
-
-type Simulation = {
-  name: string;
-  folder: string;
-  size: number;
-  displacementFiles: string[];
-  accelerationFiles: string[];
-  velocityFiles: string[];
-};
-
-type Building = {
-  name: string;
-  folder: string;
-  size: number;
-  height_map: string;
-  height_map_size: number;
-  center_map: string;
-  center_map_size: number;
-  node_map: string;
-  node_map_size: number;
-  simulations: Simulation[];
-};
 
 function walkDir(dir: string) {
   let total = 0;
@@ -60,18 +34,37 @@ function getFolderSize(p: string) {
   return 0;
 }
 
-function getFolderFiles(p: string) {
+function getFolderDirectories(p: string) {
+  const abs = path.resolve(process.cwd(), p);
+  if (!fs.existsSync(abs)) return [];
+
+  const files = fs.readdirSync(abs, { withFileTypes: true });
+  return files.filter((f) => f.isDirectory()).map((f) => f.name);
+}
+
+function getFolderFiles(p: string, ext?: string) {
   const abs = path.resolve(process.cwd(), p);
   if (!fs.existsSync(abs)) return [];
 
   const files = fs.readdirSync(abs);
-  return files.filter((f) => f.endsWith(".txt"));
+  if (ext) return files.filter((f) => f.endsWith(ext));
+  return files;
 }
 
-function folderStatsPlugin(options: { manifestFile: string; targetFile: string; placeholder: string }) {
-  const { manifestFile, targetFile, placeholder } = options;
+// Source - https://stackoverflow.com/a
+// Posted by jcalz
+// Retrieved 2026-01-28, License - CC BY-SA 4.0
 
-  let _folderStats: Index | null = null;
+// type PartialAllExcept<T, R extends string> = Partial<Omit<T, "id" | R>> &
+//   (R extends keyof T ? { [K in R]: PartialAllExcept<T, R> } : unknown);
+
+// type MaybePartialAllExcept<T, R extends string> =
+//   T extends Person ? PartialAllExcept<T, R> : T;
+
+// type PartialBuildingIndex = PartialAllExcept<BuildingIndex, "folder" | "data_type">;
+
+function folderStatsPlugin(options: { manifestFile: string }) {
+  const { manifestFile } = options;
 
   return {
     name: "folder-stats-plugin",
@@ -80,51 +73,64 @@ function folderStatsPlugin(options: { manifestFile: string; targetFile: string; 
       console.log("Start build...");
       const manifestPath = path.resolve(process.cwd(), manifestFile);
       const raw = fs.readFileSync(manifestPath, "utf8");
-      const manifest: Index = JSON.parse(raw);
+      const manifest: BuildingIndex = JSON.parse(raw);
 
       const manifestDir = path.dirname(manifestPath);
 
-      const resolveDataSet = (building: Building): Building => {
+      manifest.size = getFolderSize(manifestDir);
+      manifest.buildings = getFolderDirectories(manifestDir)
+        .map((f) => ({ folder: f }))
+        .map((f) => {
+          if (!manifest.buildings) return f as CSVBuilding;
+          const existing = manifest.buildings.find((b) => b.folder === f.folder);
+          if (existing) return existing;
+          return f as CSVBuilding;
+        });
+      for (const building of manifest.buildings) {
         const buildingDir = path.resolve(manifestDir, building.folder);
-        return {
-          name: building.name,
-          folder: building.folder,
-          size: getFolderSize(buildingDir),
-          height_map: building.height_map,
-          height_map_size: getFolderSize(path.resolve(buildingDir, building.height_map)),
-          center_map: building.center_map,
-          center_map_size: getFolderSize(path.resolve(buildingDir, building.center_map)),
-          node_map: building.node_map,
-          node_map_size: getFolderSize(path.resolve(buildingDir, building.node_map)),
-          simulations: building.simulations.map((sim) => ({
-            name: sim.name,
-            folder: sim.folder,
-            size: getFolderSize(path.resolve(buildingDir, sim.folder)),
-            displacementFiles: getFolderFiles(path.resolve(buildingDir, sim.folder, "Displacements")),
-            accelerationFiles: getFolderFiles(path.resolve(buildingDir, sim.folder, "Accelerations")),
-            velocityFiles: getFolderFiles(path.resolve(buildingDir, sim.folder, "Velocities")),
-          })),
-        };
-      };
 
-      const result: Index = {
-        size: getFolderSize(manifestDir),
-        buildings: manifest.buildings.map(resolveDataSet),
-      };
+        if (building.data_type === undefined) {
+          const files = getFolderFiles(buildingDir);
+          if (files.includes("building.bld")) {
+            (building as BinaryBuilding).data_type = "binary";
+          } else {
+            (building as CSVBuilding).data_type = "csv";
+          }
+        }
+        building.name = building.name ?? building.folder;
+        building.size = getFolderSize(buildingDir);
 
-      _folderStats = result;
-    },
+        if (building.data_type === "csv") {
+          building.height_map = building.height_map ?? "*building_height.csv";
+          building.center_map = building.center_map ?? "*building_center.csv";
+          building.node_map = building.node_map ?? "*node_mapping.csv";
+          building.simulations = building.simulations ?? getFolderDirectories(buildingDir).map((f) => ({ folder: f }));
 
-    transform(code: string, id: string) {
-      if (!id.endsWith(targetFile)) return null;
+          building.simulations.forEach((sim) => {
+            sim.name = sim.name ?? sim.folder;
+            sim.displacementFiles = getFolderFiles(path.resolve(buildingDir, sim.folder, "Displacements"), ".txt");
+            sim.accelerationFiles = getFolderFiles(path.resolve(buildingDir, sim.folder, "Accelerations"), ".txt");
+            sim.velocityFiles = getFolderFiles(path.resolve(buildingDir, sim.folder, "Velocities"), ".txt");
+            sim.groundMotion = sim.groundMotion ?? "*ground_motion.txt";
+            sim.size = getFolderSize(path.resolve(buildingDir, sim.folder));
+          });
+        } else if (building.data_type === "binary") {
+          building.building_data = building.building_data ?? "*building.bld";
+          building.building_data_size = getFolderSize(path.resolve(buildingDir, building.building_data));
+          building.simulations = building.simulations ?? getFolderDirectories(buildingDir).map((f) => ({ folder: f }));
 
-      const statsString = JSON.stringify(_folderStats, null, 2);
-      const updated = code.replace(placeholder, statsString);
+          building.simulations.forEach((sim) => {
+            sim.name = sim.name ?? sim.folder;
+            sim.displacement = sim.displacement ?? "*displacement.bld";
+            sim.velocity = sim.velocity ?? "*velocity.bld";
+            sim.acceleration = sim.acceleration ?? "*acceleration.bld";
+            sim.groundMotion = sim.groundMotion ?? "*ground_motion.bld";
+            sim.size = getFolderSize(path.resolve(buildingDir, sim.folder));
+          });
+        }
+      }
 
-      return {
-        code: updated,
-        map: null,
-      };
+      fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2));
     },
   } as PluginOption;
 }
@@ -134,13 +140,14 @@ function serveGzipHeaders() {
     name: "serve-gzip-headers",
     configureServer(server: ViteDevServer) {
       server.middlewares.use((req, res, next) => {
-        if (req.url)
-          if (req.url.endsWith(".gz")) {
+        if (req.url) {
+          const url = new URL(req.url, `http://${req.headers.host}`);
+
+          if (url.pathname.endsWith(".bld")) {
             res.setHeader("Content-Encoding", "gzip");
-            // Explicitly set the type so it's not treated as application/gzip
-            if (req.url.endsWith(".js.gz")) res.setHeader("Content-Type", "application/javascript");
-            if (req.url.endsWith(".css.gz")) res.setHeader("Content-Type", "text/css");
+            res.setHeader("Content-Type", "application/octet-stream");
           }
+        }
         next();
       });
     },
@@ -151,9 +158,12 @@ export default defineConfig({
   plugins: [
     folderStatsPlugin({
       manifestFile: "public/data/index.json",
-      targetFile: "public/data/index.ts",
-      placeholder: "__FOLDER_SIZES__",
     }),
+    // binaryStatsPlugin({
+    //   manifestFile: "public/data/index-binary.json",
+    //   targetFile: "public/data/index-binary.ts",
+    //   placeholder: "__BINARY_SIZES__",
+    // }),
     tailwindcss(),
     react({
       babel: {

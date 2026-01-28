@@ -1,4 +1,4 @@
-import { dataSources } from "@public/data";
+import DataSources from "@public/data/index";
 import { useAnimationData } from "../hooks/nodeDataHook";
 import { Link, useLocation } from "react-router";
 import React from "react";
@@ -36,13 +36,13 @@ export function DataPicker() {
       onChange={(e) => {
         // Loopup
         const [building, simulation] = e.target.value.split("/");
-        const b = dataSources.buildings.find((b) => b.folder === building);
+        const b = DataSources.buildings.find((b) => b.folder === building);
         if (!b) return;
         const s = b?.simulations.find((s) => s.folder === simulation);
         if (!s) return;
         loadSelection(b, s);
       }}>
-      {dataSources.buildings.map((b) => (
+      {DataSources.buildings.map((b) => (
         <React.Fragment key={b.folder}>
           <hr />
           <optgroup label={b.name}>

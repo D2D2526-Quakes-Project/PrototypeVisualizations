@@ -9,7 +9,7 @@ import type {
 import DataSources from "@public/data/index";
 import { XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 // import { buildAnimationData, type BuildingAnimationData } from "../lib/parser";
 import { buildAnimationDataFromBinary } from "@/lib/binaryParser";
 import { fetchWithProgressAndCache } from "@/lib/dataLoader";
@@ -83,14 +83,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       // Map 0-100% download to 5-80% of total bar (leaving 20% for parsing)
       setProgress(5 + avg * 75);
       setProgressMessage(`Downloading... ${Math.round(avg * 100)}%`);
-
-      if ("memory" in performance) {
-        // @ts-expect-error - performance.memory is not defined in Node
-        const limit = performance.memory.jsHeapSizeLimit;
-        // @ts-expect-error - performance.memory is not defined in Node
-        const used = performance.memory.usedJSHeapSize;
-        console.log(`Memory: ${Math.round(used / 1024 / 1024)} MB / ${Math.round(limit / 1024 / 1024)} MB`);
-      }
     };
 
     try {
@@ -236,6 +228,22 @@ function LoadingOverlay({
   progressMessage: string;
   error?: unknown;
 }) {
+  const memory = useMemo(() => {
+    if ("memory" in performance) {
+      // @ts-expect-error - performance.memory is not defined in Node
+      const limit = performance.memory.jsHeapSizeLimit;
+      // @ts-expect-error - performance.memory is not defined in Node
+      const used = performance.memory.usedJSHeapSize;
+      console.log(`Memory: ${Math.round(used / 1024 / 1024)} MB / ${Math.round(limit / 1024 / 1024)} MB`);
+      return {
+        used: used,
+        limit: limit,
+      };
+    }
+    console.log(progress);
+    return undefined;
+  }, [progress]);
+
   return (
     <motion.div
       key="loadingoverlay"
@@ -257,6 +265,15 @@ function LoadingOverlay({
           className="bg-amber-400 h-full rounded"
         />
       </div>
+      {memory && (
+        <div className="w-1/2 max-w-lg h-2 bg-neutral-300 rounded-lg inset-shadow-sm mt-2">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${(memory.used / memory.limit) * 100}%` }}
+            className="bg-indigo-200 h-full rounded inset-shadow-sm inset-shadow-indigo-300"
+          />
+        </div>
+      )}
       <div className="text-neutral-400 mt-2 text-sm">{progressMessage}</div>
       {error ? <div style={{ padding: 20 }}>Failed to load animation data: {String(error)}</div> : null}
     </motion.div>

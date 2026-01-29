@@ -56,27 +56,6 @@ export function BuildingScene() {
     return colors;
   }, [frameIndex, animationData, nodeCount, maxDisplacement]);
 
-  // const billboardMaterial = useMemo(() => {
-  //   const mat = new THREE.MeshBasicMaterial({
-  //     side: THREE.DoubleSide,
-  //     vertexColors: true,
-  //   });
-
-  //   mat.onBeforeCompile = (shader) => {
-  //     shader.vertexShader = shader.vertexShader.replace(
-  //       "#include <project_vertex>",
-  //       `
-  //       vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-  //       float scaleX = length(vec3(instanceMatrix[0].xyz));
-  //       float scaleY = length(vec3(instanceMatrix[1].xyz));
-  //       mvPosition.xy += position.xy * vec2(scaleX, scaleY);
-  //       gl_Position = projectionMatrix * mvPosition;
-  //       `,
-  //     );
-  //   };
-  //   return mat;
-  // }, []);
-
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
   useFrame(() => {
@@ -121,12 +100,12 @@ export function BuildingScene() {
             ref={meshRef}
             onPointerMove={(e) => (e.stopPropagation(), setHovered(e.instanceId))}
             onPointerOut={(e) => (e.stopPropagation(), setHovered(undefined))}
-            args={[null, null, nodeCount]}
+            args={[undefined, undefined, nodeCount]}
             frustumCulled={false}>
             <sphereGeometry args={[1, 4, 2]}>
               <instancedBufferAttribute
                 attach="attributes-color"
-                args={[(console.log("a"), colors.slice()), 3]}
+                args={[colors.slice(), 3]}
                 usage={THREE.DynamicDrawUsage}
               />
             </sphereGeometry>

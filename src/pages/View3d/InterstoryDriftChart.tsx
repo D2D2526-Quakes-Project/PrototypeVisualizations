@@ -1,12 +1,11 @@
-import { converter, interpolate } from "culori";
+import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useEffect, useRef, useState } from "react";
 import { useAnimationData } from "../../hooks/nodeDataHook";
-import { usePlayback } from "@/components/playback/PlaybackContext";
 
-const amber400 = "oklch(82.8% 0.189 84.429)";
-const red700 = "oklch(50.5% 0.213 27.518)";
-const colorMap = interpolate([amber400, red700], "oklab");
-const rgbConverter = converter("rgb");
+// const amber400 = "oklch(82.8% 0.189 84.429)";
+// const red700 = "oklch(50.5% 0.213 27.518)";
+// const colorMap = interpolate([amber400, red700], "oklab");
+// const rgbConverter = converter("rgb");
 
 export function InterstoryDriftChart() {
   const { animationData } = useAnimationData();
@@ -167,15 +166,17 @@ export function InterstoryDriftChart() {
           </text>
 
           {/* Bars for each story and corner */}
-          {storyOrder.map((storyId, i) => {
+          {storyOrder.map((storyId) => {
             const drift = storyDrift.get(storyId);
             if (!drift) return null;
 
             const elevation = storyElevations.get(storyId) || 0;
 
-            const barHeight = chartHeight / storyOrder.length - 2;
+            const barHeight = Math.max(0, chartHeight / storyOrder.length - 2);
             const barY = chartHeight - (elevation / maxHeight) * chartHeight;
             const barSpacing = barHeight / 4;
+
+            console.log(barHeight, barY, barSpacing);
 
             return (
               <g key={storyId}>
@@ -183,7 +184,9 @@ export function InterstoryDriftChart() {
                   const ratio = drift[corner](frameIndex);
                   const barWidth = Math.max(0, (ratio / maxRatio) * chartWidth);
                   const color = cornerColors[corner];
-                  const y = barY + cornerIdx * barSpacing;
+                  const y = Math.max(0, barY + cornerIdx * barSpacing);
+
+                  // console.log(barWidth, color, y);
 
                   return (
                     <rect

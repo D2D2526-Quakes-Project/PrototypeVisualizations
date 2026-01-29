@@ -3,7 +3,12 @@ import { UNIT_SCALE } from "@/lib/utils";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { OrthographicCamera as OrthographicCameraImpl, PerspectiveCamera as PerspectiveCameraImpl } from "three";
+import {
+  MathUtils,
+  OrthographicCamera as OrthographicCameraImpl,
+  PerspectiveCamera as PerspectiveCameraImpl,
+  Vector3,
+} from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 // This component goes INSIDE the Canvas
@@ -19,15 +24,44 @@ function CameraManager({
   const perspectiveCamRef = useRef<PerspectiveCameraImpl>(null);
   const orthoCamRef = useRef<OrthographicCameraImpl>(null);
 
-  const { camera, set } = useThree();
+  const { camera, set, size } = useThree();
 
   useEffect(() => {
-    const activeCamera = isOrthographic ? orthoCamRef.current : perspectiveCamRef.current;
-    if (activeCamera) {
-      if (camera) activeCamera.position.copy(camera.position);
-      set({ camera: activeCamera });
+    const controls = orbitControlsRef.current;
+    const perspective = perspectiveCamRef.current;
+    const ortho = orthoCamRef.current;
+
+    if (!controls || !perspective || !ortho) return;
+
+    const distance = camera.position.distanceTo(controls.target);
+
+    if (isOrthographic) {
+      // --- PERSPECTIVE TO ORTHO ---
+      // Match the perspective FOV height at the target distance
+      const fovRadians = MathUtils.degToRad(perspective.fov);
+      // Formula: zoom = 1 / (tan(fov/2) * distance)
+      // We multiply by (size.height / 2) because Drei's OrthoCam uses viewport units
+      const newZoom = size.height / (2 * Math.tan(fovRadians / 2) * distance);
+
+      ortho.zoom = newZoom;
+      ortho.position.copy(camera.position);
+      ortho.updateProjectionMatrix();
+      set({ camera: ortho });
+    } else {
+      // --- ORTHO TO PERSPECTIVE ---
+      // Reverse the formula to find the distance the perspective cam needs to be
+      const fovRadians = MathUtils.degToRad(perspective.fov);
+      const targetDistance = size.height / (2 * Math.tan(fovRadians / 2) * ortho.zoom);
+
+      // Move the perspective camera position along the same vector to match the distance
+      const direction = new Vector3().subVectors(camera.position, controls.target).normalize();
+      const newPos = new Vector3().addVectors(controls.target, direction.multiplyScalar(targetDistance));
+
+      perspective.position.copy(newPos);
+      perspective.updateProjectionMatrix();
+      set({ camera: perspective });
     }
-  }, [isOrthographic, camera, set]);
+  }, [isOrthographic, camera, set, orbitControlsRef, perspectiveCamRef, orthoCamRef, size]);
 
   return (
     <>

@@ -82,23 +82,32 @@ export function BuildingScene() {
   useFrame(() => {
     if (!meshRef.current || nodeCount === 0) return;
 
+    const colorAttr = meshRef.current.geometry.attributes.color;
+    if (!colorAttr) return;
+
     for (let i = 0; i < nodeCount; i++) {
       tempObject.position.set(positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2]);
-
-      meshRef.current.geometry.attributes.color.needsUpdate = true;
-
-      if (i === hovered) tempColor.setRGB(2 / 255, 4 / 255, 80 / 255);
-      else tempColor.set(colors[i * 3 + 0], colors[i * 3 + 1], colors[i * 3 + 2]);
-      tempColor.toArray(colors, i * 3);
 
       const scale = hovered === i ? 50 : 1 / UNIT_SCALE;
       tempObject.scale.set(scale, scale, scale);
 
       tempObject.updateMatrix();
       meshRef.current.setMatrixAt(i, tempObject.matrix);
+
+      ///
+
+      if (i === hovered) tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
+      // else tempColor.set(colors[i * 3 + 0], colors[i * 3 + 1], colors[i * 3 + 2]);
+      else tempColor.fromArray(colors, i * 3);
+
+      tempColor.toArray(colorAttr.array, i * 3);
+
+      // meshRef.current.setColorAt(i, tempColor);
+      // meshRef.current.geometry.attributes.color.needsUpdate = true;
     }
 
     meshRef.current.instanceMatrix.needsUpdate = true;
+    colorAttr.needsUpdate = true;
   });
 
   return (
@@ -115,7 +124,11 @@ export function BuildingScene() {
             args={[null, null, nodeCount]}
             frustumCulled={false}>
             <sphereGeometry args={[1, 4, 2]}>
-              <instancedBufferAttribute attach="attributes-color" args={[colors, 3]} />
+              <instancedBufferAttribute
+                attach="attributes-color"
+                args={[(console.log("a"), colors.slice()), 3]}
+                usage={THREE.DynamicDrawUsage}
+              />
             </sphereGeometry>
             <meshBasicMaterial fog={false} toneMapped={false} vertexColors />
           </instancedMesh>

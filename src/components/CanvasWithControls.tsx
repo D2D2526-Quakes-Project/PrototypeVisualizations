@@ -1,12 +1,9 @@
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { UNIT_SCALE } from "@/lib/utils";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, type RefObject } from "react";
-import {
-  OrthographicCamera as OrthographicCameraImpl,
-  PerspectiveCamera as PerspectiveCameraImpl,
-  Vector3,
-} from "three";
+import { OrthographicCamera as OrthographicCameraImpl, PerspectiveCamera as PerspectiveCameraImpl } from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 // This component goes INSIDE the Canvas
@@ -14,18 +11,10 @@ function CameraManager({
   isOrthographic,
   orbitControlsRef,
   enableSmoothing,
-  targetPosition,
-  targetLookAt,
-  isTransitioning,
-  onTransitionComplete,
 }: {
   isOrthographic: boolean;
   orbitControlsRef: RefObject<OrbitControlsImpl | null>;
   enableSmoothing: boolean;
-  targetPosition: Vector3 | null;
-  targetLookAt: Vector3 | null;
-  isTransitioning: boolean;
-  onTransitionComplete: () => void;
 }) {
   const perspectiveCamRef = useRef<PerspectiveCameraImpl>(null);
   const orthoCamRef = useRef<OrthographicCameraImpl>(null);
@@ -39,35 +28,6 @@ function CameraManager({
       set({ camera: activeCamera });
     }
   }, [isOrthographic, camera, set]);
-
-  // Smooth camera transition using lerp
-  useFrame(() => {
-    if (isTransitioning && targetPosition && targetLookAt && orbitControlsRef.current) {
-      const controls = orbitControlsRef.current;
-      const cam = controls.object;
-
-      if (cam) {
-        // Lerp camera position (adjust 0.15 for speed - higher = faster)
-        cam.position.lerp(targetPosition, 0.25);
-
-        // Lerp controls target
-        controls.target.lerp(targetLookAt, 0.25);
-
-        // Check if we're close enough to the target
-        const positionDistance = cam.position.distanceTo(targetPosition);
-        const targetDistance = controls.target.distanceTo(targetLookAt);
-
-        if (positionDistance < 1.0 && targetDistance < 1.0) {
-          // Snap to final position
-          cam.position.copy(targetPosition);
-          controls.target.copy(targetLookAt);
-          onTransitionComplete();
-        }
-
-        controls.update();
-      }
-    }
-  });
 
   return (
     <>
@@ -93,16 +53,7 @@ function CameraManager({
 export function CanvasWithControls({ children }: { children: React.ReactNode }) {
   const [isOrthographic, setIsOrthographic] = useState(false);
   const [enableSmoothing, setEnableSmoothing] = useState(true);
-  const [targetPosition, setTargetPosition] = useState<Vector3 | null>(null);
-  const [targetLookAt, setTargetLookAt] = useState<Vector3 | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const orbitControlsRef = useRef<OrbitControlsImpl>(null);
-
-  const handleTransitionComplete = () => {
-    setIsTransitioning(false);
-    setTargetPosition(null);
-    setTargetLookAt(null);
-  };
 
   return (
     <>
@@ -112,66 +63,62 @@ export function CanvasWithControls({ children }: { children: React.ReactNode }) 
           isOrthographic={isOrthographic}
           orbitControlsRef={orbitControlsRef}
           enableSmoothing={enableSmoothing}
-          targetPosition={targetPosition}
-          targetLookAt={targetLookAt}
-          isTransitioning={isTransitioning}
-          onTransitionComplete={handleTransitionComplete}
         />
       </Canvas>
       <ViewControls
+        orbitControlsRef={orbitControlsRef}
         isOrthographic={isOrthographic}
         setIsOrthographic={setIsOrthographic}
         enableSmoothing={enableSmoothing}
         setEnableSmoothing={setEnableSmoothing}
-        setTargetPosition={setTargetPosition}
-        setTargetLookAt={setTargetLookAt}
-        setIsTransitioning={setIsTransitioning}
       />
     </>
   );
 }
 
 export function ViewControls({
+  orbitControlsRef,
   isOrthographic,
   setIsOrthographic,
   enableSmoothing,
   setEnableSmoothing,
-  setTargetPosition,
-  setTargetLookAt,
-  setIsTransitioning,
 }: {
+  orbitControlsRef: RefObject<OrbitControlsImpl | null>;
   isOrthographic: boolean;
   setIsOrthographic: (value: boolean) => void;
   enableSmoothing: boolean;
   setEnableSmoothing: (value: boolean) => void;
-  setTargetPosition: (pos: Vector3 | null) => void;
-  setTargetLookAt: (pos: Vector3 | null) => void;
-  setIsTransitioning: (value: boolean) => void;
 }) {
   const { animationData } = useAnimationData();
 
-  const buildingWidth = animationData.precomputed.boundingBox.min[0] - animationData.precomputed.boundingBox.max[0];
-  const buildingDepth = animationData.precomputed.boundingBox.min[2] - animationData.precomputed.boundingBox.max[2];
-  const buildingHeight = animationData.precomputed.boundingBox.min[1] - animationData.precomputed.boundingBox.max[1];
-  const maxDimension = Math.max(buildingWidth, buildingDepth, buildingHeight);
-  const cameraDistance = maxDimension * 2;
+  const buildingVerticalCenter =
+    ((animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) / 2) * UNIT_SCALE;
+  const cameraDistance = animationData.precomputed.boundingBox.radius * 1.5 * UNIT_SCALE;
 
   const resetView = (viewType: "top" | "bottom" | "left" | "right" | "front" | "back") => {
     const viewPositions = {
-      top: { position: [0, cameraDistance, 0], target: [0, 0, 0] },
-      left: { position: [-cameraDistance, buildingHeight / 2, 0], target: [0, 0, 0] },
-      right: { position: [cameraDistance, buildingHeight / 2, 0], target: [0, 0, 0] },
-      bottom: { position: [0, -cameraDistance, 0], target: [0, 0, 0] },
-      front: { position: [0, buildingHeight / 2, cameraDistance], target: [0, 0, 0] },
-      back: { position: [0, buildingHeight / 2, -cameraDistance], target: [0, 0, 0] },
+      top: { position: [0, 0, cameraDistance], target: [0, 0, buildingVerticalCenter] },
+      left: { position: [-cameraDistance, 0, buildingVerticalCenter], target: [0, 0, buildingVerticalCenter] },
+      right: { position: [cameraDistance, 0, buildingVerticalCenter], target: [0, 0, buildingVerticalCenter] },
+      bottom: { position: [0, 0, -cameraDistance], target: [0, 0, buildingVerticalCenter] },
+      front: { position: [0, cameraDistance, buildingVerticalCenter], target: [0, 0, buildingVerticalCenter] },
+      back: { position: [0, -cameraDistance, buildingVerticalCenter], target: [0, 0, buildingVerticalCenter] },
     };
 
     const { position, target } = viewPositions[viewType];
 
-    // Set target position and start transition
-    setTargetPosition(new Vector3(position[0], position[1], position[2]));
-    setTargetLookAt(new Vector3(target[0], target[1], target[2]));
-    setIsTransitioning(true);
+    if (orbitControlsRef?.current) {
+      const controls = orbitControlsRef.current;
+      const camera = controls.object;
+
+      if (camera) {
+        camera.position.set(position[0], position[1], position[2]);
+        camera.lookAt(target[0], target[1], target[2]);
+      }
+
+      controls.target.set(target[0], target[1], target[2]);
+      controls.update();
+    }
   };
 
   const toggleCameraType = () => {

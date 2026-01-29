@@ -3,7 +3,7 @@ import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { converter, formatHex, interpolate } from "culori";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Color, Vector3 } from "three";
-import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
+import { PlaybackControls, usePlayback } from "@/components/playback/PlaybackControls";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 import { SmallTimeline } from "../../components/SmallTimeline";
 
@@ -170,11 +170,11 @@ export function ViewTemporalRibbons() {
         .map((n) => n.story)
         .filter((v, i, a) => a.indexOf(v) === i)
         .sort((a, b) => parseInt(b.replace("S", "")) - parseInt(a.replace("S", ""))),
-    [animationData.nodes]
+    [animationData.nodes],
   );
 
   const [visibleStories, setVisibleStories] = useState<Record<string, boolean>>(() =>
-    storyIds.reduce((acc, id) => ({ ...acc, [id]: true }), {})
+    storyIds.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
   );
   const [viewMode, setViewMode] = useState<ViewMode>("storyCenters");
   const [xzScale, setXzScale] = useState(1);

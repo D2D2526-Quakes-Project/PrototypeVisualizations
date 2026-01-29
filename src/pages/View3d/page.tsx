@@ -1,111 +1,93 @@
 import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { DockviewWrapper } from "@/components/dockviewWrapper";
-import { FloatingPanelManager } from "@/components/FloatingPanelManager";
-import { NodeSelectionProvider } from "@/contexts/NodeSelectionContext";
+import { useNodeSelection } from "@/contexts/NodeSelectionContext";
 import { PlaybackControls } from "@/components/playback/PlaybackControls";
 import { Timeline } from "@/components/Timeline";
-import { type DockviewApi, type IDockviewPanelProps } from "dockview";
+import {
+  DockviewApi,
+  type IDockviewPanelProps,
+  type DockviewReadyEvent,
+  type IDockviewPanelHeaderProps,
+} from "dockview";
 import { BuildingScene } from "./BuildingScene";
 import { InterstoryDriftChart } from "./InterstoryDriftChart";
 import { PlaybackProvider } from "@/components/playback/PlaybackContext";
+import { NodeSelectionProvider } from "@/contexts/NodeSelectionContext";
+import { NodePanel, NodeTab } from "@/components/NodePanel"; // Import your new panel
 
-// Define panel components
+// --- Panel Definitions ---
+
 const MainCanvasPanel = (_props: IDockviewPanelProps) => (
   <div className="relative w-full h-full">
     <CanvasWithControls>
       <BuildingScene />
     </CanvasWithControls>
-
     <div className="absolute bottom-0 left-0 right-0 flex justify-between w-full border-t-2 border-neutral-300 bg-neutral-200/80 backdrop-blur-sm p-2">
       <PlaybackControls />
-      <div className="flex items-center gap-2">
-        <label className="flex gap-2 whitespace-nowrap">
-          <input
-            type="range"
-            min="0"
-            max={1}
-            step={0.0001}
-            // value={props.params.scale}
-            // onChange={props.params.handleScaleChange}
-            className="w-full"
-          />
-          {/* Scale: {props.params.scale.toFixed(2)} */}
-        </label>
-        <label className="flex gap-2 whitespace-nowrap">
-          <input
-            type="range"
-            min="0"
-            max={20}
-            step={0.1}
-            // value={props.params.displacementScale}
-            // onChange={props.params.handleDisplacementScaleChange}
-            className="w-full"
-          />
-          {/* XZ: {props.params.displacementScale.toFixed(2)} */}
-        </label>
-      </div>
     </div>
   </div>
 );
-const TimelinePanel = (props: IDockviewPanelProps) => <Timeline {...props} />;
 
+const TimelinePanel = (props: IDockviewPanelProps) => <Timeline {...props} />;
 const ChartPanel = (_props: IDockviewPanelProps) => <InterstoryDriftChart />;
 
+// --- Components Map ---
+const components = {
+  mainCanvas: MainCanvasPanel,
+  timeline: TimelinePanel,
+  chart: ChartPanel,
+  nodePanel: NodePanel, // Register the node panel
+};
+
+const tabComponents = {
+  default: (props: IDockviewPanelHeaderProps<{ title: string }>) => {
+    return (
+      <div className="my-custom-tab">
+        <span>{props.params.title}</span>
+        <span style={{ flexGrow: 1 }} />
+
+        <span className="my-custom-tab-icon material-symbols-outlined">minimize</span>
+        <span className="my-custom-tab-icon material-symbols-outlined">maximize</span>
+        <span className="my-custom-tab-icon material-symbols-outlined">close</span>
+      </div>
+    );
+  },
+  nodeTab: NodeTab,
+};
+
 export function View3d() {
-  // /**
-  //  * Displacement scales
-  //  */
-  // const [scale, setScale] = useState(1);
-  // const [displacementScale, setDisplacementScale] = useState(1);
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      <PlaybackProvider>
+        <NodeSelectionProvider>
+          <DockviewContainer />
+        </NodeSelectionProvider>
+      </PlaybackProvider>
+    </div>
+  );
+}
 
-  // /**
-  //  * Dockview state
-  //  */
-  // const dockviewApi = useRef<DockviewApi | null>(null);
-  // const [currentLayout, setCurrentLayout] = useState<any>(null);
+// Internal wrapper to access the NodeSelectionContext
+function DockviewContainer() {
+  const { setDockviewApi } = useNodeSelection();
 
-  // function handleScaleChange(e: React.ChangeEvent<HTMLInputElement>) {
-  //   setScale(parseFloat(e.target.value));
-  // }
+  const handleDockviewReady = (event: DockviewReadyEvent) => {
+    // 1. Give the API to our context so the 3D scene can use it
+    setDockviewApi(event.api);
 
-  // function handleDisplacementScaleChange(e: React.ChangeEvent<HTMLInputElement>) {
-  //   setDisplacementScale(parseFloat(e.target.value));
-  // }
-
-  const components = {
-    mainCanvas: MainCanvasPanel,
-    timeline: TimelinePanel,
-    chart: ChartPanel,
+    // 2. Create the default layout
+    createDefaultLayout(event.api);
   };
 
-  // const handleDockviewReady = (event: DockviewReadyEvent) => {
-  //   const api = event.api;
-  //   // dockviewApi.current = api;
-
-  //   // Check for layout in URL first and remove it
-  //   const urlLayout = getLayoutFromCurrentUrl();
-  //   if (urlLayout) {
-  //     removeLayoutFromUrl();
-  //     // setCurrentLayout(urlLayout);
-  //   }
-
-  //   // Setup layout change listener (will also be handled by DockviewWrapper)
-  //   api.onDidLayoutChange(() => {
-  //     const layout = api.toJSON();
-  //     // setCurrentLayout(layout);
-  //   });
-
-  //   createDefaultLayout(api);
-  // };
-
   const createDefaultLayout = (api: DockviewApi) => {
-    // Create default layout similar to the original resizable panels
+    // Main 3D View
     api.addPanel({
       id: "main-canvas",
       component: "mainCanvas",
       title: "3D View",
     });
 
+    // Timeline at the bottom
     const timelinePanel = api.addPanel({
       id: "timeline",
       component: "timeline",
@@ -113,6 +95,7 @@ export function View3d() {
       position: { direction: "below" },
     });
 
+    // Chart to the right of the timeline
     api.addPanel({
       id: "chart",
       component: "chart",
@@ -122,23 +105,12 @@ export function View3d() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <PlaybackProvider>
-        <NodeSelectionProvider>
-          <DockviewWrapper
-            components={components}
-            // onReady={handleDockviewReady}
-            // initialLayout={getLayoutFromCurrentUrl() || loadLayoutFromLocalStorage() || undefined}
-            // onLayoutChange={(layout: SerializedDockview) => {
-            //   // setCurrentLayout(layout);
-            //   saveLayoutToLocalStorage(layout);
-            // }}
-            createDefaultLayout={createDefaultLayout}
-            className="flex-1"
-          />
-          <FloatingPanelManager />
-        </NodeSelectionProvider>
-      </PlaybackProvider>
-    </div>
+    <DockviewWrapper
+      components={components}
+      tabComponents={tabComponents}
+      onReady={handleDockviewReady}
+      className="flex-1"
+      singleTabMode="fullwidth"
+    />
   );
 }

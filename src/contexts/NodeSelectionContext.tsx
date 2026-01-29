@@ -1,24 +1,12 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-
-export interface FloatingPanel {
-  id: string;
-  nodeId: number;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  isMinimized: boolean;
-  zIndex: number;
-}
+import { DockviewApi } from "dockview";
 
 export interface NodeSelectionContextType {
   selectedNode: number | null;
-  floatingPanels: FloatingPanel[];
+  // We store the API here so the 3D scene can call it
+  setDockviewApi: (api: DockviewApi) => void;
   selectNode: (nodeId: number, screenPosition: { x: number; y: number }) => void;
   deselectNode: () => void;
-  addFloatingPanel: (nodeId: number, position: { x: number; y: number }) => void;
-  removeFloatingPanel: (panelId: string) => void;
-  updatePanelPosition: (panelId: string, position: { x: number; y: number }) => void;
-  togglePanelMinimized: (panelId: string) => void;
-  bringToFront: (panelId: string) => void;
 }
 
 const NodeSelectionContext = createContext<NodeSelectionContextType | undefined>(undefined);
@@ -31,93 +19,55 @@ export function useNodeSelection() {
   return context;
 }
 
-interface NodeSelectionProviderProps {
-  children: ReactNode;
-}
-
-export function NodeSelectionProvider({ children }: NodeSelectionProviderProps) {
+export function NodeSelectionProvider({ children }: { children: ReactNode }) {
   const [selectedNode, setSelectedNode] = useState<number | null>(null);
-  const [floatingPanels, setFloatingPanels] = useState<FloatingPanel[]>([]);
-  const [nextZIndex, setNextZIndex] = useState(1000);
+  const [api, setApi] = useState<DockviewApi | null>(null);
 
-  const selectNode = useCallback((nodeId: number, screenPosition: { x: number; y: number }) => {
-    setSelectedNode(nodeId);
-    // Automatically create a floating panel when a node is selected
-    addFloatingPanel(nodeId, screenPosition);
+  const setDockviewApi = useCallback((dockviewApi: DockviewApi) => {
+    setApi(dockviewApi);
   }, []);
+
+  const selectNode = useCallback(
+    (nodeId: number, screenPosition: { x: number; y: number }) => {
+      if (!api) return;
+
+      setSelectedNode(nodeId);
+
+      const panelId = `node-panel-${nodeId}`;
+      const existingPanel = api.getPanel(panelId);
+
+      if (existingPanel) {
+        // If it exists, just bring it to the front
+        existingPanel.focus();
+        return;
+      }
+
+      // Create the panel as a floating group initially
+      api.addPanel({
+        id: panelId,
+        component: "nodePanel", // We will register this in the next step
+        tabComponent: "nodeTab",
+        title: `Node ${nodeId}`,
+        params: { nodeId }, // Pass the nodeId to the component
+        maximumWidth: 300,
+        position: { direction: "right" },
+      });
+    },
+    [api],
+  );
 
   const deselectNode = useCallback(() => {
     setSelectedNode(null);
   }, []);
 
-  const addFloatingPanel = useCallback((nodeId: number, position: { x: number; y: number }) => {
-    const panelId = `panel-${nodeId}-${Date.now()}`;
-    const newPanel: FloatingPanel = {
-      id: panelId,
-      nodeId,
-      position: {
-        x: Math.max(0, Math.min(position.x - 150, window.innerWidth - 320)),
-        y: Math.max(0, Math.min(position.y - 100, window.innerHeight - 250))
-      },
-      size: { width: 300, height: 200 },
-      isMinimized: false,
-      zIndex: nextZIndex
-    };
-
-    setFloatingPanels(prev => [...prev, newPanel]);
-    setNextZIndex(prev => prev + 1);
-  }, [nextZIndex]);
-
-  const removeFloatingPanel = useCallback((panelId: string) => {
-    setFloatingPanels(prev => prev.filter(panel => panel.id !== panelId));
-  }, []);
-
-  const updatePanelPosition = useCallback((panelId: string, position: { x: number; y: number }) => {
-    setFloatingPanels(prev => 
-      prev.map(panel => 
-        panel.id === panelId 
-          ? { ...panel, position }
-          : panel
-      )
-    );
-  }, []);
-
-  const togglePanelMinimized = useCallback((panelId: string) => {
-    setFloatingPanels(prev => 
-      prev.map(panel => 
-        panel.id === panelId 
-          ? { ...panel, isMinimized: !panel.isMinimized }
-          : panel
-      )
-    );
-  }, []);
-
-  const bringToFront = useCallback((panelId: string) => {
-    setFloatingPanels(prev => {
-      const maxZIndex = Math.max(...prev.map(p => p.zIndex));
-      return prev.map(panel => 
-        panel.id === panelId 
-          ? { ...panel, zIndex: maxZIndex + 1 }
-          : panel
-      );
-    });
-    setNextZIndex(prev => prev + 1);
-  }, []);
-
-  const value: NodeSelectionContextType = {
-    selectedNode,
-    floatingPanels,
-    selectNode,
-    deselectNode,
-    addFloatingPanel,
-    removeFloatingPanel,
-    updatePanelPosition,
-    togglePanelMinimized,
-    bringToFront
-  };
-
   return (
-    <NodeSelectionContext.Provider value={value}>
+    <NodeSelectionContext.Provider
+      value={{
+        selectedNode,
+        setDockviewApi,
+        selectNode,
+        deselectNode,
+      }}>
       {children}
     </NodeSelectionContext.Provider>
   );

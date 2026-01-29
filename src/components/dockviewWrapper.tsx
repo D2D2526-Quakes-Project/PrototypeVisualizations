@@ -1,24 +1,22 @@
-import React from "react";
-import { DockviewReact, themeLight } from "dockview";
-import type { DockviewApi, DockviewReadyEvent, IDockviewPanelProps, SerializedDockview } from "dockview";
+import type { DockviewApi, DockviewReadyEvent, IDockviewReactProps, SerializedDockview } from "dockview";
+import { DockviewReact, themeLight, themeLightSpaced } from "dockview";
 import "dockview/dist/styles/dockview.css";
 
-export interface DockviewWrapperProps {
+export type DockviewWrapperProps = {
   className?: string;
   onReady?: (event: DockviewReadyEvent) => void;
-  components: Record<string, React.FC<IDockviewPanelProps>>;
   initialLayout?: SerializedDockview;
   onLayoutChange?: (layout: SerializedDockview) => void;
   createDefaultLayout?: (api: DockviewApi) => void;
-}
+} & IDockviewReactProps;
 
 export function DockviewWrapper({
   className,
   onReady,
-  components,
   initialLayout,
   onLayoutChange,
   createDefaultLayout,
+  ...props
 }: DockviewWrapperProps) {
   const handleReady = (event: DockviewReadyEvent) => {
     const api = event.api;
@@ -49,9 +47,9 @@ export function DockviewWrapper({
   return (
     <DockviewReact
       className={`dockview-theme-light ${className || ""}`}
-      components={components}
       onReady={handleReady}
       theme={themeLight}
+      {...props}
     />
   );
 }

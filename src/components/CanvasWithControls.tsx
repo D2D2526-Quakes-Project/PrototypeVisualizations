@@ -61,7 +61,8 @@ function CameraManager({
       perspective.updateProjectionMatrix();
       set({ camera: perspective });
     }
-  }, [isOrthographic, camera, set, orbitControlsRef, perspectiveCamRef, orthoCamRef, size]);
+    console.log("tjgs");
+  }, [orbitControlsRef, perspectiveCamRef, orthoCamRef]);
 
   return (
     <>

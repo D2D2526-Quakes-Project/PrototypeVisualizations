@@ -147,3 +147,25 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* 1. Make the dockview group content transparent so we see the 3D scene */
+.dockview-theme-light {
+  --dv-groupview-background-color: transparent;
+  --dv-paneview-active-outline-color: transparent;
+}
+
+/* 2. Hide the default tab header for our node panels to create the 'stack' look */
+/* Note: We target groups that contain our nodePanel component */
+.dockview-groupview:has([data-node-id]) .tabs-container {
+  display: none !important;
+}
+
+/* 3. Ensure the panel content can be transparent */
+.dv-render-container {
+  background: transparent !important;
+}
+
+/* 4. Optional: If you want to hide tabs ONLY for floating panels */
+.dv-floating-group .tabs-container {
+  display: none !important;
+}

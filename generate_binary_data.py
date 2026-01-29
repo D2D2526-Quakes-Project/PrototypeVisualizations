@@ -11,7 +11,7 @@ import os
 FILES = {
     "building": {
         "nodes": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/node_data.csv",
-        "mapping": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/node_mapping.csv",
+        "height": "/Users/aidan/Documents/School/CalTech/Quakes/Visiuals/public/data/15story/building_height.csv",
     },
     "simulation": {
         # Define the files for ONE simulation here
@@ -146,27 +146,106 @@ def process_building():
             buffer[idx * 3 + 1] = row["H2"]
             buffer[idx * 3 + 2] = row["V"]
 
-    # 3. Load Mapping (Stories & Corners)
-    df_map = pd.read_csv(FILES["building"]["mapping"])
+    # 3. Load Stories & Corners
+    df_height = pd.read_csv(FILES["building"]["height"])
+
+    storiesElevations = {}
+    for i, row in df_height.iterrows():
+        story = row["Story level"]
+
+        elevation = row["Story Height (ft)"]
+        for j, row2 in df_height[i:].iterrows():
+            if i == j:
+                continue
+            elevation += row2["Story Height (ft)"]
+
+        storiesElevations[story] = elevation * 12
 
     stories = {}
-    corners = {"NW": [], "NE": [], "SW": [], "SE": []}
+    storiesCorners = {}
 
-    for _, row in df_map.iterrows():
-        nid = row["Node"]
-        if nid in id_to_index:
-            idx = id_to_index[nid]
+    min_x = df_nodes["H1"].min()
+    min_y = df_nodes["H2"].min()
+    min_v = df_nodes["V"].min()
 
-            # Stories
-            story = str(row["Story Level"])
+    for _, row in df_nodes.iterrows():
+        nid = row["Node ID"]
+        idx = id_to_index.get(nid)
+        if idx is not None:
+            x, y, z = row["H1"] - min_x, row["H2"] - min_y, row["V"] - min_v
+            # Find story elevation closest to node
+            stidx = list(storiesElevations.values()).index(z) if z in storiesElevations else None
+            if stidx == None:
+                continue
+            story = list(storiesElevations.keys())[stidx]
             if story not in stories:
                 stories[story] = []
             stories[story].append(idx)
 
-            # Corners
-            c_tag = str(row["Corner"]).strip().upper()
-            if c_tag in corners:
-                corners[c_tag].append(idx)
+            # Put node in corners
+            corners = storiesCorners.get(story)
+            if corners is None:
+                corners = {
+                    "NW": {
+                        "index": idx,
+                        "x": row["H1"],
+                        "y": row["H2"],
+                    },
+                    "NE": {
+                        "index": idx,
+                        "x": row["H1"],
+                        "y": row["H2"],
+                    },
+                    "SW": {
+                        "index": idx,
+                        "x": row["H1"],
+                        "y": row["H2"],
+                    },
+                    "SE": {
+                        "index": idx,
+                        "x": row["H1"],
+                        "y": row["H2"],
+                    },
+                }
+            else:
+                nw = corners["NW"]
+                # Check if node is more northwest
+                if x <= nw["x"] and y >= nw["y"]:
+                    nw["index"] = idx
+                    nw["x"] = x
+                    nw["y"] = y
+
+                ne = corners["NE"]
+                # Check if node is more northeast
+                if x >= ne["x"] and y >= ne["y"]:
+                    ne["index"] = idx
+                    ne["x"] = x
+                    ne["y"] = y
+
+                sw = corners["SW"]
+                # Check if node is more southwest
+                if x <= sw["x"] and y <= sw["y"]:
+                    sw["index"] = idx
+                    sw["x"] = x
+                    sw["y"] = y
+
+                se = corners["SE"]
+                # Check if node is more southeast
+                if x >= se["x"] and y <= se["y"]:
+                    se["index"] = idx
+                    se["x"] = x
+                    se["y"] = y
+
+    corners = {
+        "NW": [],
+        "NE": [],
+        "SW": [],
+        "SE": [],
+    }
+
+    for story, storyCorners in storiesCorners.items():
+        for corner, cornerData in storyCorners.items():
+            corners[corner].append(cornerData["index"])
 
     # 4. Write
     header = {"count_nodes": count_nodes, "stories": stories, "corners": corners}

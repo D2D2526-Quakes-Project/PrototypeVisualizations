@@ -1,12 +1,13 @@
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   OrthographicCamera as OrthographicCameraImpl,
   PerspectiveCamera as PerspectiveCameraImpl,
   Vector3,
 } from "three";
+import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 // This component goes INSIDE the Canvas
 function CameraManager({
@@ -19,7 +20,7 @@ function CameraManager({
   onTransitionComplete,
 }: {
   isOrthographic: boolean;
-  orbitControlsRef: React.MutableRefObject<any>;
+  orbitControlsRef: RefObject<OrbitControlsImpl | null>;
   enableSmoothing: boolean;
   targetPosition: Vector3 | null;
   targetLookAt: Vector3 | null;
@@ -43,7 +44,7 @@ function CameraManager({
   useFrame(() => {
     if (isTransitioning && targetPosition && targetLookAt && orbitControlsRef.current) {
       const controls = orbitControlsRef.current;
-      const cam = controls.object || controls.camera;
+      const cam = controls.object;
 
       if (cam) {
         // Lerp camera position (adjust 0.15 for speed - higher = faster)
@@ -95,7 +96,7 @@ export function CanvasWithControls({ children }: { children: React.ReactNode }) 
   const [targetPosition, setTargetPosition] = useState<Vector3 | null>(null);
   const [targetLookAt, setTargetLookAt] = useState<Vector3 | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const orbitControlsRef = useRef<any>(null);
+  const orbitControlsRef = useRef<OrbitControlsImpl>(null);
 
   const handleTransitionComplete = () => {
     setIsTransitioning(false);

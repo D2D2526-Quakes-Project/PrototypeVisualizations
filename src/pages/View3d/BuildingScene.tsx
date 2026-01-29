@@ -3,23 +3,17 @@ import { converter, formatHex, interpolate } from "culori";
 import React, { useMemo } from "react";
 import { DoubleSide, Vector3 } from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
+import { UNIT_SCALE } from "@/lib/utils";
+import { usePlayback } from "@/components/playback/PlaybackContext";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 const rgbConverter = converter("rgb");
 
-export function BuildingScene({
-  frameIndex,
-  scale,
-  displacementScale,
-}: {
-  frameIndex: number;
-  scale: number;
-  displacementScale: number;
-}) {
+export function BuildingScene() {
   const { animationData } = useAnimationData();
-  // const frame = animationData.frames[frameIndex];
+  const { frameIndex } = usePlayback();
 
   const initalPositions = animationData.initialPositions;
 
@@ -43,6 +37,18 @@ export function BuildingScene({
   //   }
   //   return nodes;
   // }, [initalPositions, animationData.metadata.nodeCount]);
+
+  const nodeCount = animationData.metadata.nodeCount;
+
+  const positions = new Float32Array(nodeCount * 3);
+
+  for (let i = 0; i < nodeCount; i++) {
+    const pos = animationData.initialPositions.at(i);
+    const displacement = animationData.displacement.at(frameIndex).at(i);
+    positions[i * 3 + 0] = pos[0] + displacement[0];
+    positions[i * 3 + 1] = pos[1] + displacement[1];
+    positions[i * 3 + 2] = pos[2] + displacement[2];
+  }
 
   return (
     <>
@@ -82,9 +88,9 @@ export function BuildingScene({
         );
       })} */}
 
-      <group scale={scale}>
+      <group scale={UNIT_SCALE}>
         <group position={[offsetX, offsetY, offsetZ]}>
-          <Points positions={initalPositions.data} stride={3}>
+          <Points positions={positions} stride={3} frustumCulled={false}>
             <PointMaterial transparent color="#ff0a5e" size={5} sizeAttenuation={false} depthWrite={false} />
           </Points>
         </group>

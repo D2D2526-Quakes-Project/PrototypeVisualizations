@@ -29,6 +29,12 @@ importers:
       culori:
         specifier: ^4.0.2
         version: 4.0.2
+      dockview:
+        specifier: ^4.13.1
+        version: 4.13.1(react@19.2.0)
+      dockview-react:
+        specifier: ^4.13.1
+        version: 4.13.1(react@19.2.0)
       lucide-react:
         specifier: ^0.552.0
         version: 0.552.0(react@19.2.0)
@@ -56,6 +62,9 @@ importers:
       three:
         specifier: ^0.181.0
         version: 0.181.0
+      three-stdlib:
+        specifier: 2.36.0
+        version: 2.36.0(three@0.181.0)
     devDependencies:
       '@eslint/js':
         specifier: ^9.36.0
@@ -76,14 +85,14 @@ importers:
         specifier: ^5.0.4
         version: 5.1.0(vite@7.2.0(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2))
       babel-plugin-react-compiler:
-        specifier: ^19.1.0-rc.3
-        version: 19.1.0-rc.1-rc-af1b7da-20250421
+        specifier: ^1.0.0
+        version: 1.0.0
       eslint:
         specifier: ^9.36.0
         version: 9.39.1(jiti@2.6.1)
       eslint-plugin-react-hooks:
-        specifier: ^5.2.0
-        version: 5.2.0(eslint@9.39.1(jiti@2.6.1))
+        specifier: ^7.0.1
+        version: 7.0.1(eslint@9.39.1(jiti@2.6.1))
       eslint-plugin-react-refresh:
         specifier: ^0.4.22
         version: 0.4.24(eslint@9.39.1(jiti@2.6.1))
@@ -836,9 +845,8 @@ packages:
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
-  babel-plugin-react-compiler@19.1.0-rc.1-rc-af1b7da-20250421:
-    resolution: {integrity: sha512-E3kaokBhWDLf7ZD8fuYjYn0ZJHYZ+3EHtAWCdX2hl4lpu1z9S/Xr99sxhx2bTCVB41oIesz9FtM8f4INsrZaOw==}
-    deprecated: Wrong version name was published
+  babel-plugin-react-compiler@1.0.0:
+    resolution: {integrity: sha512-Ixm8tFfoKKIPYdCCKYTsqv+Fd4IJ0DQqMyEimo+pxUOMUR9cVPlwTrFt9Avu+3cb6Zp3mAzl+t1MrG2fxxKsxw==}
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -947,6 +955,17 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
+  dockview-core@4.13.1:
+    resolution: {integrity: sha512-+7vR0ZEoL8CNck6NqDVUMqBT22niwBu5CMMI137dZ3c8NDc7c5Si+3dGEqQgM4lNtHBLAtvypo1C4p21J2wkiQ==}
+
+  dockview-react@4.13.1:
+    resolution: {integrity: sha512-xnK0mUq+gzME/QyzM5nn+SsQO26AA2qZlCuqi1KX7wux52KIUSMraQHN5AY9Qm2qCVb/NHhCZoZNSysb/GS79A==}
+
+  dockview@4.13.1:
+    resolution: {integrity: sha512-K8xnYt3Rvkx8MYKHaEsb8aFaPyQclKRRkXS9JcpQPZUgqxumTLnSidgdd6uIfzEps6yJsXoZGQGJ9PtcaKyDcQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
 
@@ -970,9 +989,9 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-plugin-react-hooks@5.2.0:
-    resolution: {integrity: sha512-+f15FfK64YQwZdJNELETdn5ibXEUQmW1DZL6KXhNnc2heoy/sg9VJJeT7n8TlMWouzWqSWavFkIhHyIbIAEapg==}
-    engines: {node: '>=10'}
+  eslint-plugin-react-hooks@7.0.1:
+    resolution: {integrity: sha512-O0d0m04evaNzEPoSW+59Mezf8Qt0InfgGIBJnpC0h3NH/WjUAR7BIKUfysC6todmtiZ/A0oUVS8Gce0WhBrHsA==}
+    engines: {node: '>=18'}
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
 
@@ -1124,6 +1143,12 @@ packages:
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
+
+  hermes-estree@0.25.1:
+    resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
+
+  hermes-parser@0.25.1:
+    resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
   hls.js@1.6.14:
     resolution: {integrity: sha512-CSpT2aXsv71HST8C5ETeVo+6YybqCpHBiYrCRQSn3U5QUZuLTSsvtq/bj+zuvjLVADeKxoebzo16OkH8m1+65Q==}
@@ -1693,6 +1718,15 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  zod-validation-error@4.0.2:
+    resolution: {integrity: sha512-Q6/nZLe6jxuU80qb/4uJ4t5v2VEZ44lzQjPDhYJNztRQ4wyWc6VF3D3Kb/fAuPetZQnhS3hnajCf9CsWesghLQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
   zustand@4.5.7:
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
@@ -2409,7 +2443,7 @@ snapshots:
 
   argparse@2.0.1: {}
 
-  babel-plugin-react-compiler@19.1.0-rc.1-rc-af1b7da-20250421:
+  babel-plugin-react-compiler@1.0.0:
     dependencies:
       '@babel/types': 7.28.5
 
@@ -2506,6 +2540,19 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
+  dockview-core@4.13.1: {}
+
+  dockview-react@4.13.1(react@19.2.0):
+    dependencies:
+      dockview: 4.13.1(react@19.2.0)
+    transitivePeerDependencies:
+      - react
+
+  dockview@4.13.1(react@19.2.0):
+    dependencies:
+      dockview-core: 4.13.1
+      react: 19.2.0
+
   draco3d@1.5.7: {}
 
   electron-to-chromium@1.5.245: {}
@@ -2548,9 +2595,16 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-plugin-react-hooks@5.2.0(eslint@9.39.1(jiti@2.6.1)):
+  eslint-plugin-react-hooks@7.0.1(eslint@9.39.1(jiti@2.6.1)):
     dependencies:
+      '@babel/core': 7.28.5
+      '@babel/parser': 7.28.5
       eslint: 9.39.1(jiti@2.6.1)
+      hermes-parser: 0.25.1
+      zod: 4.3.6
+      zod-validation-error: 4.0.2(zod@4.3.6)
+    transitivePeerDependencies:
+      - supports-color
 
   eslint-plugin-react-refresh@0.4.24(eslint@9.39.1(jiti@2.6.1)):
     dependencies:
@@ -2703,6 +2757,12 @@ snapshots:
   graphemer@1.4.0: {}
 
   has-flag@4.0.0: {}
+
+  hermes-estree@0.25.1: {}
+
+  hermes-parser@0.25.1:
+    dependencies:
+      hermes-estree: 0.25.1
 
   hls.js@1.6.14: {}
 
@@ -3165,6 +3225,12 @@ snapshots:
   yallist@3.1.1: {}
 
   yocto-queue@0.1.0: {}
+
+  zod-validation-error@4.0.2(zod@4.3.6):
+    dependencies:
+      zod: 4.3.6
+
+  zod@4.3.6: {}
 
   zustand@4.5.7(@types/react@19.2.2)(react@19.2.0):
     dependencies:

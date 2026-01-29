@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
 
-export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
+export function SmallTimeline({
+  frameIndex,
+  onFrameChange,
+}: {
+  frameIndex: number;
+  onFrameChange: (index: number | ((prevState: number) => number)) => void;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const { animationData } = useAnimationData();
 
@@ -9,7 +15,7 @@ export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: numbe
    * Displacement Data
    */
 
-  const maxFrame = animationData.frames.length - 1;
+  const maxFrame = animationData.metadata.frameCount - 1;
   const graphData = animationData.frames.map((f) => Math.hypot(...f.groundMotion));
 
   const maxGraphData = Math.max(...graphData);
@@ -89,13 +95,30 @@ export function SmallTimeline({ frameIndex, onFrameChange }: { frameIndex: numbe
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
-  const linePoints = graphData.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minGraphData) / displacementRange) * chartHeight}`).join(" ");
+  const linePoints = graphData
+    .map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minGraphData) / displacementRange) * chartHeight}`)
+    .join(" ");
   const strokeColor = "stroke-amber-400";
 
   return (
     <div ref={panelRef} className="h-full w-full">
-      <svg ref={svgRef} className="select-none cursor-crosshair" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
-        <line transform={playheadTransform} x1={0} y1="-100" x2={0} y2="100" className="stroke-neutral-300" strokeWidth="0.2" />
+      <svg
+        ref={svgRef}
+        className="select-none cursor-crosshair"
+        width="100%"
+        viewBox={`0 0 100 ${viewBoxHeight}`}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}>
+        <line
+          transform={playheadTransform}
+          x1={0}
+          y1="-100"
+          x2={0}
+          y2="100"
+          className="stroke-neutral-300"
+          strokeWidth="0.2"
+        />
         <polyline points={linePoints} fill="none" className={strokeColor} strokeWidth="0.2" />
         <circle transform={playheadTransform} r=".5" className="fill-amber-500" />
       </svg>

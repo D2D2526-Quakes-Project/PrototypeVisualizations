@@ -2,7 +2,6 @@ import type {
   BinaryBuilding,
   BinarySimulation,
   Building,
-  CSVBuilding,
   CSVSimulation,
   Simulation,
   BuildingAnimationData,
@@ -18,9 +17,9 @@ import { fetchWithProgressAndCache } from "@/lib/dataLoader";
 export type AnimationDataContextType = {
   animationData: BuildingAnimationData;
   loading: boolean;
-  currentBuilding: Building;
-  currentSimulation: Simulation;
-  loadSelection: (building: Building, simulation: Simulation) => void;
+  currentBuilding: BinaryBuilding;
+  currentSimulation: BinarySimulation;
+  loadSelection: (building: BinaryBuilding, simulation: BinarySimulation) => void;
   clearSelection: () => void;
 };
 
@@ -38,8 +37,8 @@ export function useAnimationData() {
 export function AnimationDataProvider({ children }: { children: React.ReactNode }) {
   const [animationData, setAnimationData] = useState<BuildingAnimationData | null>(null);
 
-  const [currentBuilding, setCurrentBuilding] = useState<Building | null>(null);
-  const [currentSimulation, setCurrentSimulation] = useState<Simulation | null>(null);
+  const [currentBuilding, setCurrentBuilding] = useState<BinaryBuilding | null>(null);
+  const [currentSimulation, setCurrentSimulation] = useState<BinarySimulation | null>(null);
 
   const [progress, setProgress] = useState<number>(0);
   const [progressMessage, setProgressMessage] = useState<string>("");
@@ -47,7 +46,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const [error, setError] = useState<unknown>(null);
   const [needsSelection, setNeedsSelection] = useState(false);
 
-  const updateUrl = (building: Building | null, simulation: Simulation | null) => {
+  const updateUrl = (building: BinaryBuilding | null, simulation: BinarySimulation | null) => {
     const url = new URL(window.location.href);
 
     if (building && simulation) {
@@ -60,110 +59,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
     window.history.pushState({}, "", url);
   };
-
-  const loadCSVData = useCallback(async (building: CSVBuilding, simulation: CSVSimulation) => {
-    setLoading(true);
-    setError(null);
-    setProgress(0);
-    setProgressMessage("");
-    setAnimationData(null);
-
-    try {
-      const buildingFolder = `/data/${building.folder}`;
-      const simulationFolder = `/data/${building.folder}/${simulation.folder}`;
-      console.log(buildingFolder, simulationFolder);
-
-      // setProgress(5);
-      // setProgressMessage("Loading Data");
-
-      // const totalFiles =
-      //   4 + simulation.displacementFiles.length + simulation.accelerationFiles.length + simulation.velocityFiles.length;
-      // let loadedFiles = 0;
-      // function completeFile() {
-      //   loadedFiles++;
-      //   setProgress(5 + (loadedFiles / totalFiles) * 20);
-      //   setProgressMessage("Loading " + loadedFiles + "/" + totalFiles);
-      //   // await new Promise((r) => setTimeout(r, 0));
-      // }
-
-      // const nodeMappingCsvPromise = fetch(`${buildingFolder}/${building.node_map}`).then(
-      //   (r) => (completeFile(), r.text()),
-      // );
-      // const buildingHeightCsvPromise = fetch(`${buildingFolder}/${building.height_map}`).then(
-      //   (r) => (completeFile(), r.text()),
-      // );
-      // const buildingCenterCsvPromise = fetch(`${buildingFolder}/${building.center_map}`).then(
-      //   (r) => (completeFile(), r.text()),
-      // );
-      // const groundMotionCsvPromise = fetch(`${simulationFolder}/ground_motion.txt`).then(
-      //   (r) => (completeFile(), r.text()),
-      // );
-
-      // const displacementFilesPromise = Promise.all(
-      //   simulation.displacementFiles.map((f) =>
-      //     fetch(`${simulationFolder}/Displacements/${f}`)
-      //       .then((r) => (completeFile(), r.text()))
-      //       .then((text) => ({ filename: f, text })),
-      //   ),
-      // );
-      // const accelerationFilesPromise = Promise.all(
-      //   simulation.accelerationFiles.map((f) =>
-      //     fetch(`${simulationFolder}/Accelerations/${f}`)
-      //       .then((r) => (completeFile(), r.text()))
-      //       .then((text) => ({ filename: f, text })),
-      //   ),
-      // );
-      // const velocityFilesPromise = Promise.all(
-      //   simulation.velocityFiles.map((f) =>
-      //     fetch(`${simulationFolder}/Velocities/${f}`)
-      //       .then((r) => (completeFile(), r.text()))
-      //       .then((text) => ({ filename: f, text })),
-      //   ),
-      // );
-
-      // await Promise.all([
-      //   nodeMappingCsvPromise,
-      //   buildingHeightCsvPromise,
-      //   buildingCenterCsvPromise,
-      //   groundMotionCsvPromise,
-      //   displacementFilesPromise,
-      //   accelerationFilesPromise,
-      //   velocityFilesPromise,
-      // ]);
-
-      // const nodeMappingCsv = await nodeMappingCsvPromise;
-      // const groundMotionCsv = await groundMotionCsvPromise;
-      // const dataFiles = Object.fromEntries((await displacementFilesPromise).map((f) => [f.filename, f.text]));
-
-      // console.log(dataFiles);
-
-      // await new Promise((r) => setTimeout(r, 0));
-
-      // // const built = await buildAnimationData(
-      // //   nodeMappingCsv,
-      // //   groundMotionCsv,
-      // //   dataFiles,
-      // //   async (p: number, msg?: string) => {
-      // //     if (p !== -1) setProgress(25 + p * 0.75);
-      // //     if (msg) setProgressMessage(msg);
-      // //     await new Promise((r) => setTimeout(r, 0));
-      // //   },
-      // // );
-      // // console.log(built);
-
-      // setProgress(100);
-      // setProgressMessage("Done!");
-      // // setAnimationData(built);
-
-      // await new Promise((r) => setTimeout(r, 200));
-
-      // setLoading(false);
-    } catch (err) {
-      console.error(err);
-      setError(err);
-      setLoading(false);
-    }
-  }, []);
 
   const loadBinaryData = useCallback(async (building: BinaryBuilding, simulation: BinarySimulation) => {
     setLoading(true);
@@ -266,19 +161,15 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   }, []);
 
   const loadSelection = useCallback(
-    (building: Building, simulation: Simulation) => {
+    (building: BinaryBuilding, simulation: BinarySimulation) => {
       setCurrentBuilding(building);
       setCurrentSimulation(simulation);
       setNeedsSelection(false);
       updateUrl(building, simulation);
 
-      if (building.data_type === "csv") {
-        loadCSVData(building, simulation as CSVSimulation);
-      } else {
-        loadBinaryData(building, simulation as BinarySimulation);
-      }
+      loadBinaryData(building, simulation as BinarySimulation);
     },
-    [loadBinaryData, loadCSVData],
+    [loadBinaryData],
   );
 
   const clearSelection = useCallback(() => {
@@ -295,23 +186,19 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
     if (building && simulation) {
       const b = DataSources.buildings.find((b) => b.folder === building);
-      if (b) {
+      if (b && b.data_type === "binary") {
         const s = b.simulations.find((s: Simulation) => s.folder === simulation);
         if (s) {
           setCurrentBuilding(b);
           setCurrentSimulation(s);
-          if (b.data_type === "csv") {
-            loadCSVData(b, s as CSVSimulation);
-          } else {
-            loadBinaryData(b, s as BinarySimulation);
-          }
+          loadBinaryData(b, s);
           return;
         }
       }
     }
 
     setNeedsSelection(true);
-  }, []);
+  }, [loadBinaryData]);
 
   const providerValue = {
     animationData: animationData!,
@@ -376,7 +263,11 @@ function LoadingOverlay({
   );
 }
 
-function SimulationPickerOverlay({ onSelect }: { onSelect: (building: Building, simulation: Simulation) => void }) {
+function SimulationPickerOverlay({
+  onSelect,
+}: {
+  onSelect: (building: BinaryBuilding, simulation: BinarySimulation) => void;
+}) {
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
 
   return (
@@ -405,7 +296,7 @@ function SimulationPickerOverlay({ onSelect }: { onSelect: (building: Building, 
                 key={b.folder}
                 className={`${selectedBuilding == b ? "border-amber-400" : "border-transparent"} border-l-2 px-1 pt-1 pb-3 transition-colors`}>
                 <button
-                  onClick={() => setSelectedBuilding((ex) => (ex == b ? null : b))}
+                  onClick={() => setSelectedBuilding((ex) => (ex == b ? null : b.data_type === "binary" ? b : null))}
                   disabled={b.data_type === "csv"}
                   className={`w-full overflow-clip px-4 py-3 flex items-baseline justify-between bg-neutral-200 cursor-pointer rounded hover:bg-neutral-200/50 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50 ${incompleteWarning ? "incomplete-warning" : ""}`}>
                   <span className="font-semibold text-neutral-800">{b.name}</span>
@@ -468,7 +359,10 @@ function SimulationPickerOverlay({ onSelect }: { onSelect: (building: Building, 
                         return (
                           <button
                             key={s.folder}
-                            onClick={() => onSelect(selectedBuilding, s)}
+                            onClick={() =>
+                              selectedBuilding.data_type === "binary" &&
+                              onSelect(selectedBuilding, s as BinarySimulation)
+                            }
                             className={`flex justify-between items-baseline px-2 pt-3 border-b-2 border-black cursor-pointer hover:border-amber-400 transition-colors group ${incompleteWarning ? "incomplete-warning" : ""}`}>
                             <span className="font-medium text-neutral-700">
                               {s.name}

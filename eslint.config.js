@@ -19,5 +19,22 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      "react-refresh/only-export-components": [
+        "off",
+        {
+          allowConstantExport: true,
+        },
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        "error", // or "warn"
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
+    },
   },
 ]);

@@ -1,16 +1,13 @@
 import React, { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
+import type { IDockviewPanelProps } from "dockview";
+import { usePlayback } from "./playback/PlaybackContext";
 
 const DisplacentViews = ["X Ground Motion", "Y Ground Motion", "Z Ground Motion", "Ground Motion"] as const;
 
-export function Timeline({
-  frameIndex,
-  onFrameChange,
-}: {
-  frameIndex: number;
-  onFrameChange: (index: number | ((prevState: number) => number)) => void;
-}) {
+export function Timeline({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
+  const { frameIndex, setFrameIndex } = usePlayback();
 
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -51,7 +48,7 @@ export function Timeline({
       case "Ground Motion":
       default:
         return {
-          accessor: (idx: number) => animationData.precomputed.groundMotion.magnitude.at(idx)!,
+          accessor: (idx: number) => animationData.precomputed.groundMotion.magnitude.at(idx),
           min: animationData.precomputed.groundMotion.minMagnitude,
           max: animationData.precomputed.groundMotion.maxMagnitude,
           strokeColor: "stroke-amber-400",
@@ -73,20 +70,33 @@ export function Timeline({
   useEffect(() => {
     if (!panelRef.current) return;
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      setAspectRatio(entry.contentRect.height / entry.contentRect.width);
-    });
-
-    resizeObserver.observe(panelRef.current);
-
-    const rect = panelRef.current.getBoundingClientRect();
-    setAspectRatio(rect.height / rect.width);
-
-    return () => {
-      resizeObserver.disconnect();
+    const updateAspectRatio = () => {
+      const rect = panelRef.current?.getBoundingClientRect();
+      if (rect) {
+        setAspectRatio(rect.height / rect.width);
+      }
     };
-  }, []);
+
+    // Use dockview panel API if available, otherwise fallback to ResizeObserver
+    if (api) {
+      const disposable = api.onDidDimensionsChange(updateAspectRatio);
+      updateAspectRatio(); // Initial call
+      return () => disposable.dispose();
+    } else {
+      // Fallback to ResizeObserver
+      const resizeObserver = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        setAspectRatio(entry.contentRect.height / entry.contentRect.width);
+      });
+
+      resizeObserver.observe(panelRef.current);
+      updateAspectRatio(); // Initial call
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, [api]);
 
   /**
    * Constants
@@ -113,7 +123,7 @@ export function Timeline({
     const framePos = relativeX / rect.width;
     const newFrame = Math.round(framePos * (maxFrame + 1));
 
-    onFrameChange(newFrame);
+    setFrameIndex(newFrame);
   }
   function handleMouseUp() {
     setScrubbing(false);
@@ -129,25 +139,25 @@ export function Timeline({
     const x = e.clientX - rect.left;
     const relativeX = Math.max(0, Math.min(x, rect.width));
     const framePos = relativeX / rect.width;
-    const newFrame = Math.round(framePos * (maxFrame + 1));
+    const newFrame = Math.min(maxFrame, Math.round(framePos * maxFrame));
 
-    onFrameChange(newFrame);
+    setFrameIndex(newFrame);
   }
 
   /**
    * Graph data
    */
 
+  const currentValue = accessor(frameIndex) ?? 0;
+
   const playheadX = (frameIndex / maxFrame) * 100;
-  const playheadY = (1 - (accessor(frameIndex) - min) / range) * chartHeight + verticalPadding;
+  const playheadY = (1 - (currentValue - min) / range) * chartHeight + verticalPadding;
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
-  console.log(max, min, range, chartHeight, verticalPadding, 1 - (accessor(frameIndex) - min) / range);
-
   let linePoints = "";
   for (let i = 0; i < maxFrame; i++) {
-    const d = accessor(i);
+    const d = accessor(i) ?? 0;
     const x = i / maxFrame;
     const y = 1 - (d - min) / range;
     linePoints += `${x * 100},${y * chartHeight + verticalPadding} `;
@@ -158,7 +168,7 @@ export function Timeline({
       <div className="absolute top-0 inset-x-0 flex justify-between p-1">
         <div>
           Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {(frameIndex * animationData.metadata.dt).toFixed(3)}s |
-          Value: {accessor(frameIndex).toFixed(2)}
+          Value: {currentValue.toFixed(2)}
         </div>
         <div>
           <select

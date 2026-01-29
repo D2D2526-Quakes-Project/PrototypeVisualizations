@@ -5,8 +5,8 @@ import type {
   ComputedStats,
   GroundMotionMetadata,
   IndexAccessor,
-  TimeIndexAccessor,
   SimulationMetadata,
+  TimeIndexAccessor,
 } from "./types";
 
 /**
@@ -83,11 +83,11 @@ export async function buildAnimationDataFromBinary(
   if (onProgress) onProgress(20, "Decompressing Displacement Data...");
   const dispBuff = await ensureDecompressed(rawDisp);
 
-  // if (onProgress) onProgress(40, "Decompressing Velocity Data...");
-  // const velBuff = await ensureDecompressed(rawVel);
+  if (onProgress && rawVel) onProgress(40, "Decompressing Velocity Data...");
+  const velBuff = rawVel ? await ensureDecompressed(rawVel) : undefined;
 
-  // if (onProgress) onProgress(60, "Decompressing Acceleration Data...");
-  // const accelBuff = await ensureDecompressed(rawAccel);
+  if (onProgress && rawAccel) onProgress(60, "Decompressing Acceleration Data...");
+  const accelBuff = rawAccel ? await ensureDecompressed(rawAccel) : undefined;
 
   if (onProgress) onProgress(80, "Decompressing Ground Motion...");
   const gmBuff = await ensureDecompressed(rawGM);
@@ -97,8 +97,8 @@ export async function buildAnimationDataFromBinary(
 
   // 3. Parse Simulations
   const dispData = parseBlob<SimulationMetadata>(dispBuff);
-  // const velData = parseBlob<SimulationMetadata>(velBuff);
-  // const accelData = parseBlob<SimulationMetadata>(accelBuff);
+  const velData = velBuff ? parseBlob<SimulationMetadata>(velBuff) : undefined;
+  const accelData = accelBuff ? parseBlob<SimulationMetadata>(accelBuff) : undefined;
   const gmData = parseBlob<GroundMotionMetadata>(gmBuff);
 
   // 4. Verification
@@ -123,10 +123,8 @@ export async function buildAnimationDataFromBinary(
     gmData.bodyView,
     bData.bodyView,
     dispData.bodyView,
-    undefined,
-    undefined,
-    // velData.bodyView,
-    // accelData.bodyView,
+    velData ? velData.bodyView : undefined,
+    accelData ? accelData.bodyView : undefined,
   );
 
   function makeAccessor(data: Float32Array, stride: number): IndexAccessor {
@@ -281,10 +279,8 @@ function calculateStats(
     storyElevations,
     storyHeights,
     maxDisplacement: getMaxMag(disp),
-    maxVelocity: undefined,
-    maxAcceleration: undefined,
-    // maxVelocity: getMaxMag(vel),
-    // maxAcceleration: getMaxMag(accel),
+    maxVelocity: vel ? getMaxMag(vel) : undefined,
+    maxAcceleration: accel ? getMaxMag(accel) : undefined,
     groundMotion: {
       min: gmMin,
       max: gmMax,

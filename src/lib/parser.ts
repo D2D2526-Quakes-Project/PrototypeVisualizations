@@ -111,12 +111,17 @@ function parseDisplacementFile(fileContent: string, _direction: Directions): Par
         colToNode[colIdx] = nodeId;
         nodeCoords[nodeId] = [x, y, z];
         tempNodeData[nodeId] = [];
-      } catch (e) {
+      } catch (_e) {
         continue;
       }
     }
     // Check if data rows have started
-    else if (trimmedLine[0] && (/^\d/.test(trimmedLine) || (/^\./.test(trimmedLine) && /^\d/.test(trimmedLine[1] || "")) || (/^-/.test(trimmedLine) && /^\d/.test(trimmedLine[1] || "")))) {
+    else if (
+      trimmedLine[0] &&
+      (/^\d/.test(trimmedLine) ||
+        (/^\./.test(trimmedLine) && /^\d/.test(trimmedLine[1] || "")) ||
+        (/^-/.test(trimmedLine) && /^\d/.test(trimmedLine[1] || "")))
+    ) {
       dataStarted = true;
     }
 
@@ -141,7 +146,7 @@ function parseDisplacementFile(fileContent: string, _direction: Directions): Par
             tempNodeData[nodeId].push(dispVal);
           }
         }
-      } catch (e) {
+      } catch (_e) {
         continue;
       }
     }
@@ -168,7 +173,12 @@ function parseGroundMotion(ground_motion: string) {
   return { timeSteps, displacements };
 }
 
-export async function buildAnimationData(nodeMappingCsv: string, ground_motion: string, dataFiles: { [filename: string]: string }, onProgress: (progress: number, msg?: string) => Promise<void>): Promise<BuildingAnimationData> {
+export async function buildAnimationData(
+  nodeMappingCsv: string,
+  ground_motion: string,
+  dataFiles: { [filename: string]: string },
+  onProgress: (progress: number, msg?: string) => Promise<void>,
+): Promise<BuildingAnimationData> {
   await onProgress(0, "Parsing Map & Ground Motion");
 
   // Parse node mapping
@@ -220,7 +230,11 @@ export async function buildAnimationData(nodeMappingCsv: string, ground_motion: 
       // disp_V
       const key: `disp_${Directions}` = `disp_${direction}`;
       node[key] = displacements.map((d) => d * INCH_TO_METER);
-      node.initial_pos = [nodeCoords[nodeId][0] * INCH_TO_METER, nodeCoords[nodeId][1] * INCH_TO_METER, nodeCoords[nodeId][2] * INCH_TO_METER];
+      node.initial_pos = [
+        nodeCoords[nodeId][0] * INCH_TO_METER,
+        nodeCoords[nodeId][1] * INCH_TO_METER,
+        nodeCoords[nodeId][2] * INCH_TO_METER,
+      ];
       if (node.initial_pos[0] < minInitialPos[0]) minInitialPos[0] = node.initial_pos[0];
       if (node.initial_pos[1] < minInitialPos[1]) minInitialPos[1] = node.initial_pos[1];
       if (node.initial_pos[2] < minInitialPos[2]) minInitialPos[2] = node.initial_pos[2];
@@ -281,7 +295,12 @@ export async function buildAnimationData(nodeMappingCsv: string, ground_motion: 
 }
 
 /* RETURNS Z UP COORDINATE SYSTEM */
-async function calculateFrames(nodeData: Map<string, NodeData>, timeSteps: number[], groundMotion: [number, number, number][], onProgress: (progress: number, msg?: string) => Promise<void>) {
+async function calculateFrames(
+  nodeData: Map<string, NodeData>,
+  timeSteps: number[],
+  groundMotion: [number, number, number][],
+  onProgress: (progress: number, msg?: string) => Promise<void>,
+) {
   const frames: AnimationFrame[] = [];
 
   /* Z UP COORDINATE SYSTEM */
@@ -308,7 +327,7 @@ async function calculateFrames(nodeData: Map<string, NodeData>, timeSteps: numbe
       }
     >();
 
-    let averageDisplacement: [number, number, number] = [0, 0, 0];
+    const averageDisplacement: [number, number, number] = [0, 0, 0];
 
     for (const [nodeId, node] of nodeData.entries()) {
       if (!node.initial_pos) continue;
@@ -382,7 +401,13 @@ async function calculateFrames(nodeData: Map<string, NodeData>, timeSteps: numbe
 
     // ! Swap the Y and Z axes
     // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
-    const motion_of_the_ground: [number, number, number] = groundMotion[tIdx] ? [groundMotion[tIdx][0] * INCH_TO_METER, groundMotion[tIdx][2] * INCH_TO_METER, groundMotion[tIdx][1] * INCH_TO_METER] : [0, 0, 0];
+    const motion_of_the_ground: [number, number, number] = groundMotion[tIdx]
+      ? [
+          groundMotion[tIdx][0] * INCH_TO_METER,
+          groundMotion[tIdx][2] * INCH_TO_METER,
+          groundMotion[tIdx][1] * INCH_TO_METER,
+        ]
+      : [0, 0, 0];
 
     frames.push({
       frame: tIdx + 1,
@@ -399,5 +424,13 @@ async function calculateFrames(nodeData: Map<string, NodeData>, timeSteps: numbe
     }
   }
 
-  return { frames, maxAverageDisplacement, maxAverageStoryDisplacement, maxDisplacement, minDisplacement, minPos, maxPos };
+  return {
+    frames,
+    maxAverageDisplacement,
+    maxAverageStoryDisplacement,
+    maxDisplacement,
+    minDisplacement,
+    minPos,
+    maxPos,
+  };
 }

@@ -1,8 +1,18 @@
-import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useAnimationData } from "../hooks/nodeDataHook";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useAnimationData } from "../../hooks/nodeDataHook";
 
-export function usePlaybackControl() {
+export type PlaybackControlParams = {
+  frameIndex: number;
+  playing: boolean;
+  setFrameIndex: (index: number | ((prevState: number) => number)) => void;
+  handlePlayPause: () => void;
+  skipToStart: () => void;
+  skipToEnd: () => void;
+};
+
+const PlaybackContext = createContext<PlaybackControlParams | undefined>(undefined);
+
+export const PlaybackProvider = ({ children }: { children: ReactNode }) => {
   const { animationData } = useAnimationData();
   const totalFrames = animationData.metadata.frameCount;
   const frameRate = 1 / animationData.metadata.dt;
@@ -21,9 +31,8 @@ export function usePlaybackControl() {
     playbackStartTimeRef.current = performance.now();
   }, []);
 
-  // Unified frame change function that always resets playback refs
   const changeFrame = useCallback(
-    (newFrameIndex: number | ((prev: number) => number)) => {
+    (newFrameIndex: number | ((prevState: number) => number)) => {
       if (typeof newFrameIndex === "number") {
         setFrameIndex(newFrameIndex);
         resetPlaybackRefs(newFrameIndex);
@@ -35,11 +44,13 @@ export function usePlaybackControl() {
         });
       }
     },
-    [setFrameIndex, resetPlaybackRefs],
+    [resetPlaybackRefs],
   );
 
   const handlePlayPause = useCallback(() => {
-    setPlaying(!playing);
+    const nextPlayingState = !playing;
+    setPlaying(nextPlayingState);
+
     const currentFrame = frameIndex === totalFrames - 1 ? 0 : frameIndex;
 
     if (frameIndex === totalFrames - 1) {
@@ -48,11 +59,12 @@ export function usePlaybackControl() {
     } else {
       resetPlaybackRefs(currentFrame);
     }
-  }, [setPlaying, setFrameIndex, resetPlaybackRefs, totalFrames, frameIndex, playing]);
+  }, [playing, frameIndex, totalFrames, resetPlaybackRefs]);
 
-  const skipToStart = () => changeFrame(0);
-  const skipToEnd = () => changeFrame(totalFrames - 1);
+  const skipToStart = useCallback(() => changeFrame(0), [changeFrame]);
+  const skipToEnd = useCallback(() => changeFrame(totalFrames - 1), [changeFrame, totalFrames]);
 
+  // Animation Loop
   useEffect(() => {
     if (!playing) {
       if (requestedAnimationFrameRef.current) {
@@ -68,6 +80,7 @@ export function usePlaybackControl() {
 
       const deltaTime = currentTime - lastDisplayedFrameTimeRef.current;
 
+      // Throttle to ~30fps or use frameRate logic
       if (deltaTime >= 1000 / 30) {
         const expectedFrame =
           playbackStartFrameRef.current + ((currentTime - playbackStartTimeRef.current) / 1000) * frameRate;
@@ -94,8 +107,12 @@ export function usePlaybackControl() {
     };
   }, [playing, totalFrames, frameRate]);
 
+  // Keyboard Shortcuts
   useEffect(() => {
     function windowKeydown(e: KeyboardEvent) {
+      // Prevent triggers if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
       if (e.key === " ") {
         e.preventDefault();
         handlePlayPause();
@@ -107,38 +124,26 @@ export function usePlaybackControl() {
     }
 
     window.addEventListener("keydown", windowKeydown);
-
-    return () => {
-      window.removeEventListener("keydown", windowKeydown);
-    };
+    return () => window.removeEventListener("keydown", windowKeydown);
   }, [handlePlayPause, changeFrame, totalFrames]);
 
-  return {
+  const value = {
     frameIndex,
     playing,
-    setFrameIndex: changeFrame, // This always resets playback refs
+    setFrameIndex: changeFrame,
     handlePlayPause,
     skipToStart,
     skipToEnd,
   };
-}
 
-export function PlaybackControls({ playback }: { playback: ReturnType<typeof usePlaybackControl> }) {
-  return (
-    <div className="flex items-center gap-2">
-      <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={playback.skipToStart}>
-        <SkipBackIcon />
-      </button>
-      <div className="w-px h-1/2 bg-neutral-300" />
-      <button
-        className="p-2 hover:-translate-y-1 transition-transform cursor-pointer"
-        onClick={playback.handlePlayPause}>
-        {playback.playing ? <PauseIcon /> : <PlayIcon />}
-      </button>
-      <div className="w-px h-1/2 bg-neutral-300" />
-      <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={playback.skipToEnd}>
-        <SkipForwardIcon />
-      </button>
-    </div>
-  );
-}
+  return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
+};
+
+// Custom hook for consumption
+export const usePlayback = () => {
+  const context = useContext(PlaybackContext);
+  if (context === undefined) {
+    throw new Error("usePlayback must be used within a PlaybackProvider");
+  }
+  return context;
+};

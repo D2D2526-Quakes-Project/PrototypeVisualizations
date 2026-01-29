@@ -1,6 +1,9 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+// Converting data Inches to Meters
+export const UNIT_SCALE = 0.0254;
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -31,24 +34,24 @@ function computeUpperHullIndexes(points: number[][]) {
 }
 
 export function polygonHull(points: number[][]) {
-  if ((n = points.length) < 3) return points;
+  if (points.length < 3) return points;
 
-  var i,
-    n,
-    sortedPoints = new Array(n),
-    flippedPoints = new Array(n);
+  let i;
+  const n = points.length;
+  const sortedPoints = new Array(n);
+  const flippedPoints = new Array(n);
 
   for (i = 0; i < n; ++i) sortedPoints[i] = [+points[i][0], +points[i][1], i];
   sortedPoints.sort(lexicographicOrder);
   for (i = 0; i < n; ++i) flippedPoints[i] = [sortedPoints[i][0], -sortedPoints[i][1]];
 
-  var upperIndexes = computeUpperHullIndexes(sortedPoints),
-    lowerIndexes = computeUpperHullIndexes(flippedPoints);
+  const upperIndexes = computeUpperHullIndexes(sortedPoints);
+  const lowerIndexes = computeUpperHullIndexes(flippedPoints);
 
   // Construct the hull polygon, removing possible duplicate endpoints.
-  var skipLeft = lowerIndexes[0] === upperIndexes[0],
-    skipRight = lowerIndexes[lowerIndexes.length - 1] === upperIndexes[upperIndexes.length - 1] ? 1 : 0,
-    hull = [];
+  const skipLeft = lowerIndexes[0] === upperIndexes[0];
+  const skipRight = lowerIndexes[lowerIndexes.length - 1] === upperIndexes[upperIndexes.length - 1] ? 1 : 0;
+  const hull = [];
 
   // Add upper hull in right-to-l order.
   // Then add lower hull in left-to-right order.

@@ -1,7 +1,15 @@
 import React, { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
 
-export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; onFrameChange: (index: number | ((prevState: number) => number)) => void }) {
+const DisplacentViews = ["X Ground Motion", "Y Ground Motion", "Z Ground Motion", "Ground Motion"] as const;
+
+export function Timeline({
+  frameIndex,
+  onFrameChange,
+}: {
+  frameIndex: number;
+  onFrameChange: (index: number | ((prevState: number) => number)) => void;
+}) {
   const { animationData } = useAnimationData();
 
   const svgRef = useRef<SVGSVGElement>(null);
@@ -10,34 +18,50 @@ export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; on
    * Displacement Data
    */
 
-  const maxFrame = animationData.frames.length - 1;
-  const [selectedDisplacementView, setSelectedDisplacementView] = useState("Ground Motion");
-  const graphData = animationData.frames.map((frame) => {
+  const maxFrame = animationData.metadata.frameCount - 1;
+  const [selectedDisplacementView, setSelectedDisplacementView] =
+    useState<(typeof DisplacentViews)[number]>("Ground Motion");
+
+  const getDataAccessor = () => {
     switch (selectedDisplacementView) {
-      case "Avg. X Displacement":
-        return frame.averageDisplacement[0];
-      case "Avg. Y Displacement":
-        return frame.averageDisplacement[1];
-      case "Avg. Z Displacement":
-        return frame.averageDisplacement[2];
-      case "Avg. Displacement":
-        return Math.hypot(...frame.averageDisplacement);
       case "X Ground Motion":
-        return frame.groundMotion[0];
+        return {
+          accessor: animationData.groundMotion.xAt,
+          min: animationData.precomputed.groundMotion.min[0],
+          max: animationData.precomputed.groundMotion.max[0],
+          strokeColor: "stroke-red-400",
+          fillColor: "fill-red-400",
+        };
       case "Y Ground Motion":
-        return frame.groundMotion[1];
+        return {
+          accessor: animationData.groundMotion.yAt,
+          min: animationData.precomputed.groundMotion.min[1],
+          max: animationData.precomputed.groundMotion.max[1],
+          strokeColor: "stroke-green-400",
+          fillColor: "fill-green-400",
+        };
       case "Z Ground Motion":
-        return frame.groundMotion[2];
+        return {
+          accessor: animationData.groundMotion.zAt,
+          min: animationData.precomputed.groundMotion.min[2],
+          max: animationData.precomputed.groundMotion.max[2],
+          strokeColor: "stroke-blue-400",
+          fillColor: "fill-blue-400",
+        };
       case "Ground Motion":
       default:
-        return Math.hypot(...frame.groundMotion);
+        return {
+          accessor: (idx: number) => animationData.precomputed.groundMotion.magnitude.at(idx)!,
+          min: animationData.precomputed.groundMotion.minMagnitude,
+          max: animationData.precomputed.groundMotion.maxMagnitude,
+          strokeColor: "stroke-amber-400",
+          fillColor: "fill-amber-400",
+        };
     }
-  });
+  };
 
-  const maxGraphData = Math.max(...graphData);
-  const minGraphData = Math.min(...graphData);
-
-  const graphRange = maxGraphData - minGraphData;
+  const { accessor, min, max, strokeColor, fillColor } = getDataAccessor();
+  const range = max - min;
 
   /**
    * Resize observer for the aspect ratio of the canvas
@@ -115,73 +139,90 @@ export function Timeline({ frameIndex, onFrameChange }: { frameIndex: number; on
    */
 
   const playheadX = (frameIndex / maxFrame) * 100;
-  const playheadY = (1 - (graphData[frameIndex] - minGraphData) / graphRange) * chartHeight + verticalPadding;
+  const playheadY = (1 - (accessor(frameIndex) - min) / range) * chartHeight + verticalPadding;
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
-  const linePoints = graphData.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minGraphData) / graphRange) * chartHeight + verticalPadding}`).join(" ");
-  // const linePoints = avgDisplacements.map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minDisp) / displacementRange) * chartHeight + verticalPadding}`).join(" ");
-  let strokeColor;
-  let fillColor;
-  switch (selectedDisplacementView) {
-    case "X Ground Motion":
-    case "Avg. X Displacement":
-      strokeColor = "stroke-red-400";
-      fillColor = "fill-red-400";
-      break;
-    case "Y Ground Motion":
-    case "Avg. Y Displacement":
-      strokeColor = "stroke-green-400";
-      fillColor = "fill-green-400";
-      break;
-    case "Z Ground Motion":
-    case "Avg. Z Displacement":
-      strokeColor = "stroke-blue-400";
-      fillColor = "fill-blue-400";
-      break;
-    default:
-      strokeColor = "stroke-amber-400";
-      fillColor = "fill-amber-400";
-      break;
+  console.log(max, min, range, chartHeight, verticalPadding, 1 - (accessor(frameIndex) - min) / range);
+
+  let linePoints = "";
+  for (let i = 0; i < maxFrame; i++) {
+    const d = accessor(i);
+    const x = i / maxFrame;
+    const y = 1 - (d - min) / range;
+    linePoints += `${x * 100},${y * chartHeight + verticalPadding} `;
   }
 
   return (
     <div ref={panelRef} className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full">
       <div className="absolute top-0 inset-x-0 flex justify-between p-1">
         <div>
-          Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {animationData.timeSteps[frameIndex]?.toFixed(3)}s | Value: {graphData[frameIndex]?.toFixed(2)}
+          Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {(frameIndex * animationData.metadata.dt).toFixed(3)}s |
+          Value: {accessor(frameIndex).toFixed(2)}
         </div>
         <div>
-          <select className="bg-neutral-200 rounded-md p-1" value={selectedDisplacementView} onChange={(e) => setSelectedDisplacementView(e.target.value)}>
+          <select
+            className="bg-neutral-200 rounded-md p-1"
+            value={selectedDisplacementView}
+            onChange={(e) => setSelectedDisplacementView(e.target.value as (typeof DisplacentViews)[number])}>
             <optgroup label="Ground Motion">
-              <option value="Ground Motion">Ground Motion</option>
-              <option value="X Ground Motion">X Ground Motion</option>
-              <option value="Y Ground Motion">Y Ground Motion</option>
-              <option value="Z Ground Motion">Z Ground Motion</option>
-            </optgroup>
-            <optgroup label="Displacement">
-              <option value="Avg. Displacement">Avg. Displacement</option>
-              <option value="Avg. X Displacement">Avg. X Displacement</option>
-              <option value="Avg. Y Displacement">Avg. Y Displacement</option>
-              <option value="Avg. Z Displacement">Avg. Z Displacement</option>
+              {DisplacentViews.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
             </optgroup>
           </select>
         </div>
       </div>
 
-      <svg ref={svgRef} className="select-none" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseMove={handleMouseMove}>
-        <line transform={playheadTransform} x1={0} y1="-100" x2={0} y2="100" className="stroke-neutral-300" strokeWidth="0.2" />
+      <svg
+        ref={svgRef}
+        className="select-none"
+        width="100%"
+        viewBox={`0 0 100 ${viewBoxHeight}`}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}>
+        <line
+          transform={playheadTransform}
+          x1={0}
+          y1="-100"
+          x2={0}
+          y2="100"
+          className="stroke-neutral-300"
+          strokeWidth="0.2"
+        />
         <polyline points={linePoints} fill="none" className={strokeColor} strokeWidth="0.2" />
-        <polygon points={linePoints + ` 100,${(1 - (0 - minGraphData) / graphRange) * chartHeight + verticalPadding} 0,${(1 - (0 - minGraphData) / graphRange) * chartHeight + verticalPadding}`} className={fillColor} opacity={0.2} />
+        <polygon
+          points={
+            linePoints +
+            ` 100,${(1 - (0 - min) / range) * chartHeight + verticalPadding} 0,${(1 - (0 - min) / range) * chartHeight + verticalPadding}`
+          }
+          className={fillColor}
+          opacity={0.2}
+        />
 
         <g>
           {/* x labels */}
           {Array.from({ length: 16 }).map((_, i) => (
             <React.Fragment key={i}>
-              <text x={(i / 15) * 100} y={chartHeight + 1.5 + verticalPadding} textAnchor="middle" className="text-neutral-300" fontSize={1}>
-                {(i * maxFrame) / 15 / animationData.frameRate}
+              <text
+                x={(i / 15) * 100}
+                y={chartHeight + 1.5 + verticalPadding}
+                textAnchor="middle"
+                className="text-neutral-300"
+                fontSize={1}>
+                {(i * maxFrame) / 15}
               </text>
-              <line x1={(i / 15) * 100} y1={chartHeight + verticalPadding} x2={(i / 15) * 100} y2={0} className="stroke-neutral-300" strokeWidth="0.1" />
+              <line
+                x1={(i / 15) * 100}
+                y1={chartHeight + verticalPadding}
+                x2={(i / 15) * 100}
+                y2={0}
+                className="stroke-neutral-300"
+                strokeWidth="0.1"
+              />
             </React.Fragment>
           ))}
         </g>

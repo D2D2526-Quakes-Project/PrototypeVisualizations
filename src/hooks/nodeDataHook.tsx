@@ -71,92 +71,93 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     try {
       const buildingFolder = `/data/${building.folder}`;
       const simulationFolder = `/data/${building.folder}/${simulation.folder}`;
+      console.log(buildingFolder, simulationFolder);
 
-      setProgress(5);
-      setProgressMessage("Loading Data");
+      // setProgress(5);
+      // setProgressMessage("Loading Data");
 
-      const totalFiles =
-        4 + simulation.displacementFiles.length + simulation.accelerationFiles.length + simulation.velocityFiles.length;
-      let loadedFiles = 0;
-      function completeFile() {
-        loadedFiles++;
-        setProgress(5 + (loadedFiles / totalFiles) * 20);
-        setProgressMessage("Loading " + loadedFiles + "/" + totalFiles);
-        // await new Promise((r) => setTimeout(r, 0));
-      }
+      // const totalFiles =
+      //   4 + simulation.displacementFiles.length + simulation.accelerationFiles.length + simulation.velocityFiles.length;
+      // let loadedFiles = 0;
+      // function completeFile() {
+      //   loadedFiles++;
+      //   setProgress(5 + (loadedFiles / totalFiles) * 20);
+      //   setProgressMessage("Loading " + loadedFiles + "/" + totalFiles);
+      //   // await new Promise((r) => setTimeout(r, 0));
+      // }
 
-      const nodeMappingCsvPromise = fetch(`${buildingFolder}/${building.node_map}`).then(
-        (r) => (completeFile(), r.text()),
-      );
-      const buildingHeightCsvPromise = fetch(`${buildingFolder}/${building.height_map}`).then(
-        (r) => (completeFile(), r.text()),
-      );
-      const buildingCenterCsvPromise = fetch(`${buildingFolder}/${building.center_map}`).then(
-        (r) => (completeFile(), r.text()),
-      );
-      const groundMotionCsvPromise = fetch(`${simulationFolder}/ground_motion.txt`).then(
-        (r) => (completeFile(), r.text()),
-      );
-
-      const displacementFilesPromise = Promise.all(
-        simulation.displacementFiles.map((f) =>
-          fetch(`${simulationFolder}/Displacements/${f}`)
-            .then((r) => (completeFile(), r.text()))
-            .then((text) => ({ filename: f, text })),
-        ),
-      );
-      const accelerationFilesPromise = Promise.all(
-        simulation.accelerationFiles.map((f) =>
-          fetch(`${simulationFolder}/Accelerations/${f}`)
-            .then((r) => (completeFile(), r.text()))
-            .then((text) => ({ filename: f, text })),
-        ),
-      );
-      const velocityFilesPromise = Promise.all(
-        simulation.velocityFiles.map((f) =>
-          fetch(`${simulationFolder}/Velocities/${f}`)
-            .then((r) => (completeFile(), r.text()))
-            .then((text) => ({ filename: f, text })),
-        ),
-      );
-
-      await Promise.all([
-        nodeMappingCsvPromise,
-        buildingHeightCsvPromise,
-        buildingCenterCsvPromise,
-        groundMotionCsvPromise,
-        displacementFilesPromise,
-        accelerationFilesPromise,
-        velocityFilesPromise,
-      ]);
-
-      const nodeMappingCsv = await nodeMappingCsvPromise;
-      const groundMotionCsv = await groundMotionCsvPromise;
-      const dataFiles = Object.fromEntries((await displacementFilesPromise).map((f) => [f.filename, f.text]));
-
-      console.log(dataFiles);
-
-      await new Promise((r) => setTimeout(r, 0));
-
-      // const built = await buildAnimationData(
-      //   nodeMappingCsv,
-      //   groundMotionCsv,
-      //   dataFiles,
-      //   async (p: number, msg?: string) => {
-      //     if (p !== -1) setProgress(25 + p * 0.75);
-      //     if (msg) setProgressMessage(msg);
-      //     await new Promise((r) => setTimeout(r, 0));
-      //   },
+      // const nodeMappingCsvPromise = fetch(`${buildingFolder}/${building.node_map}`).then(
+      //   (r) => (completeFile(), r.text()),
       // );
-      // console.log(built);
+      // const buildingHeightCsvPromise = fetch(`${buildingFolder}/${building.height_map}`).then(
+      //   (r) => (completeFile(), r.text()),
+      // );
+      // const buildingCenterCsvPromise = fetch(`${buildingFolder}/${building.center_map}`).then(
+      //   (r) => (completeFile(), r.text()),
+      // );
+      // const groundMotionCsvPromise = fetch(`${simulationFolder}/ground_motion.txt`).then(
+      //   (r) => (completeFile(), r.text()),
+      // );
 
-      setProgress(100);
-      setProgressMessage("Done!");
-      // setAnimationData(built);
+      // const displacementFilesPromise = Promise.all(
+      //   simulation.displacementFiles.map((f) =>
+      //     fetch(`${simulationFolder}/Displacements/${f}`)
+      //       .then((r) => (completeFile(), r.text()))
+      //       .then((text) => ({ filename: f, text })),
+      //   ),
+      // );
+      // const accelerationFilesPromise = Promise.all(
+      //   simulation.accelerationFiles.map((f) =>
+      //     fetch(`${simulationFolder}/Accelerations/${f}`)
+      //       .then((r) => (completeFile(), r.text()))
+      //       .then((text) => ({ filename: f, text })),
+      //   ),
+      // );
+      // const velocityFilesPromise = Promise.all(
+      //   simulation.velocityFiles.map((f) =>
+      //     fetch(`${simulationFolder}/Velocities/${f}`)
+      //       .then((r) => (completeFile(), r.text()))
+      //       .then((text) => ({ filename: f, text })),
+      //   ),
+      // );
 
-      await new Promise((r) => setTimeout(r, 200));
+      // await Promise.all([
+      //   nodeMappingCsvPromise,
+      //   buildingHeightCsvPromise,
+      //   buildingCenterCsvPromise,
+      //   groundMotionCsvPromise,
+      //   displacementFilesPromise,
+      //   accelerationFilesPromise,
+      //   velocityFilesPromise,
+      // ]);
 
-      setLoading(false);
+      // const nodeMappingCsv = await nodeMappingCsvPromise;
+      // const groundMotionCsv = await groundMotionCsvPromise;
+      // const dataFiles = Object.fromEntries((await displacementFilesPromise).map((f) => [f.filename, f.text]));
+
+      // console.log(dataFiles);
+
+      // await new Promise((r) => setTimeout(r, 0));
+
+      // // const built = await buildAnimationData(
+      // //   nodeMappingCsv,
+      // //   groundMotionCsv,
+      // //   dataFiles,
+      // //   async (p: number, msg?: string) => {
+      // //     if (p !== -1) setProgress(25 + p * 0.75);
+      // //     if (msg) setProgressMessage(msg);
+      // //     await new Promise((r) => setTimeout(r, 0));
+      // //   },
+      // // );
+      // // console.log(built);
+
+      // setProgress(100);
+      // setProgressMessage("Done!");
+      // // setAnimationData(built);
+
+      // await new Promise((r) => setTimeout(r, 200));
+
+      // setLoading(false);
     } catch (err) {
       console.error(err);
       setError(err);
@@ -187,6 +188,14 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       // Map 0-100% download to 5-80% of total bar (leaving 20% for parsing)
       setProgress(5 + avg * 75);
       setProgressMessage(`Downloading... ${Math.round(avg * 100)}%`);
+
+      if ("memory" in performance) {
+        // @ts-expect-error - performance.memory is not defined in Node
+        const limit = performance.memory.jsHeapSizeLimit;
+        // @ts-expect-error - performance.memory is not defined in Node
+        const used = performance.memory.usedJSHeapSize;
+        console.log(`Memory: ${Math.round(used / 1024 / 1024)} MB / ${Math.round(limit / 1024 / 1024)} MB`);
+      }
     };
 
     try {
@@ -196,7 +205,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       setProgress(5);
       setProgressMessage("Initializing download...");
 
-      const [buildingBuffer, dispBuffer, velBuffer, accelBuffer, gmBuffer] = await Promise.all([
+      const [buildingBuffer, dispBuffer, /* velBuffer, accelBuffer,*/ gmBuffer] = await Promise.all([
         fetchWithProgressAndCache(`${buildingFolder}/${building.building_data}`, (p) => {
           progressMap["building.bld"] = p;
           updateOverallProgress();
@@ -205,14 +214,14 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           progressMap["displacement.bld"] = p;
           updateOverallProgress();
         }),
-        fetchWithProgressAndCache(`${simulationFolder}/${simulation.velocity}`, (p) => {
-          progressMap["velocity.bld"] = p;
-          updateOverallProgress();
-        }),
-        fetchWithProgressAndCache(`${simulationFolder}/${simulation.acceleration}`, (p) => {
-          progressMap["acceleration.bld"] = p;
-          updateOverallProgress();
-        }),
+        // fetchWithProgressAndCache(`${simulationFolder}/${simulation.velocity}`, (p) => {
+        //   progressMap["velocity.bld"] = p;
+        //   updateOverallProgress();
+        // }),
+        // fetchWithProgressAndCache(`${simulationFolder}/${simulation.acceleration}`, (p) => {
+        //   progressMap["acceleration.bld"] = p;
+        //   updateOverallProgress();
+        // }),
         fetchWithProgressAndCache(`${simulationFolder}/${simulation.groundMotion}`, (p) => {
           progressMap["ground_motion.bld"] = p;
           updateOverallProgress();
@@ -228,10 +237,12 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       // Pass the ArrayBuffers to your parser
       const built = await buildAnimationDataFromBinary(
         buildingBuffer,
-        dispBuffer,
-        velBuffer,
-        accelBuffer,
         gmBuffer,
+        dispBuffer,
+        undefined,
+        undefined,
+        // velBuffer,
+        // accelBuffer,
         async (p: number, msg?: string) => {
           if (p !== -1) setProgress(85 + p * 0.15);
           if (msg) setProgressMessage(msg);

@@ -42,7 +42,7 @@ export function View3d() {
                     type="range"
                     min="0"
                     max={1}
-                    step={0.1}
+                    step={0.0001}
                     value={scale}
                     onChange={handleScaleChange}
                     className="w-full"

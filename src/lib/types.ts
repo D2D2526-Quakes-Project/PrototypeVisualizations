@@ -93,33 +93,50 @@ export interface BuildingAnimationData {
    * Layout: [x, y, z, x, y, z, ...]
    * Size: nodeCount * 3
    */
-  initialPositions: Float32Array;
+  initialPositions: IndexAccessor;
 
   /**
    * Displacement Data.
    * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
    * Access: (frameIndex * nodeCount * 6) + (nodeIndex * 6) + componentIndex
    */
-  displacement: Float32Array;
+  displacement: TimeIndexAccessor;
 
   /**
    * Velocity Data.
    * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
    */
-  velocity: Float32Array;
+  velocity?: TimeIndexAccessor;
 
   /**
    * Acceleration Data.
    * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
    */
-  acceleration: Float32Array;
+  acceleration?: TimeIndexAccessor;
 
   /**
    * Ground Motion Data.
    * Layout: Frame -> [x, y, z]
    * Size: frameCount * 3
    */
-  groundMotion: Float32Array;
+  groundMotion: IndexAccessor;
+}
+
+export interface IndexAccessor {
+  data: Float32Array;
+  stride: number;
+  at: (idx: number) => Float32Array;
+  xAt: (idx: number) => number;
+  yAt: (idx: number) => number;
+  zAt: (idx: number) => number;
+}
+
+export interface TimeIndexAccessor {
+  data: Float32Array;
+  stride: number;
+  at: (idx: number) => IndexAccessor;
+  linAt: (idx: number) => IndexAccessor;
+  rotAt: (idx: number) => IndexAccessor;
 }
 
 export interface ComputedStats {
@@ -137,9 +154,15 @@ export interface ComputedStats {
 
   // SIMULATION SCALARS
   maxDisplacement: number; // Max absolute drift (inches)
-  maxVelocity: number; // Max velocity
-  maxAcceleration: number; // Max acceleration (g)
+  maxVelocity?: number; // Max velocity
+  maxAcceleration?: number; // Max acceleration (g)
 
   // GROUND MOTION
-  pgd: number; // Peak Ground Displacement
+  groundMotion: {
+    min: [number, number, number];
+    max: [number, number, number];
+    magnitude: Float32Array;
+    maxMagnitude: number;
+    minMagnitude: number;
+  };
 }

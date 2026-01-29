@@ -1,11 +1,11 @@
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
 
 export function usePlaybackControl() {
   const { animationData } = useAnimationData();
-  const totalFrames = animationData.frames.length;
-  const frameRate = animationData.frameRate;
+  const totalFrames = animationData.metadata.frameCount;
+  const frameRate = 1 / animationData.metadata.dt;
 
   const [frameIndex, setFrameIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -15,27 +15,30 @@ export function usePlaybackControl() {
   const playbackStartFrameRef = useRef<number>(0);
   const playbackStartTimeRef = useRef<number>(0);
 
-  const resetPlaybackRefs = (newFrame: number) => {
+  const resetPlaybackRefs = useCallback((newFrame: number) => {
     lastDisplayedFrameTimeRef.current = 0;
     playbackStartFrameRef.current = newFrame;
     playbackStartTimeRef.current = performance.now();
-  };
+  }, []);
 
   // Unified frame change function that always resets playback refs
-  const changeFrame = (newFrameIndex: number | ((prev: number) => number)) => {
-    if (typeof newFrameIndex === "number") {
-      setFrameIndex(newFrameIndex);
-      resetPlaybackRefs(newFrameIndex);
-    } else {
-      setFrameIndex((prev) => {
-        const computed = newFrameIndex(prev);
-        resetPlaybackRefs(computed);
-        return computed;
-      });
-    }
-  };
+  const changeFrame = useCallback(
+    (newFrameIndex: number | ((prev: number) => number)) => {
+      if (typeof newFrameIndex === "number") {
+        setFrameIndex(newFrameIndex);
+        resetPlaybackRefs(newFrameIndex);
+      } else {
+        setFrameIndex((prev) => {
+          const computed = newFrameIndex(prev);
+          resetPlaybackRefs(computed);
+          return computed;
+        });
+      }
+    },
+    [setFrameIndex, resetPlaybackRefs],
+  );
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     setPlaying(!playing);
     const currentFrame = frameIndex === totalFrames - 1 ? 0 : frameIndex;
 
@@ -45,7 +48,7 @@ export function usePlaybackControl() {
     } else {
       resetPlaybackRefs(currentFrame);
     }
-  };
+  }, [setPlaying, setFrameIndex, resetPlaybackRefs, totalFrames, frameIndex, playing]);
 
   const skipToStart = () => changeFrame(0);
   const skipToEnd = () => changeFrame(totalFrames - 1);
@@ -66,7 +69,8 @@ export function usePlaybackControl() {
       const deltaTime = currentTime - lastDisplayedFrameTimeRef.current;
 
       if (deltaTime >= 1000 / 30) {
-        const expectedFrame = playbackStartFrameRef.current + ((currentTime - playbackStartTimeRef.current) / 1000) * frameRate;
+        const expectedFrame =
+          playbackStartFrameRef.current + ((currentTime - playbackStartTimeRef.current) / 1000) * frameRate;
         const newFrameIndex = Math.round(expectedFrame);
 
         if (newFrameIndex >= 0 && newFrameIndex < totalFrames) {
@@ -90,43 +94,13 @@ export function usePlaybackControl() {
     };
   }, [playing, totalFrames, frameRate]);
 
-  const avgDisplacements = animationData.frames.map((frame) => Math.hypot(...frame.averageDisplacement));
-  const maxDisp = Math.max(...avgDisplacements);
-  const minDisp = Math.min(...avgDisplacements);
-  const argMaxDisp = avgDisplacements.indexOf(maxDisp);
-  const argMinDisp = avgDisplacements.indexOf(minDisp);
-
   useEffect(() => {
     function windowKeydown(e: KeyboardEvent) {
       if (e.key === " ") {
         e.preventDefault();
         handlePlayPause();
-      } else if (e.key === "ArrowLeft" && e.shiftKey) {
-        changeFrame((prev) => {
-          if (argMaxDisp > argMinDisp) {
-            if (prev > argMaxDisp) return argMaxDisp;
-            else if (prev > argMinDisp) return argMinDisp;
-          } else {
-            // argMaxDisp < argMinDisp
-            if (prev > argMinDisp) return argMinDisp;
-            else if (prev > argMaxDisp) return argMaxDisp;
-          }
-          return 0;
-        });
       } else if (e.key === "ArrowLeft") {
         changeFrame((prev) => Math.max(0, prev - 1));
-      } else if (e.key === "ArrowRight" && e.shiftKey) {
-        changeFrame((prev) => {
-          if (argMaxDisp > argMinDisp) {
-            if (prev < argMinDisp) return argMinDisp;
-            else if (prev < argMaxDisp) return argMaxDisp;
-          } else {
-            // argMaxDisp < argMinDisp
-            if (prev < argMaxDisp) return argMaxDisp;
-            else if (prev < argMinDisp) return argMinDisp;
-          }
-          return animationData.frames.length - 1;
-        });
       } else if (e.key === "ArrowRight") {
         changeFrame((prev) => Math.min(totalFrames - 1, prev + 1));
       }
@@ -137,7 +111,7 @@ export function usePlaybackControl() {
     return () => {
       window.removeEventListener("keydown", windowKeydown);
     };
-  }, [handlePlayPause]);
+  }, [handlePlayPause, changeFrame, totalFrames]);
 
   return {
     frameIndex,
@@ -156,7 +130,9 @@ export function PlaybackControls({ playback }: { playback: ReturnType<typeof use
         <SkipBackIcon />
       </button>
       <div className="w-px h-1/2 bg-neutral-300" />
-      <button className="p-2 hover:-translate-y-1 transition-transform cursor-pointer" onClick={playback.handlePlayPause}>
+      <button
+        className="p-2 hover:-translate-y-1 transition-transform cursor-pointer"
+        onClick={playback.handlePlayPause}>
         {playback.playing ? <PauseIcon /> : <PlayIcon />}
       </button>
       <div className="w-px h-1/2 bg-neutral-300" />

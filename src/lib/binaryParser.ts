@@ -4,6 +4,8 @@ import type {
   BuildingMetadata,
   ComputedStats,
   GroundMotionMetadata,
+  IndexAccessor,
+  TimeIndexAccessor,
   SimulationMetadata,
 } from "./types";
 
@@ -68,10 +70,10 @@ function parseBlob<T>(buffer: ArrayBuffer) {
  */
 export async function buildAnimationDataFromBinary(
   rawBuilding: ArrayBuffer,
-  rawDisp: ArrayBuffer,
-  rawVel: ArrayBuffer,
-  rawAccel: ArrayBuffer,
   rawGM: ArrayBuffer,
+  rawDisp: ArrayBuffer,
+  rawVel?: ArrayBuffer,
+  rawAccel?: ArrayBuffer,
   onProgress?: (p: number, msg: string) => void,
 ): Promise<BuildingAnimationData> {
   // 1. Decompress all buffers
@@ -81,11 +83,11 @@ export async function buildAnimationDataFromBinary(
   if (onProgress) onProgress(20, "Decompressing Displacement Data...");
   const dispBuff = await ensureDecompressed(rawDisp);
 
-  if (onProgress) onProgress(40, "Decompressing Velocity Data...");
-  const velBuff = await ensureDecompressed(rawVel);
+  // if (onProgress) onProgress(40, "Decompressing Velocity Data...");
+  // const velBuff = await ensureDecompressed(rawVel);
 
-  if (onProgress) onProgress(60, "Decompressing Acceleration Data...");
-  const accelBuff = await ensureDecompressed(rawAccel);
+  // if (onProgress) onProgress(60, "Decompressing Acceleration Data...");
+  // const accelBuff = await ensureDecompressed(rawAccel);
 
   if (onProgress) onProgress(80, "Decompressing Ground Motion...");
   const gmBuff = await ensureDecompressed(rawGM);
@@ -95,8 +97,8 @@ export async function buildAnimationDataFromBinary(
 
   // 3. Parse Simulations
   const dispData = parseBlob<SimulationMetadata>(dispBuff);
-  const velData = parseBlob<SimulationMetadata>(velBuff);
-  const accelData = parseBlob<SimulationMetadata>(accelBuff);
+  // const velData = parseBlob<SimulationMetadata>(velBuff);
+  // const accelData = parseBlob<SimulationMetadata>(accelBuff);
   const gmData = parseBlob<GroundMotionMetadata>(gmBuff);
 
   // 4. Verification
@@ -118,32 +120,74 @@ export async function buildAnimationDataFromBinary(
 
   const precomputed = calculateStats(
     metadata,
+    gmData.bodyView,
     bData.bodyView,
     dispData.bodyView,
-    velData.bodyView,
-    accelData.bodyView,
-    gmData.bodyView,
+    undefined,
+    undefined,
+    // velData.bodyView,
+    // accelData.bodyView,
   );
+
+  function makeAccessor(data: Float32Array, stride: number): IndexAccessor {
+    return {
+      data,
+      stride,
+      at(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride);
+      },
+      xAt(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride)[0];
+      },
+      yAt(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride)[1];
+      },
+      zAt(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride)[2];
+      },
+    };
+  }
+
+  function makeTimeAccessor(data: Float32Array, outerStride: number, innerStride: number): TimeIndexAccessor {
+    return {
+      data,
+      stride: outerStride,
+      at(frameIdx: number) {
+        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, innerStride);
+      },
+      linAt(frameIdx: number) {
+        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, innerStride);
+      },
+      rotAt(frameIdx: number) {
+        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, innerStride);
+      },
+    };
+  }
 
   // 5. Construct Final Object
   return {
     metadata,
     precomputed,
-    initialPositions: bData.bodyView, // [x, y, z...]
-    displacement: dispData.bodyView, // [frame][node][x,y,z,rx,ry,rz]
-    velocity: velData.bodyView,
-    acceleration: accelData.bodyView,
-    groundMotion: gmData.bodyView, // [frame][x,y,z]
+    initialPositions: makeAccessor(bData.bodyView, 3), // [x, y, z...]
+    displacement: makeTimeAccessor(dispData.bodyView, metadata.nodeCount * 6, 6), // [frame][node][x,y,z,rx,ry,rz]
+    velocity: undefined,
+    acceleration: undefined,
+    // velocity: velData.bodyView,
+    // acceleration: accelData.bodyView,
+    groundMotion: makeAccessor(gmData.bodyView, 3), // [frame][x,y,z]
   };
 }
 
 function calculateStats(
   metadata: AnimationMetadata,
+  gm: Float32Array,
   positions: Float32Array,
   disp: Float32Array,
-  vel: Float32Array,
-  accel: Float32Array,
-  gm: Float32Array,
+  vel?: Float32Array,
+  accel?: Float32Array,
 ): ComputedStats {
   // --- 1. GEOMETRY BOUNDS ---
   let minX = Infinity,
@@ -213,23 +257,40 @@ function calculateStats(
 
   // --- 4. GROUND MOTION PEAKS ---
   // Stride is 3 (x,y,z)
-  let maxGM = 0;
+  const gmMax: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  const gmMin: [number, number, number] = [Infinity, Infinity, Infinity];
+  const gmMag = new Float32Array(gm.length / 3);
   for (let i = 0; i < gm.length; i += 3) {
     const x = gm[i];
     const y = gm[i + 1];
     const z = gm[i + 2];
     // Usually we care about the strongest single component or the vector
-    const val = Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
-    if (val > maxGM) maxGM = val;
+    if (x > gmMax[0]) gmMax[0] = x;
+    if (y > gmMax[1]) gmMax[1] = y;
+    if (z > gmMax[2]) gmMax[2] = z;
+    if (x < gmMin[0]) gmMin[0] = x;
+    if (y < gmMin[1]) gmMin[1] = y;
+    if (z < gmMin[2]) gmMin[2] = z;
+    gmMag[Math.floor(i / 3)] = Math.hypot(x, y, z);
   }
+  const gmMagMax = Math.max(...gmMag);
+  const gmMagMin = Math.min(...gmMag);
 
   return {
     boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
     storyElevations,
     storyHeights,
     maxDisplacement: getMaxMag(disp),
-    maxVelocity: getMaxMag(vel),
-    maxAcceleration: getMaxMag(accel),
-    pgd: maxGM,
+    maxVelocity: undefined,
+    maxAcceleration: undefined,
+    // maxVelocity: getMaxMag(vel),
+    // maxAcceleration: getMaxMag(accel),
+    groundMotion: {
+      min: gmMin,
+      max: gmMax,
+      magnitude: gmMag,
+      maxMagnitude: gmMagMax,
+      minMagnitude: gmMagMin,
+    },
   };
 }

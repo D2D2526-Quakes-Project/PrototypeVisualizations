@@ -70,8 +70,20 @@ function CameraManager({
 
   return (
     <>
-      <PerspectiveCamera ref={perspectiveCamRef} makeDefault={!isOrthographic} position={[5, 5, 5]} fov={75} />
-      <OrthographicCamera ref={orthoCamRef} makeDefault={isOrthographic} position={[5, 5, 5]} zoom={50} />
+      <PerspectiveCamera
+        ref={perspectiveCamRef}
+        makeDefault={!isOrthographic}
+        position={[50, 50, 50]}
+        fov={75}
+        up={[0, 0, 1]}
+      />
+      <OrthographicCamera
+        ref={orthoCamRef}
+        makeDefault={isOrthographic}
+        position={[50, 50, 50]}
+        zoom={50}
+        up={[0, 0, 1]}
+      />
       <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} />
     </>
   );
@@ -93,7 +105,7 @@ export function CanvasWithControls({ children }: { children: React.ReactNode }) 
 
   return (
     <>
-      <Canvas camera={{ position: [50, 50, 50], fov: 75 }}>
+      <Canvas>
         {children}
         <CameraManager
           isOrthographic={isOrthographic}
@@ -137,9 +149,9 @@ export function ViewControls({
 }) {
   const { animationData } = useAnimationData();
 
-  const buildingWidth = animationData.maxInitialPos[0] - animationData.minInitialPos[0];
-  const buildingDepth = animationData.maxInitialPos[2] - animationData.minInitialPos[2];
-  const buildingHeight = animationData.maxInitialPos[1] - animationData.minInitialPos[1];
+  const buildingWidth = animationData.precomputed.boundingBox.min[0] - animationData.precomputed.boundingBox.max[0];
+  const buildingDepth = animationData.precomputed.boundingBox.min[2] - animationData.precomputed.boundingBox.max[2];
+  const buildingHeight = animationData.precomputed.boundingBox.min[1] - animationData.precomputed.boundingBox.max[1];
   const maxDimension = Math.max(buildingWidth, buildingDepth, buildingHeight);
   const cameraDistance = maxDimension * 2;
 

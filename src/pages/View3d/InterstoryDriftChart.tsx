@@ -176,8 +176,6 @@ export function InterstoryDriftChart() {
             const barY = chartHeight - (elevation / maxHeight) * chartHeight;
             const barSpacing = barHeight / 4;
 
-            console.log(barHeight, barY, barSpacing);
-
             return (
               <g key={storyId}>
                 {(["NW", "NE", "SW", "SE"] as const).map((corner, cornerIdx) => {
@@ -185,8 +183,6 @@ export function InterstoryDriftChart() {
                   const barWidth = Math.max(0, (ratio / maxRatio) * chartWidth);
                   const color = cornerColors[corner];
                   const y = Math.max(0, barY + cornerIdx * barSpacing);
-
-                  // console.log(barWidth, color, y);
 
                   return (
                     <rect

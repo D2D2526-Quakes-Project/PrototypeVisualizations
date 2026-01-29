@@ -1,8 +1,9 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
+import { useNodeSelection } from "@/contexts/NodeSelectionContext";
 import { UNIT_SCALE } from "@/lib/utils";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { converter, interpolate } from "culori";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
@@ -17,6 +18,8 @@ const tempColor = new THREE.Color();
 export function BuildingScene() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
+  const { selectNode } = useNodeSelection();
+  const { camera, gl: renderer } = useThree();
 
   const offsetX = -animationData.precomputed.boundingBox.center[0];
   const offsetY = -animationData.precomputed.boundingBox.center[1];
@@ -40,6 +43,27 @@ export function BuildingScene() {
     }
     return positions;
   }, [frameIndex, animationData, nodeCount]);
+
+  const handleNodeClick = useCallback((event: { instanceId?: number; stopPropagation: () => void }) => {
+    if (event.instanceId === undefined) return;
+    
+    const nodeId = event.instanceId;
+    
+    // Get the world position of the clicked node
+    const worldPos = new THREE.Vector3(
+      positions[nodeId * 3 + 0],
+      positions[nodeId * 3 + 1], 
+      positions[nodeId * 3 + 2]
+    );
+    
+    // Convert world coordinates to screen coordinates
+    const vector = worldPos.clone();
+    vector.project(camera);
+    const x = (vector.x * 0.5 + 0.5) * renderer.domElement.width;
+    const y = (vector.y * -0.5 + 0.5) * renderer.domElement.height;
+    
+    selectNode(nodeId, { x, y });
+  }, [camera, renderer, selectNode, positions]);
 
   const colors = useMemo(() => {
     const colors = new Float32Array(nodeCount * 3);
@@ -100,6 +124,7 @@ export function BuildingScene() {
             ref={meshRef}
             onPointerMove={(e) => (e.stopPropagation(), setHovered(e.instanceId))}
             onPointerOut={(e) => (e.stopPropagation(), setHovered(undefined))}
+            onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
             args={[undefined, undefined, nodeCount]}
             frustumCulled={false}>
             <sphereGeometry args={[1, 4, 2]}>
@@ -132,69 +157,4 @@ export function BuildingScene() {
   );
 }
 
-function InSceneGraph({ frameIndex }: { frameIndex: number; scale: number; displacementScale: number }) {
-  // const { animationData } = useAnimationData();
-  // const maxAvgDisp = animationData.maxAverageStoryDisplacement;
-  // const width = 20;
-  // const padding = 8;
-  // const offsetX =
-  //   animationData.maxInitialPos[0] + (animationData.maxInitialPos[0] + animationData.minInitialPos[0]) / -2;
-  // const offsetY = animationData.minInitialPos[1] + -animationData.minInitialPos[1];
-  // const offsetZ =
-  //   animationData.maxInitialPos[2] + (animationData.maxInitialPos[2] + animationData.minInitialPos[2]) / -2;
-  // const frame = animationData.frames[frameIndex];
-  // const stories = Array.from(animationData.frames[frameIndex].stories.values());
-  // const numStories = stories.length;
-  // const displacementPoints: [number, number, number][] = new Array(numStories);
-  // const displacementPointsColors: [number, number, number][] = new Array(numStories);
-  // const interStoryDriftPoints: [number, number, number][] = new Array(numStories);
-  // const interStoryDriftPointsColors: [number, number, number][] = new Array(numStories);
-  // const minY = animationData.minInitialPos[1];
-  // const getY = (nodeId: string) => frame.nodePositions.get(nodeId)![1];
-  // for (let i = 0; i < numStories; i++) {
-  //   const story = stories[i];
-  //   const nodeZero = story.nodeIds[0];
-  //   const storyHeight = getY(nodeZero);
-  //   // displacement point
-  //   const displacement = Math.hypot(...story.averageDisplacement);
-  //   const xDisp = (displacement / maxAvgDisp) * width;
-  //   displacementPoints[i] = [xDisp, storyHeight - minY, 0];
-  //   const c = rgbConverter(colorMap(displacement / maxAvgDisp));
-  //   displacementPointsColors[i] = [c.r, c.g, c.b];
-  //   // inter-story drift point
-  //   if (i === 0) {
-  //     interStoryDriftPoints[i] = [0, storyHeight - minY, 0];
-  //     interStoryDriftPointsColors[i] = [0, 0, 0];
-  //   } else {
-  //     const prev = stories[i - 1];
-  //     const prevHeight = getY(prev.nodeIds[0]);
-  //     const prevDisp = Math.hypot(...prev.averageDisplacement);
-  //     const drift = displacement - prevDisp;
-  //     const ratio = drift / Math.abs(storyHeight - prevHeight);
-  //     interStoryDriftPoints[i] = [ratio * width * width, storyHeight - minY, 0];
-  //     interStoryDriftPointsColors[i] = [0, 0, 0];
-  //   }
-  // }
-  // return (
-  //   <mesh position={[offsetX + padding, offsetY, offsetZ]}>
-  //     {/* <mesh position={[width / 2, height / 2, 0]}>
-  //       <planeGeometry args={[width, height]} />
-  //     </mesh> */}
-  //     <Line
-  //       points={displacementPoints}
-  //       vertexColors={displacementPointsColors}
-  //       lineWidth={2}
-  //       fog={false}
-  //       toneMapped={false}
-  //     />
-  //     <Line
-  //       position={[0, 0, -1]}
-  //       points={interStoryDriftPoints}
-  //       vertexColors={interStoryDriftPointsColors}
-  //       lineWidth={2}
-  //       fog={false}
-  //       toneMapped={false}
-  //     />
-  //   </mesh>
-  // );
-}
+

@@ -1,21 +1,16 @@
 import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { DockviewWrapper } from "@/components/dockviewWrapper";
+import { FloatingPanelManager } from "@/components/FloatingPanelManager";
+import { NodeSelectionProvider } from "@/contexts/NodeSelectionContext";
 import { PlaybackControls } from "@/components/playback/PlaybackControls";
 import { Timeline } from "@/components/Timeline";
-import {
-  getLayoutFromCurrentUrl,
-  loadLayoutFromLocalStorage,
-  removeLayoutFromUrl,
-  saveLayoutToLocalStorage,
-} from "@/lib/layoutPersistence";
-import { type DockviewApi, type DockviewReadyEvent, type IDockviewPanelProps, type SerializedDockview } from "dockview";
-import { useRef, useState } from "react";
+import { type DockviewApi, type IDockviewPanelProps } from "dockview";
 import { BuildingScene } from "./BuildingScene";
 import { InterstoryDriftChart } from "./InterstoryDriftChart";
 import { PlaybackProvider } from "@/components/playback/PlaybackContext";
 
 // Define panel components
-const MainCanvasPanel = (props: IDockviewPanelProps) => (
+const MainCanvasPanel = (_props: IDockviewPanelProps) => (
   <div className="relative w-full h-full">
     <CanvasWithControls>
       <BuildingScene />
@@ -52,9 +47,9 @@ const MainCanvasPanel = (props: IDockviewPanelProps) => (
     </div>
   </div>
 );
-const TimelinePanle = (props: IDockviewPanelProps) => <Timeline {...props} />;
+const TimelinePanel = (props: IDockviewPanelProps) => <Timeline {...props} />;
 
-const ChartPlanel = (props: IDockviewPanelProps) => <InterstoryDriftChart {...props} />;
+const ChartPanel = (_props: IDockviewPanelProps) => <InterstoryDriftChart />;
 
 export function View3d() {
   // /**
@@ -79,8 +74,8 @@ export function View3d() {
 
   const components = {
     mainCanvas: MainCanvasPanel,
-    timeline: TimelinePanle,
-    chart: ChartPlanel,
+    timeline: TimelinePanel,
+    chart: ChartPanel,
   };
 
   // const handleDockviewReady = (event: DockviewReadyEvent) => {
@@ -105,7 +100,7 @@ export function View3d() {
 
   const createDefaultLayout = (api: DockviewApi) => {
     // Create default layout similar to the original resizable panels
-    const mainPanel = api.addPanel({
+    api.addPanel({
       id: "main-canvas",
       component: "mainCanvas",
       title: "3D View",
@@ -129,17 +124,20 @@ export function View3d() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <PlaybackProvider>
-        <DockviewWrapper
-          components={components}
-          // onReady={handleDockviewReady}
-          // initialLayout={getLayoutFromCurrentUrl() || loadLayoutFromLocalStorage() || undefined}
-          // onLayoutChange={(layout: SerializedDockview) => {
-          //   // setCurrentLayout(layout);
-          //   saveLayoutToLocalStorage(layout);
-          // }}
-          createDefaultLayout={createDefaultLayout}
-          className="flex-1"
-        />
+        <NodeSelectionProvider>
+          <DockviewWrapper
+            components={components}
+            // onReady={handleDockviewReady}
+            // initialLayout={getLayoutFromCurrentUrl() || loadLayoutFromLocalStorage() || undefined}
+            // onLayoutChange={(layout: SerializedDockview) => {
+            //   // setCurrentLayout(layout);
+            //   saveLayoutToLocalStorage(layout);
+            // }}
+            createDefaultLayout={createDefaultLayout}
+            className="flex-1"
+          />
+          <FloatingPanelManager />
+        </NodeSelectionProvider>
       </PlaybackProvider>
     </div>
   );

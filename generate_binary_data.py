@@ -135,6 +135,7 @@ def process_building():
     df_nodes = pd.read_csv(FILES["building"]["nodes"])
     unique_ids = df_nodes["Node ID"].unique()
     id_to_index = {uid: i for i, uid in enumerate(unique_ids)}
+    index_to_id = {i: uid for i, uid in enumerate(unique_ids)}
     count_nodes = len(unique_ids)
 
     # 2. Prepare Binary Buffer (Only XYZ)
@@ -173,8 +174,9 @@ def process_building():
         idx = id_to_index.get(nid)
         if idx is not None:
             x, y, z = row["H1"] - min_x, row["H2"] - min_y, row["V"] - min_v
+
             # Find story elevation closest to node
-            stidx = list(storiesElevations.values()).index(z) if z in storiesElevations else None
+            stidx = list(storiesElevations.values()).index(z) if z in list(storiesElevations.values()) else None
             if stidx == None:
                 continue
             story = list(storiesElevations.keys())[stidx]
@@ -182,59 +184,39 @@ def process_building():
                 stories[story] = []
             stories[story].append(idx)
 
-            # Put node in corners
-            corners = storiesCorners.get(story)
-            if corners is None:
-                corners = {
-                    "NW": {
-                        "index": idx,
-                        "x": row["H1"],
-                        "y": row["H2"],
-                    },
-                    "NE": {
-                        "index": idx,
-                        "x": row["H1"],
-                        "y": row["H2"],
-                    },
-                    "SW": {
-                        "index": idx,
-                        "x": row["H1"],
-                        "y": row["H2"],
-                    },
-                    "SE": {
-                        "index": idx,
-                        "x": row["H1"],
-                        "y": row["H2"],
-                    },
-                }
-            else:
-                nw = corners["NW"]
-                # Check if node is more northwest
-                if x <= nw["x"] and y >= nw["y"]:
-                    nw["index"] = idx
-                    nw["x"] = x
-                    nw["y"] = y
+    # Now find corners for each story based on all nodes at that elevation
+    for story, node_indices in stories.items():
+        # Get all coordinates for nodes at this story
+        story_nodes = df_nodes[df_nodes["Node ID"].isin([index_to_id[idx] for idx in node_indices])]
 
-                ne = corners["NE"]
-                # Check if node is more northeast
-                if x >= ne["x"] and y >= ne["y"]:
-                    ne["index"] = idx
-                    ne["x"] = x
-                    ne["y"] = y
+        xs = story_nodes["H1"].values - min_x
+        ys = story_nodes["H2"].values - min_y
 
-                sw = corners["SW"]
-                # Check if node is more southwest
-                if x <= sw["x"] and y <= sw["y"]:
-                    sw["index"] = idx
-                    sw["x"] = x
-                    sw["y"] = y
+        # Find the bounding box
+        max_x, min_x_story = xs.max(), xs.min()
+        max_y, min_y_story = ys.max(), ys.min()
 
-                se = corners["SE"]
-                # Check if node is more southeast
-                if x >= se["x"] and y <= se["y"]:
-                    se["index"] = idx
-                    se["x"] = x
-                    se["y"] = y
+        # Define ideal corner positions
+        ideal_corners = {
+            "NW": (min_x_story, max_y),
+            "NE": (max_x, max_y),
+            "SW": (min_x_story, min_y_story),
+            "SE": (max_x, min_y_story),
+        }
+
+        corners = {}
+        for corner_name, (ideal_x, ideal_y) in ideal_corners.items():
+            # Find node closest to this ideal corner
+            distances = np.sqrt((xs - ideal_x) ** 2 + (ys - ideal_y) ** 2)
+            closest_idx = distances.argmin()
+
+            corners[corner_name] = {
+                "index": node_indices[closest_idx],
+                "x": xs[closest_idx],
+                "y": ys[closest_idx],
+            }
+
+        storiesCorners[story] = corners
 
     corners = {
         "NW": [],
@@ -247,8 +229,17 @@ def process_building():
         for corner, cornerData in storyCorners.items():
             corners[corner].append(cornerData["index"])
 
+    storyHeights = {}
+    for i, row in df_height.iterrows():
+        story = row["Story level"]
+        storyHeights[story] = row["Story Height (ft)"] * 12
+
+    storyOrder = list(stories.keys())
+    storyOrder.reverse()
+    print(storyOrder)
+
     # 4. Write
-    header = {"count_nodes": count_nodes, "stories": stories, "corners": corners}
+    header = {"count_nodes": count_nodes, "stories": stories, "corners": corners, "story_heights": storyHeights, "story_order": storyOrder}
 
     write_bld_file("building.bld", header, buffer.tobytes())
     return id_to_index

@@ -1,21 +1,22 @@
-import { Line, PointMaterial, Points } from "@react-three/drei";
-import { converter, formatHex, interpolate } from "culori";
-import React, { useMemo } from "react";
-import { DoubleSide, Vector3 } from "three";
-import { useAnimationData } from "../../hooks/nodeDataHook";
-import { UNIT_SCALE } from "@/lib/utils";
 import { usePlayback } from "@/components/playback/PlaybackContext";
+import { UNIT_SCALE } from "@/lib/utils";
+import { useFrame } from "@react-three/fiber";
+import { converter, interpolate } from "culori";
+import { useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import { useAnimationData } from "../../hooks/nodeDataHook";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
 const colorMap = interpolate([amber400, red700], "oklab");
 const rgbConverter = converter("rgb");
 
+const tempObject = new THREE.Object3D();
+const tempColor = new THREE.Color();
+
 export function BuildingScene() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-
-  const initalPositions = animationData.initialPositions;
 
   const offsetX = -animationData.precomputed.boundingBox.center[0];
   const offsetY = -animationData.precomputed.boundingBox.center[1];
@@ -23,76 +24,101 @@ export function BuildingScene() {
 
   const maxDisplacement = animationData.precomputed.maxDisplacement;
 
-  // const nodes = useMemo(() => {
-  //   const nodes = [];
-
-  //   for (let i = 0; i < animationData.metadata.nodeCount; i++) {
-  //     const pos = initalPositions.at(i);
-  //     nodes.push(
-  //       <mesh position={[pos[0], pos[1], pos[2]]} key={i}>
-  //         <boxGeometry args={[2, 2, 2]} />
-  //         <meshBasicMaterial color="red" fog={false} toneMapped={false} />
-  //       </mesh>,
-  //     );
-  //   }
-  //   return nodes;
-  // }, [initalPositions, animationData.metadata.nodeCount]);
-
   const nodeCount = animationData.metadata.nodeCount;
 
-  const positions = new Float32Array(nodeCount * 3);
+  const [hovered, setHovered] = useState<number | undefined>(undefined);
 
-  for (let i = 0; i < nodeCount; i++) {
-    const pos = animationData.initialPositions.at(i);
-    const displacement = animationData.displacement.at(frameIndex).at(i);
-    positions[i * 3 + 0] = pos[0] + displacement[0];
-    positions[i * 3 + 1] = pos[1] + displacement[1];
-    positions[i * 3 + 2] = pos[2] + displacement[2];
-  }
+  const positions = useMemo(() => {
+    const positions = new Float32Array(nodeCount * 3);
+
+    for (let i = 0; i < nodeCount; i++) {
+      const pos = animationData.initialPositions.at(i);
+      const displacement = animationData.displacement.at(frameIndex).at(i);
+      positions[i * 3 + 0] = pos[0] + displacement[0];
+      positions[i * 3 + 1] = pos[1] + displacement[1];
+      positions[i * 3 + 2] = pos[2] + displacement[2];
+    }
+    return positions;
+  }, [frameIndex, animationData, nodeCount]);
+
+  const colors = useMemo(() => {
+    const colors = new Float32Array(nodeCount * 3);
+    for (let i = 0; i < nodeCount; i++) {
+      const displacement = animationData.displacement.at(frameIndex).at(i);
+      const mag = Math.hypot(displacement[0], displacement[1], displacement[2]);
+      const displacementScale = mag / maxDisplacement;
+      const color = rgbConverter(colorMap(displacementScale));
+
+      colors[i * 3 + 0] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
+    }
+    return colors;
+  }, [frameIndex, animationData, nodeCount, maxDisplacement]);
+
+  // const billboardMaterial = useMemo(() => {
+  //   const mat = new THREE.MeshBasicMaterial({
+  //     side: THREE.DoubleSide,
+  //     vertexColors: true,
+  //   });
+
+  //   mat.onBeforeCompile = (shader) => {
+  //     shader.vertexShader = shader.vertexShader.replace(
+  //       "#include <project_vertex>",
+  //       `
+  //       vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+  //       float scaleX = length(vec3(instanceMatrix[0].xyz));
+  //       float scaleY = length(vec3(instanceMatrix[1].xyz));
+  //       mvPosition.xy += position.xy * vec2(scaleX, scaleY);
+  //       gl_Position = projectionMatrix * mvPosition;
+  //       `,
+  //     );
+  //   };
+  //   return mat;
+  // }, []);
+
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+
+  useFrame(() => {
+    if (!meshRef.current || nodeCount === 0) return;
+
+    for (let i = 0; i < nodeCount; i++) {
+      tempObject.position.set(positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2]);
+
+      meshRef.current.geometry.attributes.color.needsUpdate = true;
+
+      if (i === hovered) tempColor.setRGB(2 / 255, 4 / 255, 80 / 255);
+      else tempColor.set(colors[i * 3 + 0], colors[i * 3 + 1], colors[i * 3 + 2]);
+      tempColor.toArray(colors, i * 3);
+
+      const scale = hovered === i ? 50 : 1 / UNIT_SCALE;
+      tempObject.scale.set(scale, scale, scale);
+
+      tempObject.updateMatrix();
+      meshRef.current.setMatrixAt(i, tempObject.matrix);
+    }
+
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
 
   return (
     <>
       <ambientLight intensity={2} />
       <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
-      {/* {Array.from(Object.entries(animationData.metadata.stories)).map(([storyId, indices]) => {
-        // const avgDisp = Math.hypot(...story.averageDisplacement);
-        const floorColor = formatHex(colorMap(0));
-        // const floorColor = formatHex(colorMap(avgDisp / maxDisplacement));
-
-        return (
-          <React.Fragment key={storyId}>
-            {nodePositions.map(({ pos, disp }, i) => {
-              const displacement = Math.hypot(...disp);
-              const color = formatHex(colorMap(displacement / maxDisplacement));
-              return (
-                <mesh key={i} position={[pos[0], pos[1], pos[2]]} scale={[2, 1, 2]}>
-                  <boxGeometry args={[2, 2, 2]} />
-                  <meshBasicMaterial color={color} fog={false} toneMapped={false} />
-                </mesh>
-              );
-            })}
-            <mesh>
-              <bufferGeometry>
-                <bufferAttribute attach="attributes-position" args={[floorQuadPositions, 3]} />
-              </bufferGeometry>
-              <meshBasicMaterial
-                color={floorColor}
-                opacity={0.3}
-                transparent
-                side={DoubleSide}
-                fog={false}
-                toneMapped={false}
-              />
-            </mesh>
-          </React.Fragment>
-        );
-      })} */}
 
       <group scale={UNIT_SCALE}>
         <group position={[offsetX, offsetY, offsetZ]}>
-          <Points positions={positions} stride={3} frustumCulled={false}>
-            <PointMaterial transparent color="#ff0a5e" size={5} sizeAttenuation={false} depthWrite={false} />
-          </Points>
+          <instancedMesh
+            ref={meshRef}
+            onPointerMove={(e) => (e.stopPropagation(), setHovered(e.instanceId))}
+            onPointerOut={(e) => (e.stopPropagation(), setHovered(undefined))}
+            args={[null, null, nodeCount]}
+            frustumCulled={false}>
+            <sphereGeometry args={[1, 4, 2]}>
+              <instancedBufferAttribute attach="attributes-color" args={[colors, 3]} />
+            </sphereGeometry>
+            <meshBasicMaterial fog={false} toneMapped={false} vertexColors />
+          </instancedMesh>
         </group>
       </group>
 

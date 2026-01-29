@@ -57,6 +57,8 @@ export interface BuildingMetadata {
   count_nodes: number;
   stories: Record<string, number[]>; // Map "15" -> [nodeIndex, nodeIndex...]
   corners: Record<string, number[]>; // Map "NW" -> [nodeIndex, nodeIndex...]
+  story_heights: Record<string, number>; // Map "15" -> storyHeight
+  story_order: string[]; // Story order from bottom up
 }
 
 export interface SimulationMetadata {
@@ -75,8 +77,10 @@ export interface AnimationMetadata {
   nodeCount: number;
   frameCount: number;
   dt: number; // Time step (usually 0.01)
+  storyHeights: Record<string, number>;
   stories: Record<string, number[]>;
   corners: Record<string, number[]>;
+  storyOrder: string[];
 }
 
 export interface BuildingAnimationData {
@@ -92,6 +96,7 @@ export interface BuildingAnimationData {
    * Static Node Positions (Rest State).
    * Layout: [x, y, z, x, y, z, ...]
    * Size: nodeCount * 3
+   * Units: Inches
    */
   initialPositions: IndexAccessor;
 
@@ -99,18 +104,21 @@ export interface BuildingAnimationData {
    * Displacement Data.
    * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
    * Access: (frameIndex * nodeCount * 6) + (nodeIndex * 6) + componentIndex
+   * Units: Inches
    */
   displacement: TimeIndexAccessor;
 
   /**
    * Velocity Data.
    * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
+   * Units: Inches
    */
   velocity?: TimeIndexAccessor;
 
   /**
    * Acceleration Data.
    * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
+   * Units: Inches
    */
   acceleration?: TimeIndexAccessor;
 
@@ -118,6 +126,7 @@ export interface BuildingAnimationData {
    * Ground Motion Data.
    * Layout: Frame -> [x, y, z]
    * Size: frameCount * 3
+   * Units: Inches
    */
   groundMotion: IndexAccessor;
 }

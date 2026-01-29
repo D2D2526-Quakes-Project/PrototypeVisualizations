@@ -116,6 +116,8 @@ export async function buildAnimationDataFromBinary(
     dt: dispData.metadata.dt,
     stories: bData.metadata.stories,
     corners: bData.metadata.corners,
+    storyHeights: bData.metadata.story_heights,
+    storyOrder: bData.metadata.story_order,
   };
 
   const precomputed = calculateStats(

@@ -54,6 +54,28 @@ const saveToCache = async (url: string, data: ArrayBuffer) => {
   }
 };
 
+export const removeFromCache = async (url: string) => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    store.delete(url);
+  } catch (e) {
+    console.warn("Cache write failed (likely quota exceeded)", e);
+  }
+};
+
+export const clearCache = async () => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    store.clear();
+  } catch (e) {
+    console.warn("Cache write failed (likely quota exceeded)", e);
+  }
+};
+
 /**
  * 3. The Smart Fetcher
  */

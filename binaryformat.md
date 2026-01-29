@@ -37,7 +37,13 @@ All files in this suite follow a standard "Header-Body" architecture.
     "NE": [...],
     "SW": [...],
     "SE": [...]
-  }
+  },
+  "story_heights": {
+    "15": <float>, // Story height in inches
+    "Roof": <float>,
+    ...
+  },
+  "story_order": ["Ground", ...] // Story order from bottom up
 }
 ```
 

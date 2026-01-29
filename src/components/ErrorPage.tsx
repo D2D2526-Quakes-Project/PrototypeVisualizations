@@ -1,3 +1,4 @@
+import { clearCache } from "@/lib/dataLoader";
 import { Link, useRouteError } from "react-router";
 
 export function ErrorPage() {
@@ -16,8 +17,11 @@ export function ErrorPage() {
       <Link to="/" className="bg-neutral-300 px-4 py-2 rounded-md">
         Go back home
       </Link>
-      <button className="bg-neutral-300 px-4 py-2 rounded-md" onClick={() => window.location.reload()}>
+      <button className="bg-neutral-300 px-4 py-2 rounded-md cursor-pointer" onClick={() => window.location.reload()}>
         Reload
+      </button>
+      <button className="bg-neutral-300 px-4 py-2 rounded-md cursor-pointer" onClick={() => clearCache()}>
+        Clear Cache
       </button>
     </div>
   );

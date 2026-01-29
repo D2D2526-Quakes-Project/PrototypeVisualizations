@@ -24,9 +24,7 @@ export function InterstoryDriftChart() {
     return () => resizeObserver.disconnect();
   }, []);
 
-  const { corners, stories } = animationData.metadata;
-
-  console.log(stories);
+  const { corners, stories, storyHeights, storyOrder } = animationData.metadata;
 
   const cornerSets = {
     NW: new Set(corners.NW),
@@ -34,10 +32,6 @@ export function InterstoryDriftChart() {
     SW: new Set(corners.SW),
     SE: new Set(corners.SE),
   };
-
-  const storyOrder = Array.from(Object.keys(stories))
-    .filter((a) => !isNaN(Number(a)))
-    .sort((a, b) => Number(a) - Number(b));
 
   const cornerNodes = new Map<
     string,
@@ -50,7 +44,7 @@ export function InterstoryDriftChart() {
   >();
 
   // story height, (story evelation - story below elevation)
-  const storyToHeight = new Map<string, number>();
+  const storyElevations = new Map<string, number>();
 
   storyOrder.forEach((storyId, index) => {
     const nodeIndices = stories[storyId];
@@ -64,16 +58,13 @@ export function InterstoryDriftChart() {
     cornerNodes.set(storyId, corners);
 
     if (index > 0) {
-      const height = animationData.initialPositions.yAt(corners.NW);
-      const belowId = storyOrder[index - 1];
-      const belowHeight = animationData.initialPositions.yAt(cornerNodes.get(belowId)!.NW);
-
-      console.log(height, belowHeight);
-      storyToHeight.set(storyId, height - belowHeight);
+      let elevation = storyHeights[storyId];
+      storyOrder.forEach((storyId2, index2) => {
+        if (index2 < index) elevation += storyHeights[storyId2];
+      });
+      storyElevations.set(storyId, elevation);
     }
   });
-
-  console.log(storyToHeight);
 
   const storyDrift = new Map<
     string,
@@ -89,7 +80,7 @@ export function InterstoryDriftChart() {
     const storyId = storyOrder[i];
     const belowId = storyOrder[i - 1];
 
-    const height = storyToHeight.get(storyId)!;
+    const height = storyElevations.get(storyId)!;
     const corners = cornerNodes.get(storyId)!;
     const belowCorners = cornerNodes.get(belowId)!;
 
@@ -102,7 +93,7 @@ export function InterstoryDriftChart() {
         const driftMag = Math.hypot(current[0], current[1], current[2]);
         const belowDriftMag = Math.hypot(below[0], below[1], below[2]);
 
-        return (driftMag - belowDriftMag) / height;
+        return ((driftMag - belowDriftMag) / height) * 100;
       };
     };
 
@@ -121,10 +112,10 @@ export function InterstoryDriftChart() {
       d.SW(frameIndex),
       d.SE(frameIndex),
     ]),
-    0.002,
+    0.000001,
   );
 
-  const maxHeight = storyToHeight.get(storyOrder[storyOrder.length - 1]) || 0;
+  const maxHeight = storyElevations.get(storyOrder.at(-1) ?? "0") || 0;
 
   const padding = { top: 20, right: 120, bottom: 30, left: 40 };
   const chartWidth = size.width - padding.left - padding.right;
@@ -151,7 +142,7 @@ export function InterstoryDriftChart() {
               <g key={i}>
                 <line x1="-5" y1={y} x2="0" y2={y} stroke="black" />
                 <text x="-8" y={y + 3} textAnchor="end" fontSize="10">
-                  {height.toFixed(1)}m
+                  {height.toFixed(1)}in
                 </text>
               </g>
             );
@@ -172,7 +163,7 @@ export function InterstoryDriftChart() {
             );
           })}
           <text x={chartWidth / 2} y={size.height - padding.top} textAnchor="middle" fontSize="12">
-            Drift Ratio (m/m)
+            Drift Ratio (in/in)
           </text>
 
           {/* Bars for each story and corner */}
@@ -180,13 +171,10 @@ export function InterstoryDriftChart() {
             const drift = storyDrift.get(storyId);
             if (!drift) return null;
 
-            // const height = storyToHeight.get(storyId) || 0;
-            const cumulativeHeight = storyOrder
-              .slice(0, i + 1)
-              .reduce((sum, id) => sum + (storyToHeight.get(id) || 0), 0);
+            const elevation = storyElevations.get(storyId) || 0;
 
             const barHeight = chartHeight / storyOrder.length - 2;
-            const barY = chartHeight - (cumulativeHeight / maxHeight) * chartHeight;
+            const barY = chartHeight - (elevation / maxHeight) * chartHeight;
             const barSpacing = barHeight / 4;
 
             return (

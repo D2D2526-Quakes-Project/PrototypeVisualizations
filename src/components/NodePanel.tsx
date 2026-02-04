@@ -1,11 +1,10 @@
-import { XIcon, MinusIcon, Maximize2, ExternalLink } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { useAnimationData } from "@/hooks/nodeDataHook";
 import { usePlayback } from "@/components/playback/PlaybackContext";
-import { UNIT_SCALE } from "@/lib/utils";
+import { useAnimationData } from "@/hooks/nodeDataHook";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
-import { useState, useMemo, useEffect, useRef } from "react";
-import { Vector3, type Color } from "three";
+import { XIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Vector3 } from "three";
 
 export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
   const { animationData } = useAnimationData();
@@ -62,7 +61,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
             </div>
             <div>
               <span className="font-medium text-neutral-700">Height:</span>
-              <div className="text-neutral-600">{(storyInfo.height * UNIT_SCALE).toFixed(1)}"</div>
+              <div className="text-neutral-600">{storyInfo.height.toFixed(1)}"</div>
             </div>
           </div>
 

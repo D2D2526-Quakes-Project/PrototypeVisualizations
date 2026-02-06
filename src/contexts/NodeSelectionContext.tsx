@@ -5,7 +5,7 @@ export interface NodeSelectionContextType {
   selectedNode: number | null;
   // We store the API here so the 3D scene can call it
   setDockviewApi: (api: DockviewApi) => void;
-  selectNode: (nodeId: number, screenPosition: { x: number; y: number }) => void;
+  selectNode: (nodeId: number) => void;
   deselectNode: () => void;
 }
 
@@ -28,7 +28,7 @@ export function NodeSelectionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const selectNode = useCallback(
-    (nodeId: number, screenPosition: { x: number; y: number }) => {
+    (nodeId: number) => {
       if (!api) return;
 
       setSelectedNode(nodeId);

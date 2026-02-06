@@ -1,10 +1,8 @@
-import { CanvasWithControls } from "@/components/CanvasWithControls";
-import React, { useMemo } from "react";
-import { DoubleSide } from "three";
-import { useAnimationData } from "../../hooks/nodeDataHook";
-import { formatHex, interpolate, converter } from "culori";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { UNIT_SCALE } from "@/lib/utils";
+import { converter, formatHex, interpolate } from "culori";
+import { DoubleSide } from "three";
+import { useAnimationData } from "../../hooks/nodeDataHook";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -28,9 +26,7 @@ const colorMap = interpolate(
 const rgbConverter = converter("rgb");
 
 export function ThresholdBuilding({
-  warningThreshold,
   visibleFloors,
-  onToggleFloor,
 }: {
   warningThreshold: number;
   visibleFloors: Set<string>;
@@ -38,7 +34,7 @@ export function ThresholdBuilding({
 }) {
   const { animationData } = useAnimationData();
   const { storyOrder } = animationData.metadata;
-  const { cornerNodes, storyDrift, peakStoryDrift, storyElevations } = animationData.precomputed;
+  const { cornerNodes, storyDrift, peakStoryDrift } = animationData.precomputed;
   const { frameIndex } = usePlayback();
 
   const offsetX = -animationData.precomputed.boundingBox.center[0];

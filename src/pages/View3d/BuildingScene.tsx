@@ -60,10 +60,7 @@ export function BuildingScene() {
       // Convert world coordinates to screen coordinates
       const vector = worldPos.clone();
       vector.project(camera);
-      const x = (vector.x * 0.5 + 0.5) * renderer.domElement.width;
-      const y = (vector.y * -0.5 + 0.5) * renderer.domElement.height;
-
-      selectNode(nodeId, { x, y });
+      selectNode(nodeId);
     },
     [camera, renderer, selectNode, positions],
   );

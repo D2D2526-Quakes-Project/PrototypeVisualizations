@@ -1,7 +1,7 @@
 import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { PlaybackControls } from "@/components/playback/PlaybackControls";
-import { converter, formatHex, interpolate } from "culori";
+import { formatHex, interpolate } from "culori";
 import React, { useMemo, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
 import { SmallTimeline } from "../../components/SmallTimeline";
@@ -27,7 +27,6 @@ const colorMap = interpolate(
   ],
   "oklab",
 );
-const rgbConverter = converter("rgb");
 
 export function ViewDamageThreshold() {
   const { animationData } = useAnimationData();
@@ -38,7 +37,7 @@ export function ViewDamageThreshold() {
   const [warningThreshold, setWarningThreshold] = useState(0.01);
   const [visibleFloors, setVisibleFloors] = useState<Set<string>>(() => new Set(storyOrder));
 
-  const { cornerNodes, storyDrift, peakStoryDrift, storyElevations } = animationData.precomputed;
+  const { storyDrift, peakStoryDrift } = animationData.precomputed;
 
   const toggleFloor = (storyId: string) => {
     setVisibleFloors((prev) => {
@@ -103,24 +102,24 @@ export function ViewDamageThreshold() {
   }, [storyDrift, warningThreshold]);
 
   // This is the max for the current frame.
-  const maxRatioPerFrame = useMemo(() => {
-    const frameCount = animationData.metadata.frameCount;
-    const maxRatios = new Float32Array(frameCount);
+  // const maxRatioPerFrame = useMemo(() => {
+  //   const frameCount = animationData.metadata.frameCount;
+  //   const maxRatios = new Float32Array(frameCount);
 
-    for (let frame = 0; frame < frameCount; frame++) {
-      let max = 0.000001;
-      for (let s = 0; s < storyDrift.storyCount; s++) {
-        const corners = storyDrift.getStoryDrift(s, frame);
-        max = Math.max(max, corners[0], corners[1], corners[2], corners[3]);
-      }
-      maxRatios[frame] = max;
-    }
+  //   for (let frame = 0; frame < frameCount; frame++) {
+  //     let max = 0.000001;
+  //     for (let s = 0; s < storyDrift.storyCount; s++) {
+  //       const corners = storyDrift.getStoryDrift(s, frame);
+  //       max = Math.max(max, corners[0], corners[1], corners[2], corners[3]);
+  //     }
+  //     maxRatios[frame] = max;
+  //   }
 
-    return maxRatios;
-  }, [storyDrift, animationData.metadata.frameCount]);
+  //   return maxRatios;
+  // }, [storyDrift, animationData.metadata.frameCount]);
 
-  const maxRatio = maxRatioPerFrame[frameIndex];
-  const maxHeight = storyElevations[storyOrder.at(-1) ?? "0"] || 0;
+  // const maxRatio = maxRatioPerFrame[frameIndex];
+  // const maxHeight = storyElevations[storyOrder.at(-1) ?? "0"] || 0;
 
   return (
     <div className="flex h-full min-h-0">

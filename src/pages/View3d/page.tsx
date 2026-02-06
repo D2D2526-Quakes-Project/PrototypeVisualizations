@@ -1,22 +1,9 @@
-import { CanvasWithControls } from "@/components/CanvasWithControls";
 import { DockviewWrapper } from "@/components/dockviewWrapper";
-import { useNodeSelection } from "@/contexts/NodeSelectionContext";
-import { PlaybackControls } from "@/components/playback/PlaybackControls";
-import { Timeline } from "@/components/Timeline";
-import {
-  DockviewApi,
-  type IDockviewPanelProps,
-  type DockviewReadyEvent,
-  type IDockviewPanelHeaderProps,
-} from "dockview";
-import { BuildingScene } from "./BuildingScene";
-import { InterstoryDriftChart } from "./InterstoryDriftChart";
-import { PlaybackProvider } from "@/components/playback/PlaybackContext";
-import { NodeSelectionProvider } from "@/contexts/NodeSelectionContext";
-import { NodePanel, NodeTab } from "@/components/NodePanel"; // Import your new panel
 import { MagicPanel, MagicPanelTab } from "@/components/MagicPanel";
-
-// --- Panel Definitions ---
+import { NodePanel, NodeTab } from "@/components/NodePanel"; // Import your new panel
+import { PlaybackProvider } from "@/components/playback/PlaybackContext";
+import { NodeSelectionProvider, useNodeSelection } from "@/contexts/NodeSelectionContext";
+import { DockviewApi, type DockviewReadyEvent, type IDockviewPanelHeaderProps } from "dockview";
 
 // --- Components Map ---
 const components = {
@@ -86,13 +73,13 @@ function DockviewContainer() {
     });
 
     // Chart to the right of the timeline
-    // api.addPanel({
-    //   id: "chart",
-    //   component: "magicPanel",
-    //   title: "Interstory Drift",
-    //   position: { referencePanel: timelinePanel, direction: "right" },
-    //   params: { panelType: "InterstoryDriftChart" },
-    // });
+    api.addPanel({
+      id: "chart",
+      component: "magicPanel",
+      title: "Interstory Drift",
+      position: { referencePanel: timelinePanel, direction: "right" },
+      params: { panelType: "InterstoryDriftChart" },
+    });
   };
 
   return (

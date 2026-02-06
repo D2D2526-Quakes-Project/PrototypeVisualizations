@@ -1,5 +1,5 @@
 import type { DockviewApi, DockviewReadyEvent, IDockviewReactProps, SerializedDockview } from "dockview";
-import { DockviewReact, themeLight, themeLightSpaced } from "dockview";
+import { DockviewReact, themeLight } from "dockview";
 import "dockview/dist/styles/dockview.css";
 
 export type DockviewWrapperProps = {

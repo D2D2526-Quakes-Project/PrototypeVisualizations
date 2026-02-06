@@ -78,6 +78,7 @@ export interface AnimationMetadata {
   frameCount: number;
   dt: number; // Time step (usually 0.01)
   storyHeights: Record<string, number>;
+  // Map from story id to a list of indices
   stories: Record<string, number[]>;
   corners: Record<string, number[]>;
   storyOrder: string[];

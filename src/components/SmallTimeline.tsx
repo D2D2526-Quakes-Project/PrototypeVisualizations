@@ -1,25 +1,22 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
+import { usePlayback } from "./playback/PlaybackContext";
 
-export function SmallTimeline({
-  frameIndex,
-  onFrameChange,
-}: {
-  frameIndex: number;
-  onFrameChange: (index: number | ((prevState: number) => number)) => void;
-}) {
+export function SmallTimeline() {
   const svgRef = useRef<SVGSVGElement>(null);
   const { animationData } = useAnimationData();
+
+  const { frameIndex, setFrameIndex } = usePlayback();
 
   /**
    * Displacement Data
    */
 
   const maxFrame = animationData.metadata.frameCount - 1;
-  const graphData = animationData.frames.map((f) => Math.hypot(...f.groundMotion));
+  const graphData = animationData.precomputed.groundMotion.magnitude;
 
-  const maxGraphData = Math.max(...graphData);
-  const minGraphData = Math.min(...graphData);
+  const maxGraphData = animationData.precomputed.groundMotion.maxMagnitude;
+  const minGraphData = 0;
 
   const displacementRange = maxGraphData - minGraphData;
 
@@ -83,21 +80,26 @@ export function SmallTimeline({
     const framePos = relativeX / rect.width;
     const newFrame = Math.round(framePos * (maxFrame + 1));
 
-    onFrameChange(Math.max(0, Math.min(newFrame, maxFrame)));
+    setFrameIndex(Math.max(0, Math.min(newFrame, maxFrame)));
   }
 
   /**
    * Graph data
    */
 
+  const current = graphData.at(frameIndex) ?? 0;
   const playheadX = (frameIndex / maxFrame) * 100;
-  const playheadY = (1 - (graphData[frameIndex] - minGraphData) / displacementRange) * chartHeight;
+  const playheadY = (1 - (current - minGraphData) / displacementRange) * chartHeight;
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
-  const linePoints = graphData
-    .map((d, i) => `${(i / maxFrame) * 100},${(1 - (d - minGraphData) / displacementRange) * chartHeight}`)
-    .join(" ");
+  let linePoints = "";
+  for (let i = 0; i < maxFrame; i++) {
+    const d = graphData.at(i) ?? 0;
+    const x = i / maxFrame;
+    const y = 1 - (d - minGraphData) / displacementRange;
+    linePoints += `${x * 100},${y * chartHeight} `;
+  }
   const strokeColor = "stroke-amber-400";
 
   return (

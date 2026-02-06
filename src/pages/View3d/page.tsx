@@ -14,6 +14,7 @@ import { InterstoryDriftChart } from "./InterstoryDriftChart";
 import { PlaybackProvider } from "@/components/playback/PlaybackContext";
 import { NodeSelectionProvider } from "@/contexts/NodeSelectionContext";
 import { NodePanel, NodeTab } from "@/components/NodePanel"; // Import your new panel
+import MagicPanel from "@/components/MagicPanel";
 
 // --- Panel Definitions ---
 
@@ -37,6 +38,7 @@ const components = {
   timeline: TimelinePanel,
   chart: ChartPanel,
   nodePanel: NodePanel, // Register the node panel
+  magicPanel: MagicPanel,
 };
 
 const tabComponents = {
@@ -69,6 +71,7 @@ export function View3d() {
 
 // Internal wrapper to access the NodeSelectionContext
 function DockviewContainer() {
+  console.log("DockviewContainer render");
   const { setDockviewApi } = useNodeSelection();
 
   const handleDockviewReady = (event: DockviewReadyEvent) => {
@@ -83,25 +86,28 @@ function DockviewContainer() {
     // Main 3D View
     api.addPanel({
       id: "main-canvas",
-      component: "mainCanvas",
+      component: "magicPanel",
       title: "3D View",
+      params: { panelType: "3DView" },
     });
 
     // Timeline at the bottom
     const timelinePanel = api.addPanel({
       id: "timeline",
-      component: "timeline",
+      component: "magicPanel",
       title: "Timeline",
       position: { direction: "below" },
+      params: { panelType: "Timeline" },
     });
 
     // Chart to the right of the timeline
-    api.addPanel({
-      id: "chart",
-      component: "chart",
-      title: "Interstory Drift",
-      position: { referencePanel: timelinePanel, direction: "right" },
-    });
+    // api.addPanel({
+    //   id: "chart",
+    //   component: "magicPanel",
+    //   title: "Interstory Drift",
+    //   position: { referencePanel: timelinePanel, direction: "right" },
+    //   params: { panelType: "InterstoryDriftChart" },
+    // });
   };
 
   return (

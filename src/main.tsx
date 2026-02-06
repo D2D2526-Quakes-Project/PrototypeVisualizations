@@ -6,7 +6,7 @@ import { ErrorPage } from "./components/ErrorPage";
 import { NavigationBar } from "./components/NavigationBar";
 import { AnimationDataProvider } from "./hooks/nodeDataHook";
 import "./index.css";
-// import { ViewDamageThreshold } from "./pages/DamageThreshold/page";
+import { ViewDamageThreshold } from "./pages/DamageThreshold/page";
 // import { ViewDataExplorer } from "./pages/DataExplorer/page";
 // import { ElevationSlice } from "./pages/ElevationSlice/page";
 // import { FloorPlanTorsion } from "./pages/FloorPlanTorsion/page";
@@ -16,6 +16,7 @@ import "./index.css";
 // import { ViewSurface } from "./pages/Surface/page";
 // import { ViewTemporalRibbons } from "./pages/TemporalRibbons/page";
 import { View3d } from "./pages/View3d/page";
+import { PlaybackProvider } from "./components/playback/PlaybackContext";
 // import { ViewVolumes } from "./pages/ViewVolumes/page";
 
 const routes = [
@@ -25,7 +26,15 @@ const routes = [
   // { path: "/surface", label: "Surface", element: <ViewSurface /> },
   // { path: "/nodegrid", label: "Node Grid", element: <ViewNodeGrid /> },
   // { path: "/ribbons", label: "Ribbons", element: <ViewTemporalRibbons /> },
-  // { path: "/threshold", label: "Thresholds", element: <ViewDamageThreshold /> },
+  {
+    path: "/threshold",
+    label: "Thresholds",
+    element: (
+      <PlaybackProvider>
+        <ViewDamageThreshold />
+      </PlaybackProvider>
+    ),
+  },
   // { path: "/slice", label: "Elevation Slice", element: <ElevationSlice /> },
   // { path: "/torsion", label: "Floor Torsion", element: <FloorPlanTorsion /> },
   // { path: "/volumes", label: "Volumes", element: <ViewVolumes /> },

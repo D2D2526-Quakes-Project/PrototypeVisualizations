@@ -1,184 +1,89 @@
 import { CanvasWithControls } from "@/components/CanvasWithControls";
+import { usePlayback } from "@/components/playback/PlaybackContext";
+import { PlaybackControls } from "@/components/playback/PlaybackControls";
+import { converter, formatHex, interpolate } from "culori";
 import React, { useMemo, useState } from "react";
-import { DoubleSide } from "three";
-import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
 import { SmallTimeline } from "../../components/SmallTimeline";
 import { useAnimationData } from "../../hooks/nodeDataHook";
-import type { BuildingAnimationData } from "../../lib/parser";
-import { formatHex } from "culori";
+import { ThresholdBuilding } from "./ThresholdBuilding";
+import { useStoryDriftData } from "./useStoryDriftData";
 
-const red500 = formatHex("oklch(63.7% 0.237 25.331)")!;
-const amber400 = formatHex("oklch(82.8% 0.189 84.429)")!;
-const green500 = formatHex("oklch(72.3% 0.219 149.579)")!;
-
-function ThresholdBuilding({
-  frameIndex,
-  warningThreshold,
-  criticalThreshold,
-  animationData,
-}: {
-  frameIndex: number;
-  warningThreshold: number;
-  criticalThreshold: number;
-  animationData: BuildingAnimationData;
-}) {
-  const frame = animationData.frames[frameIndex];
-  const initialFrame = animationData.frames[0];
-
-  const offsetX = (animationData.maxInitialPos[0] + animationData.minInitialPos[0]) / -2;
-  const offsetY = -animationData.minInitialPos[1];
-  const offsetZ = (animationData.maxInitialPos[2] + animationData.minInitialPos[2]) / -2;
-  const scale = 1;
-
-  const stories = Array.from(frame.stories.entries()).sort(([, a], [, b]) => {
-    const yA = frame.nodePositions.get(a.nodeIds[0])![1];
-    const yB = frame.nodePositions.get(b.nodeIds[0])![1];
-    return yA - yB;
-  });
-
-  const driftColors = useMemo(() => {
-    const colors = new Map<string, string>();
-    for (let i = 0; i < stories.length; i++) {
-      const [storyId, story] = stories[i];
-      const displacement = Math.hypot(...story.averageDisplacement);
-      const storyHeight = frame.nodePositions.get(story.nodeIds[0])![1];
-      let ratio = 0;
-
-      if (i === 0) {
-        const initialHeight = initialFrame.nodePositions.get(story.nodeIds[0])![1];
-        ratio = initialHeight > 0 ? displacement / initialHeight : 0;
-      } else {
-        const [, prevStory] = stories[i - 1];
-        const prevHeight = frame.nodePositions.get(prevStory.nodeIds[0])![1];
-        const prevDisp = Math.hypot(...prevStory.averageDisplacement);
-        const drift = Math.abs(displacement - prevDisp);
-        const interStoryHeight = storyHeight - prevHeight;
-        ratio = interStoryHeight > 0 ? drift / interStoryHeight : 0;
-      }
-
-      if (ratio >= criticalThreshold) colors.set(storyId, red500);
-      else if (ratio >= warningThreshold) colors.set(storyId, amber400);
-      else colors.set(storyId, green500);
-    }
-    return colors;
-  }, [frame, initialFrame, warningThreshold, criticalThreshold, stories]);
-
-  return (
-    <>
-      {stories.map(([storyId, story]) => {
-        const nodePositions = story.nodeIds.map((nodeId) => {
-          const pos = frame.nodePositions.get(nodeId)!;
-          return { pos: [(pos[0] + offsetX) * scale, (pos[1] + offsetY) * scale, (pos[2] + offsetZ) * scale] };
-        });
-
-        const floorQuadPositions = new Float32Array([
-          ...nodePositions[1].pos,
-          ...nodePositions[0].pos,
-          ...nodePositions[2].pos,
-          ...nodePositions[1].pos,
-          ...nodePositions[2].pos,
-          ...nodePositions[3].pos,
-        ]);
-        const floorColor = driftColors.get(storyId) || green500;
-
-        return (
-          <mesh key={storyId}>
-            <bufferGeometry>
-              <bufferAttribute attach="attributes-position" args={[floorQuadPositions, 3]} />
-            </bufferGeometry>
-            <meshBasicMaterial
-              color={floorColor}
-              opacity={0.6}
-              transparent
-              side={DoubleSide}
-              fog={false}
-              toneMapped={false}
-            />
-          </mesh>
-        );
-      })}
-      <axesHelper args={[75]} />
-    </>
-  );
-}
+const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
+const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
+const blue400 = formatHex("oklch(70.7% 0.165 254.624)")!;
+const white = formatHex("#fff")!;
+const red400 = formatHex("oklch(70.4% 0.191 22.216)")!;
+const red600 = formatHex("oklch(57.7% 0.245 27.325)")!;
+const red900 = formatHex("oklch(39.6% 0.141 25.723)")!;
+const colorMap = interpolate(
+  [
+    [blue900, -1],
+    [blue600, -0.51],
+    [blue400, -0.5],
+    [white, 0],
+    [red400, 0.5],
+    [red600, 0.51],
+    [red900, 1],
+  ],
+  "oklab",
+);
+const rgbConverter = converter("rgb");
 
 export function ViewDamageThreshold() {
   const { animationData } = useAnimationData();
+  const { storyOrder } = animationData.metadata;
 
-  const playback = usePlaybackControl();
+  const { frameIndex } = usePlayback();
 
   const [warningThreshold, setWarningThreshold] = useState(0.01);
-  const [criticalThreshold, setCriticalThreshold] = useState(0.02);
 
-  const { storyData } = useMemo(() => {
-    const storyData = new Map<string, { peakDrift: number; warningTime?: number; criticalTime?: number }>();
-    const initialFrame = animationData.frames[0];
+  const { storyDrift, peakStoryDrift, storyElevations } = useStoryDriftData();
 
-    // Initialize map with all stories
-    for (const storyId of initialFrame.stories.keys()) {
-      storyData.set(storyId, { peakDrift: 0 });
-    }
-
-    // Single pass to calculate peak drifts and first exceedance times
-    for (let t = 0; t < animationData.frames.length; t++) {
-      const frame = animationData.frames[t];
-      const time = animationData.timeSteps[t];
-      const stories = Array.from(frame.stories.entries()).sort(([, a], [, b]) => {
-        const yA = frame.nodePositions.get(a.nodeIds[0])![1];
-        const yB = frame.nodePositions.get(b.nodeIds[0])![1];
-        return yA - yB;
-      });
-
-      for (let i = 0; i < stories.length; i++) {
-        const [storyId, story] = stories[i];
-        const displacement = Math.hypot(...story.averageDisplacement);
-        const storyHeight = frame.nodePositions.get(story.nodeIds[0])![1];
-        let ratio = 0;
-
-        if (i === 0) {
-          const initialHeight = initialFrame.nodePositions.get(story.nodeIds[0])![1];
-          ratio = initialHeight > 0 ? displacement / initialHeight : 0;
-        } else {
-          const [, prevStory] = stories[i - 1];
-          const prevHeight = frame.nodePositions.get(prevStory.nodeIds[0])![1];
-          const prevDisp = Math.hypot(...prevStory.averageDisplacement);
-          const drift = Math.abs(displacement - prevDisp);
-          const interStoryHeight = storyHeight - prevHeight;
-          ratio = interStoryHeight > 0 ? drift / interStoryHeight : 0;
-        }
-
-        const currentStoryData = storyData.get(storyId)!;
-
-        // Update peak drift
-        if (ratio > currentStoryData.peakDrift) {
-          currentStoryData.peakDrift = ratio;
-        }
-
-        // Log first time warning threshold is exceeded
-        if (ratio >= warningThreshold && currentStoryData.warningTime === undefined) {
-          currentStoryData.warningTime = time;
-        }
-
-        // Log first time critical threshold is exceeded
-        if (ratio >= criticalThreshold && currentStoryData.criticalTime === undefined) {
-          currentStoryData.criticalTime = time;
-        }
+  const storyThresholdFrame = useMemo(() => {
+    const storyThresholdTime = new Map<
+      string,
+      {
+        NW: number | null;
+        NE: number | null;
+        SW: number | null;
+        SE: number | null;
       }
+    >(storyOrder.map((id) => [id, { NW: null, NE: null, SW: null, SE: null }]));
+
+    for (const [storyId, corners] of storyDrift) {
+      const time = storyThresholdTime.get(storyId)!;
+
+      for (let i = 0; i < animationData.metadata.frameCount; i++) {
+        const cornerNE = corners.NE(i);
+        const cornerNW = corners.NW(i);
+        const cornerSW = corners.SW(i);
+        const cornerSE = corners.SE(i);
+
+        if (cornerNE > warningThreshold && !time.NE) time.NE = i;
+        if (cornerNW > warningThreshold && !time.NW) time.NW = i;
+        if (cornerSW > warningThreshold && !time.SW) time.SW = i;
+        if (cornerSE > warningThreshold && !time.SE) time.SE = i;
+
+        if (time.NE && time.NW && time.SW && time.SE) break;
+      }
+      storyThresholdTime.set(storyId, time);
     }
+    return storyThresholdTime;
+  }, [animationData, storyDrift, warningThreshold]);
 
-    return { storyData };
-  }, [animationData, warningThreshold, criticalThreshold]);
+  // This is the max for the current frame.
+  const maxRatio = Math.max(
+    ...Array.from(storyDrift.values()).flatMap((d) => [
+      d.NW(frameIndex),
+      d.NE(frameIndex),
+      d.SW(frameIndex),
+      d.SE(frameIndex),
+    ]),
+    0.000001,
+  );
 
-  const sortedStories = useMemo(
-    () =>
-      Array.from(storyData.entries()).sort((a, b) => parseInt(a[0].replace("S", "")) - parseInt(b[0].replace("S", ""))),
-    [storyData]
-  );
-  const maxPeakDrift = useMemo(
-    () => Math.max(...Array.from(storyData.values()).map((d) => d.peakDrift), 0.01),
-    [storyData]
-  );
+  const maxHeight = storyElevations.get(storyOrder.at(-1) ?? "0") || 0;
 
   return (
     <div className="flex h-full min-h-0">
@@ -202,58 +107,57 @@ export function ViewDamageThreshold() {
                   onChange={(e) => setWarningThreshold(parseFloat(e.target.value))}
                 />
               </label>
-              <label className="flex flex-col">
-                <span className="font-semibold">Critical Threshold ({criticalThreshold.toFixed(3)})</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="0.05"
-                  step="0.001"
-                  value={criticalThreshold}
-                  onChange={(e) => setCriticalThreshold(parseFloat(e.target.value))}
-                />
-              </label>
             </div>
 
             <div>
               <h3 className="text-lg font-bold mt-4">Story Damage Summary</h3>
-              <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto] p-2 gap-1">
-                <span className="whitespace-nowrap">Floor</span>
+              <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] p-2 gap-1">
+                <span className="whitespace-nowrap">Corner</span>
+                <span className="whitespace-nowrap text-center">Current Drift</span>
                 <span className="whitespace-nowrap text-center">Peak Drift</span>
-                <span className="whitespace-nowrap text-center">Warning (s)</span>
-                <span className="whitespace-nowrap text-center">Critical (s)</span>
-
-                {/* Rows */}
-                {sortedStories.map(([storyId, data]) => (
-                  <React.Fragment key={storyId}>
-                    <div className="font-mono">{storyId}</div>
-                    <div className="w-full flex items-center">
-                      <div className="grow bg-neutral-200 h-4 rounded">
-                        <div
-                          className={`h-full rounded ${
-                            data.peakDrift > criticalThreshold
-                              ? "bg-red-500"
-                              : data.peakDrift > warningThreshold
-                              ? "bg-amber-400"
-                              : "bg-green-500"
-                          }`}
-                          style={{
-                            width: `${(data.peakDrift / maxPeakDrift) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="w-12 font-mono text-right shrink-0">{data.peakDrift.toFixed(4)}</span>
-                    </div>
-                    <div
-                      className={`w-14 font-mono text-center p-1 rounded ${data.warningTime ? "bg-yellow-200" : ""}`}>
-                      {data.warningTime?.toFixed(2) ?? "-"}
-                    </div>
-                    <div className={`w-14 font-mono text-center p-1 rounded ${data.criticalTime ? "bg-red-200" : ""}`}>
-                      {data.criticalTime?.toFixed(2) ?? "-"}
-                    </div>
-                  </React.Fragment>
-                ))}
+                <span
+                  className="whitespace-nowrap text-center"
+                  title="Time in seconds the corner crossed warning threshold">
+                  Warning (s)
+                </span>
               </div>
+
+              {/* Rows */}
+              {storyOrder.toReversed().map((storyId) => (
+                <React.Fragment key={storyId}>
+                  <div className="font-mono text-sm">{storyId}</div>
+                  <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] items-center p-2 gap-2">
+                    {(["NE", "NW", "SW", "SW"] as const).map((corner) => {
+                      if (!peakStoryDrift.has(storyId)) return;
+                      if (!storyThresholdFrame.has(storyId)) return;
+                      if (!storyDrift.has(storyId)) return;
+                      const thresholdFrame = storyThresholdFrame.get(storyId)![corner];
+                      const peak = peakStoryDrift.get(storyId)![corner];
+                      const current = storyDrift.get(storyId)![corner](frameIndex);
+                      return (
+                        <>
+                          <div
+                            className={`h-4 aspect-square rotate-45 ${
+                              current > warningThreshold ? "bg-amber-400" : "bg-green-500"
+                            }`}
+                            style={{
+                              background: formatHex(colorMap(current / peak)),
+                            }}
+                          />
+                          <div className="font-mono">{corner}</div>
+
+                          <span className="w-12 font-mono text-right shrink-0">{current.toFixed(4)}</span>
+                          <span className="w-12 font-mono text-right shrink-0">{peak.toFixed(4)}</span>
+                          <div
+                            className={`w-14 font-mono text-center p-1 rounded ${thresholdFrame ? "bg-yellow-200" : ""}`}>
+                            {thresholdFrame ? (thresholdFrame * animationData.metadata.dt).toFixed(2) : "-"}
+                          </div>
+                        </>
+                      );
+                    })}
+                  </div>
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </ResizablePanel>
@@ -261,17 +165,12 @@ export function ViewDamageThreshold() {
         <ResizablePanel defaultSize={70} className="min-h-0 flex h-full">
           <div className="relative w-full">
             <CanvasWithControls>
-              <ThresholdBuilding
-                frameIndex={playback.frameIndex}
-                warningThreshold={warningThreshold}
-                criticalThreshold={criticalThreshold}
-                animationData={animationData}
-              />
+              <ThresholdBuilding warningThreshold={warningThreshold} />
             </CanvasWithControls>
 
             <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
-              <PlaybackControls playback={playback} />
-              <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
+              <PlaybackControls />
+              <SmallTimeline />
             </div>
           </div>
         </ResizablePanel>

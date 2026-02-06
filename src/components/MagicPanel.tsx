@@ -3,17 +3,21 @@ import { SmallTimeline } from "./SmallTimeline";
 import { Timeline } from "./Timeline";
 import { useState } from "react";
 import type { IDockviewPanelProps } from "dockview";
+import { View3d } from "@/pages/View3d/page";
+import { NodePanel } from "./NodePanel";
 
 const PanelCatalog = {
   Timeline: Timeline,
   SmallTimeline: SmallTimeline,
   InterstoryDriftChart: InterstoryDriftChart,
+  ["3DView"]: View3d,
 } as const;
 
 type PanelType = keyof typeof PanelCatalog;
 
-const MagicPanel = ({ panelProps, type }: { panelProps: IDockviewPanelProps; type: PanelType }) => {
-  const [currentPanelType, setCurrentPanelType] = useState<PanelType>("Timeline"); // Default view
+const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>) => {
+  console.log("render");
+  const [currentPanelType, setCurrentPanelType] = useState<PanelType>(props.params.panelType); // Default view
 
   const CurrentComponent = PanelCatalog[currentPanelType];
 
@@ -35,7 +39,7 @@ const MagicPanel = ({ panelProps, type }: { panelProps: IDockviewPanelProps; typ
       </div>
       <div className="panel-content">
         {/* Dynamically render the selected component and pass dock props */}
-        <CurrentComponent panelProps={panelProps} />
+        <CurrentComponent {...props} />
       </div>
     </div>
   );

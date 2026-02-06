@@ -85,7 +85,7 @@ export function InterstoryDriftChart() {
 
     const makeStoryDriftAccessor = (height: number, nodeIdx: number, belowNodeIdx: number) => {
       return (frame: number) => {
-        const frameData = animationData.displacement.at(frame);
+        const frameData = animationData.displacement.atFrame(frame);
         const current = frameData.at(nodeIdx);
         const below = frameData.at(belowNodeIdx);
 

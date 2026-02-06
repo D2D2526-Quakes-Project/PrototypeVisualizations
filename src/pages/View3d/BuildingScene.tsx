@@ -36,7 +36,7 @@ export function BuildingScene() {
 
     for (let i = 0; i < nodeCount; i++) {
       const pos = animationData.initialPositions.at(i);
-      const displacement = animationData.displacement.at(frameIndex).at(i);
+      const displacement = animationData.displacement.atFrame(frameIndex).at(i);
       positions[i * 3 + 0] = pos[0] + displacement[0];
       positions[i * 3 + 1] = pos[1] + displacement[1];
       positions[i * 3 + 2] = pos[2] + displacement[2];
@@ -44,31 +44,34 @@ export function BuildingScene() {
     return positions;
   }, [frameIndex, animationData, nodeCount]);
 
-  const handleNodeClick = useCallback((event: { instanceId?: number; stopPropagation: () => void }) => {
-    if (event.instanceId === undefined) return;
-    
-    const nodeId = event.instanceId;
-    
-    // Get the world position of the clicked node
-    const worldPos = new THREE.Vector3(
-      positions[nodeId * 3 + 0],
-      positions[nodeId * 3 + 1], 
-      positions[nodeId * 3 + 2]
-    );
-    
-    // Convert world coordinates to screen coordinates
-    const vector = worldPos.clone();
-    vector.project(camera);
-    const x = (vector.x * 0.5 + 0.5) * renderer.domElement.width;
-    const y = (vector.y * -0.5 + 0.5) * renderer.domElement.height;
-    
-    selectNode(nodeId, { x, y });
-  }, [camera, renderer, selectNode, positions]);
+  const handleNodeClick = useCallback(
+    (event: { instanceId?: number; stopPropagation: () => void }) => {
+      if (event.instanceId === undefined) return;
+
+      const nodeId = event.instanceId;
+
+      // Get the world position of the clicked node
+      const worldPos = new THREE.Vector3(
+        positions[nodeId * 3 + 0],
+        positions[nodeId * 3 + 1],
+        positions[nodeId * 3 + 2],
+      );
+
+      // Convert world coordinates to screen coordinates
+      const vector = worldPos.clone();
+      vector.project(camera);
+      const x = (vector.x * 0.5 + 0.5) * renderer.domElement.width;
+      const y = (vector.y * -0.5 + 0.5) * renderer.domElement.height;
+
+      selectNode(nodeId, { x, y });
+    },
+    [camera, renderer, selectNode, positions],
+  );
 
   const colors = useMemo(() => {
     const colors = new Float32Array(nodeCount * 3);
     for (let i = 0; i < nodeCount; i++) {
-      const displacement = animationData.displacement.at(frameIndex).at(i);
+      const displacement = animationData.displacement.atFrame(frameIndex).at(i);
       const mag = Math.hypot(displacement[0], displacement[1], displacement[2]);
       const displacementScale = mag / maxDisplacement;
       const color = rgbConverter(colorMap(displacementScale));
@@ -156,5 +159,3 @@ export function BuildingScene() {
     </>
   );
 }
-
-

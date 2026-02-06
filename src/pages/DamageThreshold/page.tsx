@@ -7,7 +7,6 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../comp
 import { SmallTimeline } from "../../components/SmallTimeline";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 import { ThresholdBuilding } from "./ThresholdBuilding";
-import { useStoryDriftData } from "./useStoryDriftData";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -37,53 +36,91 @@ export function ViewDamageThreshold() {
   const { frameIndex } = usePlayback();
 
   const [warningThreshold, setWarningThreshold] = useState(0.01);
+  const [visibleFloors, setVisibleFloors] = useState<Set<string>>(() => new Set(storyOrder));
 
-  const { storyDrift, peakStoryDrift, storyElevations } = useStoryDriftData();
+  const { cornerNodes, storyDrift, peakStoryDrift, storyElevations } = animationData.precomputed;
+
+  const toggleFloor = (storyId: string) => {
+    setVisibleFloors((prev) => {
+      const next = new Set(prev);
+      if (next.has(storyId)) {
+        next.delete(storyId);
+      } else {
+        next.add(storyId);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllFloors = () => {
+    if (visibleFloors.size === storyOrder.length) {
+      setVisibleFloors(new Set());
+    } else {
+      setVisibleFloors(new Set(storyOrder));
+    }
+  };
 
   const storyThresholdFrame = useMemo(() => {
-    const storyThresholdTime = new Map<
-      string,
-      {
-        NW: number | null;
-        NE: number | null;
-        SW: number | null;
-        SE: number | null;
+    const thresholds = new Map();
+
+    for (let i = 0; i < storyDrift.storyCount; i++) {
+      const storyId = storyOrder[i];
+      const time = {
+        NW: 0,
+        NE: 0,
+        SW: 0,
+        SE: 0,
+      };
+
+      for (let f = 0; f < storyDrift.frameCount; f++) {
+        const story = storyDrift.getStoryDrift(i, f);
+        const nw = story[0];
+        const ne = story[1];
+        const sw = story[2];
+        const se = story[3];
+
+        if (nw > warningThreshold && !time.NW) {
+          time.NW = i;
+        }
+        if (ne > warningThreshold && !time.NE) {
+          time.NE = i;
+        }
+        if (sw > warningThreshold && !time.SW) {
+          time.SW = i;
+        }
+        if (se > warningThreshold && !time.SE) {
+          time.SE = i;
+        }
+        if (time.NW !== 0 && time.NE !== 0 && time.SW !== 0 && time.SE !== 0) {
+          break;
+        }
       }
-    >(storyOrder.map((id) => [id, { NW: null, NE: null, SW: null, SE: null }]));
 
-    for (const [storyId, corners] of storyDrift) {
-      const time = storyThresholdTime.get(storyId)!;
-
-      for (let i = 0; i < animationData.metadata.frameCount; i++) {
-        const cornerNE = corners.NE(i);
-        const cornerNW = corners.NW(i);
-        const cornerSW = corners.SW(i);
-        const cornerSE = corners.SE(i);
-
-        if (cornerNE > warningThreshold && !time.NE) time.NE = i;
-        if (cornerNW > warningThreshold && !time.NW) time.NW = i;
-        if (cornerSW > warningThreshold && !time.SW) time.SW = i;
-        if (cornerSE > warningThreshold && !time.SE) time.SE = i;
-
-        if (time.NE && time.NW && time.SW && time.SE) break;
-      }
-      storyThresholdTime.set(storyId, time);
+      thresholds.set(storyId, time);
     }
-    return storyThresholdTime;
-  }, [animationData, storyDrift, warningThreshold]);
+
+    return thresholds;
+  }, [storyDrift, warningThreshold]);
 
   // This is the max for the current frame.
-  const maxRatio = Math.max(
-    ...Array.from(storyDrift.values()).flatMap((d) => [
-      d.NW(frameIndex),
-      d.NE(frameIndex),
-      d.SW(frameIndex),
-      d.SE(frameIndex),
-    ]),
-    0.000001,
-  );
+  const maxRatioPerFrame = useMemo(() => {
+    const frameCount = animationData.metadata.frameCount;
+    const maxRatios = new Float32Array(frameCount);
 
-  const maxHeight = storyElevations.get(storyOrder.at(-1) ?? "0") || 0;
+    for (let frame = 0; frame < frameCount; frame++) {
+      let max = 0.000001;
+      for (let s = 0; s < storyDrift.storyCount; s++) {
+        const corners = storyDrift.getStoryDrift(s, frame);
+        max = Math.max(max, corners[0], corners[1], corners[2], corners[3]);
+      }
+      maxRatios[frame] = max;
+    }
+
+    return maxRatios;
+  }, [storyDrift, animationData.metadata.frameCount]);
+
+  const maxRatio = maxRatioPerFrame[frameIndex];
+  const maxHeight = storyElevations[storyOrder.at(-1) ?? "0"] || 0;
 
   return (
     <div className="flex h-full min-h-0">
@@ -109,6 +146,32 @@ export function ViewDamageThreshold() {
               </label>
             </div>
 
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-bold">Floor Visibility</h3>
+                <button
+                  onClick={toggleAllFloors}
+                  className="text-xs px-2 py-1 bg-neutral-200 hover:bg-neutral-300 rounded">
+                  {visibleFloors.size === storyOrder.length ? "Hide All" : "Show All"}
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-1">
+                {storyOrder.toReversed().map((storyId) => (
+                  <label
+                    key={storyId}
+                    className="flex items-center gap-2 cursor-pointer hover:bg-neutral-100 p-1 rounded">
+                    <input
+                      type="checkbox"
+                      checked={visibleFloors.has(storyId)}
+                      onChange={() => toggleFloor(storyId)}
+                      className="cursor-pointer"
+                    />
+                    <span className="font-mono text-sm">{storyId}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div>
               <h3 className="text-lg font-bold mt-4">Story Damage Summary</h3>
               <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] p-2 gap-1">
@@ -122,42 +185,45 @@ export function ViewDamageThreshold() {
                 </span>
               </div>
 
-              {/* Rows */}
-              {storyOrder.toReversed().map((storyId) => (
-                <React.Fragment key={storyId}>
-                  <div className="font-mono text-sm">{storyId}</div>
-                  <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] items-center p-2 gap-2">
-                    {(["NE", "NW", "SW", "SW"] as const).map((corner) => {
-                      if (!peakStoryDrift.has(storyId)) return;
-                      if (!storyThresholdFrame.has(storyId)) return;
-                      if (!storyDrift.has(storyId)) return;
-                      const thresholdFrame = storyThresholdFrame.get(storyId)![corner];
-                      const peak = peakStoryDrift.get(storyId)![corner];
-                      const current = storyDrift.get(storyId)![corner](frameIndex);
-                      return (
-                        <>
-                          <div
-                            className={`h-4 aspect-square rotate-45 ${
-                              current > warningThreshold ? "bg-amber-400" : "bg-green-500"
-                            }`}
-                            style={{
-                              background: formatHex(colorMap(current / peak)),
-                            }}
-                          />
-                          <div className="font-mono">{corner}</div>
+              {storyOrder.toReversed().map((storyId, i) => {
+                if (!visibleFloors.has(storyId)) return null;
+                const corners = storyDrift.getStoryDrift(storyOrder.length - i - 1, frameIndex);
+                const peaks = peakStoryDrift[storyId];
+                const thresholds = storyThresholdFrame.get(storyId);
 
-                          <span className="w-12 font-mono text-right shrink-0">{current.toFixed(4)}</span>
-                          <span className="w-12 font-mono text-right shrink-0">{peak.toFixed(4)}</span>
-                          <div
-                            className={`w-14 font-mono text-center p-1 rounded ${thresholdFrame ? "bg-yellow-200" : ""}`}>
-                            {thresholdFrame ? (thresholdFrame * animationData.metadata.dt).toFixed(2) : "-"}
-                          </div>
-                        </>
-                      );
-                    })}
-                  </div>
-                </React.Fragment>
-              ))}
+                if (!corners || !peaks || !thresholds) return null;
+
+                return (
+                  <React.Fragment key={storyId}>
+                    <div className="font-mono text-sm">{storyId}</div>
+                    <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] items-center p-2 gap-2">
+                      {(["NE", "NW", "SW", "SE"] as const).map((corner, ci) => {
+                        const thresholdFrame = thresholds[corner];
+                        const peak = peaks[corner];
+                        const current = corners[ci];
+
+                        return (
+                          <React.Fragment key={corner}>
+                            <div
+                              className="h-4 aspect-square rotate-45"
+                              style={{
+                                background: formatHex(colorMap(current / peak)),
+                              }}
+                            />
+                            <div className="font-mono">{corner}</div>
+                            <span className="w-12 font-mono text-right shrink-0">{current.toFixed(4)}</span>
+                            <span className="w-12 font-mono text-right shrink-0">{peak.toFixed(4)}</span>
+                            <div
+                              className={`w-14 font-mono text-center p-1 rounded ${thresholdFrame !== null ? "bg-yellow-200" : ""}`}>
+                              {thresholdFrame !== null ? (thresholdFrame * animationData.metadata.dt).toFixed(2) : "-"}
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  </React.Fragment>
+                );
+              })}
             </div>
           </div>
         </ResizablePanel>
@@ -165,7 +231,11 @@ export function ViewDamageThreshold() {
         <ResizablePanel defaultSize={70} className="min-h-0 flex h-full">
           <div className="relative w-full">
             <CanvasWithControls>
-              <ThresholdBuilding warningThreshold={warningThreshold} />
+              <ThresholdBuilding
+                warningThreshold={warningThreshold}
+                visibleFloors={visibleFloors}
+                onToggleFloor={toggleFloor}
+              />
             </CanvasWithControls>
 
             <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">

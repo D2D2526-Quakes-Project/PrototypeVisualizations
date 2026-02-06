@@ -1,14 +1,10 @@
 import { CanvasWithControls } from "@/components/CanvasWithControls";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { DoubleSide } from "three";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../components/resizable";
-import { SmallTimeline } from "../../components/SmallTimeline";
 import { useAnimationData } from "../../hooks/nodeDataHook";
-import type { BuildingAnimationData } from "../../lib/parser";
-import { formatHex, interpolate } from "culori";
+import { formatHex, interpolate, converter } from "culori";
 import { usePlayback } from "@/components/playback/PlaybackContext";
-import { PlaybackControls } from "@/components/playback/PlaybackControls";
-import { useStoryDriftData } from "./useStoryDriftData";
+import { UNIT_SCALE } from "@/lib/utils";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -29,97 +25,103 @@ const colorMap = interpolate(
   ],
   "oklab",
 );
+const rgbConverter = converter("rgb");
 
-export function ThresholdBuilding({ warningThreshold }: { warningThreshold: number }) {
-  return null;
+export function ThresholdBuilding({
+  warningThreshold,
+  visibleFloors,
+  onToggleFloor,
+}: {
+  warningThreshold: number;
+  visibleFloors: Set<string>;
+  onToggleFloor: (storyId: string) => void;
+}) {
   const { animationData } = useAnimationData();
   const { storyOrder } = animationData.metadata;
-  const { storyDrift, peakStoryDrift, storyElevations, cornerNodes } = useStoryDriftData();
-
-  // const frame = animationData.frames[frameIndex];
-  // const initialFrame = animationData.frames[0];
+  const { cornerNodes, storyDrift, peakStoryDrift, storyElevations } = animationData.precomputed;
+  const { frameIndex } = usePlayback();
 
   const offsetX = -animationData.precomputed.boundingBox.center[0];
   const offsetY = -animationData.precomputed.boundingBox.center[1];
   const offsetZ = -animationData.precomputed.boundingBox.min[2];
 
-  // const stories = Array.from(frame.stories.entries()).sort(([, a], [, b]) => {
-  //   const yA = frame.nodePositions.get(a.nodeIds[0])![1];
-  //   const yB = frame.nodePositions.get(b.nodeIds[0])![1];
-  //   return yA - yB;
-  // });
+  const getNodePosition = (nodeIdx: number) => {
+    const pos = animationData.initialPositions.at(nodeIdx);
+    const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
 
-  // const driftColors = useMemo(() => {
-  //   const colors = new Map<string, string>();
-  //   for (let i = 0; i < stories.length; i++) {
-  //     const [storyId, story] = stories[i];
-  //     const displacement = Math.hypot(...story.averageDisplacement);
-  //     const storyHeight = frame.nodePositions.get(story.nodeIds[0])![1];
-  //     let ratio = 0;
-
-  //     if (i === 0) {
-  //       const initialHeight = initialFrame.nodePositions.get(story.nodeIds[0])![1];
-  //       ratio = initialHeight > 0 ? displacement / initialHeight : 0;
-  //     } else {
-  //       const [, prevStory] = stories[i - 1];
-  //       const prevHeight = frame.nodePositions.get(prevStory.nodeIds[0])![1];
-  //       const prevDisp = Math.hypot(...prevStory.averageDisplacement);
-  //       const drift = Math.abs(displacement - prevDisp);
-  //       const interStoryHeight = storyHeight - prevHeight;
-  //       ratio = interStoryHeight > 0 ? drift / interStoryHeight : 0;
-  //     }
-
-  //     if (ratio >= criticalThreshold) colors.set(storyId, red500);
-  //     else if (ratio >= warningThreshold) colors.set(storyId, amber400);
-  //     else colors.set(storyId, green500);
-  //   }
-  //   return colors;
-  // }, [frame, initialFrame, warningThreshold, criticalThreshold, stories]);
+    return [pos[0] + displacement[0], pos[1] + displacement[1], pos[2] + displacement[2]];
+  };
 
   return (
     <>
-      {storyOrder.flatMap((storyId) => {
-        const corners = cornerNodes.get(storyId);
-        if (!corners) return;
+      <ambientLight intensity={2} />
+      <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
 
-        return (["NE", "NW", "SW", "SE"] as const).map(() => {
-          // const cornerNode = story;
+      <group scale={UNIT_SCALE}>
+        <group position={[offsetX, offsetY, offsetZ]}>
+          {storyOrder.map((storyId, storyIndex) => {
+            if (!visibleFloors.has(storyId)) return null;
+            const corners = cornerNodes[storyId];
+            if (!corners) return null;
 
-          return (
-            <mesh key={storyId}>
-              {/* <bufferGeometry>
-              <bufferAttribute attach="attributes-position" args={[floorQuadPositions, 3]} />
-            </bufferGeometry>
-            <meshBasicMaterial
-              color={floorColor}
-              opacity={0.6}
-              transparent
-              side={DoubleSide}
-              fog={false}
-              toneMapped={false}
-            /> */}
-            </mesh>
-          );
-        });
+            const drifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
+            const peaks = peakStoryDrift[storyId] ?? { NW: 0, NE: 0, SW: 0, SE: 0 };
 
-        // const corners = animationData.metadata.corners.
+            const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
+            const nodePositions = cornerOrder.map((corner) => {
+              const nodeId = corners[corner];
+              return {
+                pos: getNodePosition(nodeId),
+                drift: drifts[cornerOrder.indexOf(corner)],
+                peak: peaks[corner],
+              };
+            });
 
-        // const nodePositions = story.map((nodeIdx) => {
-        //   const pos = frame.nodePositions.get(nodeId)!;
-        //   return { pos: [(pos[0] + offsetX) * scale, (pos[1] + offsetY) * scale, (pos[2] + offsetZ) * scale] };
-        // });
+            const positions = new Float32Array([
+              ...nodePositions[0].pos, // NW
+              ...nodePositions[1].pos, // NE
+              ...nodePositions[2].pos, // SW
+              ...nodePositions[1].pos, // NE
+              ...nodePositions[3].pos, // SE
+              ...nodePositions[2].pos, // SW
+            ]);
 
-        // const floorQuadPositions = new Float32Array([
-        //   ...nodePositions[1].pos,
-        //   ...nodePositions[0].pos,
-        //   ...nodePositions[2].pos,
-        //   ...nodePositions[1].pos,
-        //   ...nodePositions[2].pos,
-        //   ...nodePositions[3].pos,
-        // ]);
-        // const floorColor = driftColors.get(storyId) || green500;
-      })}
-      <axesHelper args={[75]} />
+            const colors = new Float32Array(18);
+            const vertexOrder = [0, 1, 2, 1, 3, 2];
+
+            vertexOrder.forEach((cornerIdx, i) => {
+              const ratio = nodePositions[cornerIdx].drift / nodePositions[cornerIdx].peak;
+              const colorHex = formatHex(colorMap(ratio));
+              const rgb = rgbConverter(colorHex);
+
+              if (rgb) {
+                colors[i * 3] = rgb.r;
+                colors[i * 3 + 1] = rgb.g;
+                colors[i * 3 + 2] = rgb.b;
+              }
+            });
+
+            return (
+              <mesh key={storyId}>
+                <bufferGeometry>
+                  <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+                  <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+                </bufferGeometry>
+                <meshBasicMaterial
+                  vertexColors
+                  opacity={0.6}
+                  transparent
+                  side={DoubleSide}
+                  fog={false}
+                  toneMapped={false}
+                />
+              </mesh>
+            );
+          })}
+        </group>
+      </group>
+
+      <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 20]} />
     </>
   );
 }

@@ -14,29 +14,12 @@ import { InterstoryDriftChart } from "./InterstoryDriftChart";
 import { PlaybackProvider } from "@/components/playback/PlaybackContext";
 import { NodeSelectionProvider } from "@/contexts/NodeSelectionContext";
 import { NodePanel, NodeTab } from "@/components/NodePanel"; // Import your new panel
-import MagicPanel from "@/components/MagicPanel";
+import { MagicPanel, MagicPanelTab } from "@/components/MagicPanel";
 
 // --- Panel Definitions ---
 
-const MainCanvasPanel = (_props: IDockviewPanelProps) => (
-  <div className="relative w-full h-full">
-    <CanvasWithControls>
-      <BuildingScene />
-    </CanvasWithControls>
-    <div className="absolute bottom-0 left-0 right-0 flex justify-between w-full border-t-2 border-neutral-300 bg-neutral-200/80 backdrop-blur-sm p-2">
-      <PlaybackControls />
-    </div>
-  </div>
-);
-
-const TimelinePanel = (props: IDockviewPanelProps) => <Timeline {...props} />;
-const ChartPanel = (_props: IDockviewPanelProps) => <InterstoryDriftChart />;
-
 // --- Components Map ---
 const components = {
-  mainCanvas: MainCanvasPanel,
-  timeline: TimelinePanel,
-  chart: ChartPanel,
   nodePanel: NodePanel, // Register the node panel
   magicPanel: MagicPanel,
 };
@@ -55,6 +38,7 @@ const tabComponents = {
     );
   },
   nodeTab: NodeTab,
+  magicPanelTab: MagicPanelTab,
 };
 
 export function View3d() {
@@ -71,7 +55,6 @@ export function View3d() {
 
 // Internal wrapper to access the NodeSelectionContext
 function DockviewContainer() {
-  console.log("DockviewContainer render");
   const { setDockviewApi } = useNodeSelection();
 
   const handleDockviewReady = (event: DockviewReadyEvent) => {
@@ -87,14 +70,16 @@ function DockviewContainer() {
     api.addPanel({
       id: "main-canvas",
       component: "magicPanel",
+      tabComponent: "magicPanelTab",
       title: "3D View",
-      params: { panelType: "3DView" },
+      params: { panelType: "MainCanvas" },
     });
 
     // Timeline at the bottom
     const timelinePanel = api.addPanel({
       id: "timeline",
       component: "magicPanel",
+      tabComponent: "magicPanelTab",
       title: "Timeline",
       position: { direction: "below" },
       params: { panelType: "Timeline" },

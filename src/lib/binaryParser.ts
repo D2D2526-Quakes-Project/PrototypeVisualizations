@@ -152,7 +152,7 @@ export async function buildAnimationDataFromBinary(
     return {
       data,
       stride: outerStride,
-      at(frameIdx: number) {
+      atFrame(frameIdx: number) {
         const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
         return makeAccessor(frameData, innerStride);
       },
@@ -276,6 +276,113 @@ function calculateStats(
   const gmMagMax = Math.max(...gmMag);
   const gmMagMin = Math.min(...gmMag);
 
+  // --- 5. STORY DRIFT PRECOMPUTATIONS ---
+
+  // 5.1 Calculate corner nodes mapping (similar to hook lines 8-37)
+  const cornerSets = {
+    NW: new Set(metadata.corners.NW),
+    NE: new Set(metadata.corners.NE),
+    SW: new Set(metadata.corners.SW),
+    SE: new Set(metadata.corners.SE),
+  };
+
+  const cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
+  const cumulativeStoryElevations: Record<string, number> = {};
+
+  // Calculate cumulative elevations and corner nodes
+  metadata.storyOrder.forEach((storyId, index) => {
+    const nodeIndices = metadata.stories[storyId];
+
+    // Find corner nodes for this story
+    const corners = {
+      NW: nodeIndices.find((n) => cornerSets.NW.has(n))!,
+      NE: nodeIndices.find((n) => cornerSets.NE.has(n))!,
+      SW: nodeIndices.find((n) => cornerSets.SW.has(n))!,
+      SE: nodeIndices.find((n) => cornerSets.SE.has(n))!,
+    };
+    cornerNodes[storyId] = corners;
+
+    // Calculate cumulative elevation (similar to hook lines 39-45)
+    if (index > 0) {
+      let elevation = metadata.storyHeights[storyId];
+      metadata.storyOrder.forEach((storyId2, index2) => {
+        if (index2 < index) elevation += metadata.storyHeights[storyId2];
+      });
+      cumulativeStoryElevations[storyId] = elevation;
+    }
+  });
+
+  // 5.2 Precompute all story drift values
+  const storyCount = metadata.storyOrder.length;
+  const frameCount = metadata.frameCount;
+  const cornerCount = 4; // NW, NE, SW, SE
+  const storyDriftData = new Float32Array(storyCount * frameCount * cornerCount);
+
+  // Calculate drift for each story, frame, and corner
+  for (let storyIdx = 1; storyIdx < storyCount; storyIdx++) {
+    const storyId = metadata.storyOrder[storyIdx];
+    const belowId = metadata.storyOrder[storyIdx - 1];
+
+    const height = cumulativeStoryElevations[storyId];
+    const corners = cornerNodes[storyId];
+    const belowCorners = cornerNodes[belowId];
+
+    for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+      // Get displacement data for this frame
+      const frameOffset = frameIdx * metadata.nodeCount * 6;
+
+      // Calculate drift for each corner
+      const cornerOffsets = [corners.NW * 6, corners.NE * 6, corners.SW * 6, corners.SE * 6];
+      const belowCornerOffsets = [belowCorners.NW * 6, belowCorners.NE * 6, belowCorners.SW * 6, belowCorners.SE * 6];
+
+      for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
+        const nodeOffset = frameOffset + cornerOffsets[cornerIdx];
+        const belowNodeOffset = frameOffset + belowCornerOffsets[cornerIdx];
+
+        // Calculate drift magnitude
+        const currentMag = Math.hypot(disp[nodeOffset], disp[nodeOffset + 1], disp[nodeOffset + 2]);
+        const belowMag = Math.hypot(disp[belowNodeOffset], disp[belowNodeOffset + 1], disp[belowNodeOffset + 2]);
+
+        const driftPercent = ((currentMag - belowMag) / height) * 100;
+
+        // Store in Float32Array: [story][frame][corner]
+        const arrayIndex = storyIdx * frameCount * cornerCount + frameIdx * cornerCount + cornerIdx;
+        storyDriftData[arrayIndex] = driftPercent;
+      }
+    }
+  }
+
+  // 5.3 Calculate peak story drift (similar to hook lines 92-123)
+  const peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
+
+  for (let storyIdx = 1; storyIdx < storyCount; storyIdx++) {
+    const storyId = metadata.storyOrder[storyIdx];
+    const max = { NW: -Infinity, NE: -Infinity, SW: -Infinity, SE: -Infinity };
+
+    for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+      for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
+        const arrayIndex = storyIdx * frameCount * cornerCount + frameIdx * cornerCount + cornerIdx;
+        const driftValue = storyDriftData[arrayIndex];
+
+        const cornerNames = ["NW", "NE", "SW", "SE"] as const;
+        max[cornerNames[cornerIdx]] = Math.max(max[cornerNames[cornerIdx]], driftValue);
+      }
+    }
+
+    peakStoryDrift[storyId] = max;
+  }
+
+  // Helper accessor function
+  const getStoryDrift = (storyIndex: number, frameIndex: number): [number, number, number, number] => {
+    const baseIndex = storyIndex * frameCount * cornerCount + frameIndex * cornerCount;
+    return [
+      storyDriftData[baseIndex], // NW
+      storyDriftData[baseIndex + 1], // NE
+      storyDriftData[baseIndex + 2], // SW
+      storyDriftData[baseIndex + 3], // SE
+    ];
+  };
+
   return {
     boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
     storyElevations,
@@ -290,5 +397,14 @@ function calculateStats(
       maxMagnitude: gmMagMax,
       minMagnitude: gmMagMin,
     },
+    cornerNodes,
+    storyDrift: {
+      data: storyDriftData,
+      storyCount,
+      frameCount,
+      cornerCount,
+      getStoryDrift,
+    },
+    peakStoryDrift,
   };
 }

@@ -53,6 +53,8 @@ export type Simulation = CSVSimulation | BinarySimulation;
 
 // -----------------------------------------------------------------------------
 
+export const CornerOrder = ["NW", "NE", "SW", "SE"] as const;
+
 export interface BuildingMetadata {
   count_nodes: number;
   stories: Record<string, number[]>; // Map "15" -> [nodeIndex, nodeIndex...]
@@ -144,7 +146,7 @@ export interface IndexAccessor {
 export interface TimeIndexAccessor {
   data: Float32Array;
   stride: number;
-  at: (idx: number) => IndexAccessor;
+  atFrame: (idx: number) => IndexAccessor;
   linAt: (idx: number) => IndexAccessor;
   rotAt: (idx: number) => IndexAccessor;
 }
@@ -175,4 +177,16 @@ export interface ComputedStats {
     maxMagnitude: number;
     minMagnitude: number;
   };
+
+  // STORY DRIFT DATA
+  cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }>; // Story ID -> corner node indices
+  storyDrift: {
+    // Layout: [story][frame][corner] where corners are ordered NW, NE, SW, SE
+    data: Float32Array;
+    storyCount: number;
+    frameCount: number;
+    cornerCount: number; // Always 4
+    getStoryDrift: (storyIndex: number, frameIndex: number) => [number, number, number, number]; // [NW, NE, SW, SE]
+  };
+  peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }>; // Precomputed max values
 }

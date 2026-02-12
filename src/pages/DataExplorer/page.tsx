@@ -1,63 +1,103 @@
-// import { useMemo } from "react";
-// import { SmallTimeline } from "../../components/SmallTimeline";
-// import { useAnimationData } from "../../hooks/nodeDataHook";
+import { useMemo } from "react";
+import { usePlayback } from "@/components/playback/PlaybackContext";
+import { useAnimationData } from "@/hooks/nodeDataHook";
 
 export function ViewDataExplorer() {
-  return null;
-  // const { animationData } = useAnimationData();
-  // const playback = usePlaybackControl();
+  const { animationData } = useAnimationData();
+  const { frameIndex } = usePlayback();
 
-  // const frame = animationData.frames[playback.frameIndex];
-  // const sortedStories = useMemo(
-  //   () =>
-  //     Array.from(frame.stories.entries()).sort(([, a], [, b]) => {
-  //       const yA = frame.nodePositions.get(a.nodeIds[0])![1];
-  //       const yB = frame.nodePositions.get(b.nodeIds[0])![1];
-  //       return yB - yA; // Sort descending by height
-  //     }),
-  //   [frame]
-  // );
+  const { stories, storyOrder } = animationData.metadata;
+  const frameCount = animationData.metadata.frameCount;
+  const dt = animationData.metadata.dt;
 
-  // return (
-  //   <div className="p-4 flex flex-col gap-4 h-full overflow-hidden">
-  //     <div className="flex items-center gap-4">
-  //       <PlaybackControls playback={playback} />
-  //       <div className="grow h-8">
-  //         <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
-  //       </div>
-  //     </div>
-  //     <div className="text-sm text-neutral-600">
-  //       <span>
-  //         Frame: {playback.frameIndex + 1} / {animationData.frames.length} | Time: {animationData.timeSteps[playback.frameIndex]?.toFixed(3)}s | Avg Building Displacement: {Math.hypot(...frame.averageDisplacement)?.toFixed(3)}m
-  //       </span>
-  //     </div>
-  //     <div className="grow overflow-auto border-2 border-neutral-300 rounded-lg">
-  //       <table className="w-full text-left table-auto border-collapse">
-  //         <thead className="sticky top-0 bg-neutral-200">
-  //           <tr>
-  //             <th className="p-2 border-b-2 border-neutral-300">Story ID</th>
-  //             <th className="p-2 border-b-2 border-neutral-300">Avg Disp X (m)</th>
-  //             <th className="p-2 border-b-2 border-neutral-300">Avg Disp Y (m)</th>
-  //             <th className="p-2 border-b-2 border-neutral-300">Avg Disp Z (m)</th>
-  //             <th className="p-2 border-b-2 border-neutral-300">Total Magnitude (m)</th>
-  //           </tr>
-  //         </thead>
-  //         <tbody>
-  //           {sortedStories.map(([storyId, story]) => {
-  //             const dispMag = Math.hypot(...story.averageDisplacement);
-  //             return (
-  //               <tr key={storyId} className="odd:bg-white even:bg-neutral-50">
-  //                 <td className="p-2 border-b border-neutral-200">{storyId}</td>
-  //                 <td className="p-2 border-b border-neutral-200">{story.averageDisplacement[0].toFixed(4)}</td>
-  //                 <td className="p-2 border-b border-neutral-200">{story.averageDisplacement[1].toFixed(4)}</td>
-  //                 <td className="p-2 border-b border-neutral-200">{story.averageDisplacement[2].toFixed(4)}</td>
-  //                 <td className="p-2 border-b border-neutral-200 font-bold">{dispMag.toFixed(4)}</td>
-  //               </tr>
-  //             );
-  //           })}
-  //         </tbody>
-  //       </table>
-  //     </div>
-  //   </div>
-  // );
+  // Calculate average building displacement for current frame
+  const avgBuildingDisplacement = useMemo(() => {
+    let totalDx = 0;
+    let totalDy = 0;
+    let totalDz = 0;
+    const nodeCount = animationData.metadata.nodeCount;
+    
+    for (let i = 0; i < nodeCount; i++) {
+      const displacement = animationData.displacement.atFrame(frameIndex).at(i);
+      totalDx += displacement[0];
+      totalDy += displacement[1];
+      totalDz += displacement[2];
+    }
+    
+    return [
+      totalDx / nodeCount,
+      totalDy / nodeCount,
+      totalDz / nodeCount,
+    ];
+  }, [animationData, frameIndex]);
+
+  // Sort stories by height (descending)
+  const sortedStories = useMemo(() => {
+    return storyOrder.map((storyId) => ({
+      storyId,
+      nodeIndices: stories[storyId],
+    }));
+  }, [stories, storyOrder]);
+
+  // Calculate story data for current frame
+  const storyData = useMemo(() => {
+    return sortedStories.map(({ storyId, nodeIndices }) => {
+      let totalDx = 0;
+      let totalDy = 0;
+      let totalDz = 0;
+
+      for (const nodeIdx of nodeIndices) {
+        const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+        totalDx += displacement[0];
+        totalDy += displacement[1];
+        totalDz += displacement[2];
+      }
+
+      const count = nodeIndices.length;
+      const avgDisp = [totalDx / count, totalDy / count, totalDz / count];
+      const dispMag = Math.hypot(...avgDisp);
+
+      return {
+        storyId,
+        avgDisp,
+        dispMag,
+      };
+    });
+  }, [sortedStories, animationData, frameIndex]);
+
+  return (
+    <div className="p-4 flex flex-col gap-4 h-full overflow-hidden">
+      <div className="flex items-center gap-4">
+        <div className="text-sm text-neutral-600">
+          <span>
+            Frame: {frameIndex + 1} / {frameCount} | Time: {(frameIndex * dt).toFixed(3)}s | Avg Building Displacement: {Math.hypot(...avgBuildingDisplacement).toFixed(3)}in
+          </span>
+        </div>
+      </div>
+      <div className="grow overflow-auto border-2 border-neutral-300 rounded-lg">
+        <table className="w-full text-left table-auto border-collapse">
+          <thead className="sticky top-0 bg-neutral-200">
+            <tr>
+              <th className="p-2 border-b-2 border-neutral-300">Story ID</th>
+              <th className="p-2 border-b-2 border-neutral-300">Avg Disp X (in)</th>
+              <th className="p-2 border-b-2 border-neutral-300">Avg Disp Y (in)</th>
+              <th className="p-2 border-b-2 border-neutral-300">Avg Disp Z (in)</th>
+              <th className="p-2 border-b-2 border-neutral-300">Total Magnitude (in)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {storyData.map(({ storyId, avgDisp, dispMag }) => (
+              <tr key={storyId} className="odd:bg-white even:bg-neutral-50">
+                <td className="p-2 border-b border-neutral-200">{storyId}</td>
+                <td className="p-2 border-b border-neutral-200">{avgDisp[0].toFixed(4)}</td>
+                <td className="p-2 border-b border-neutral-200">{avgDisp[1].toFixed(4)}</td>
+                <td className="p-2 border-b border-neutral-200">{avgDisp[2].toFixed(4)}</td>
+                <td className="p-2 border-b border-neutral-200 font-bold">{dispMag.toFixed(4)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }

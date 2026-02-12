@@ -1,157 +1,147 @@
-// import { Line } from "@react-three/drei";
-// import { useThree } from "@react-three/fiber";
-// import { CanvasWithControls } from "@/components/CanvasWithControls";
-// import { converter, interpolate } from "culori";
-// import { useMemo, useState } from "react";
-// import { Color, Vector3 } from "three";
-// import { PlaybackControls, usePlaybackControl } from "../../components/PlaybackControls";
-// import { SmallTimeline } from "../../components/SmallTimeline";
-// import { useAnimationData } from "../../hooks/nodeDataHook";
+import { Line } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
+import { CanvasWithControls } from "@/components/CanvasWithControls";
+import { converter, interpolate } from "culori";
+import { useMemo, useState } from "react";
+import { Color, Vector3 } from "three";
+import { usePlayback } from "@/components/playback/PlaybackContext";
+import { useAnimationData } from "@/hooks/nodeDataHook";
 
-// const amber400 = "oklch(82.8% 0.189 84.429)";
-// const red700 = "oklch(50.5% 0.213 27.518)";
-// const colorMap = interpolate([amber400, red700], "oklab");
-// const rgbConverter = converter("rgb");
+const amber400 = "oklch(82.8% 0.189 84.429)";
+const red700 = "oklch(50.5% 0.213 27.518)";
+const colorMap = interpolate([amber400, red700], "oklab");
+const rgbConverter = converter("rgb");
 
-// function SurfacePlot({ metric, frameIndex }: { metric: "displacement" | "drift"; frameIndex: number }) {
-//   const { animationData } = useAnimationData();
-//   const { invalidate } = useThree();
-//   const meshLength = 2000;
+function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
+  const { animationData } = useAnimationData();
+  const { frameIndex } = usePlayback();
+  const { invalidate } = useThree();
+  const meshLength = 2000;
 
-//   const { positions, colors } = useMemo((): {
-//     positions: Vector3[][];
-//     colors: Color[][];
-//     maxMetricValue: number;
-//   } => {
-//     const { frames } = animationData;
-//     const numFrames = frames.length;
-//     if (numFrames === 0) return { positions: [], colors: [], maxMetricValue: 1 };
+  const { stories, storyOrder } = animationData.metadata;
+  const frameCount = animationData.metadata.frameCount;
 
-//     const firstFrameStories = Array.from(frames[0].stories.values()).sort((a, b) => {
-//       const yA = frames[0].nodePositions.get(a.nodeIds[0])![1];
-//       const yB = frames[0].nodePositions.get(b.nodeIds[0])![1];
-//       return yA - yB;
-//     });
-//     const numStories = firstFrameStories.length;
+  const { positions, colors } = useMemo((): {
+    positions: Vector3[][];
+    colors: Color[][];
+    maxMetricValue: number;
+  } => {
+    const numFrames = frameCount;
+    if (numFrames === 0) return { positions: [], colors: [], maxMetricValue: 1 };
 
-//     const heightData = Array.from({ length: numStories }, () => new Float32Array(numFrames));
-//     let maxMetricValue = 0;
+    const numStories = storyOrder.length;
 
-//     for (let t = 0; t < numFrames; t++) {
-//       const frame = frames[t];
-//       const stories = Array.from(frame.stories.values()).sort((a, b) => {
-//         const yA = frame.nodePositions.get(a.nodeIds[0])![1];
-//         const yB = frame.nodePositions.get(b.nodeIds[0])![1];
-//         return yA - yB;
-//       });
+    const heightData: Float32Array[] = Array.from({ length: numStories }, () => new Float32Array(numFrames));
+    let maxMetricValue = 0;
 
-//       for (let s = 0; s < numStories; s++) {
-//         let value = 0;
-//         const story = stories[s];
-//         if (metric === "displacement") {
-//           value = Math.hypot(...story.averageDisplacement);
-//         } else {
-//           // drift
-//           const displacement = Math.hypot(...story.averageDisplacement);
-//           const storyHeight = frame.nodePositions.get(story.nodeIds[0])![1];
-//           if (s === 0) {
-//             const initialHeight = animationData.frames[0].nodePositions.get(story.nodeIds[0])![1];
-//             value = initialHeight > 0 ? displacement / initialHeight : 0;
-//           } else {
-//             const prevStory = stories[s - 1];
-//             const prevHeight = frame.nodePositions.get(prevStory.nodeIds[0])![1];
-//             const prevDisp = Math.hypot(...prevStory.averageDisplacement);
-//             const drift = Math.abs(displacement - prevDisp);
-//             const interStoryHeight = storyHeight - prevHeight;
-//             value = interStoryHeight > 0 ? drift / interStoryHeight : 0;
-//           }
-//         }
-//         heightData[s][t] = value;
-//         if (value > maxMetricValue) maxMetricValue = value;
-//       }
-//     }
+    for (let t = 0; t < numFrames; t++) {
+      for (let s = 0; s < numStories; s++) {
+        const storyId = storyOrder[s];
+        const nodeIndices = stories[storyId];
+        
+        // Calculate average displacement for this story at this frame
+        let totalDx = 0, totalDy = 0, totalDz = 0;
+        for (const nodeIdx of nodeIndices) {
+          const disp = animationData.displacement.atFrame(t).at(nodeIdx);
+          totalDx += disp[0];
+          totalDy += disp[1];
+          totalDz += disp[2];
+        }
+        const avgDisp = [totalDx / nodeIndices.length, totalDy / nodeIndices.length, totalDz / nodeIndices.length];
+        const displacement = Math.hypot(...avgDisp);
 
-//     const positions: Vector3[][] = [];
-//     const colors: Color[][] = [];
+        let value = 0;
+        if (metric === "displacement") {
+          value = displacement;
+        } else {
+          // drift
+          const storyElevation = animationData.precomputed.storyElevations[storyId] || 0;
+          
+          if (s === 0) {
+            value = storyElevation > 0 ? displacement / storyElevation : 0;
+          } else {
+            const prevStoryId = storyOrder[s - 1];
+            const prevNodeIndices = stories[prevStoryId];
+            let prevTotalDx = 0, prevTotalDy = 0, prevTotalDz = 0;
+            for (const nodeIdx of prevNodeIndices) {
+              const disp = animationData.displacement.atFrame(t).at(nodeIdx);
+              prevTotalDx += disp[0];
+              prevTotalDy += disp[1];
+              prevTotalDz += disp[2];
+            }
+            const prevAvgDisp = [prevTotalDx / prevNodeIndices.length, prevTotalDy / prevNodeIndices.length, prevTotalDz / prevNodeIndices.length];
+            const prevDisp = Math.hypot(...prevAvgDisp);
+            
+            const prevElevation = animationData.precomputed.storyElevations[prevStoryId] || 0;
+            const interStoryHeight = storyElevation - prevElevation;
+            const drift = Math.abs(displacement - prevDisp);
+            value = interStoryHeight > 0 ? drift / interStoryHeight : 0;
+          }
+        }
+        heightData[s][t] = value;
+        if (value > maxMetricValue) maxMetricValue = value;
+      }
+    }
 
-//     for (let s = 0; s < numStories; s++) {
-//       const storyData: Vector3[] = [];
-//       const storyColor: Color[] = [];
-//       for (let t = 0; t < numFrames; t++) {
-//         const height = heightData[s][t];
-//         storyData.push(new Vector3((t / numFrames) * meshLength, s * 5, (height / maxMetricValue) * 20));
+    const positions: Vector3[][] = [];
+    const colors: Color[][] = [];
 
-//         const colorFactor = height / maxMetricValue;
-//         const rgbColor = rgbConverter(colorMap(colorFactor));
-//         storyColor.push(new Color(rgbColor.r, rgbColor.g, rgbColor.b));
-//       }
-//       positions.push(storyData);
-//       colors.push(storyColor);
-//     }
+    for (let s = 0; s < numStories; s++) {
+      const storyData: Vector3[] = [];
+      const storyColor: Color[] = [];
+      for (let t = 0; t < numFrames; t++) {
+        const height = heightData[s][t];
+        storyData.push(new Vector3((t / numFrames) * meshLength, s * 5, (height / maxMetricValue) * 20));
 
-//     invalidate();
+        const colorFactor = height / maxMetricValue;
+        const rgbColor = rgbConverter(colorMap(colorFactor));
+        storyColor.push(new Color(rgbColor.r, rgbColor.g, rgbColor.b));
+      }
+      positions.push(storyData);
+      colors.push(storyColor);
+    }
 
-//     return { positions, colors, maxMetricValue };
-//   }, [animationData, metric, invalidate]);
+    invalidate();
 
-//   // const yAxisLabel = metric === "displacement" ? "Avg. Displacement (m)" : "Story Drift Ratio";
+    return { positions, colors, maxMetricValue };
+  }, [animationData, metric, stories, storyOrder, frameCount, invalidate]);
 
-//   return (
-//     <>
-//       {/* <mesh geometry={geometry} position={[-meshLength / 2 + (frameIndex / animationData.frames.length) * meshLength, 0, 50]} scale={[-1, 1, -2]}>
-//         <meshStandardMaterial vertexColors side={2} />
-//       </mesh> */}
-//       <group position={[(frameIndex / animationData.frames.length) * meshLength, 0, 0]} scale={[-1, 1, -2]}>
-//         {positions.map((pos, i) => {
-//           return <Line key={i} points={pos} vertexColors={colors[i]} lineWidth={10} fog={false} toneMapped={false} />;
-//         })}
-//       </group>
-//       <axesHelper args={[60]} />
-//       <gridHelper args={[100, 10]} />
+  return (
+    <>
+      <group position={[(frameIndex / frameCount) * meshLength, 0, 0]} scale={[-1, 1, -2]}>
+        {positions.map((pos, i) => {
+          return <Line key={i} points={pos} vertexColors={colors[i]} lineWidth={10} fog={false} toneMapped={false} />;
+        })}
+      </group>
+      <axesHelper args={[60]} />
+      <gridHelper args={[100, 10]} />
+    </>
+  );
+}
 
-//       {/* <text position={[55, 0, 0]} fontSize={2} rotation={[0, Math.PI / 2, 0]}>
-//         Time (s)
-//       </text>
-//       <text position={[0, 0, 55]} fontSize={2}>
-//         Floor
-//       </text>
-//       <text position={[0, 22, 0]} fontSize={2}>
-//         {yAxisLabel}
-//       </text> */}
-//     </>
-//   );
-// }
+export function ViewSurface() {
+  const [metric, setMetric] = useState<"displacement" | "drift">("displacement");
 
-// export function ViewSurface() {
-//   const [metric, setMetric] = useState<"displacement" | "drift">("displacement");
+  return (
+    <div className="grow flex flex-col relative min-h-0">
+      <div className="absolute top-2 left-2 z-10 bg-white/80 p-2 rounded">
+        <label className="flex items-center gap-2">
+          <span className="font-bold">Metric:</span>
+          <select
+            value={metric}
+            onChange={(e) => setMetric(e.target.value as "displacement" | "drift")}
+            className="p-1 border rounded">
+            <option value="displacement">Average Displacement</option>
+            <option value="drift">Story Drift Ratio</option>
+          </select>
+        </label>
+      </div>
 
-//   const playback = usePlaybackControl();
-
-//   return (
-//     <div className="grow flex flex-col relative min-h-0">
-//       <div className="absolute top-2 left-2 z-10 bg-white/80 p-2 rounded">
-//         <label className="flex items-center gap-2">
-//           <span className="font-bold">Metric:</span>
-//           <select
-//             value={metric}
-//             onChange={(e) => setMetric(e.target.value as "displacement" | "drift")}
-//             className="p-1 border rounded">
-//             <option value="displacement">Average Displacement</option>
-//             <option value="drift">Story Drift Ratio</option>
-//           </select>
-//         </label>
-//       </div>
-
-//       <CanvasWithControls>
-//         <ambientLight intensity={1.5} />
-//         <directionalLight position={[100, 100, 50]} intensity={2} />
-//         <SurfacePlot metric={metric} frameIndex={playback.frameIndex} />
-//       </CanvasWithControls>
-
-//       <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
-//         <PlaybackControls playback={playback} />
-//         <SmallTimeline frameIndex={playback.frameIndex} onFrameChange={playback.setFrameIndex} />
-//       </div>
-//     </div>
-//   );
-// }
+      <CanvasWithControls>
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[100, 100, 50]} intensity={2} />
+        <SurfacePlot metric={metric} />
+      </CanvasWithControls>
+    </div>
+  );
+}

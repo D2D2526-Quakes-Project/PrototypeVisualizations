@@ -1,4 +1,4 @@
-import DataSources from "@public/data/index";
+import DataSources from "@/data/index";
 import { useAnimationData } from "../hooks/nodeDataHook";
 import { Link, useLocation } from "react-router";
 import React from "react";

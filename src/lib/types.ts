@@ -11,8 +11,11 @@ type BaseBuilding = {
 
 export type CSVBuilding = BaseBuilding & {
   data_type: "csv";
+  /** Path to height map file (relative to /data/{folder}/) or full URL (http/https) */
   height_map: string;
+  /** Path to center map file (relative to /data/{folder}/) or full URL (http/https) */
   center_map: string;
+  /** Path to node map file (relative to /data/{folder}/) or full URL (http/https) */
   node_map: string;
   simulations: CSVSimulation[];
 };
@@ -22,6 +25,7 @@ export type BinaryBuilding = BaseBuilding & {
   name: string;
   folder: string;
   size: number;
+  /** Path to building data file (relative to /data/{folder}/) or full URL (http/https) */
   building_data: string;
   building_data_size: number;
   simulations: BinarySimulation[];
@@ -36,16 +40,24 @@ type BaseSimulation = {
 };
 
 export type CSVSimulation = BaseSimulation & {
+  /** Paths to displacement files (relative to /data/{folder}/{simulation.folder}/) or full URLs (http/https) */
   displacementFiles: string[];
+  /** Paths to acceleration files (relative to /data/{folder}/{simulation.folder}/) or full URLs (http/https) */
   accelerationFiles: string[];
+  /** Paths to velocity files (relative to /data/{folder}/{simulation.folder}/) or full URLs (http/https) */
   velocityFiles: string[];
+  /** Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   groundMotion: string;
 };
 
 export type BinarySimulation = BaseSimulation & {
+  /** Path to displacement file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   displacement: string;
+  /** Path to velocity file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   velocity: string;
+  /** Path to acceleration file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   acceleration: string;
+  /** Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   groundMotion: string;
 };
 

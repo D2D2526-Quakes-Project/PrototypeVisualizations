@@ -6,7 +6,7 @@ import type {
   Simulation,
   BuildingAnimationData,
 } from "@/lib/types";
-import DataSources from "@public/data/index";
+import DataSources from "@/data/index";
 import { XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -68,11 +68,11 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     setAnimationData(null);
 
     const progressMap = {
-      "building.bld": 0,
-      "displacement.bld": 0,
-      "velocity.bld": 0,
-      "acceleration.bld": 0,
-      "ground_motion.bld": 0,
+      building: 0,
+      displacement: 0,
+      velocity: 0,
+      acceleration: 0,
+      groundMotion: 0,
     };
 
     const updateOverallProgress = () => {
@@ -85,32 +85,37 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       setProgressMessage(`Downloading... ${Math.round(avg * 100)}%`);
     };
 
-    try {
-      const buildingFolder = `/data/${building.folder}`;
-      const simulationFolder = `/data/${building.folder}/${simulation.folder}`;
+    // Helper to resolve URL - supports both full URLs (http/https) and relative paths
+    const resolveUrl = (pathOrUrl: string, folder: string): string => {
+      if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+        return pathOrUrl;
+      }
+      return `/data/${folder}/${pathOrUrl}`;
+    };
 
+    try {
       setProgress(5);
       setProgressMessage("Initializing download...");
 
       const [buildingBuffer, dispBuffer, /* velBuffer, accelBuffer,*/ gmBuffer] = await Promise.all([
-        fetchWithProgressAndCache(`${buildingFolder}/${building.building_data}`, (p) => {
-          progressMap["building.bld"] = p;
+        fetchWithProgressAndCache(resolveUrl(building.building_data, building.folder), (p) => {
+          progressMap.building = p;
           updateOverallProgress();
         }),
-        fetchWithProgressAndCache(`${simulationFolder}/${simulation.displacement}`, (p) => {
-          progressMap["displacement.bld"] = p;
+        fetchWithProgressAndCache(resolveUrl(simulation.displacement, `${building.folder}/${simulation.folder}`), (p) => {
+          progressMap.displacement = p;
           updateOverallProgress();
         }),
-        // fetchWithProgressAndCache(`${simulationFolder}/${simulation.velocity}`, (p) => {
-        //   progressMap["velocity.bld"] = p;
+        // fetchWithProgressAndCache(resolveUrl(simulation.velocity, `${building.folder}/${simulation.folder}`), (p) => {
+        //   progressMap.velocity = p;
         //   updateOverallProgress();
         // }),
-        // fetchWithProgressAndCache(`${simulationFolder}/${simulation.acceleration}`, (p) => {
-        //   progressMap["acceleration.bld"] = p;
+        // fetchWithProgressAndCache(resolveUrl(simulation.acceleration, `${building.folder}/${simulation.folder}`), (p) => {
+        //   progressMap.acceleration = p;
         //   updateOverallProgress();
         // }),
-        fetchWithProgressAndCache(`${simulationFolder}/${simulation.groundMotion}`, (p) => {
-          progressMap["ground_motion.bld"] = p;
+        fetchWithProgressAndCache(resolveUrl(simulation.groundMotion, `${building.folder}/${simulation.folder}`), (p) => {
+          progressMap.groundMotion = p;
           updateOverallProgress();
         }),
       ]);
@@ -304,10 +309,13 @@ function SimulationPickerOverlay({
         <div className="text-neutral-500 mb-4">Pick your building and simulation to view</div>
         <div className="w-full max-w-sm flex flex-col gap-4">
           {DataSources.buildings.map((b) => {
+            // Helper to check if a path is incomplete (starts with "*" but not a URL)
+            const isIncomplete = (path: string) => !path.startsWith('http') && path.startsWith("*");
+            
             const incompleteWarning =
               b.data_type === "csv"
-                ? b.height_map.includes("*") || b.node_map.includes("*") || b.center_map.includes("*")
-                : b.building_data.includes("*");
+                ? isIncomplete(b.height_map) || isIncomplete(b.node_map) || isIncomplete(b.center_map)
+                : isIncomplete(b.building_data);
             return (
               <div
                 key={b.folder}
@@ -357,21 +365,24 @@ function SimulationPickerOverlay({
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2, ease: "easeOut" }}>
                       {selectedBuilding.simulations.map((s) => {
+                        // Helper to check if a path is incomplete (starts with "*" but not a URL)
+                        const isIncomplete = (path: string) => !path.startsWith('http') && path.startsWith("*");
+                        
                         let incompleteWarning;
                         if (b.data_type === "csv") {
                           s = s as CSVSimulation;
                           incompleteWarning =
-                            s.groundMotion.includes("*") ||
-                            s.displacementFiles.find((f) => f.includes("*")) ||
-                            s.velocityFiles.find((f) => f.includes("*")) ||
-                            s.accelerationFiles.find((f) => f.includes("*"));
+                            isIncomplete(s.groundMotion) ||
+                            s.displacementFiles.find((f) => isIncomplete(f)) ||
+                            s.velocityFiles.find((f) => isIncomplete(f)) ||
+                            s.accelerationFiles.find((f) => isIncomplete(f));
                         } else {
                           s = s as BinarySimulation;
                           incompleteWarning =
-                            s.displacement.includes("*") ||
-                            s.velocity.includes("*") ||
-                            s.acceleration.includes("*") ||
-                            s.groundMotion.includes("*");
+                            isIncomplete(s.displacement) ||
+                            isIncomplete(s.velocity) ||
+                            isIncomplete(s.acceleration) ||
+                            isIncomplete(s.groundMotion);
                         }
                         return (
                           <button

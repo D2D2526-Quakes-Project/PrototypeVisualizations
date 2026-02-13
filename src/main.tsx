@@ -7,38 +7,81 @@ import { NavigationBar } from "./components/NavigationBar";
 import { AnimationDataProvider } from "./hooks/nodeDataHook";
 import "./index.css";
 import { ViewDamageThreshold } from "./pages/DamageThreshold/page";
-// import { ViewDataExplorer } from "./pages/DataExplorer/page";
-// import { ElevationSlice } from "./pages/ElevationSlice/page";
-// import { FloorPlanTorsion } from "./pages/FloorPlanTorsion/page";
-// import FloorTimeVolumePage from "./pages/FloorTimeVolume/page";
-// import { ViewHamburger } from "./pages/Hamburger/page";
-// import { ViewNodeGrid } from "./pages/NodeGrid/page";
-// import { ViewSurface } from "./pages/Surface/page";
-// import { ViewTemporalRibbons } from "./pages/TemporalRibbons/page";
+import { ViewDataExplorer } from "./pages/DataExplorer/page";
+import { ElevationSlice } from "./pages/ElevationSlice/page";
+import { FloorPlanTorsion } from "./pages/FloorPlanTorsion/page";
+import FloorTimeVolumePage from "./pages/FloorTimeVolume/page";
+import { ViewHamburger } from "./pages/Hamburger/page";
+import { ViewNodeGrid } from "./pages/NodeGrid/page";
+import { ViewTexture } from "./pages/ViewTexture/page";
+import { ViewSurface } from "./pages/Surface/page";
+import { ViewTemporalRibbons } from "./pages/TemporalRibbons/page";
 import { View3d } from "./pages/View3d/page";
+
+import { ViewVolumes } from "./pages/ViewVolumes/page";
 import { PlaybackProvider } from "./components/playback/PlaybackContext";
-// import { ViewVolumes } from "./pages/ViewVolumes/page";
 
 const routes = [
-  { path: "/", label: "3D View", element: <View3d /> },
-  // { path: "/explorer", label: "Data Explorer", element: <ViewDataExplorer /> },
-  // { path: "/hamburger", label: "Hamburger", element: <ViewHamburger /> },
-  // { path: "/surface", label: "Surface", element: <ViewSurface /> },
-  // { path: "/nodegrid", label: "Node Grid", element: <ViewNodeGrid /> },
-  // { path: "/ribbons", label: "Ribbons", element: <ViewTemporalRibbons /> },
+  {
+    path: "/",
+    label: "3D View",
+    element: <View3d />,
+  },
+  {
+    path: "/explorer",
+    label: "Data Explorer",
+    element: <ViewDataExplorer />,
+  },
+  {
+    path: "/hamburger",
+    label: "Hamburger",
+    element: <ViewHamburger />,
+  },
+  {
+    path: "/surface",
+    label: "Surface",
+    element: <ViewSurface />,
+  },
+  {
+    path: "/nodegrid",
+    label: "Node Grid",
+    element: <ViewNodeGrid />,
+  },
+  {
+    path: "/texture",
+    label: "Texture",
+    element: <ViewTexture />,
+  },
+  {
+    path: "/ribbons",
+    label: "Ribbons",
+    element: <ViewTemporalRibbons />,
+  },
   {
     path: "/threshold",
     label: "Thresholds",
-    element: (
-      <PlaybackProvider>
-        <ViewDamageThreshold />
-      </PlaybackProvider>
-    ),
+    element: <ViewDamageThreshold />,
   },
-  // { path: "/slice", label: "Elevation Slice", element: <ElevationSlice /> },
-  // { path: "/torsion", label: "Floor Torsion", element: <FloorPlanTorsion /> },
-  // { path: "/volumes", label: "Volumes", element: <ViewVolumes /> },
-  // { path: "/timevolumes", label: "Time Volumes", element: <FloorTimeVolumePage /> },
+  {
+    path: "/slice",
+    label: "Elevation Slice",
+    element: <ElevationSlice />,
+  },
+  {
+    path: "/torsion",
+    label: "Floor Torsion",
+    element: <FloorPlanTorsion />,
+  },
+  {
+    path: "/volumes",
+    label: "Volumes",
+    element: <ViewVolumes />,
+  },
+  {
+    path: "/timevolumes",
+    label: "Time Volumes",
+    element: <FloorTimeVolumePage />,
+  },
 ];
 
 const router = createBrowserRouter([
@@ -47,7 +90,9 @@ const router = createBrowserRouter([
       <>
         <AnimationDataProvider>
           <NavigationBar routes={routes} />
-          <Outlet />
+          <PlaybackProvider>
+            <Outlet />
+          </PlaybackProvider>
         </AnimationDataProvider>
       </>
     ),

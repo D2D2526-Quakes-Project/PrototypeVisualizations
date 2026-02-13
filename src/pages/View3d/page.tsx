@@ -1,7 +1,6 @@
 import { DockviewWrapper } from "@/components/dockviewWrapper";
 import { MagicPanel, MagicPanelTab } from "@/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/components/NodePanel"; // Import your new panel
-import { PlaybackProvider } from "@/components/playback/PlaybackContext";
 import { NodeSelectionProvider, useNodeSelection } from "@/contexts/NodeSelectionContext";
 import { DockviewApi, type DockviewReadyEvent, type IDockviewPanelHeaderProps } from "dockview";
 
@@ -31,11 +30,9 @@ const tabComponents = {
 export function View3d() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <PlaybackProvider>
-        <NodeSelectionProvider>
-          <DockviewContainer />
-        </NodeSelectionProvider>
-      </PlaybackProvider>
+      <NodeSelectionProvider>
+        <DockviewContainer />
+      </NodeSelectionProvider>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { formatHex, interpolate } from "culori";
 import { useMemo, useState } from "react";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { SmallTimeline } from "@/components/SmallTimeline";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
@@ -80,6 +81,9 @@ export function ViewTexture() {
           <input type="range" min="20" max="500" step={1} value={curveResolution} onChange={(e) => setCurveResolution(parseInt(e.target.value))} className="w-full" />
           Curve Resolution: {curveResolution}
         </label>
+      </div>
+      <div className="h-8 shrink-0">
+        <SmallTimeline />
       </div>
       <div className="flex flex-col items-center h-full gap-1">
         {storyData.map((story, i) => {

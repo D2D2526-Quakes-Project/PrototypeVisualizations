@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
 import { usePlayback } from "./playback/PlaybackContext";
 
@@ -53,80 +53,52 @@ export function SmallTimeline() {
   const chartHeight = viewBoxHeight;
   const [scrubbing, setScrubbing] = useState(false);
 
-  const updateFrameFromEvent = useCallback((clientX: number) => {
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    const rect = svg.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const relativeX = Math.max(0, Math.min(x, rect.width));
-    const framePos = relativeX / rect.width;
-    const newFrame = Math.round(framePos * (maxFrame + 1));
-
-    setFrameIndex(Math.max(0, Math.min(newFrame, maxFrame)));
-  }, [maxFrame, setFrameIndex]);
-
   /**
    * Mouse input
    */
 
   function handleMouseDown(e: MouseEvent<SVGSVGElement>) {
     setScrubbing(true);
-    updateFrameFromEvent(e.clientX);
+    updateFrame(e);
   }
-
   function handleMouseUp() {
     setScrubbing(false);
   }
 
   function handleMouseMove(e: MouseEvent<SVGSVGElement>) {
     if (!scrubbing) return;
-    updateFrameFromEvent(e.clientX);
+    updateFrame(e);
   }
 
-  function handleMouseLeave() {
-    setScrubbing(false);
+  function updateFrame(e: MouseEvent<SVGSVGElement>) {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const relativeX = Math.max(0, Math.min(x, rect.width));
+    const framePos = relativeX / rect.width;
+    const newFrame = Math.round(framePos * (maxFrame + 1));
+
+    setFrameIndex(Math.max(0, Math.min(newFrame, maxFrame)));
   }
-
-  // Global mouse event listeners for dragging outside the component
-  useEffect(() => {
-    if (!scrubbing) return;
-
-    const handleGlobalMouseMove = (e: globalThis.MouseEvent) => {
-      updateFrameFromEvent(e.clientX);
-    };
-
-    const handleGlobalMouseUp = () => {
-      setScrubbing(false);
-    };
-
-    window.addEventListener("mouseup", handleGlobalMouseUp);
-    window.addEventListener("mousemove", handleGlobalMouseMove);
-
-    return () => {
-      window.removeEventListener("mouseup", handleGlobalMouseUp);
-      window.removeEventListener("mousemove", handleGlobalMouseMove);
-    };
-  }, [scrubbing, updateFrameFromEvent]);
 
   /**
    * Graph data
    */
 
   const current = graphData.at(frameIndex) ?? 0;
-  const playheadX = maxFrame > 0 ? (frameIndex / maxFrame) * 100 : 0;
-  const playheadY = displacementRange > 0 ? (1 - (current - minGraphData) / displacementRange) * chartHeight : chartHeight / 2;
+  const playheadX = (frameIndex / maxFrame) * 100;
+  const playheadY = (1 - (current - minGraphData) / displacementRange) * chartHeight;
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
 
   let linePoints = "";
-  if (maxFrame > 0) {
-    for (let i = 0; i <= maxFrame; i++) {
-      const d = graphData.at(i) ?? 0;
-      const x = i / maxFrame;
-      const y = displacementRange > 0 ? 1 - (d - minGraphData) / displacementRange : 0.5;
-      linePoints += `${x * 100},${y * chartHeight} `;
-    }
+  for (let i = 0; i < maxFrame; i++) {
+    const d = graphData.at(i) ?? 0;
+    const x = i / maxFrame;
+    const y = 1 - (d - minGraphData) / displacementRange;
+    linePoints += `${x * 100},${y * chartHeight} `;
   }
   const strokeColor = "stroke-amber-400";
 
@@ -139,8 +111,7 @@ export function SmallTimeline() {
         viewBox={`0 0 100 ${viewBoxHeight}`}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}>
+        onMouseMove={handleMouseMove}>
         <line
           transform={playheadTransform}
           x1={0}

@@ -5,6 +5,7 @@ import { Vector3 } from "three";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/resizable";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { SmallTimeline } from "@/components/SmallTimeline";
 
 // { _sliceAxis }: { _sliceAxis: "X" | "Z" }
 function SliceView() {
@@ -76,6 +77,9 @@ export function ElevationSlice() {
                   Z
                 </button>
               </div>
+            </div>
+            <div className="h-8 shrink-0">
+              <SmallTimeline />
             </div>
             <div className="text-center text-sm">Frame: {frameIndex}</div>
           </div>

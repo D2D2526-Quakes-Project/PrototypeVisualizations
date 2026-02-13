@@ -5,6 +5,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Color, Vector3 } from "three";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { SmallTimeline } from "@/components/SmallTimeline";
 
 const velocityColorMap = interpolate(["blue", "aquamarine", "lime", "red"], "oklab");
 const rgbConverter = converter("rgb");
@@ -368,7 +369,11 @@ export function ViewTemporalRibbons() {
         )}
       </div>
 
-      <div className="grow min-w-0 relative">
+      <div className="grow min-w-0 relative flex flex-col">
+        <div className="h-8 shrink-0">
+          <SmallTimeline />
+        </div>
+        <div className="grow">
         <CanvasWithControls>
           {
             <MotionRibbons
@@ -380,6 +385,7 @@ export function ViewTemporalRibbons() {
             />
           }
         </CanvasWithControls>
+        </div>
       </div>
 
       {/* Right sidebar with mini ribbons */}

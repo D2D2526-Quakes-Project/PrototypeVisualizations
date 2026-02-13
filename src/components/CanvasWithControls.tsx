@@ -86,7 +86,7 @@ function CameraManager({
 
 export function CanvasWithControls({ children }: { children: React.ReactNode }) {
   const [isOrthographic, setIsOrthographic] = useState(false);
-  const [enableSmoothing, setEnableSmoothing] = useState(true);
+  const [enableSmoothing, setEnableSmoothing] = useState(false);
   const orbitControlsRef = useRef<OrbitControlsImpl>(null);
 
   return (

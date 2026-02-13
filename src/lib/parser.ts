@@ -71,23 +71,35 @@ function parseBlob<T>(buffer: ArrayBuffer) {
 export async function buildAnimationDataFromBinary(
   rawBuilding: ArrayBuffer,
   rawGM: ArrayBuffer,
-  rawDisp: ArrayBuffer,
-  rawVel?: ArrayBuffer,
-  rawAccel?: ArrayBuffer,
+  rawDispLin: ArrayBuffer,
+  rawDispRot?: ArrayBuffer,
+  rawVelLin?: ArrayBuffer,
+  rawVelRot?: ArrayBuffer,
+  rawAccelLin?: ArrayBuffer,
+  rawAccelRot?: ArrayBuffer,
   onProgress?: (p: number, msg: string) => void,
 ): Promise<BuildingAnimationData> {
   // 1. Decompress all buffers
   if (onProgress) onProgress(10, "Decompressing Building Data...");
   const buildingBuff = await ensureDecompressed(rawBuilding);
 
-  if (onProgress) onProgress(20, "Decompressing Displacement Data...");
-  const dispBuff = await ensureDecompressed(rawDisp);
+  if (onProgress) onProgress(20, "Decompressing Displacement Linear Data...");
+  const dispLinBuff = await ensureDecompressed(rawDispLin);
 
-  if (onProgress && rawVel) onProgress(40, "Decompressing Velocity Data...");
-  const velBuff = rawVel ? await ensureDecompressed(rawVel) : undefined;
+  if (onProgress && rawDispRot) onProgress(25, "Decompressing Displacement Rotation Data...");
+  const dispRotBuff = rawDispRot ? await ensureDecompressed(rawDispRot) : undefined;
 
-  if (onProgress && rawAccel) onProgress(60, "Decompressing Acceleration Data...");
-  const accelBuff = rawAccel ? await ensureDecompressed(rawAccel) : undefined;
+  if (onProgress && rawVelLin) onProgress(40, "Decompressing Velocity Linear Data...");
+  const velLinBuff = rawVelLin ? await ensureDecompressed(rawVelLin) : undefined;
+
+  if (onProgress && rawVelRot) onProgress(45, "Decompressing Velocity Rotation Data...");
+  const velRotBuff = rawVelRot ? await ensureDecompressed(rawVelRot) : undefined;
+
+  if (onProgress && rawAccelLin) onProgress(60, "Decompressing Acceleration Linear Data...");
+  const accelLinBuff = rawAccelLin ? await ensureDecompressed(rawAccelLin) : undefined;
+
+  if (onProgress && rawAccelRot) onProgress(65, "Decompressing Acceleration Rotation Data...");
+  const accelRotBuff = rawAccelRot ? await ensureDecompressed(rawAccelRot) : undefined;
 
   if (onProgress) onProgress(80, "Decompressing Ground Motion...");
   const gmBuff = await ensureDecompressed(rawGM);
@@ -96,15 +108,18 @@ export async function buildAnimationDataFromBinary(
   const bData = parseBlob<BuildingMetadata>(buildingBuff);
 
   // 3. Parse Simulations
-  const dispData = parseBlob<SimulationMetadata>(dispBuff);
-  const velData = velBuff ? parseBlob<SimulationMetadata>(velBuff) : undefined;
-  const accelData = accelBuff ? parseBlob<SimulationMetadata>(accelBuff) : undefined;
+  const dispLinData = parseBlob<SimulationMetadata>(dispLinBuff);
+  const dispRotData = dispRotBuff ? parseBlob<SimulationMetadata>(dispRotBuff) : undefined;
+  const velLinData = velLinBuff ? parseBlob<SimulationMetadata>(velLinBuff) : undefined;
+  const velRotData = velRotBuff ? parseBlob<SimulationMetadata>(velRotBuff) : undefined;
+  const accelLinData = accelLinBuff ? parseBlob<SimulationMetadata>(accelLinBuff) : undefined;
+  const accelRotData = accelRotBuff ? parseBlob<SimulationMetadata>(accelRotBuff) : undefined;
   const gmData = parseBlob<GroundMotionMetadata>(gmBuff);
 
   // 4. Verification
-  if (dispData.metadata.count_nodes !== bData.metadata.count_nodes) {
+  if (dispLinData.metadata.count_nodes !== bData.metadata.count_nodes) {
     throw new Error(
-      `Mismatch: Building has ${bData.metadata.count_nodes} nodes, but Displacement file has ${dispData.metadata.count_nodes}`,
+      `Mismatch: Building has ${bData.metadata.count_nodes} nodes, but Displacement Linear file has ${dispLinData.metadata.count_nodes}`,
     );
   }
 
@@ -112,8 +127,8 @@ export async function buildAnimationDataFromBinary(
 
   const metadata: AnimationMetadata = {
     nodeCount: bData.metadata.count_nodes,
-    frameCount: dispData.metadata.count_frames,
-    dt: dispData.metadata.dt,
+    frameCount: dispLinData.metadata.count_frames,
+    dt: dispLinData.metadata.dt,
     stories: bData.metadata.stories,
     corners: bData.metadata.corners,
     storyHeights: bData.metadata.story_heights,
@@ -124,9 +139,10 @@ export async function buildAnimationDataFromBinary(
     metadata,
     gmData.bodyView,
     bData.bodyView,
-    dispData.bodyView,
-    velData ? velData.bodyView : undefined,
-    accelData ? accelData.bodyView : undefined,
+    dispLinData.bodyView,
+    dispRotData?.bodyView,
+    velLinData?.bodyView,
+    accelLinData?.bodyView,
   );
 
   function makeAccessor(data: Float32Array, stride: number): IndexAccessor {
@@ -148,21 +164,37 @@ export async function buildAnimationDataFromBinary(
     };
   }
 
-  function makeTimeAccessor(data: Float32Array, outerStride: number, innerStride: number): TimeIndexAccessor {
+  function makeTimeAccessor(
+    linData: Float32Array,
+    rotData: Float32Array | undefined,
+    nodeCount: number,
+  ): TimeIndexAccessor {
+    const outerStride = nodeCount * 3; // Stride 3 for each file
     return {
-      data,
+      data: linData,
       stride: outerStride,
       atFrame(frameIdx: number) {
-        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
-        return makeAccessor(frameData, innerStride);
+        const frameData = linData.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, 3);
       },
       linAt(frameIdx: number) {
-        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
-        return makeAccessor(frameData, innerStride);
+        const frameData = linData.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, 3);
       },
       rotAt(frameIdx: number) {
-        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
-        return makeAccessor(frameData, innerStride);
+        if (!rotData) {
+          // Return zeros if no rotation data
+          return {
+            data: new Float32Array(3),
+            stride: 3,
+            at: () => new Float32Array(3),
+            xAt: () => 0,
+            yAt: () => 0,
+            zAt: () => 0,
+          };
+        }
+        const frameData = rotData.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, 3);
       },
     };
   }
@@ -172,11 +204,9 @@ export async function buildAnimationDataFromBinary(
     metadata,
     precomputed,
     initialPositions: makeAccessor(bData.bodyView, 3), // [x, y, z...]
-    displacement: makeTimeAccessor(dispData.bodyView, metadata.nodeCount * 6, 6), // [frame][node][x,y,z,rx,ry,rz]
-    velocity: undefined,
-    acceleration: undefined,
-    // velocity: velData.bodyView,
-    // acceleration: accelData.bodyView,
+    displacement: makeTimeAccessor(dispLinData.bodyView, dispRotData?.bodyView, metadata.nodeCount),
+    velocity: velLinData ? makeTimeAccessor(velLinData.bodyView, velRotData?.bodyView, metadata.nodeCount) : undefined,
+    acceleration: accelLinData ? makeTimeAccessor(accelLinData.bodyView, accelRotData?.bodyView, metadata.nodeCount) : undefined,
     groundMotion: makeAccessor(gmData.bodyView, 3), // [frame][x,y,z]
   };
 }
@@ -185,9 +215,10 @@ function calculateStats(
   metadata: AnimationMetadata,
   gm: Float32Array,
   positions: Float32Array,
-  disp: Float32Array,
-  vel?: Float32Array,
-  accel?: Float32Array,
+  dispLin: Float32Array,
+  dispRot?: Float32Array,
+  velLin?: Float32Array,
+  accelLin?: Float32Array,
 ): ComputedStats {
   // --- 1. GEOMETRY BOUNDS ---
   let minX = Infinity,
@@ -241,11 +272,11 @@ function calculateStats(
   // Base case for ground floor if needed, or handle generically
 
   // --- 3. SIMULATION MAXIMA (Vector Magnitude) ---
-  // Helper to find max vector magnitude in a stride-6 buffer (x,y,z,rx,ry,rz)
+  // Helper to find max vector magnitude in a stride-3 buffer (x,y,z)
   const getMaxMag = (buffer: Float32Array) => {
     let maxSq = 0;
-    // Stride is 6. We only care about linear (0,1,2).
-    for (let i = 0; i < buffer.length; i += 6) {
+    // Stride is 3.
+    for (let i = 0; i < buffer.length; i += 3) {
       const x = buffer[i];
       const y = buffer[i + 1];
       const z = buffer[i + 2];
@@ -328,20 +359,20 @@ function calculateStats(
     const belowCorners = cornerNodes[belowId];
 
     for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
-      // Get displacement data for this frame
-      const frameOffset = frameIdx * metadata.nodeCount * 6;
+      // Get displacement data for this frame - stride 3
+      const frameOffset = frameIdx * metadata.nodeCount * 3;
 
-      // Calculate drift for each corner
-      const cornerOffsets = [corners.NW * 6, corners.NE * 6, corners.SW * 6, corners.SE * 6];
-      const belowCornerOffsets = [belowCorners.NW * 6, belowCorners.NE * 6, belowCorners.SW * 6, belowCorners.SE * 6];
+      // Calculate drift for each corner - stride 3
+      const cornerOffsets = [corners.NW * 3, corners.NE * 3, corners.SW * 3, corners.SE * 3];
+      const belowCornerOffsets = [belowCorners.NW * 3, belowCorners.NE * 3, belowCorners.SW * 3, belowCorners.SE * 3];
 
       for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
         const nodeOffset = frameOffset + cornerOffsets[cornerIdx];
         const belowNodeOffset = frameOffset + belowCornerOffsets[cornerIdx];
 
-        // Calculate drift magnitude
-        const currentMag = Math.hypot(disp[nodeOffset], disp[nodeOffset + 1], disp[nodeOffset + 2]);
-        const belowMag = Math.hypot(disp[belowNodeOffset], disp[belowNodeOffset + 1], disp[belowNodeOffset + 2]);
+        // Calculate drift magnitude using linear displacement (dispLin)
+        const currentMag = Math.hypot(dispLin[nodeOffset], dispLin[nodeOffset + 1], dispLin[nodeOffset + 2]);
+        const belowMag = Math.hypot(dispLin[belowNodeOffset], dispLin[belowNodeOffset + 1], dispLin[belowNodeOffset + 2]);
 
         const driftPercent = ((currentMag - belowMag) / height) * 100;
 
@@ -387,9 +418,9 @@ function calculateStats(
     boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
     storyElevations,
     storyHeights,
-    maxDisplacement: getMaxMag(disp),
-    maxVelocity: vel ? getMaxMag(vel) : undefined,
-    maxAcceleration: accel ? getMaxMag(accel) : undefined,
+    maxDisplacement: getMaxMag(dispLin),
+    maxVelocity: velLin ? getMaxMag(velLin) : undefined,
+    maxAcceleration: accelLin ? getMaxMag(accelLin) : undefined,
     groundMotion: {
       min: gmMin,
       max: gmMax,

@@ -28,12 +28,18 @@ type BaseSimulation = {
 };
 
 export type BinarySimulation = BaseSimulation & {
-  /** Path to displacement file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
-  displacement: string;
-  /** Path to velocity file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
-  velocity?: string;
-  /** Path to acceleration file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
-  acceleration?: string;
+  /** Path to displacement linear file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  displacementLin: string;
+  /** Path to displacement rotation file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  displacementRot?: string;
+  /** Path to velocity linear file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  velocityLin?: string;
+  /** Path to velocity rotation file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  velocityRot?: string;
+  /** Path to acceleration linear file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  accelerationLin?: string;
+  /** Path to acceleration rotation file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  accelerationRot?: string;
   /** Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   groundMotion: string;
 };
@@ -94,23 +100,23 @@ export interface BuildingAnimationData {
 
   /**
    * Displacement Data.
-   * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
-   * Access: (frameIndex * nodeCount * 6) + (nodeIndex * 6) + componentIndex
-   * Units: Inches
+   * Layout: Frame -> Node -> [x, y, z] for linear, [rx, ry, rz] for rotation
+   * Access: (frameIndex * nodeCount * 3) + (nodeIndex * 3) + componentIndex
+   * Units: Inches (linear), Radians (rotation)
    */
   displacement: TimeIndexAccessor;
 
   /**
    * Velocity Data.
-   * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
-   * Units: Inches
+   * Layout: Frame -> Node -> [x, y, z] for linear, [rx, ry, rz] for rotation
+   * Units: Inches/s (linear), Radians/s (rotation)
    */
   velocity?: TimeIndexAccessor;
 
   /**
    * Acceleration Data.
-   * Layout: Frame -> Node -> [x, y, z, rx, ry, rz]
-   * Units: Inches
+   * Layout: Frame -> Node -> [x, y, z] for linear, [rx, ry, rz] for rotation
+   * Units: Inches/s² (linear), Radians/s² (rotation)
    */
   acceleration?: TimeIndexAccessor;
 

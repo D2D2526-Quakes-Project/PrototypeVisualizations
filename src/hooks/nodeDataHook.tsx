@@ -36,7 +36,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const [progress, setProgress] = useState<number>(0);
   const [fileProgress, setFileProgress] = useState<Record<string, number>>({
     building: 0,
-    displacement: 0,
+    displacementLin: 0,
     groundMotion: 0,
   });
   const [progressMessage, setProgressMessage] = useState<string>("");
@@ -66,7 +66,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     setProgressMessage("");
     setAnimationData(null);
 
-    const progressRef = { current: { building: 0, displacement: 0, groundMotion: 0 } };
+    const progressRef = { current: { building: 0, displacementLin: 0, groundMotion: 0 } };
 
     const updateOverallProgress = () => {
       const values = Object.values(progressRef.current);
@@ -80,6 +80,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
     // Helper to resolve URL - supports both full URLs (http/https) and relative paths
     const resolveUrl = (pathOrUrl: string, folder: string): string => {
+      console.log(pathOrUrl, folder);
       if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
         return pathOrUrl;
       }
@@ -90,28 +91,49 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       setProgress(5);
       setProgressMessage("Initializing download...");
 
-      const [buildingBuffer, dispBuffer, /* velBuffer, accelBuffer,*/ gmBuffer] = await Promise.all([
+      // Fetch required files (building, displacementLin, groundMotion)
+      // Optional files (displacementRot, velocityLin/Rot, accelerationLin/Rot) are commented out
+      const [
+        buildingBuffer,
+        dispLinBuffer,
+        /* dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer,*/ gmBuffer,
+      ] = await Promise.all([
         fetchWithProgressAndCache(resolveUrl(building.building_data, building.folder), (p) => {
           progressRef.current.building = p;
           setFileProgress((prev) => ({ ...prev, building: p * 100 }));
           updateOverallProgress();
         }),
         fetchWithProgressAndCache(
-          resolveUrl(simulation.displacement, `${building.folder}/${simulation.folder}`),
+          resolveUrl(simulation.displacementLin, `${building.folder}/${simulation.folder}`),
           (p) => {
-            progressRef.current.displacement = p;
-            setFileProgress((prev) => ({ ...prev, displacement: p * 100 }));
+            progressRef.current.displacementLin = p;
+            setFileProgress((prev) => ({ ...prev, displacementLin: p * 100 }));
             updateOverallProgress();
           },
         ),
-        // fetchWithProgressAndCache(resolveUrl(simulation.velocity, `${building.folder}/${simulation.folder}`), (p) => {
-        //   progressMap.velocity = p;
-        //   updateOverallProgress();
-        // }),
-        // fetchWithProgressAndCache(resolveUrl(simulation.acceleration, `${building.folder}/${simulation.folder}`), (p) => {
-        //   progressMap.acceleration = p;
-        //   updateOverallProgress();
-        // }),
+        // Uncomment to load displacement rotation data:
+        // simulation.displacementRot ? fetchWithProgressAndCache(
+        //   resolveUrl(simulation.displacementRot, `${building.folder}/${simulation.folder}`),
+        //   (p) => { progressRef.current.displacementRot = p; updateOverallProgress(); },
+        // ) : Promise.resolve(undefined),
+        // Uncomment to load velocity data:
+        // simulation.velocityLin ? fetchWithProgressAndCache(
+        //   resolveUrl(simulation.velocityLin, `${building.folder}/${simulation.folder}`),
+        //   (p) => { progressRef.current.velocityLin = p; updateOverallProgress(); },
+        // ) : Promise.resolve(undefined),
+        // simulation.velocityRot ? fetchWithProgressAndCache(
+        //   resolveUrl(simulation.velocityRot, `${building.folder}/${simulation.folder}`),
+        //   (p) => { progressRef.current.velocityRot = p; updateOverallProgress(); },
+        // ) : Promise.resolve(undefined),
+        // Uncomment to load acceleration data:
+        // simulation.accelerationLin ? fetchWithProgressAndCache(
+        //   resolveUrl(simulation.accelerationLin, `${building.folder}/${simulation.folder}`),
+        //   (p) => { progressRef.current.accelerationLin = p; updateOverallProgress(); },
+        // ) : Promise.resolve(undefined),
+        // simulation.accelerationRot ? fetchWithProgressAndCache(
+        //   resolveUrl(simulation.accelerationRot, `${building.folder}/${simulation.folder}`),
+        //   (p) => { progressRef.current.accelerationRot = p; updateOverallProgress(); },
+        // ) : Promise.resolve(undefined),
         fetchWithProgressAndCache(
           resolveUrl(simulation.groundMotion, `${building.folder}/${simulation.folder}`),
           (p) => {
@@ -129,14 +151,16 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       await new Promise((r) => setTimeout(r, 10));
 
       // Pass the ArrayBuffers to your parser
+      // Add optional buffers when uncommenting above: dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer
       const built = await buildAnimationDataFromBinary(
         buildingBuffer,
         gmBuffer,
-        dispBuffer,
-        undefined,
-        undefined,
-        // velBuffer,
-        // accelBuffer,
+        dispLinBuffer,
+        undefined, // dispRotBuffer
+        undefined, // velLinBuffer
+        undefined, // velRotBuffer
+        undefined, // accelLinBuffer
+        undefined, // accelRotBuffer
         async (p: number, msg?: string) => {
           if (p !== -1) setProgress(85 + p * 0.15);
           if (msg) setProgressMessage(msg);
@@ -214,7 +238,12 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         <SimulationPickerOverlay onSelect={loadSelection} />
       ) : (
         (loading || error != null || needsSelection) && (
-          <LoadingOverlay progress={progress} progressMessage={progressMessage} error={error} fileProgress={fileProgress} />
+          <LoadingOverlay
+            progress={progress}
+            progressMessage={progressMessage}
+            error={error}
+            fileProgress={fileProgress}
+          />
         )
       )}
       {animationData && (
@@ -275,22 +304,26 @@ function LoadingOverlay({
               <span>{Math.round(p)}%</span>
             </div>
             <div className="h-2 bg-neutral-400 rounded-lg shadow-md">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${p}%` }}
-                className="bg-amber-400 h-full rounded"
-              />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${p}%` }} className="bg-amber-400 h-full rounded" />
             </div>
           </div>
         ))}
       </div>
       {memory && (
-        <div className="w-1/2 max-w-lg h-2 bg-neutral-300 rounded-lg inset-shadow-sm mt-2">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${(memory.used / memory.limit) * 100}%` }}
-            className="bg-indigo-200 h-full rounded inset-shadow-sm inset-shadow-indigo-300"
-          />
+        <div className="w-1/2 max-w-lg flex flex-col gap-1 mt-2">
+          <div className="flex justify-between text-xs text-neutral-500">
+            <span>Memory</span>
+            <span>
+              {Math.round(memory.used / 1024 / 1024)} MB / {Math.round(memory.limit / 1024 / 1024)} MB
+            </span>
+          </div>
+          <div className="h-2 bg-neutral-300 rounded-lg inset-shadow-sm">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(memory.used / memory.limit) * 100}%` }}
+              className="bg-indigo-200 h-full rounded inset-shadow-sm inset-shadow-indigo-300"
+            />
+          </div>
         </div>
       )}
       <div className="text-neutral-400 mt-2 text-sm">{progressMessage}</div>
@@ -383,9 +416,12 @@ function SimulationPickerOverlay({
                         const isIncomplete = (path: string) => !path.startsWith("http") && path.startsWith("*");
 
                         const incompleteWarning =
-                          isIncomplete(s.displacement) ||
-                          (s.velocity && isIncomplete(s.velocity)) ||
-                          (s.acceleration && isIncomplete(s.acceleration)) ||
+                          isIncomplete(s.displacementLin) ||
+                          (s.displacementRot && isIncomplete(s.displacementRot)) ||
+                          (s.velocityLin && isIncomplete(s.velocityLin)) ||
+                          (s.velocityRot && isIncomplete(s.velocityRot)) ||
+                          (s.accelerationLin && isIncomplete(s.accelerationLin)) ||
+                          (s.accelerationRot && isIncomplete(s.accelerationRot)) ||
                           isIncomplete(s.groundMotion);
                         return (
                           <button

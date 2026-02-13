@@ -6,6 +6,7 @@ import { DoubleSide, Vector3 } from "three";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/resizable";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { SmallTimeline } from "@/components/SmallTimeline";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
@@ -207,6 +208,10 @@ export function FloorPlanTorsion() {
                   />
                 </label>
               )}
+            </div>
+
+            <div className="h-8 shrink-0">
+              <SmallTimeline />
             </div>
 
             <div>

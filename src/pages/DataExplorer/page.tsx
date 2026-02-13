@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { SmallTimeline } from "@/components/SmallTimeline";
 
 export function ViewDataExplorer() {
   const { animationData } = useAnimationData();
@@ -73,6 +74,9 @@ export function ViewDataExplorer() {
             Frame: {frameIndex + 1} / {frameCount} | Time: {(frameIndex * dt).toFixed(3)}s | Avg Building Displacement: {Math.hypot(...avgBuildingDisplacement).toFixed(3)}in
           </span>
         </div>
+      </div>
+      <div className="h-8 shrink-0">
+        <SmallTimeline />
       </div>
       <div className="grow overflow-auto border-2 border-neutral-300 rounded-lg">
         <table className="w-full text-left table-auto border-collapse">

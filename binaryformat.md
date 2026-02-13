@@ -57,17 +57,22 @@ All files in this suite follow a standard "Header-Body" architecture.
 
 ### File Simulation Time Series Data
 
-**Filenames:** `displacement.bld`, `velocity.bld`, `acceleration.bld`
-**Purpose:** Animation data per time-step.
+**Filenames:** `{type}_lin.bld`, `{type}_rot.bld` where `{type}` is `displacement`, `velocity`, or `acceleration`
+**Purpose:** Animation data per time-step, split into linear and rotational components.
 **Units:**
 
-- Displacements: **Inches** relative to rest position.
+- Linear (translations): **Inches** relative to rest position.
+- Rotation: **Radians**
+- Velocity Linear: **Inches/s**
+- Velocity Rotation: **Radians/s**
+- Acceleration Linear: **Inches/s²**
+- Acceleration Rotation: **Radians/s²**
 
 #### JSON Header Schema
 
 ```json
 {
-  "type": "displacement" | "velocity" | "acceleration",
+  "type": "displacement_lin" | "displacement_rot" | "velocity_lin" | "velocity_rot" | "acceleration_lin" | "acceleration_rot",
   "count_frames": <integer>,
   "count_nodes": <integer>,
   "dt": <float>, // Time step size (seconds) ex. 0.01
@@ -76,14 +81,24 @@ All files in this suite follow a standard "Header-Body" architecture.
 
 #### Binary Body Layout
 
-The body contains a single continuous buffer. Data is ordered **Frame-Major**.
+Each file contains a single continuous buffer with stride 3. Data is ordered **Frame-Major**.
 
-**Structure:**
+**Structure for `_lin.bld` files:**
 
 ```
 [ Frame 0 ]
   [ Node 0: x, y, z ]
   [ Node 1: x, y, z ]
+[ Frame 1 ]
+  ...
+```
+
+**Structure for `_rot.bld` files:**
+
+```
+[ Frame 0 ]
+  [ Node 0: rx, ry, rz ]
+  [ Node 1: rx, ry, rz ]
 [ Frame 1 ]
   ...
 ```

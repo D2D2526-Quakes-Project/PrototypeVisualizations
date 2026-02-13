@@ -37,24 +37,36 @@
         "name": { "type": "string" },
         "folder": { "type": "string" },
         "size": { "type": "number" },
-        "displacement": {
+        "displacementLin": {
           "type": "string",
-          "description": "Path to displacement file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+          "description": "Path to displacement linear file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
         },
-        "velocity": {
+        "displacementRot": {
           "type": "string",
-          "description": "Path to velocity file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+          "description": "Path to displacement rotation file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
         },
-        "acceleration": {
+        "velocityLin": {
           "type": "string",
-          "description": "Path to acceleration file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+          "description": "Path to velocity linear file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        },
+        "velocityRot": {
+          "type": "string",
+          "description": "Path to velocity rotation file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        },
+        "accelerationLin": {
+          "type": "string",
+          "description": "Path to acceleration linear file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        },
+        "accelerationRot": {
+          "type": "string",
+          "description": "Path to acceleration rotation file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
         },
         "groundMotion": {
           "type": "string",
           "description": "Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
         }
       },
-      "required": ["name", "folder", "size", "displacement", "groundMotion"]
+      "required": ["name", "folder", "size", "displacementLin", "groundMotion"]
     }
   }
 }

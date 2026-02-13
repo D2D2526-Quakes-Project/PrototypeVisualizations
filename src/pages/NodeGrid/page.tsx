@@ -2,6 +2,7 @@ import { formatHex, interpolate } from "culori";
 import { useMemo } from "react";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { SmallTimeline } from "@/components/SmallTimeline";
 
 // Color scale for drift
 const amber400 = "oklch(82.8% 0.189 84.429)";
@@ -120,6 +121,9 @@ export function ViewNodeGrid() {
           </span>
           <p>Circle size represents individual node displacement. Color represents the Story Drift Ratio for the node&apos;s floor.</p>
         </div>
+      </div>
+      <div className="h-8 shrink-0">
+        <SmallTimeline />
       </div>
 
       <div className="grow overflow-auto bg-neutral-100 p-4">

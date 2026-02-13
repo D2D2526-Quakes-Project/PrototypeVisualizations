@@ -2,6 +2,7 @@ import { formatHex, interpolate } from "culori";
 import { useMemo, useState } from "react";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { SmallTimeline } from "@/components/SmallTimeline";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
@@ -86,6 +87,9 @@ export function ViewHamburger() {
           <input type="range" min="20" max="2000" step={1} value={displacementScale} onChange={(e) => setDisplacementScale(parseFloat(e.target.value))} className="w-full" />
           Scale: {displacementScale.toFixed(0)}
         </label>
+      </div>
+      <div className="h-8 shrink-0">
+        <SmallTimeline />
       </div>
       <div className="flex gap-1">
         {storyData.map((story, i) => {

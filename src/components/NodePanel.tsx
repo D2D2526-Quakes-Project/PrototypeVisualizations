@@ -180,14 +180,14 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   // ROTATION (current and peak)
   const currentRotation = useMemo(() => {
-    const rot = currentDisp.slice(3, 6);
+    const rot = animationData.displacement.rotAt(frameIndex).at(nodeId);
     return {
       rx: rot[0],
       ry: rot[1],
       rz: rot[2],
       magnitude: Math.hypot(rot[0], rot[1], rot[2]),
     };
-  }, [currentDisp]);
+  }, [animationData.displacement, frameIndex, nodeId]);
 
   const peakRotation = useMemo(() => {
     let maxMag = 0;
@@ -196,8 +196,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
       maxRz = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const disp = animationData.displacement.atFrame(i).at(nodeId);
-      const rot = disp.slice(3, 6);
+      const rot = animationData.displacement.rotAt(i).at(nodeId);
       const mag = Math.hypot(rot[0], rot[1], rot[2]);
 
       if (mag > maxMag) {
@@ -209,7 +208,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
     }
 
     return { magnitude: maxMag, rx: maxRx, ry: maxRy, rz: maxRz };
-  }, [animationData, nodeId]);
+  }, [animationData.displacement, animationData.metadata.frameCount, nodeId]);
 
   return (
     <div className="h-full w-full flex flex-col bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl overflow-hidden rounded-lg">

@@ -14,6 +14,12 @@ import boto3
 from dotenv import load_dotenv
 
 
+def to_camel_case(snake_str: str) -> str:
+    """Convert snake_case string to camelCase"""
+    components = snake_str.split("_")
+    return components[0] + "".join(word.capitalize() for word in components[1:])
+
+
 def main():
     # Load environment variables
     load_dotenv()
@@ -103,12 +109,8 @@ def main():
                     sim = {"name": sim_name, "folder": sim_name, "size": 0}
                     buildings[building_name]["simulations"].append(sim)
 
-                # Determine file type from filename
-                file_type = file_name.replace(".bld", "")
-
-                # Map to correct field name
-                if file_type == "ground_motion":
-                    file_type = "groundMotion"
+                # Determine file type from filename and convert to camelCase
+                file_type = to_camel_case(file_name.replace(".bld", ""))
 
                 # Add URL to simulation
                 sim[file_type] = url

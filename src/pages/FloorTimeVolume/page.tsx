@@ -4,6 +4,7 @@ import { useAnimationData } from "@/hooks/nodeDataHook";
 import * as THREE from "three";
 import { converter, interpolate } from "culori";
 import { DoubleSide } from "three";
+import { SmallTimeline } from "@/components/SmallTimeline";
 
 const amber400 = "oklch(82.8% 0.189 84.429)";
 const red700 = "oklch(50.5% 0.213 27.518)";
@@ -362,6 +363,10 @@ export default function FloorTimeVolumePage() {
         maxHeight={maxHeight}
         onMaxHeightChange={setMaxHeight}
       />
+
+      <div className="absolute bottom-4 right-4 left-4 h-8 z-10">
+        <SmallTimeline />
+      </div>
 
       <CanvasWithControls>
         <ambientLight intensity={0.6} />

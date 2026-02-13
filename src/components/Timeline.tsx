@@ -3,7 +3,7 @@ import { useAnimationData } from "../hooks/nodeDataHook";
 import type { IDockviewPanelProps } from "dockview";
 import { usePlayback } from "./playback/PlaybackContext";
 
-const DisplacentViews = ["X Ground Motion", "Y Ground Motion", "Z Ground Motion", "Ground Motion"] as const;
+const DisplacentViews = ["X Ground Motion", "Y Ground Motion", "Z Ground Motion", "Ground Motion", "X & Y Ground Motion"] as const;
 
 export function Timeline({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
@@ -28,7 +28,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
           max: animationData.precomputed.groundMotion.max[0],
           strokeColor: "stroke-red-400",
           fillColor: "fill-red-400",
-        };
+        } as const;
       case "Y Ground Motion":
         return {
           accessor: animationData.groundMotion.yAt,
@@ -36,7 +36,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
           max: animationData.precomputed.groundMotion.max[1],
           strokeColor: "stroke-green-400",
           fillColor: "fill-green-400",
-        };
+        } as const;
       case "Z Ground Motion":
         return {
           accessor: animationData.groundMotion.zAt,
@@ -44,7 +44,20 @@ export function Timeline({ api }: IDockviewPanelProps) {
           max: animationData.precomputed.groundMotion.max[2],
           strokeColor: "stroke-blue-400",
           fillColor: "fill-blue-400",
-        };
+        } as const;
+      case "X & Y Ground Motion":
+        return {
+          accessor: animationData.groundMotion.xAt,
+          min: animationData.precomputed.groundMotion.min[0],
+          max: animationData.precomputed.groundMotion.max[0],
+          strokeColor: "stroke-red-400",
+          fillColor: "fill-red-400",
+          secondAccessor: animationData.groundMotion.yAt,
+          secondMin: animationData.precomputed.groundMotion.min[1],
+          secondMax: animationData.precomputed.groundMotion.max[1],
+          secondStrokeColor: "stroke-green-400",
+          secondFillColor: "fill-green-400",
+        } as const;
       case "Ground Motion":
       default:
         return {
@@ -53,12 +66,14 @@ export function Timeline({ api }: IDockviewPanelProps) {
           max: animationData.precomputed.groundMotion.maxMagnitude,
           strokeColor: "stroke-amber-400",
           fillColor: "fill-amber-400",
-        };
+        } as const;
     }
   };
 
-  const { accessor, min, max, strokeColor, fillColor } = getDataAccessor();
+  const { accessor, min, max, strokeColor, fillColor, secondAccessor, secondMin, secondMax, secondStrokeColor, secondFillColor } = getDataAccessor();
   const range = max - min;
+  const secondRange = secondMax !== undefined ? secondMax - secondMin : undefined;
+  const isStacked = secondAccessor !== undefined;
 
   /**
    * Resize observer for the aspect ratio of the canvas
@@ -104,7 +119,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
   const verticalPadding = 3;
   const viewBoxHeight = aspectRatio * 100;
-  const chartHeight = viewBoxHeight - verticalPadding * 2;
+  const chartHeight = (viewBoxHeight - verticalPadding * 2) / (isStacked ? 2 : 1);
   const [scrubbing, setScrubbing] = useState(false);
 
   /**
@@ -149,26 +164,43 @@ export function Timeline({ api }: IDockviewPanelProps) {
    */
 
   const currentValue = accessor(frameIndex) ?? 0;
+  const secondCurrentValue = isStacked ? (secondAccessor?.(frameIndex) ?? 0) : undefined;
 
   const playheadX = (frameIndex / maxFrame) * 100;
   const playheadY = (1 - (currentValue - min) / range) * chartHeight + verticalPadding;
+  const secondPlayheadY = isStacked && secondRange !== undefined
+    ? (1 - (secondCurrentValue! - secondMin) / secondRange!) * chartHeight + verticalPadding + chartHeight + verticalPadding
+    : undefined;
 
   const playheadTransform = `translate(${playheadX}, ${playheadY})`;
+  const secondPlayheadTransform = isStacked ? `translate(${playheadX}, ${secondPlayheadY})` : undefined;
 
   let linePoints = "";
-  for (let i = 0; i < maxFrame; i++) {
+  for (let i = 0; i <= maxFrame; i++) {
     const d = accessor(i) ?? 0;
     const x = i / maxFrame;
     const y = 1 - (d - min) / range;
     linePoints += `${x * 100},${y * chartHeight + verticalPadding} `;
   }
 
+  let secondLinePoints = "";
+  if (isStacked && secondAccessor && secondRange !== undefined) {
+    for (let i = 0; i <= maxFrame; i++) {
+      const d = secondAccessor(i) ?? 0;
+      const x = i / maxFrame;
+      const y = 1 - (d - secondMin) / secondRange;
+      secondLinePoints += `${x * 100},${y * chartHeight + verticalPadding + chartHeight + verticalPadding} `;
+    }
+  }
+
+  const xAxisY = isStacked ? viewBoxHeight - 1 : chartHeight + 1.5 + verticalPadding;
+
   return (
     <div ref={panelRef} className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full">
       <div className="absolute top-0 inset-x-0 flex justify-between p-1">
         <div>
           Frame: {frameIndex + 1} / {maxFrame + 1} | Time: {(frameIndex * animationData.metadata.dt).toFixed(3)}s |
-          Value: {currentValue.toFixed(2)}
+          X: {currentValue.toFixed(2)}{isStacked && secondCurrentValue !== undefined ? ` | Y: ${secondCurrentValue.toFixed(2)}` : ""}
         </div>
         <div>
           <select
@@ -194,6 +226,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseMove={handleMouseMove}>
+        {/* X Graph */}
         <line
           transform={playheadTransform}
           x1={0}
@@ -212,6 +245,32 @@ export function Timeline({ api }: IDockviewPanelProps) {
           className={fillColor}
           opacity={0.2}
         />
+        <polygon transform={playheadTransform} points="-1,-1.4 1,-1.4 0,0" className="fill-amber-500" />
+
+        {/* Y Graph (stacked below X) */}
+        {isStacked && (
+          <>
+            <line
+              transform={secondPlayheadTransform!}
+              x1={0}
+              y1="-100"
+              x2={0}
+              y2="100"
+              className="stroke-neutral-300"
+              strokeWidth="0.2"
+            />
+            <polyline points={secondLinePoints} fill="none" className={secondStrokeColor} strokeWidth="0.2" />
+            <polygon
+              points={
+                secondLinePoints +
+                ` 100,${(1 - (0 - secondMin) / secondRange!) * chartHeight + verticalPadding + chartHeight + verticalPadding} 0,${(1 - (0 - secondMin) / secondRange!) * chartHeight + verticalPadding + chartHeight + verticalPadding}`
+              }
+              className={secondFillColor}
+              opacity={0.2}
+            />
+            <polygon transform={secondPlayheadTransform!} points="-1,-1.4 1,-1.4 0,0" className="fill-amber-500" />
+          </>
+        )}
 
         <g>
           {/* x labels */}
@@ -219,7 +278,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             <React.Fragment key={i}>
               <text
                 x={(i / 15) * 100}
-                y={chartHeight + 1.5 + verticalPadding}
+                y={xAxisY}
                 textAnchor="middle"
                 className="text-neutral-300"
                 fontSize={1}>
@@ -227,18 +286,25 @@ export function Timeline({ api }: IDockviewPanelProps) {
               </text>
               <line
                 x1={(i / 15) * 100}
-                y1={chartHeight + verticalPadding}
+                y1={isStacked ? chartHeight + verticalPadding : chartHeight + verticalPadding}
                 x2={(i / 15) * 100}
                 y2={0}
                 className="stroke-neutral-300"
                 strokeWidth="0.1"
               />
+              {isStacked && (
+                <line
+                  x1={(i / 15) * 100}
+                  y1={viewBoxHeight}
+                  x2={(i / 15) * 100}
+                  y2={chartHeight + verticalPadding * 2}
+                  className="stroke-neutral-300"
+                  strokeWidth="0.1"
+                />
+              )}
             </React.Fragment>
           ))}
         </g>
-
-        {/* <circle transform={playheadTransform} r="0.3" className="fill-amber-500" /> */}
-        <polygon transform={playheadTransform} points="-1,-1.4 1,-1.4 0,0" className="fill-amber-500" />
       </svg>
     </div>
   );

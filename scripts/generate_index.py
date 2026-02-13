@@ -24,8 +24,9 @@ def main():
     secret_key = os.getenv("R2_SECRET_ACCESS_KEY")
     endpoint = os.getenv("R2_ENDPOINT")
     bucket = os.getenv("R2_BUCKET")
+    public_endpoint = os.getenv("R2_PUBLIC_ENDPOINT")
 
-    if not access_key or not secret_key or not endpoint or not bucket:
+    if not access_key or not secret_key or not endpoint or not bucket or not public_endpoint:
         print("❌ Missing R2 credentials in .env file")
         sys.exit(1)
 
@@ -39,7 +40,7 @@ def main():
     s3 = boto3.client("s3", endpoint_url=endpoint, aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name="auto")
 
     # Construct public URL base
-    base_url = endpoint.replace("https://", f"https://{bucket}.")
+    base_url = public_endpoint.rstrip("/")
 
     print(f"✓ Connected to bucket: {bucket}")
     print()

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Building Index",
+  "type": "object",
+  "properties": {
+    "size": { "type": "number" },
+    "buildings": {
+      "type": "array",
+      "items": {
+        "oneOf": [{ "$ref": "#/$defs/BinaryBuilding" }]
+      }
+    }
+  },
+  "required": ["size", "buildings"],
+  "$defs": {
+    "BinaryBuilding": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "folder": { "type": "string" },
+        "size": { "type": "number" },
+        "building_data": {
+          "type": "string",
+          "description": "Path to building data file (relative to /data/{folder}/) or full URL (http/https)"
+        },
+        "building_data_size": { "type": "number" },
+        "simulations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BinarySimulation" }
+        }
+      },
+      "required": ["name", "folder", "size", "building_data", "building_data_size", "simulations"]
+    },
+    "BinarySimulation": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "folder": { "type": "string" },
+        "size": { "type": "number" },
+        "displacement": {
+          "type": "string",
+          "description": "Path to displacement file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        },
+        "velocity": {
+          "type": "string",
+          "description": "Path to velocity file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        },
+        "acceleration": {
+          "type": "string",
+          "description": "Path to acceleration file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        },
+        "groundMotion": {
+          "type": "string",
+          "description": "Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        }
+      },
+      "required": ["name", "folder", "size", "displacement", "groundMotion"]
+    }
+  }
+}

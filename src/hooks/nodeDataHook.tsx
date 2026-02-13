@@ -1,17 +1,10 @@
-import type {
-  BinaryBuilding,
-  BinarySimulation,
-  Building,
-  CSVSimulation,
-  Simulation,
-  BuildingAnimationData,
-} from "@/lib/types";
+import type { BinaryBuilding, BinarySimulation, Building, Simulation, BuildingAnimationData } from "@/lib/types";
 import DataSources from "@/data/index";
 import { XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 // import { buildAnimationData, type BuildingAnimationData } from "../lib/parser";
-import { buildAnimationDataFromBinary } from "@/lib/binaryParser";
+import { buildAnimationDataFromBinary } from "@/lib/parser";
 import { fetchWithProgressAndCache } from "@/lib/dataLoader";
 
 export type AnimationDataContextType = {
@@ -41,6 +34,11 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const [currentSimulation, setCurrentSimulation] = useState<BinarySimulation | null>(null);
 
   const [progress, setProgress] = useState<number>(0);
+  const [fileProgress, setFileProgress] = useState<Record<string, number>>({
+    building: 0,
+    displacement: 0,
+    groundMotion: 0,
+  });
   const [progressMessage, setProgressMessage] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
@@ -64,30 +62,25 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     setLoading(true);
     setError(null);
     setProgress(0);
+    setFileProgress({ building: 0, displacement: 0, groundMotion: 0 });
     setProgressMessage("");
     setAnimationData(null);
 
-    const progressMap = {
-      building: 0,
-      displacement: 0,
-      velocity: 0,
-      acceleration: 0,
-      groundMotion: 0,
-    };
+    const progressRef = { current: { building: 0, displacement: 0, groundMotion: 0 } };
 
     const updateOverallProgress = () => {
-      const values = Object.values(progressMap);
+      const values = Object.values(progressRef.current);
       const sum = values.reduce((a, b) => a + b, 0);
       const avg = sum / values.length;
 
-      // Map 0-100% download to 5-80% of total bar (leaving 20% for parsing)
+      // Map 0-1 download to 5-80% of total bar (leaving 20% for parsing)
       setProgress(5 + avg * 75);
       setProgressMessage(`Downloading... ${Math.round(avg * 100)}%`);
     };
 
     // Helper to resolve URL - supports both full URLs (http/https) and relative paths
     const resolveUrl = (pathOrUrl: string, folder: string): string => {
-      if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+      if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
         return pathOrUrl;
       }
       return `/data/${folder}/${pathOrUrl}`;
@@ -99,13 +92,18 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
       const [buildingBuffer, dispBuffer, /* velBuffer, accelBuffer,*/ gmBuffer] = await Promise.all([
         fetchWithProgressAndCache(resolveUrl(building.building_data, building.folder), (p) => {
-          progressMap.building = p;
+          progressRef.current.building = p;
+          setFileProgress((prev) => ({ ...prev, building: p * 100 }));
           updateOverallProgress();
         }),
-        fetchWithProgressAndCache(resolveUrl(simulation.displacement, `${building.folder}/${simulation.folder}`), (p) => {
-          progressMap.displacement = p;
-          updateOverallProgress();
-        }),
+        fetchWithProgressAndCache(
+          resolveUrl(simulation.displacement, `${building.folder}/${simulation.folder}`),
+          (p) => {
+            progressRef.current.displacement = p;
+            setFileProgress((prev) => ({ ...prev, displacement: p * 100 }));
+            updateOverallProgress();
+          },
+        ),
         // fetchWithProgressAndCache(resolveUrl(simulation.velocity, `${building.folder}/${simulation.folder}`), (p) => {
         //   progressMap.velocity = p;
         //   updateOverallProgress();
@@ -114,10 +112,14 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         //   progressMap.acceleration = p;
         //   updateOverallProgress();
         // }),
-        fetchWithProgressAndCache(resolveUrl(simulation.groundMotion, `${building.folder}/${simulation.folder}`), (p) => {
-          progressMap.groundMotion = p;
-          updateOverallProgress();
-        }),
+        fetchWithProgressAndCache(
+          resolveUrl(simulation.groundMotion, `${building.folder}/${simulation.folder}`),
+          (p) => {
+            progressRef.current.groundMotion = p;
+            setFileProgress((prev) => ({ ...prev, groundMotion: p * 100 }));
+            updateOverallProgress();
+          },
+        ),
       ]);
 
       setProgress(85);
@@ -183,7 +185,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
     if (building && simulation) {
       const b = DataSources.buildings.find((b) => b.folder === building);
-      if (b && b.data_type === "binary") {
+      if (b) {
         const s = b.simulations.find((s: Simulation) => s.folder === simulation);
         if (s) {
           setCurrentBuilding(b);
@@ -212,7 +214,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         <SimulationPickerOverlay onSelect={loadSelection} />
       ) : (
         (loading || error != null || needsSelection) && (
-          <LoadingOverlay progress={progress} progressMessage={progressMessage} error={error} />
+          <LoadingOverlay progress={progress} progressMessage={progressMessage} error={error} fileProgress={fileProgress} />
         )
       )}
       {animationData && (
@@ -228,10 +230,12 @@ function LoadingOverlay({
   progress,
   progressMessage,
   error,
+  fileProgress,
 }: {
   progress: number;
   progressMessage: string;
   error?: unknown;
+  fileProgress: Record<string, number>;
 }) {
   const memory = useMemo(() => {
     if ("memory" in performance) {
@@ -263,12 +267,22 @@ function LoadingOverlay({
         Quakes
       </motion.div>
       <div className="text-neutral-500">Loading animation data...</div>
-      <div className="w-1/2 max-w-lg h-2 bg-neutral-400 rounded-lg shadow-md">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          className="bg-amber-400 h-full rounded"
-        />
+      <div className="w-1/2 max-w-lg flex flex-col gap-2">
+        {Object.entries(fileProgress).map(([name, p]) => (
+          <div key={name} className="flex flex-col">
+            <div className="flex justify-between text-xs text-neutral-500 mb-1">
+              <span className="capitalize">{name}</span>
+              <span>{Math.round(p)}%</span>
+            </div>
+            <div className="h-2 bg-neutral-400 rounded-lg shadow-md">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${p}%` }}
+                className="bg-amber-400 h-full rounded"
+              />
+            </div>
+          </div>
+        ))}
       </div>
       {memory && (
         <div className="w-1/2 max-w-lg h-2 bg-neutral-300 rounded-lg inset-shadow-sm mt-2">
@@ -292,6 +306,8 @@ function SimulationPickerOverlay({
 }) {
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
 
+  console.log(DataSources);
+
   return (
     <motion.div
       key="loadingoverlay"
@@ -310,19 +326,17 @@ function SimulationPickerOverlay({
         <div className="w-full max-w-sm flex flex-col gap-4">
           {DataSources.buildings.map((b) => {
             // Helper to check if a path is incomplete (starts with "*" but not a URL)
-            const isIncomplete = (path: string) => !path.startsWith('http') && path.startsWith("*");
-            
-            const incompleteWarning =
-              b.data_type === "csv"
-                ? isIncomplete(b.height_map) || isIncomplete(b.node_map) || isIncomplete(b.center_map)
-                : isIncomplete(b.building_data);
+            const isIncomplete = (path: string) => !path.startsWith("http") && path.startsWith("*");
+
+            console.log(b);
+
+            const incompleteWarning = isIncomplete(b.building_data);
             return (
               <div
                 key={b.folder}
                 className={`${selectedBuilding == b ? "border-amber-400" : "border-transparent"} border-l-2 px-1 pt-1 pb-3 transition-colors`}>
                 <button
-                  onClick={() => setSelectedBuilding((ex) => (ex == b ? null : b.data_type === "binary" ? b : null))}
-                  disabled={b.data_type === "csv"}
+                  onClick={() => setSelectedBuilding((ex) => (ex == b ? null : b))}
                   className={`w-full overflow-clip px-4 py-3 flex items-baseline justify-between bg-neutral-200 cursor-pointer rounded hover:bg-neutral-200/50 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50 ${incompleteWarning ? "incomplete-warning" : ""}`}>
                   <span className="font-semibold text-neutral-800">{b.name}</span>
                   <span>
@@ -365,32 +379,18 @@ function SimulationPickerOverlay({
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2, ease: "easeOut" }}>
                       {selectedBuilding.simulations.map((s) => {
-                        // Helper to check if a path is incomplete (starts with "*" but not a URL)
-                        const isIncomplete = (path: string) => !path.startsWith('http') && path.startsWith("*");
-                        
-                        let incompleteWarning;
-                        if (b.data_type === "csv") {
-                          s = s as CSVSimulation;
-                          incompleteWarning =
-                            isIncomplete(s.groundMotion) ||
-                            s.displacementFiles.find((f) => isIncomplete(f)) ||
-                            s.velocityFiles.find((f) => isIncomplete(f)) ||
-                            s.accelerationFiles.find((f) => isIncomplete(f));
-                        } else {
-                          s = s as BinarySimulation;
-                          incompleteWarning =
-                            isIncomplete(s.displacement) ||
-                            isIncomplete(s.velocity) ||
-                            isIncomplete(s.acceleration) ||
-                            isIncomplete(s.groundMotion);
-                        }
+                        console.log(s);
+                        const isIncomplete = (path: string) => !path.startsWith("http") && path.startsWith("*");
+
+                        const incompleteWarning =
+                          isIncomplete(s.displacement) ||
+                          (s.velocity && isIncomplete(s.velocity)) ||
+                          (s.acceleration && isIncomplete(s.acceleration)) ||
+                          isIncomplete(s.groundMotion);
                         return (
                           <button
                             key={s.folder}
-                            onClick={() =>
-                              selectedBuilding.data_type === "binary" &&
-                              onSelect(selectedBuilding, s as BinarySimulation)
-                            }
+                            onClick={() => onSelect(selectedBuilding, s as BinarySimulation)}
                             className={`flex justify-between items-baseline px-2 pt-3 border-b-2 border-black cursor-pointer hover:border-amber-400 transition-colors group ${incompleteWarning ? "incomplete-warning" : ""}`}>
                             <span className="font-medium text-neutral-700">
                               {s.name}

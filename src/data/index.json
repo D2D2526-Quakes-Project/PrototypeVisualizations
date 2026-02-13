@@ -1,0 +1,41 @@
+{
+  "$schema": "./index.schema.json",
+  "buildings": [
+    {
+      "data_type": "binary",
+      "name": "15story",
+      "folder": "15story",
+      "building_data": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/building.bld",
+      "building_data_size": 22677,
+      "simulations": [
+        {
+          "name": "station3138Corners",
+          "folder": "station3138Corners",
+          "size": 6167978,
+          "displacement": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138Corners/displacement.bld",
+          "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138Corners/ground_motion.bld"
+        },
+        {
+          "name": "station3138Entire",
+          "folder": "station3138Entire",
+          "size": 2135892306,
+          "acceleration": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138Entire/acceleration.bld",
+          "displacement": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138Entire/displacement.bld",
+          "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138Entire/ground_motion.bld",
+          "velocity": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138Entire/velocity.bld"
+        },
+        {
+          "name": "station3139Entire",
+          "folder": "station3139Entire",
+          "size": 1897179739,
+          "acceleration": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139Entire/acceleration.bld",
+          "displacement": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139Entire/displacement.bld",
+          "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139Entire/ground_motion.bld",
+          "velocity": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139Entire/velocity.bld"
+        }
+      ],
+      "size": 4039262700
+    }
+  ],
+  "size": 4039262700
+}

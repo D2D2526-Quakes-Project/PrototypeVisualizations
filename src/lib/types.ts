@@ -9,19 +9,7 @@ type BaseBuilding = {
   size: number;
 };
 
-export type CSVBuilding = BaseBuilding & {
-  data_type: "csv";
-  /** Path to height map file (relative to /data/{folder}/) or full URL (http/https) */
-  height_map: string;
-  /** Path to center map file (relative to /data/{folder}/) or full URL (http/https) */
-  center_map: string;
-  /** Path to node map file (relative to /data/{folder}/) or full URL (http/https) */
-  node_map: string;
-  simulations: CSVSimulation[];
-};
-
 export type BinaryBuilding = BaseBuilding & {
-  data_type: "binary";
   name: string;
   folder: string;
   size: number;
@@ -31,7 +19,7 @@ export type BinaryBuilding = BaseBuilding & {
   simulations: BinarySimulation[];
 };
 
-export type Building = CSVBuilding | BinaryBuilding;
+export type Building = BinaryBuilding;
 
 type BaseSimulation = {
   name: string;
@@ -39,29 +27,18 @@ type BaseSimulation = {
   size: number;
 };
 
-export type CSVSimulation = BaseSimulation & {
-  /** Paths to displacement files (relative to /data/{folder}/{simulation.folder}/) or full URLs (http/https) */
-  displacementFiles: string[];
-  /** Paths to acceleration files (relative to /data/{folder}/{simulation.folder}/) or full URLs (http/https) */
-  accelerationFiles: string[];
-  /** Paths to velocity files (relative to /data/{folder}/{simulation.folder}/) or full URLs (http/https) */
-  velocityFiles: string[];
-  /** Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
-  groundMotion: string;
-};
-
 export type BinarySimulation = BaseSimulation & {
   /** Path to displacement file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   displacement: string;
   /** Path to velocity file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
-  velocity: string;
+  velocity?: string;
   /** Path to acceleration file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
-  acceleration: string;
+  acceleration?: string;
   /** Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   groundMotion: string;
 };
 
-export type Simulation = CSVSimulation | BinarySimulation;
+export type Simulation = BinarySimulation;
 
 // -----------------------------------------------------------------------------
 

@@ -37,7 +37,7 @@ export function DataPicker() {
         // Loopup
         const [building, simulation] = e.target.value.split("/");
         const b = DataSources.buildings.find((b) => b.folder === building);
-        if (!b || b.data_type !== "binary") return;
+        if (!b) return;
         const s = b?.simulations.find((s) => s.folder === simulation);
         if (!s) return;
         loadSelection(b, s);

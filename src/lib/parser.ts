@@ -1,436 +1,410 @@
-export interface NodeData {
-  story: string;
-  corner: Corner;
-  initial_pos: [number, number, number]; // meters
-  disp_H1: number[];
-  disp_H2: number[];
-  disp_V: number[];
-  nodeId: string;
-}
+import type {
+  AnimationMetadata,
+  BuildingAnimationData,
+  BuildingMetadata,
+  ComputedStats,
+  GroundMotionMetadata,
+  IndexAccessor,
+  SimulationMetadata,
+  TimeIndexAccessor,
+} from "./types";
 
-interface NodeCoordinates {
-  [nodeId: string]: [number, number, number];
-}
-
-interface DisplacementData {
-  [nodeId: string]: number[];
-}
-
-export interface ParsedDisplacementFile {
-  timeSteps: number[];
-  displacementData: DisplacementData;
-  nodeCoords: NodeCoordinates;
-}
-
-export interface AnimationFrame {
-  frame: number;
-  time: number;
-  nodePositions: Map<string, [number, number, number]>;
-  nodeDisplacements: Map<string, [number, number, number]>;
-  averageDisplacement: [number, number, number];
-  groundMotion: [number, number, number];
-  stories: Map<
-    string,
-    {
-      nodeIds: string[];
-      averageDisplacement: [number, number, number];
-    }
-  >;
-}
-
-export interface BuildingAnimationData {
-  nodes: Map<string, NodeData>;
-  timeSteps: number[];
-  frames: AnimationFrame[];
-  frameRate: number;
-  minPos: [number, number, number]; // meters
-  maxPos: [number, number, number]; // meters
-  minInitialPos: [number, number, number]; // meters
-  maxInitialPos: [number, number, number]; // meters
-  maxAverageDisplacement: number; // meters
-  maxAverageStoryDisplacement: number; // meters
-  maxDisplacement: number; // meters
-  minDisplacement: number; // meters
-}
-
-export type Directions = "H1" | "H2" | "V";
-export type Corner = "NW" | "NE" | "SW" | "SE";
-
-const INCH_TO_METER = 0.0254 as const;
-
-function parseNodeMapping(csvData: string): Map<string, NodeData> {
-  const nodes = new Map<string, NodeData>();
-  const lines = csvData.trim().split("\n");
-
-  // Skip header
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    const row = line.split(",").map((cell) => cell.trim());
-    if (!row[0]) continue;
-
-    const [nodeId, story, corner] = row;
-    nodes.set(nodeId, {
-      story,
-      corner: corner as Corner,
-      initial_pos: [0, 0, 0],
-      disp_H1: [],
-      disp_H2: [],
-      disp_V: [],
-      nodeId,
-    });
+/**
+ * Helper to decompress GZIP data if needed.
+ * If the buffer starts with the GZIP magic number (0x1f, 0x8b), it decompresses it.
+ */
+async function ensureDecompressed(raw: ArrayBuffer | string): Promise<ArrayBuffer> {
+  // Handle the edge case where the old hook passed a string
+  let buffer: ArrayBuffer;
+  if (typeof raw === "string") {
+    // This is technically broken data if read via r.text(), but we try to salvage
+    // Note: You REALLY should change the hook to use r.arrayBuffer()
+    const enc = new TextEncoder();
+    buffer = enc.encode(raw).buffer;
+  } else {
+    buffer = raw;
   }
 
-  return nodes;
-}
+  const view = new Uint8Array(buffer);
 
-function parseDisplacementFile(fileContent: string, _direction: Directions): ParsedDisplacementFile {
-  const lines = fileContent.trim().split("\n");
-
-  const colToNode: { [colIdx: number]: string } = {};
-  const nodeCoords: NodeCoordinates = {};
-  let dataStarted = false;
-  const timeSteps: number[] = [];
-  const tempNodeData: DisplacementData = {};
-
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    if (!trimmedLine) continue;
-
-    // Parse column header lines
-    if (trimmedLine.toLowerCase().startsWith("column,")) {
-      const parts = trimmedLine.split(",").map((p) => p.trim());
-      try {
-        const colIdx = parseInt(parts[1]);
-        const nodeId = parts[3];
-        const x = parseFloat(parts[5]);
-        const y = parseFloat(parts[6]);
-        const z = parseFloat(parts[7]);
-
-        colToNode[colIdx] = nodeId;
-        nodeCoords[nodeId] = [x, y, z];
-        tempNodeData[nodeId] = [];
-      } catch (_e) {
-        continue;
-      }
-    }
-    // Check if data rows have started
-    else if (
-      trimmedLine[0] &&
-      (/^\d/.test(trimmedLine) ||
-        (/^\./.test(trimmedLine) && /^\d/.test(trimmedLine[1] || "")) ||
-        (/^-/.test(trimmedLine) && /^\d/.test(trimmedLine[1] || "")))
-    ) {
-      dataStarted = true;
-    }
-
-    if (dataStarted) {
-      // Skip summary lines
-      if (trimmedLine.toLowerCase().startsWith("maximum") || trimmedLine.toLowerCase().startsWith("minimum")) {
-        continue;
-      }
-
-      // Parse data values
-      const values = trimmedLine
-        .replace(/,/g, " ")
-        .split(/\s+/)
-        .filter((v) => v);
-      try {
-        timeSteps.push(parseFloat(values[0]));
-
-        for (const [colIdx, nodeId] of Object.entries(colToNode)) {
-          const dataIdx = parseInt(colIdx) - 1;
-          if (dataIdx < values.length) {
-            const dispVal = parseFloat(values[dataIdx]);
-            tempNodeData[nodeId].push(dispVal);
-          }
-        }
-      } catch (_e) {
-        continue;
-      }
-    }
+  // Check GZIP Magic Number (1F 8B)
+  if (view[0] === 0x1f && view[1] === 0x8b) {
+    const ds = new DecompressionStream("gzip");
+    const writer = ds.writable.getWriter();
+    writer.write(buffer);
+    writer.close();
+    const output = await new Response(ds.readable).arrayBuffer();
+    return output;
   }
 
+  return buffer;
+}
+
+/**
+ * parseBlob reads the Length-Prefixed JSON Header and returns the Metadata + Body View
+ */
+function parseBlob<T>(buffer: ArrayBuffer) {
+  // 1. Read Header Length (First 4 bytes, Little Endian)
+  const headerLen = new Uint32Array(buffer, 0, 1)[0];
+
+  // 2. Decode Header JSON
+  const decoder = new TextDecoder("utf-8");
+  const headerBytes = new Uint8Array(buffer, 4, headerLen);
+  const headerJson = decoder.decode(headerBytes);
+  const metadata = JSON.parse(headerJson) as T;
+
+  // 3. Create View on the Body
+  let bodyOffset = 4 + headerLen;
+  const remainder = bodyOffset % 4;
+  if (remainder !== 0) {
+    bodyOffset += 4 - remainder;
+  }
+
+  const bodyView = new Float32Array(buffer, bodyOffset);
+
+  return { metadata, bodyView };
+}
+
+/**
+ * Main Entry Point for the Hook
+ */
+export async function buildAnimationDataFromBinary(
+  rawBuilding: ArrayBuffer,
+  rawGM: ArrayBuffer,
+  rawDisp: ArrayBuffer,
+  rawVel?: ArrayBuffer,
+  rawAccel?: ArrayBuffer,
+  onProgress?: (p: number, msg: string) => void,
+): Promise<BuildingAnimationData> {
+  // 1. Decompress all buffers
+  if (onProgress) onProgress(10, "Decompressing Building Data...");
+  const buildingBuff = await ensureDecompressed(rawBuilding);
+
+  if (onProgress) onProgress(20, "Decompressing Displacement Data...");
+  const dispBuff = await ensureDecompressed(rawDisp);
+
+  if (onProgress && rawVel) onProgress(40, "Decompressing Velocity Data...");
+  const velBuff = rawVel ? await ensureDecompressed(rawVel) : undefined;
+
+  if (onProgress && rawAccel) onProgress(60, "Decompressing Acceleration Data...");
+  const accelBuff = rawAccel ? await ensureDecompressed(rawAccel) : undefined;
+
+  if (onProgress) onProgress(80, "Decompressing Ground Motion...");
+  const gmBuff = await ensureDecompressed(rawGM);
+
+  // 2. Parse Building
+  const bData = parseBlob<BuildingMetadata>(buildingBuff);
+
+  // 3. Parse Simulations
+  const dispData = parseBlob<SimulationMetadata>(dispBuff);
+  const velData = velBuff ? parseBlob<SimulationMetadata>(velBuff) : undefined;
+  const accelData = accelBuff ? parseBlob<SimulationMetadata>(accelBuff) : undefined;
+  const gmData = parseBlob<GroundMotionMetadata>(gmBuff);
+
+  // 4. Verification
+  if (dispData.metadata.count_nodes !== bData.metadata.count_nodes) {
+    throw new Error(
+      `Mismatch: Building has ${bData.metadata.count_nodes} nodes, but Displacement file has ${dispData.metadata.count_nodes}`,
+    );
+  }
+
+  if (onProgress) onProgress(100, "Processing Complete");
+
+  const metadata: AnimationMetadata = {
+    nodeCount: bData.metadata.count_nodes,
+    frameCount: dispData.metadata.count_frames,
+    dt: dispData.metadata.dt,
+    stories: bData.metadata.stories,
+    corners: bData.metadata.corners,
+    storyHeights: bData.metadata.story_heights,
+    storyOrder: bData.metadata.story_order,
+  };
+
+  const precomputed = calculateStats(
+    metadata,
+    gmData.bodyView,
+    bData.bodyView,
+    dispData.bodyView,
+    velData ? velData.bodyView : undefined,
+    accelData ? accelData.bodyView : undefined,
+  );
+
+  function makeAccessor(data: Float32Array, stride: number): IndexAccessor {
+    return {
+      data,
+      stride,
+      at(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride);
+      },
+      xAt(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride)[0];
+      },
+      yAt(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride)[1];
+      },
+      zAt(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride)[2];
+      },
+    };
+  }
+
+  function makeTimeAccessor(data: Float32Array, outerStride: number, innerStride: number): TimeIndexAccessor {
+    return {
+      data,
+      stride: outerStride,
+      atFrame(frameIdx: number) {
+        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, innerStride);
+      },
+      linAt(frameIdx: number) {
+        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, innerStride);
+      },
+      rotAt(frameIdx: number) {
+        const frameData = data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+        return makeAccessor(frameData, innerStride);
+      },
+    };
+  }
+
+  // 5. Construct Final Object
   return {
-    timeSteps,
-    displacementData: tempNodeData,
-    nodeCoords,
+    metadata,
+    precomputed,
+    initialPositions: makeAccessor(bData.bodyView, 3), // [x, y, z...]
+    displacement: makeTimeAccessor(dispData.bodyView, metadata.nodeCount * 6, 6), // [frame][node][x,y,z,rx,ry,rz]
+    velocity: undefined,
+    acceleration: undefined,
+    // velocity: velData.bodyView,
+    // acceleration: accelData.bodyView,
+    groundMotion: makeAccessor(gmData.bodyView, 3), // [frame][x,y,z]
   };
 }
 
-function parseGroundMotion(ground_motion: string) {
-  const lines = ground_motion.trim().split("\n");
-  const timeSteps: number[] = [];
-  const displacements: [number, number, number][] = [];
-  for (const line of lines) {
-    const parts = line.split(" ");
-    if (parts.length !== 4) continue;
-    const [time, x, y, z] = parts;
-    timeSteps.push(parseFloat(time));
-    displacements.push([parseFloat(x), parseFloat(y), parseFloat(z)]);
-  }
-  return { timeSteps, displacements };
-}
+function calculateStats(
+  metadata: AnimationMetadata,
+  gm: Float32Array,
+  positions: Float32Array,
+  disp: Float32Array,
+  vel?: Float32Array,
+  accel?: Float32Array,
+): ComputedStats {
+  // --- 1. GEOMETRY BOUNDS ---
+  let minX = Infinity,
+    minY = Infinity,
+    minZ = Infinity;
+  let maxX = -Infinity,
+    maxY = -Infinity,
+    maxZ = -Infinity;
 
-export async function buildAnimationData(
-  nodeMappingCsv: string,
-  ground_motion: string,
-  dataFiles: { [filename: string]: string },
-  onProgress: (progress: number, msg?: string) => Promise<void>,
-): Promise<BuildingAnimationData> {
-  await onProgress(0, "Parsing Map & Ground Motion");
+  for (let i = 0; i < positions.length; i += 3) {
+    const x = positions[i];
+    const y = positions[i + 1];
+    const z = positions[i + 2];
 
-  // Parse node mapping
-  const nodeMapping = parseNodeMapping(nodeMappingCsv);
-  // TODO: kinda just assuming that there is a ground motion for every time
-  const groundMotion = parseGroundMotion(ground_motion); // TODO: Check timesteps to make sure they match
-
-  await onProgress(5, "Parsing Displacement Files");
-
-  const nodeData = new Map<string, NodeData>();
-  let timeSteps: number[] = [];
-
-  /* Z UP COORDINATE SYSTEM */
-  const minInitialPos: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
-  /* Z UP COORDINATE SYSTEM */
-  const maxInitialPos: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
-
-  // Parse displacement files
-  const fileEntries = Object.entries(dataFiles);
-  for (let i = 0; i < fileEntries.length; i++) {
-    const [filename, content] = fileEntries[i];
-    await onProgress(-1, "Parsing " + filename);
-    const parts = filename.split("_");
-    const direction = parts[1] as Directions; // H1, H2, or V
-
-    const { timeSteps: tSteps, displacementData, nodeCoords } = parseDisplacementFile(content, direction);
-
-    if (timeSteps.length === 0 && tSteps.length > 0) {
-      timeSteps = tSteps;
-    }
-
-    // Merge displacement data into node data
-    for (const [nodeId, displacements] of Object.entries(displacementData)) {
-      const hasNode = nodeData.has(nodeId);
-      const node: NodeData = hasNode
-        ? nodeData.get(nodeId)!
-        : {
-            story: "",
-            corner: "" as Corner,
-            initial_pos: [0, 0, 0],
-            disp_H1: [],
-            disp_H2: [],
-            disp_V: [],
-            nodeId,
-          };
-
-      // disp_H1
-      // disp_H2
-      // disp_V
-      const key: `disp_${Directions}` = `disp_${direction}`;
-      node[key] = displacements.map((d) => d * INCH_TO_METER);
-      node.initial_pos = [
-        nodeCoords[nodeId][0] * INCH_TO_METER,
-        nodeCoords[nodeId][1] * INCH_TO_METER,
-        nodeCoords[nodeId][2] * INCH_TO_METER,
-      ];
-      if (node.initial_pos[0] < minInitialPos[0]) minInitialPos[0] = node.initial_pos[0];
-      if (node.initial_pos[1] < minInitialPos[1]) minInitialPos[1] = node.initial_pos[1];
-      if (node.initial_pos[2] < minInitialPos[2]) minInitialPos[2] = node.initial_pos[2];
-      if (node.initial_pos[0] > maxInitialPos[0]) maxInitialPos[0] = node.initial_pos[0];
-      if (node.initial_pos[1] > maxInitialPos[1]) maxInitialPos[1] = node.initial_pos[1];
-      if (node.initial_pos[2] > maxInitialPos[2]) maxInitialPos[2] = node.initial_pos[2];
-
-      if (!hasNode) {
-        const mapData = nodeMapping.get(nodeId);
-        if (mapData) {
-          node.story = mapData.story;
-          node.corner = mapData.corner;
-        }
-        nodeData.set(nodeId, node);
-      }
-    }
-    await onProgress(5 + ((i + 1) / fileEntries.length) * 45);
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+    if (z < minZ) minZ = z;
+    if (z > maxZ) maxZ = z;
   }
 
-  console.log(nodeData);
+  const center: [number, number, number] = [(minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2];
 
-  // Pre-calculate frame data
-  await onProgress(50, "Congregating Frame Data");
-  const {
-    frames, //
-    maxAverageDisplacement,
-    maxAverageStoryDisplacement,
-    maxDisplacement,
-    minDisplacement,
-    minPos,
-    maxPos,
-  } = await calculateFrames(nodeData, timeSteps, groundMotion.displacements, onProgress);
+  // Radius for camera zoom (approximate via bounding box diagonal)
+  const radius = Math.sqrt(Math.pow(maxX - minX, 2) + Math.pow(maxY - minY, 2) + Math.pow(maxZ - minZ, 2)) / 2;
 
-  // ! Swap the Y and Z axes
-  // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
-  nodeData.forEach((node) => {
-    node.initial_pos = [node.initial_pos[0], node.initial_pos[2], node.initial_pos[1]];
+  // --- 2. STORY ELEVATIONS & HEIGHTS ---
+  const storyElevations: Record<string, number> = {};
+  const storyHeights: Record<string, number> = {};
+
+  // Calculate average Z for each story
+  Object.entries(metadata.stories).forEach(([storyName, nodeIndices]) => {
+    if (nodeIndices.length === 0) return;
+
+    // Just grab the Z of the first node in the story (assuming flat floors)
+    // nodeIndices stores the node Index. Position index is nodeIndex * 3 + 2 (Z)
+    const firstNodeIdx = nodeIndices[0];
+    const zVal = positions[firstNodeIdx * 3 + 2];
+    storyElevations[storyName] = zVal;
   });
 
-  await onProgress(100, "Done!");
+  // Sort stories to calculate height diffs
+  const sortedStories = Object.entries(storyElevations).sort(([, zA], [, zB]) => zA - zB);
 
-  return {
-    nodes: nodeData,
-    timeSteps,
-    frames,
-    frameRate: 1 / (timeSteps[1] - timeSteps[0]),
-    // ! Swap the Y and Z axes
-    // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
-    minPos: [minPos[0], minPos[2], minPos[1]],
-    maxPos: [maxPos[0], maxPos[2], maxPos[1]],
-    minInitialPos: [minInitialPos[0], minInitialPos[2], minInitialPos[1]],
-    maxInitialPos: [maxInitialPos[0], maxInitialPos[2], maxInitialPos[1]],
-    maxAverageDisplacement: maxAverageDisplacement,
-    maxAverageStoryDisplacement: maxAverageStoryDisplacement,
-    maxDisplacement: maxDisplacement,
-    minDisplacement: minDisplacement,
+  for (let i = 1; i < sortedStories.length; i++) {
+    const [upperName, upperZ] = sortedStories[i];
+    const [, lowerZ] = sortedStories[i - 1];
+    storyHeights[upperName] = upperZ - lowerZ;
+  }
+  // Base case for ground floor if needed, or handle generically
+
+  // --- 3. SIMULATION MAXIMA (Vector Magnitude) ---
+  // Helper to find max vector magnitude in a stride-6 buffer (x,y,z,rx,ry,rz)
+  const getMaxMag = (buffer: Float32Array) => {
+    let maxSq = 0;
+    // Stride is 6. We only care about linear (0,1,2).
+    for (let i = 0; i < buffer.length; i += 6) {
+      const x = buffer[i];
+      const y = buffer[i + 1];
+      const z = buffer[i + 2];
+      const magSq = x * x + y * y + z * z;
+      if (magSq > maxSq) maxSq = magSq;
+    }
+    return Math.sqrt(maxSq);
   };
-}
 
-/* RETURNS Z UP COORDINATE SYSTEM */
-async function calculateFrames(
-  nodeData: Map<string, NodeData>,
-  timeSteps: number[],
-  groundMotion: [number, number, number][],
-  onProgress: (progress: number, msg?: string) => Promise<void>,
-) {
-  const frames: AnimationFrame[] = [];
+  // --- 4. GROUND MOTION PEAKS ---
+  // Stride is 3 (x,y,z)
+  const gmMax: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  const gmMin: [number, number, number] = [Infinity, Infinity, Infinity];
+  const gmMag = new Float32Array(gm.length / 3);
+  for (let i = 0; i < gm.length; i += 3) {
+    const x = gm[i];
+    const y = gm[i + 1];
+    const z = gm[i + 2];
+    // Usually we care about the strongest single component or the vector
+    if (x > gmMax[0]) gmMax[0] = x;
+    if (y > gmMax[1]) gmMax[1] = y;
+    if (z > gmMax[2]) gmMax[2] = z;
+    if (x < gmMin[0]) gmMin[0] = x;
+    if (y < gmMin[1]) gmMin[1] = y;
+    if (z < gmMin[2]) gmMin[2] = z;
+    gmMag[Math.floor(i / 3)] = Math.hypot(x, y, z);
+  }
+  const gmMagMax = Math.max(...gmMag);
+  const gmMagMin = Math.min(...gmMag);
 
-  /* Z UP COORDINATE SYSTEM */
-  let maxAverageDisplacement: number = 0;
-  /* Z UP COORDINATE SYSTEM */
-  let maxAverageStoryDisplacement: number = 0;
-  /* Z UP COORDINATE SYSTEM */
-  let maxDisplacement: number = Number.MIN_VALUE;
-  /* Z UP COORDINATE SYSTEM */
-  let minDisplacement: number = Number.MAX_VALUE;
-  /* Z UP COORDINATE SYSTEM */
-  const minPos: [number, number, number] = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
-  /* Z UP COORDINATE SYSTEM */
-  const maxPos: [number, number, number] = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
+  // --- 5. STORY DRIFT PRECOMPUTATIONS ---
 
-  for (let tIdx = 0; tIdx < timeSteps.length; tIdx++) {
-    const nodePositions = new Map<string, [number, number, number]>();
-    const nodeDisplacements = new Map<string, [number, number, number]>();
-    const stories = new Map<
-      string,
-      {
-        nodeIds: string[];
-        averageDisplacement: [number, number, number];
-      }
-    >();
+  // 5.1 Calculate corner nodes mapping (similar to hook lines 8-37)
+  const cornerSets = {
+    NW: new Set(metadata.corners.NW),
+    NE: new Set(metadata.corners.NE),
+    SW: new Set(metadata.corners.SW),
+    SE: new Set(metadata.corners.SE),
+  };
 
-    const averageDisplacement: [number, number, number] = [0, 0, 0];
+  const cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
+  const cumulativeStoryElevations: Record<string, number> = {};
 
-    for (const [nodeId, node] of nodeData.entries()) {
-      if (!node.initial_pos) continue;
+  // Calculate cumulative elevations and corner nodes
+  metadata.storyOrder.forEach((storyId, index) => {
+    const nodeIndices = metadata.stories[storyId];
 
-      const [ix, iy, iz] = node.initial_pos;
+    // Find corner nodes for this story
+    const corners = {
+      NW: nodeIndices.find((n) => cornerSets.NW.has(n))!,
+      NE: nodeIndices.find((n) => cornerSets.NE.has(n))!,
+      SW: nodeIndices.find((n) => cornerSets.SW.has(n))!,
+      SE: nodeIndices.find((n) => cornerSets.SE.has(n))!,
+    };
+    cornerNodes[storyId] = corners;
 
-      const dx = node.disp_H1[tIdx] ?? 0;
-      const dy = node.disp_H2[tIdx] ?? 0;
-      const dz = node.disp_V[tIdx] ?? 0;
-
-      averageDisplacement[0] += dx;
-      averageDisplacement[1] += dy;
-      averageDisplacement[2] += dz;
-
-      const displacementDistance = Math.hypot(dx, dy, dz);
-      if (displacementDistance > maxDisplacement) {
-        maxDisplacement = displacementDistance;
-      }
-
-      if (displacementDistance < minDisplacement) {
-        minDisplacement = displacementDistance;
-      }
-
-      const finalX = ix + dx;
-      const finalY = iy + dy;
-      const finalZ = iz + dz;
-
-      if (finalX < minPos[0]) minPos[0] = finalX;
-      if (finalY < minPos[1]) minPos[1] = finalY;
-      if (finalZ < minPos[2]) minPos[2] = finalZ;
-      if (finalX > maxPos[0]) maxPos[0] = finalX;
-      if (finalY > maxPos[1]) maxPos[1] = finalY;
-      if (finalZ > maxPos[2]) maxPos[2] = finalZ;
-
-      // ! Swap the Y and Z axes
-      // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
-      nodePositions.set(nodeId, [finalX, finalZ, finalY]);
-      nodeDisplacements.set(nodeId, [dx, dy, dz]);
-
-      //* Floor
-
-      const storyId = node.story;
-      const story = stories.get(storyId) ?? {
-        nodeIds: [],
-        averageDisplacement: [0, 0, 0],
-      };
-      story.nodeIds.push(nodeId);
-      story.averageDisplacement[0] += dx;
-      story.averageDisplacement[1] += dy;
-      story.averageDisplacement[2] += dz;
-      stories.set(storyId, story);
+    // Calculate cumulative elevation (similar to hook lines 39-45)
+    if (index > 0) {
+      let elevation = metadata.storyHeights[storyId];
+      metadata.storyOrder.forEach((storyId2, index2) => {
+        if (index2 < index) elevation += metadata.storyHeights[storyId2];
+      });
+      cumulativeStoryElevations[storyId] = elevation;
     }
+  });
 
-    averageDisplacement[0] = averageDisplacement[0] / nodePositions.size;
-    averageDisplacement[1] = averageDisplacement[1] / nodePositions.size;
-    averageDisplacement[2] = averageDisplacement[2] / nodePositions.size;
+  // 5.2 Precompute all story drift values
+  const storyCount = metadata.storyOrder.length;
+  const frameCount = metadata.frameCount;
+  const cornerCount = 4; // NW, NE, SW, SE
+  const storyDriftData = new Float32Array(storyCount * frameCount * cornerCount);
 
-    if (Math.hypot(...averageDisplacement) > maxAverageDisplacement) {
-      maxAverageDisplacement = Math.hypot(...averageDisplacement);
-    }
+  // Calculate drift for each story, frame, and corner
+  for (let storyIdx = 1; storyIdx < storyCount; storyIdx++) {
+    const storyId = metadata.storyOrder[storyIdx];
+    const belowId = metadata.storyOrder[storyIdx - 1];
 
-    for (const [_storyId, story] of stories.entries()) {
-      story.averageDisplacement[0] = story.averageDisplacement[0] / story.nodeIds.length;
-      story.averageDisplacement[1] = story.averageDisplacement[1] / story.nodeIds.length;
-      story.averageDisplacement[2] = story.averageDisplacement[2] / story.nodeIds.length;
+    const height = cumulativeStoryElevations[storyId];
+    const corners = cornerNodes[storyId];
+    const belowCorners = cornerNodes[belowId];
 
-      if (Math.hypot(...story.averageDisplacement) > maxAverageStoryDisplacement) {
-        maxAverageStoryDisplacement = Math.hypot(...story.averageDisplacement);
+    for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+      // Get displacement data for this frame
+      const frameOffset = frameIdx * metadata.nodeCount * 6;
+
+      // Calculate drift for each corner
+      const cornerOffsets = [corners.NW * 6, corners.NE * 6, corners.SW * 6, corners.SE * 6];
+      const belowCornerOffsets = [belowCorners.NW * 6, belowCorners.NE * 6, belowCorners.SW * 6, belowCorners.SE * 6];
+
+      for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
+        const nodeOffset = frameOffset + cornerOffsets[cornerIdx];
+        const belowNodeOffset = frameOffset + belowCornerOffsets[cornerIdx];
+
+        // Calculate drift magnitude
+        const currentMag = Math.hypot(disp[nodeOffset], disp[nodeOffset + 1], disp[nodeOffset + 2]);
+        const belowMag = Math.hypot(disp[belowNodeOffset], disp[belowNodeOffset + 1], disp[belowNodeOffset + 2]);
+
+        const driftPercent = ((currentMag - belowMag) / height) * 100;
+
+        // Store in Float32Array: [story][frame][corner]
+        const arrayIndex = storyIdx * frameCount * cornerCount + frameIdx * cornerCount + cornerIdx;
+        storyDriftData[arrayIndex] = driftPercent;
       }
-    }
-
-    // ! Swap the Y and Z axes
-    // ThreeJS is a Y up coordinate system, and the data is in a Z up coordinate system
-    const motion_of_the_ground: [number, number, number] = groundMotion[tIdx]
-      ? [
-          groundMotion[tIdx][0] * INCH_TO_METER,
-          groundMotion[tIdx][2] * INCH_TO_METER,
-          groundMotion[tIdx][1] * INCH_TO_METER,
-        ]
-      : [0, 0, 0];
-
-    frames.push({
-      frame: tIdx + 1,
-      time: timeSteps[tIdx],
-      nodePositions,
-      nodeDisplacements,
-      averageDisplacement,
-      stories,
-      groundMotion: motion_of_the_ground,
-    });
-
-    if (tIdx % 100 === 0) {
-      await onProgress(50 + (tIdx / timeSteps.length) * 50, "Frame " + (tIdx + 1) + "/" + timeSteps.length);
     }
   }
 
+  // 5.3 Calculate peak story drift (similar to hook lines 92-123)
+  const peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
+
+  for (let storyIdx = 1; storyIdx < storyCount; storyIdx++) {
+    const storyId = metadata.storyOrder[storyIdx];
+    const max = { NW: -Infinity, NE: -Infinity, SW: -Infinity, SE: -Infinity };
+
+    for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+      for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
+        const arrayIndex = storyIdx * frameCount * cornerCount + frameIdx * cornerCount + cornerIdx;
+        const driftValue = storyDriftData[arrayIndex];
+
+        const cornerNames = ["NW", "NE", "SW", "SE"] as const;
+        max[cornerNames[cornerIdx]] = Math.max(max[cornerNames[cornerIdx]], driftValue);
+      }
+    }
+
+    peakStoryDrift[storyId] = max;
+  }
+
+  // Helper accessor function
+  const getStoryDrift = (storyIndex: number, frameIndex: number): [number, number, number, number] => {
+    const baseIndex = storyIndex * frameCount * cornerCount + frameIndex * cornerCount;
+    return [
+      storyDriftData[baseIndex], // NW
+      storyDriftData[baseIndex + 1], // NE
+      storyDriftData[baseIndex + 2], // SW
+      storyDriftData[baseIndex + 3], // SE
+    ];
+  };
+
   return {
-    frames,
-    maxAverageDisplacement,
-    maxAverageStoryDisplacement,
-    maxDisplacement,
-    minDisplacement,
-    minPos,
-    maxPos,
+    boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
+    storyElevations,
+    storyHeights,
+    maxDisplacement: getMaxMag(disp),
+    maxVelocity: vel ? getMaxMag(vel) : undefined,
+    maxAcceleration: accel ? getMaxMag(accel) : undefined,
+    groundMotion: {
+      min: gmMin,
+      max: gmMax,
+      magnitude: gmMag,
+      maxMagnitude: gmMagMax,
+      minMagnitude: gmMagMin,
+    },
+    cornerNodes,
+    storyDrift: {
+      data: storyDriftData,
+      storyCount,
+      frameCount,
+      cornerCount,
+      getStoryDrift,
+    },
+    peakStoryDrift,
   };
 }

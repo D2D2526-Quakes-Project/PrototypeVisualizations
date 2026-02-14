@@ -1,8 +1,11 @@
+import { Switch } from "@/components/ui/switch";
 import { useCamera } from "@/contexts/CameraContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { UNIT_SCALE } from "@/lib/utils";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
+import { BoxSelect, ChevronDown, ScanEye } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   OrthographicCamera as OrthographicCameraImpl,
@@ -10,9 +13,7 @@ import {
   Vector3,
 } from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { ChevronDown, ScanEye, BoxSelect } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { motion, AnimatePresence } from "motion/react";
+import { SmallPlaybackControls } from "./playback/PlaybackControls";
 
 function CameraManager({ isOrthographic, enableSmoothing }: { isOrthographic: boolean; enableSmoothing: boolean }) {
   const { orbitControlsRef } = useCamera();
@@ -80,7 +81,13 @@ function CameraManager({ isOrthographic, enableSmoothing }: { isOrthographic: bo
   );
 }
 
-export function CanvasWithControls({ children }: { children: React.ReactNode }) {
+export function CanvasWithControls({
+  children,
+  showPlaybackControls,
+}: {
+  children: React.ReactNode;
+  showPlaybackControls?: boolean;
+}) {
   const [isOrthographic, setIsOrthographic] = useState(false);
   const [enableSmoothing, setEnableSmoothing] = useState(false);
   const { orbitControlsRef } = useCamera();
@@ -98,6 +105,13 @@ export function CanvasWithControls({ children }: { children: React.ReactNode }) 
         enableSmoothing={enableSmoothing}
         setEnableSmoothing={setEnableSmoothing}
       />
+      {showPlaybackControls && (
+        <div className="absolute top-2 left-2 z-50">
+          <div className="flex items-start gap-0.5">
+            <SmallPlaybackControls />
+          </div>
+        </div>
+      )}
     </>
   );
 }

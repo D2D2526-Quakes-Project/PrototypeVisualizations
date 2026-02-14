@@ -140,7 +140,7 @@ export async function buildAnimationDataFromBinary(
     gmData.bodyView,
     bData.bodyView,
     dispLinData.bodyView,
-    dispRotData?.bodyView,
+    // dispRotData?.bodyView,
     velLinData?.bodyView,
     accelLinData?.bodyView,
   );
@@ -200,7 +200,7 @@ function calculateStats(
   gm: Float32Array,
   positions: Float32Array,
   dispLin: Float32Array,
-  dispRot?: Float32Array,
+  // dispRot?: Float32Array,
   velLin?: Float32Array,
   accelLin?: Float32Array,
 ): ComputedStats {

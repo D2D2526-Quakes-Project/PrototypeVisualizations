@@ -31,6 +31,7 @@ export function BuildingScene() {
   const nodeCount = animationData.metadata.nodeCount;
 
   const [hovered, setHovered] = useState<number | undefined>(undefined);
+  const pointerDownNodeId = useRef<number | undefined>(undefined);
 
   const positions = useMemo(() => {
     const positions = new Float32Array(nodeCount * 3);
@@ -49,6 +50,9 @@ export function BuildingScene() {
     (event: { instanceId?: number; stopPropagation: () => void }) => {
       if (event.instanceId === undefined) return;
 
+      // Only trigger click if we're releasing over the same node that was clicked down on
+      if (event.instanceId !== pointerDownNodeId.current) return;
+
       const nodeId = event.instanceId;
 
       // Get the world position of the clicked node
@@ -64,6 +68,14 @@ export function BuildingScene() {
       selectNode(nodeId);
     },
     [camera, renderer, selectNode, positions],
+  );
+
+  const handlePointerDown = useCallback(
+    (event: { instanceId?: number; stopPropagation: () => void }) => {
+      event.stopPropagation();
+      pointerDownNodeId.current = event.instanceId;
+    },
+    [],
   );
 
   const colors = useMemo(() => {
@@ -123,6 +135,7 @@ export function BuildingScene() {
         <group position={[offsetX, offsetY, offsetZ]}>
           <instancedMesh
             ref={meshRef}
+            onPointerDown={handlePointerDown}
             onPointerMove={(e) => (e.stopPropagation(), setHovered(e.instanceId))}
             onPointerOut={(e) => (e.stopPropagation(), setHovered(undefined))}
             onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}

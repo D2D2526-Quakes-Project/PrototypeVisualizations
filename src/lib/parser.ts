@@ -153,21 +153,18 @@ export async function buildAnimationDataFromBinary(
         return data.subarray(idx * stride, (idx + 1) * stride);
       },
       xAt(idx: number) {
-        return data.subarray(idx * stride, (idx + 1) * stride)[0];
+        return data.subarray(idx * stride, (idx + 1) * stride)[0] ?? 0;
       },
       yAt(idx: number) {
-        return data.subarray(idx * stride, (idx + 1) * stride)[1];
+        return data.subarray(idx * stride, (idx + 1) * stride)[1] ?? 0;
       },
       zAt(idx: number) {
-        return data.subarray(idx * stride, (idx + 1) * stride)[2];
+        return data.subarray(idx * stride, (idx + 1) * stride)[2] ?? 0;
       },
     };
   }
 
-  function makeTimeAccessor(
-    linData: Float32Array,
-    nodeCount: number,
-  ): TimeIndexAccessor {
+  function makeTimeAccessor(linData: Float32Array, nodeCount: number): TimeIndexAccessor {
     const outerStride = nodeCount * 3; // Stride 3 for each file
     return {
       data: linData,
@@ -176,13 +173,10 @@ export async function buildAnimationDataFromBinary(
         const frameData = linData.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
         return makeAccessor(frameData, 3);
       },
-      linAt(frameIdx: number) {
-        const frameData = linData.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
-        return makeAccessor(frameData, 3);
-      },
-      rotAt(frameIdx: number) {
-        throw new Error("Rotation data not available - use displacementRot field instead");
-      },
+      // linAt(frameIdx: number) {
+      //   const frameData = linData.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
+      //   return makeAccessor(frameData, 3);
+      // }
     };
   }
 
@@ -349,7 +343,11 @@ function calculateStats(
 
         // Calculate drift magnitude using linear displacement (dispLin)
         const currentMag = Math.hypot(dispLin[nodeOffset], dispLin[nodeOffset + 1], dispLin[nodeOffset + 2]);
-        const belowMag = Math.hypot(dispLin[belowNodeOffset], dispLin[belowNodeOffset + 1], dispLin[belowNodeOffset + 2]);
+        const belowMag = Math.hypot(
+          dispLin[belowNodeOffset],
+          dispLin[belowNodeOffset + 1],
+          dispLin[belowNodeOffset + 2],
+        );
 
         // Use absolute value to ensure positive drift (interstory drift is always a magnitude)
         // storyHeight is in inches, drift is expressed as percentage

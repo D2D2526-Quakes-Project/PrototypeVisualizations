@@ -4,6 +4,19 @@ import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockvi
 import { TrendingUpIcon, XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  }),
+};
 import { Vector3 } from "three";
 import { MiniRibbon } from "./MiniRibbon";
 
@@ -221,9 +234,9 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}>
           {/* LOCATION INFO */}
-
-          <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Location</h3>
-          <div className="grid grid-cols-2 gap-2">
+          <motion.div custom={0} variants={sectionVariants} initial="hidden" animate="visible">
+            <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Location</h3>
+            <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="font-medium text-neutral-700">Floor:</span>
               <div className="text-neutral-600">
@@ -247,9 +260,10 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
               <div className="text-neutral-600">{storyInfo.height.toFixed(1)}"</div>
             </div>
           </div>
+          </motion.div>
 
           {/* POSITION */}
-          <div className="border-t pt-2">
+          <motion.div custom={1} variants={sectionVariants} initial="hidden" animate="visible" className="border-t pt-2">
             <span className="font-medium text-neutral-700">Position (in):</span>
             <div className="text-neutral-600 font-mono text-[10px]">
               X: {currentPos[0].toFixed(3)}
@@ -258,54 +272,55 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
               <br />
               Z: {currentPos[2].toFixed(3)}
             </div>
-          </div>
+          </motion.div>
 
           {/* DISPLACEMENT */}
-
-          <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Displacement (in)</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="font-medium text-neutral-700">Current Total:</span>
-              <div className="text-neutral-600 font-mono">{displacementMag.toFixed(3)}"</div>
+          <motion.div custom={2} variants={sectionVariants} initial="hidden" animate="visible">
+            <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Displacement (in)</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="font-medium text-neutral-700">Current Total:</span>
+                <div className="text-neutral-600 font-mono">{displacementMag.toFixed(3)}"</div>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700 flex items-center gap-1">
+                  <TrendingUpIcon className="size-3" />
+                  Peak Total:
+                </span>
+                <div className="text-neutral-600 font-mono">{peakDisplacement.magnitude.toFixed(3)}"</div>
+                <div className="text-neutral-500 text-[9px]">@ {peakDisplacement.time.toFixed(2)}s</div>
+              </div>
             </div>
-            <div>
-              <span className="font-medium text-neutral-700 flex items-center gap-1">
-                <TrendingUpIcon className="size-3" />
-                Peak Total:
-              </span>
-              <div className="text-neutral-600 font-mono">{peakDisplacement.magnitude.toFixed(3)}"</div>
-              <div className="text-neutral-500 text-[9px]">@ {peakDisplacement.time.toFixed(2)}s</div>
+            <div className="mt-2 space-y-1">
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-neutral-600">Current X:</span>
+                <span className="font-mono text-neutral-800">{currentDisp[0].toFixed(3)}"</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-neutral-600">Peak X:</span>
+                <span className="font-mono text-neutral-800">{peakDisplacement.x.toFixed(3)}"</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-neutral-600">Current Y:</span>
+                <span className="font-mono text-neutral-800">{currentDisp[1].toFixed(3)}"</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-neutral-600">Peak Y:</span>
+                <span className="font-mono text-neutral-800">{peakDisplacement.y.toFixed(3)}"</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-neutral-600">Current Z:</span>
+                <span className="font-mono text-neutral-800">{currentDisp[2].toFixed(3)}"</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-neutral-600">Peak Z:</span>
+                <span className="font-mono text-neutral-800">{peakDisplacement.z.toFixed(3)}"</span>
+              </div>
             </div>
-          </div>
-          <div className="mt-2 space-y-1">
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Current X:</span>
-              <span className="font-mono text-neutral-800">{currentDisp[0].toFixed(3)}"</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Peak X:</span>
-              <span className="font-mono text-neutral-800">{peakDisplacement.x.toFixed(3)}"</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Current Y:</span>
-              <span className="font-mono text-neutral-800">{currentDisp[1].toFixed(3)}"</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Peak Y:</span>
-              <span className="font-mono text-neutral-800">{peakDisplacement.y.toFixed(3)}"</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Current Z:</span>
-              <span className="font-mono text-neutral-800">{currentDisp[2].toFixed(3)}"</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Peak Z:</span>
-              <span className="font-mono text-neutral-800">{peakDisplacement.z.toFixed(3)}"</span>
-            </div>
-          </div>
+          </motion.div>
 
           {/* ROTATION */}
-          <div className="border-t pt-2">
+          <motion.div custom={3} variants={sectionVariants} initial="hidden" animate="visible" className="border-t pt-2">
             <h3 className="font-bold text-sm mb-2">Rotation (rad)</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -334,11 +349,11 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                 <div className="font-mono text-neutral-500">({peakRotation.rz.toFixed(4)})</div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* VELOCITY */}
           {currentVelocity && (
-            <div className="bg-green-50 p-2 rounded">
+            <motion.div custom={4} variants={sectionVariants} initial="hidden" animate="visible" className="bg-green-50 p-2 rounded">
               <h3 className="font-bold text-sm mb-2">Velocity (in/s)</h3>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -364,12 +379,12 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                   Z: <span className="font-mono">{currentVelocity.z.toFixed(3)}</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* ACCELERATION */}
           {currentAcceleration && (
-            <div className="bg-red-50 p-2 rounded">
+            <motion.div custom={5} variants={sectionVariants} initial="hidden" animate="visible" className="bg-red-50 p-2 rounded">
               <h3 className="font-bold text-sm mb-2">Acceleration (in/s²)</h3>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -395,12 +410,12 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                   Z: <span className="font-mono">{currentAcceleration.z.toFixed(3)}</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* STORY DRIFT */}
           {storyDrift && (
-            <div className="bg-purple-50 p-2 rounded">
+            <motion.div custom={6} variants={sectionVariants} initial="hidden" animate="visible" className="bg-purple-50 p-2 rounded">
               <h3 className="font-bold text-sm mb-2">Story Drift Ratio (%)</h3>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -412,20 +427,20 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                   <div className="text-neutral-600 font-mono">{storyDrift.peak.toFixed(4)}%</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* CUMULATIVE STATS */}
-          <div className="border-t pt-2">
+          <motion.div custom={7} variants={sectionVariants} initial="hidden" animate="visible" className="border-t pt-2">
             <span className="font-medium text-neutral-700">Total Distance Traveled:</span>
             <div className="text-neutral-600 font-mono">{totalDistanceTraveled.toFixed(3)}"</div>
-          </div>
+          </motion.div>
 
           {/* RIBBONS */}
-          <div className="border-t pt-2">
+          <motion.div custom={8} variants={sectionVariants} initial="hidden" animate="visible" className="border-t pt-2">
             <span className="font-medium text-neutral-700">Displacement Path (Top View):</span>
-            <MiniRibbon path={ribbonPath} />
-          </div>
+            <MiniRibbon path={ribbonPath} dt={animationData.metadata.dt} />
+          </motion.div>
         </motion.div>
       </AnimatePresence>
     </div>

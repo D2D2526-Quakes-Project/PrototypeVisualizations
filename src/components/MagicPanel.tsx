@@ -3,7 +3,6 @@ import { MainCanvasPanel } from "@/pages/View3d/MainCanvasPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
-import { SmallTimeline } from "./SmallTimeline";
 import { Timeline } from "./Timeline";
 import { Columns, Maximize2, Minimize2, MoreHorizontal, X } from "lucide-react";
 import { useState } from "react";

@@ -165,8 +165,6 @@ export interface TimeIndexAccessor {
   data: Float32Array;
   stride: number;
   atFrame: (idx: number) => IndexAccessor;
-  linAt: (idx: number) => IndexAccessor;
-  rotAt: (idx: number) => IndexAccessor;
 }
 
 export interface ComputedStats {

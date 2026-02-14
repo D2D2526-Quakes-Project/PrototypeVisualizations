@@ -1,6 +1,6 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
@@ -67,51 +67,17 @@ function TooltipContent({
   );
 }
 
+const corners: Array<keyof typeof cornerColors> = ["NW", "NE", "SW", "SE"];
+
 export function InterstoryDriftChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { precomputed } = animationData;
 
-  const chartData = useMemo(() => {
-    const storyOrder = animationData.metadata.storyOrder;
-    const peakDrift = precomputed.peakStoryDrift;
-    const storyDrift = precomputed.storyDrift;
-
-    const currentDrifts: Record<string, Record<string, number>> = {};
-    let maxCurrentRatio = 0.0001;
-    let maxPeakRatio = 0.0001;
-
-    storyOrder.forEach((storyId, storyIndex) => {
-      if (storyIndex === 0) return;
-
-      const cornerDrifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
-      currentDrifts[storyId] = {
-        NW: cornerDrifts[0],
-        NE: cornerDrifts[1],
-        SW: cornerDrifts[2],
-        SE: cornerDrifts[3],
-      };
-
-      maxCurrentRatio = Math.max(maxCurrentRatio, ...cornerDrifts);
-
-      const peakCornerDrifts = [
-        peakDrift[storyId]?.NW || 0,
-        peakDrift[storyId]?.NE || 0,
-        peakDrift[storyId]?.SW || 0,
-        peakDrift[storyId]?.SE || 0,
-      ];
-      maxPeakRatio = Math.max(maxPeakRatio, ...peakCornerDrifts);
-    });
-
-    return { currentDrifts, maxCurrentRatio, maxPeakRatio };
-  }, [animationData, precomputed, frameIndex]);
-
-  const option = useMemo(() => {
-    console.log("running chartdata");
-    const { currentDrifts, maxPeakRatio } = chartData;
+  // Static configuration that doesn't change with frameIndex
+  const staticConfig = useMemo(() => {
     const { storyOrder, storyHeights } = animationData.metadata;
-    const { storyElevations, peakStoryDrift } = precomputed;
-
+    const { peakStoryDrift } = precomputed;
     const storyOrderWithoutGround = storyOrder.slice(1);
 
     const yAxisData = storyOrderWithoutGround.map((storyId) => {
@@ -120,46 +86,62 @@ export function InterstoryDriftChart() {
       return `${storyId} (${heightFt.toFixed(0)}ft)`;
     });
 
-    const corners: Array<keyof typeof cornerColors> = ["NW", "NE", "SW", "SE"];
-
-    // Create peak series first (render behind)
-    const peakSeries = corners.map((corner) => ({
-      name: `${corner}`,
-      type: "bar" as const,
-      stack: corner,
-      data: storyOrderWithoutGround.map((storyId) => peakStoryDrift[storyId][corner] - currentDrifts[storyId][corner]),
-      itemStyle: {
-        color: cornerColors[corner],
-        opacity: 0.3,
-        borderRadius: [0, 2, 2, 0],
-      },
-      barGap: "0%",
-      barCategoryGap: "20%",
-      silent: true,
-      z: 1,
-      legendHoverLink: false,
-    }));
-
-    // Current value series (render on top)
-    const currentSeries = corners.map((corner) => ({
-      name: corner,
-      type: "bar" as const,
-      stack: corner,
-      data: storyOrderWithoutGround.map((storyId) => currentDrifts[storyId][corner] || 0),
-      itemStyle: {
-        color: cornerColors[corner],
-        borderRadius: [0, 2, 2, 0],
-      },
-      barGap: "0%",
-      barCategoryGap: "20%",
-      z: 2,
-    }));
+    // Pre-compute max peak ratio
+    let maxPeakRatio = 0.0001;
+    storyOrder.forEach((storyId) => {
+      const peakCornerDrifts = [
+        peakStoryDrift[storyId]?.NW || 0,
+        peakStoryDrift[storyId]?.NE || 0,
+        peakStoryDrift[storyId]?.SW || 0,
+        peakStoryDrift[storyId]?.SE || 0,
+      ];
+      maxPeakRatio = Math.max(maxPeakRatio, ...peakCornerDrifts);
+    });
 
     return {
+      storyOrderWithoutGround,
+      yAxisData,
+      maxPeakRatio,
+      peakStoryDrift,
+      storyHeights,
+    };
+  }, [animationData.metadata, precomputed]);
+
+  const { storyOrderWithoutGround, yAxisData, maxPeakRatio, peakStoryDrift, storyHeights } = staticConfig;
+
+  // Current drifts that change with frameIndex
+  const currentDriftsRef = useRef<Record<string, Record<string, number>>>({});
+
+  const chartData = useMemo(() => {
+    const { storyDrift } = precomputed;
+    const currentDrifts: Record<string, Record<string, number>> = {};
+    let maxCurrentRatio = 0.0001;
+
+    storyOrderWithoutGround.forEach((storyId, idx) => {
+      const storyIndex = idx + 1;
+      const cornerDrifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
+      currentDrifts[storyId] = {
+        NW: cornerDrifts[0],
+        NE: cornerDrifts[1],
+        SW: cornerDrifts[2],
+        SE: cornerDrifts[3],
+      };
+      maxCurrentRatio = Math.max(maxCurrentRatio, ...cornerDrifts);
+    });
+
+    currentDriftsRef.current = currentDrifts;
+    return { currentDrifts, maxCurrentRatio };
+  }, [precomputed, frameIndex, storyOrderWithoutGround]);
+
+  const { currentDrifts, maxCurrentRatio } = chartData;
+
+  // Static parts of the option that don't depend on frameIndex
+  const baseOption = useMemo(() => {
+    return {
       tooltip: {
-        trigger: "axis",
+        trigger: "axis" as const,
         axisPointer: {
-          type: "shadow",
+          type: "shadow" as const,
           shadowStyle: {
             color: "rgba(0,0,0,0.05)",
           },
@@ -186,19 +168,17 @@ export function InterstoryDriftChart() {
               storyId={storyId}
               elevationFt={heightFt}
               corners={corners}
-              currentDrifts={currentDrifts}
+              currentDrifts={currentDriftsRef.current}
               peakDrift={peakStoryDrift}
             />,
           );
         },
       },
       legend: {
-        data: [
-          ...corners.map((corner) => ({
-            name: corner,
-            itemStyle: { color: cornerColors[corner] },
-          })),
-        ],
+        data: corners.map((corner) => ({
+          name: corner,
+          itemStyle: { color: cornerColors[corner] },
+        })),
         right: 0,
         top: 0,
         orient: "vertical" as const,
@@ -217,34 +197,6 @@ export function InterstoryDriftChart() {
         top: 0,
         containLabel: false,
       },
-      xAxis: {
-        type: "value" as const,
-        name: "Drift (%)",
-        nameLocation: "middle" as const,
-        nameGap: 25,
-        nameTextStyle: {
-          fontSize: 11,
-          color: "#4b5563",
-          fontWeight: 500,
-        },
-        max: Math.max(maxPeakRatio * 1.15, MIN_X_AXIS_MAX),
-        axisLine: {
-          lineStyle: {
-            color: "#d1d5db",
-          },
-        },
-        axisLabel: {
-          formatter: (value: number) => value.toFixed(3),
-          color: "#6b7280",
-          fontSize: 10,
-        },
-        splitLine: {
-          lineStyle: {
-            color: "#e5e7eb",
-            type: "dashed" as const,
-          },
-        },
-      },
       yAxis: {
         type: "category" as const,
         data: yAxisData,
@@ -262,10 +214,84 @@ export function InterstoryDriftChart() {
           show: false,
         },
       },
-      series: [...currentSeries, ...peakSeries],
       animation: false,
     };
-  }, [chartData]);
+  }, [storyOrderWithoutGround, yAxisData, storyHeights, peakStoryDrift]);
+
+  // Dynamic parts that change with frameIndex
+  const seriesData = useMemo(() => {
+    // Create peak series first (render behind)
+    const peakSeries = corners.map((corner) => ({
+      name: `${corner}`,
+      type: "bar" as const,
+      stack: corner,
+      data: storyOrderWithoutGround.map((storyId) => peakStoryDrift[storyId][corner] - currentDrifts[storyId][corner]),
+      itemStyle: {
+        color: cornerColors[corner],
+        opacity: 0.3,
+        borderRadius: [0, 2, 2, 0] as [number, number, number, number],
+      },
+      barGap: "0%",
+      barCategoryGap: "20%",
+      silent: true,
+      z: 1,
+      legendHoverLink: false,
+    }));
+
+    // Current value series (render on top)
+    const currentSeries = corners.map((corner) => ({
+      name: corner,
+      type: "bar" as const,
+      stack: corner,
+      data: storyOrderWithoutGround.map((storyId) => currentDrifts[storyId][corner] || 0),
+      itemStyle: {
+        color: cornerColors[corner],
+        borderRadius: [0, 2, 2, 0] as [number, number, number, number],
+      },
+      barGap: "0%",
+      barCategoryGap: "20%",
+      z: 2,
+    }));
+
+    return [...currentSeries, ...peakSeries];
+  }, [currentDrifts, storyOrderWithoutGround, peakStoryDrift]);
+
+  const xAxisMax = Math.max(Math.max(maxCurrentRatio, maxPeakRatio) * 1.15, MIN_X_AXIS_MAX);
+
+  const option = useMemo(() => {
+    return {
+      ...baseOption,
+      xAxis: {
+        type: "value" as const,
+        name: "Drift (%)",
+        nameLocation: "middle" as const,
+        nameGap: 25,
+        nameTextStyle: {
+          fontSize: 11,
+          color: "#4b5563",
+          fontWeight: 500,
+        },
+        max: xAxisMax,
+        axisLine: {
+          lineStyle: {
+            color: "#d1d5db",
+          },
+        },
+        axisLabel: {
+          formatter: (value: number) => value.toFixed(3),
+          color: "#6b7280",
+          fontSize: 10,
+        },
+        splitLine: {
+          lineStyle: {
+            color: "#e5e7eb",
+            type: "dashed" as const,
+          },
+        },
+      },
+      series: seriesData,
+    };
+  }, [baseOption, seriesData, xAxisMax]);
 
   return (
     <div className="h-full w-full">

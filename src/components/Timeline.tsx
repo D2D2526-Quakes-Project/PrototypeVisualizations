@@ -1,8 +1,14 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import ReactECharts from "echarts-for-react";
-import { useAnimationData } from "../hooks/nodeDataHook";
 import type { IDockviewPanelProps } from "dockview";
+import ReactECharts from "echarts-for-react";
+import { ChevronDown } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { renderToString } from "react-dom/server";
+import { useAnimationData } from "../hooks/nodeDataHook";
+import { Checkbox } from "./ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { usePlayback } from "./playback/PlaybackContext";
+import { Button } from "./ui/button";
+import { Label } from "./ui/label";
 
 // Configuration for available data channels
 const CHANNEL_CONFIG = {
@@ -37,7 +43,40 @@ type ChannelKey = keyof typeof CHANNEL_CONFIG;
 // Fixed order for display regardless of selection order
 const CHANNEL_ORDER: ChannelKey[] = ["x", "y", "z", "magnitude"];
 
-// Custom Multi-Select Dropdown Component
+function TooltipContent({
+  frame,
+  time,
+  values,
+}: {
+  frame: number;
+  time: number;
+  values: Array<{ name: string; color: string; value: number }>;
+}) {
+  return (
+    <div style={{ minWidth: "180px" }}>
+      <div
+        style={{
+          fontWeight: 600,
+          marginBottom: "6px",
+          borderBottom: "1px solid #e5e7eb",
+          paddingBottom: "4px",
+          fontSize: "13px",
+        }}>
+        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span>{" "}
+        {parseFloat(time.toString()).toFixed(3)}s
+      </div>
+      {values.map((item) => (
+        <div key={item.name} style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
+          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color }} />
+          <span style={{ color: "#6b7280", fontSize: "10px" }}>{item.name}:</span>
+          <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>{item.value.toFixed(4)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Custom Multi-Select Dropdown Component using shadcn Popover and Checkbox
 function CheckSelect({
   options,
   selected,
@@ -47,19 +86,7 @@ function CheckSelect({
   selected: ChannelKey[];
   onChange: (keys: ChannelKey[]) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const [open, setOpen] = useState(false);
 
   const toggleOption = (key: ChannelKey) => {
     if (selected.includes(key)) {
@@ -80,47 +107,43 @@ function CheckSelect({
   }, [selected, options]);
 
   return (
-    <div className="relative" ref={containerRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="bg-neutral-100 border border-neutral-300 rounded px-3 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 flex items-center gap-2 hover:bg-neutral-50 active:bg-neutral-200 max-w-[200px]"
-        title={labelText}>
-        <span className="truncate">{labelText}</span>
-        <svg
-          className={`w-3 h-3 text-neutral-500 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-neutral-200 shadow-lg rounded-md z-50 py-1">
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button title={labelText} variant={"outline"} size="xs" className="min-w-16">
+          <span className="truncate flex-1">{labelText}</span>
+          <ChevronDown
+            className={`w-3 h-3 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-48 p-1">
+        <div className="flex flex-col gap-0.5">
           {CHANNEL_ORDER.map((key) => {
             const opt = options[key];
+            const isChecked = selected.includes(opt.id as ChannelKey);
             return (
-              <label
+              <Label
                 key={opt.id}
-                className="flex items-center px-3 py-2 hover:bg-neutral-100 cursor-pointer select-none text-sm text-neutral-700">
-                <input
-                  type="checkbox"
-                  className="mr-3 rounded border-neutral-300 text-blue-500 focus:ring-blue-500"
-                  checked={selected.includes(opt.id as ChannelKey)}
-                  onChange={() => toggleOption(opt.id as ChannelKey)}
+                htmlFor={`channel-${opt.id}`}
+                className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+                <Checkbox
+                  id={`channel-${opt.id}`}
+                  checked={isChecked}
+                  onCheckedChange={() => toggleOption(opt.id as ChannelKey)}
+                  className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                 />
                 <span className="flex-1">{opt.label}</span>
                 <span className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: opt.color }} />
-              </label>
+              </Label>
             );
           })}
         </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
-export function Timeline({ api }: IDockviewPanelProps) {
+export function Timeline({ api: _api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const chartRef = useRef<any>(null);
@@ -161,7 +184,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
         case "magnitude":
         default:
           return {
-            accessor: (idx: number) => animationData.precomputed.groundMotion.magnitude.at(idx),
+            accessor: (idx: number) => animationData.precomputed.groundMotion.magnitude.at(idx) ?? 0,
             config: CHANNEL_CONFIG.magnitude,
           };
       }
@@ -176,7 +199,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       const { accessor, config } = getChannelData(key);
       const data: [number, number][] = [];
       for (let i = 0; i <= maxFrame; i++) {
-        data.push([times[i], accessor(i) ?? 0]);
+        data.push([times[i], accessor(i)]);
       }
       return { key, data, config, accessor };
     });
@@ -334,41 +357,25 @@ export function Timeline({ api }: IDockviewPanelProps) {
         formatter: (params: any) => {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
 
-          // Use the first param to get time
           const firstParam = params[0];
           const time = firstParam.axisValue;
           const frame = Math.round(time / animationData.metadata.dt);
 
-          let html = `<div style="font-weight:600;margin-bottom:6px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;">
-            Frame ${frame} <span style="font-weight:400;color:#9ca3af;">|</span> ${parseFloat(time).toFixed(3)}s
-          </div>`;
-
-          // Filter params to ignore Markers and Playheads, and remove duplicates
-          const uniqueSeries = new Map();
+          const values: Array<{ name: string; color: string; value: number }> = [];
 
           params.forEach((p: any) => {
             if (p.seriesName.includes("Marker") || p.seriesName === "Playhead") return;
-            if (!uniqueSeries.has(p.seriesName)) {
-              uniqueSeries.set(p.seriesName, p);
-            }
-          });
 
-          uniqueSeries.forEach((param) => {
-            // Find original config color because param.color might be slightly off due to gradients/areaStyle
             const configKey = Object.keys(CHANNEL_CONFIG).find(
-              (key) => CHANNEL_CONFIG[key as ChannelKey].label === param.seriesName,
+              (key) => CHANNEL_CONFIG[key as ChannelKey].label === p.seriesName,
             );
-            const color = configKey ? CHANNEL_CONFIG[configKey as ChannelKey].color : param.color;
-            const value = param.data[1];
+            const color = configKey ? CHANNEL_CONFIG[configKey as ChannelKey].color : p.color;
+            const value = p.data[1];
 
-            html += `<div style="display:flex;align-items:center;gap:8px;margin-top:2px;">`;
-            html += `<span style="width:8px;height:8px;border-radius:50%;background:${color};"></span>`;
-            html += `<span style="color:#6b7280;font-size:10px;">${param.seriesName}:</span>`;
-            html += `<span style="font-weight:500;margin-left:auto;font-family:monospace;">${value.toFixed(4)}</span>`;
-            html += `</div>`;
+            values.push({ name: p.seriesName, color, value });
           });
 
-          return html;
+          return renderToString(<TooltipContent frame={frame} time={time} values={values} />);
         },
       },
       animation: false,
@@ -387,17 +394,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
       const gridModel = chart.getModel().getComponent("grid", 0);
       if (!gridModel) return null;
 
-      const gridRect = gridModel.coordinateSystem.getRect();
-      const relativeX = pixelX - rect.left - gridRect.x;
-      const gridWidth = gridRect.width;
-
-      if (relativeX < 0 || relativeX > gridWidth) return null;
-
-      const ratio = relativeX / gridWidth;
-
-      // Account for zoom if necessary, but typically ratio logic works if axes are standard.
-      // However, if zoomed in, ECharts coord system handles mapping.
-      // Better approach: convert pixel to point in data space.
       const pointInGrid = chart.convertFromPixel({ seriesIndex: 0 }, [pixelX - rect.left, 0]);
       if (!pointInGrid) return null;
 
@@ -408,9 +404,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
     };
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Only scrub if clicking in the chart area, roughly
-      if (e.offsetY < 80 && e.target instanceof HTMLElement) return; // avoidance for top bars
-
       const newFrame = convertToFrame(e.clientX);
       if (newFrame !== null) {
         setIsDragging(true);
@@ -445,13 +438,13 @@ export function Timeline({ api }: IDockviewPanelProps) {
   // Update for MarkLine and MarkPoint
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
-    if (!chart) return;
+    if (!chart || !chart.getOption()) return;
 
     const currentTime = frameIndex * animationData.metadata.dt;
 
     // We map over the active series to update markers for each one
     const updatedSeries = chartData.seriesData.map((item) => {
-      const currentValue = item.accessor(frameIndex) ?? 0;
+      const currentValue = item.accessor(frameIndex);
 
       return {
         // markLine (Vertical playhead)
@@ -469,7 +462,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
       };
     });
 
-    // Use setOption to update ONLY the series markers
     chart.setOption({
       series: updatedSeries,
     });
@@ -478,19 +470,21 @@ export function Timeline({ api }: IDockviewPanelProps) {
   return (
     <div className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full bg-white">
       {/* Top Bar Row 1: Controls & Time */}
-      <div className="flex justify-between items-center px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
-        <div className="text-sm text-neutral-700 flex items-center gap-2">
+      <div className="flex justify-between items-start px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
+        <div className="text-sm text-neutral-700 flex items-center gap-2 flex-wrap">
           <span className="font-medium">Frame:</span> {frameIndex + 1}
           <span className="text-neutral-300">|</span>
           <span className="font-medium">Time:</span> {(frameIndex * animationData.metadata.dt).toFixed(3)}s
           <span className="text-neutral-300">|</span>
-          {chartData.seriesData.map((item) => (
-            <div key={item.key} className="flex items-center gap-1 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ background: item.config.color }} />
-              <span className="font-medium text-neutral-500">{item.config.shortName}:</span>
-              <span className="font-mono">{item.accessor(frameIndex)?.toFixed(3)}</span>
-            </div>
-          ))}
+          <div className="flex items-center gap-2 flex-wrap">
+            {chartData.seriesData.map((item) => (
+              <div key={item.key} className="flex items-center gap-1 text-xs">
+                <div className="w-2 h-2 rounded-full" style={{ background: item.config.color }} />
+                <span className="font-medium text-neutral-500">{item.config.shortName}:</span>
+                <span className="font-mono">{item.accessor(frameIndex)?.toFixed(3)}</span>
+              </div>
+            ))}
+          </div>
         </div>
         <CheckSelect options={CHANNEL_CONFIG} selected={selectedKeys} onChange={setSelectedKeys} />
       </div>

@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { usePlayback } from "./playback/PlaybackContext";
-import type { Vector3 } from "three";
-import { InfoIcon } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Vector3 } from "three";
+import { usePlayback } from "./playback/PlaybackContext";
 
 // Target maximum number of points to render for performance
 const MAX_POINTS = 400;
@@ -10,10 +9,10 @@ const MAX_POINTS = 400;
 // Helper to convert velocity magnitude to color
 function velocityToColor(velocity: number, maxVelocity: number): string {
   const t = Math.min(velocity / maxVelocity, 1);
-  
+
   // Blue (low) -> Green (medium) -> Red (high)
   let r: number, g: number, b: number;
-  
+
   if (t < 0.5) {
     // Blue to green
     const localT = t * 2;
@@ -27,7 +26,7 @@ function velocityToColor(velocity: number, maxVelocity: number): string {
     g = Math.round(200 * (1 - localT) + 50 * localT);
     b = Math.round(0 * (1 - localT) + 50 * localT);
   }
-  
+
   return `rgb(${r}, ${g}, ${b})`;
 }
 
@@ -106,10 +105,10 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
   // Step 4: Calculate segments with colors - only when normalizedPoints or dt changes
   const segments = useMemo(() => {
     if (normalizedPoints.length < 2) return [];
-    
+
     const segmentData = [];
     let maxVelocity = 0;
-    
+
     // First pass: calculate all velocities
     for (let i = 1; i < downsampledPath.length; i++) {
       const prev = downsampledPath[i - 1];
@@ -121,7 +120,7 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
       const step = Math.ceil(path.length / MAX_POINTS);
       const actualDt = dt * step;
       const velocity = Math.sqrt(dx * dx + dy * dy + dz * dz) / actualDt;
-      
+
       segmentData.push({
         x1: normalizedPoints[i - 1].x,
         z1: normalizedPoints[i - 1].z,
@@ -129,16 +128,16 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
         z2: normalizedPoints[i].z,
         velocity,
       });
-      
+
       maxVelocity = Math.max(maxVelocity, velocity);
     }
-    
+
     // Second pass: assign colors using 90th percentile
-    const velocities = segmentData.map(s => s.velocity).sort((a, b) => a - b);
+    const velocities = segmentData.map((s) => s.velocity).sort((a, b) => a - b);
     const percentile90 = velocities[Math.floor(velocities.length * 0.9)] || maxVelocity;
     const colorScaleMax = Math.max(percentile90 * 1.2, 0.1);
-    
-    return segmentData.map(seg => ({
+
+    return segmentData.map((seg) => ({
       ...seg,
       color: velocityToColor(seg.velocity, colorScaleMax),
     }));
@@ -147,10 +146,10 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
   // Step 5: Calculate current position based on actual frame index
   const currentPos = useMemo(() => {
     if (frameIndex < 0 || frameIndex >= path.length) return null;
-    
+
     const point = path[frameIndex];
     const { minX, minZ, xRange, zRange } = bounds;
-    
+
     return {
       x: ((point.x - minX) / xRange) * 100,
       z: ((point.z - minZ) / zRange) * 100 * aspectRatio,
@@ -160,7 +159,7 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
   const viewBoxHeight = aspectRatio * 100;
 
   return (
-    <div ref={containerRef} className="w-full h-20 mb-3">
+    <div ref={containerRef} className="w-full h-20">
       <svg className="w-full h-full border border-neutral-200 rounded" viewBox={`0 0 100 ${viewBoxHeight}`}>
         {/* Draw colored line segments as static elements */}
         <g>
@@ -196,10 +195,6 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
           />
         )}
       </svg>
-      <div className="text-xs text-neutral-500 flex items-center gap-1 mb-1">
-        <InfoIcon className="size-3" />
-        <span className="text-xs font-medium">Number of points reduced for performance</span>
-      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
-import { TrendingUpIcon, XIcon } from "lucide-react";
+import { InfoIcon, XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
 import { Vector3 } from "three";
@@ -56,15 +56,24 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   // PEAK DISPLACEMENT ACROSS ALL TIME
   const peakDisplacement = useMemo(() => {
-    let maxMag = 0;
-    let maxX = 0,
+    let maxMag = 0,
+      maxX = 0,
       maxY = 0,
-      maxZ = 0;
-    let maxFrame = 0;
+      maxZ = 0,
+      maxFrame = 0;
+    let maxAbsX = 0,
+      maxAbsXFrame = 0;
+    let maxAbsY = 0,
+      maxAbsYFrame = 0;
+    let maxAbsZ = 0,
+      maxAbsZFrame = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
       const disp = animationData.displacementLin.atFrame(i).at(nodeId);
       const mag = Math.hypot(disp[0], disp[1], disp[2]);
+      const absX = Math.abs(disp[0]);
+      const absY = Math.abs(disp[1]);
+      const absZ = Math.abs(disp[2]);
 
       if (mag > maxMag) {
         maxMag = mag;
@@ -73,13 +82,28 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
         maxZ = disp[2];
         maxFrame = i;
       }
+      if (absX > maxAbsX) {
+        maxAbsX = absX;
+        maxAbsXFrame = i;
+      }
+      if (absY > maxAbsY) {
+        maxAbsY = absY;
+        maxAbsYFrame = i;
+      }
+      if (absZ > maxAbsZ) {
+        maxAbsZ = absZ;
+        maxAbsZFrame = i;
+      }
     }
 
     return {
       magnitude: maxMag,
       x: maxX,
+      xTime: maxAbsXFrame * animationData.metadata.dt,
       y: maxY,
+      yTime: maxAbsYFrame * animationData.metadata.dt,
       z: maxZ,
+      zTime: maxAbsZFrame * animationData.metadata.dt,
       frame: maxFrame,
       time: maxFrame * animationData.metadata.dt,
     };
@@ -99,20 +123,58 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   const peakVelocity = useMemo(() => {
     if (!animationData.velocityLin) return null;
-    let maxMag = 0;
-    let maxFrame = 0;
+    let maxMag = 0,
+      maxX = 0,
+      maxY = 0,
+      maxZ = 0,
+      maxFrame = 0;
+    let maxAbsX = 0,
+      maxAbsXFrame = 0;
+    let maxAbsY = 0,
+      maxAbsYFrame = 0;
+    let maxAbsZ = 0,
+      maxAbsZFrame = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
       const vel = animationData.velocityLin.atFrame(i).at(nodeId);
       const mag = Math.hypot(vel[0], vel[1], vel[2]);
+      const absX = Math.abs(vel[0]);
+      const absY = Math.abs(vel[1]);
+      const absZ = Math.abs(vel[2]);
+
       if (mag > maxMag) {
         maxMag = mag;
+        maxX = vel[0];
+        maxY = vel[1];
+        maxZ = vel[2];
         maxFrame = i;
+      }
+      if (absX > maxAbsX) {
+        maxAbsX = absX;
+        maxAbsXFrame = i;
+      }
+      if (absY > maxAbsY) {
+        maxAbsY = absY;
+        maxAbsYFrame = i;
+      }
+      if (absZ > maxAbsZ) {
+        maxAbsZ = absZ;
+        maxAbsZFrame = i;
       }
     }
 
-    return { magnitude: maxMag, frame: maxFrame, time: maxFrame * animationData.metadata.dt };
-  }, [animationData.velocityLin, nodeId]);
+    return {
+      magnitude: maxMag,
+      x: maxX,
+      xTime: maxAbsXFrame * animationData.metadata.dt,
+      y: maxY,
+      yTime: maxAbsYFrame * animationData.metadata.dt,
+      z: maxZ,
+      zTime: maxAbsZFrame * animationData.metadata.dt,
+      frame: maxFrame,
+      time: maxFrame * animationData.metadata.dt,
+    };
+  }, [animationData.velocityLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   // ACCELERATION (if available)
   const currentAcceleration = useMemo(() => {
@@ -128,20 +190,58 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   const peakAcceleration = useMemo(() => {
     if (!animationData.accelerationLin) return null;
-    let maxMag = 0;
-    let maxFrame = 0;
+    let maxMag = 0,
+      maxX = 0,
+      maxY = 0,
+      maxZ = 0,
+      maxFrame = 0;
+    let maxAbsX = 0,
+      maxAbsXFrame = 0;
+    let maxAbsY = 0,
+      maxAbsYFrame = 0;
+    let maxAbsZ = 0,
+      maxAbsZFrame = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
       const acc = animationData.accelerationLin.atFrame(i).at(nodeId);
       const mag = Math.hypot(acc[0], acc[1], acc[2]);
+      const absX = Math.abs(acc[0]);
+      const absY = Math.abs(acc[1]);
+      const absZ = Math.abs(acc[2]);
+
       if (mag > maxMag) {
         maxMag = mag;
+        maxX = acc[0];
+        maxY = acc[1];
+        maxZ = acc[2];
         maxFrame = i;
+      }
+      if (absX > maxAbsX) {
+        maxAbsX = absX;
+        maxAbsXFrame = i;
+      }
+      if (absY > maxAbsY) {
+        maxAbsY = absY;
+        maxAbsYFrame = i;
+      }
+      if (absZ > maxAbsZ) {
+        maxAbsZ = absZ;
+        maxAbsZFrame = i;
       }
     }
 
-    return { magnitude: maxMag, frame: maxFrame, time: maxFrame * animationData.metadata.dt };
-  }, [animationData.accelerationLin, nodeId]);
+    return {
+      magnitude: maxMag,
+      x: maxX,
+      xTime: maxAbsXFrame * animationData.metadata.dt,
+      y: maxY,
+      yTime: maxAbsYFrame * animationData.metadata.dt,
+      z: maxZ,
+      zTime: maxAbsZFrame * animationData.metadata.dt,
+      frame: maxFrame,
+      time: maxFrame * animationData.metadata.dt,
+    };
+  }, [animationData.accelerationLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   // STRUCTURAL INFO
   const storyInfo = useMemo(() => {
@@ -217,29 +317,63 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
   }, [animationData.displacementRot, frameIndex, nodeId]);
 
   const peakRotation = useMemo(() => {
-    if (!animationData.displacementRot) return { magnitude: 0, rx: 0, ry: 0, rz: 0 };
-    let maxMag = 0;
-    let maxRx = 0,
+    if (!animationData.displacementRot)
+      return { magnitude: 0, rx: 0, ry: 0, rz: 0, rxTime: 0, ryTime: 0, rzTime: 0, frame: 0, time: 0 };
+    let maxMag = 0,
+      maxRx = 0,
       maxRy = 0,
-      maxRz = 0;
+      maxRz = 0,
+      maxFrame = 0;
+    let maxAbsRx = 0,
+      maxAbsRxFrame = 0;
+    let maxAbsRy = 0,
+      maxAbsRyFrame = 0;
+    let maxAbsRz = 0,
+      maxAbsRzFrame = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
       const rot = animationData.displacementRot.atFrame(i).at(nodeId);
       const mag = Math.hypot(rot[0], rot[1], rot[2]);
+      const absRx = Math.abs(rot[0]);
+      const absRy = Math.abs(rot[1]);
+      const absRz = Math.abs(rot[2]);
 
       if (mag > maxMag) {
         maxMag = mag;
         maxRx = rot[0];
         maxRy = rot[1];
         maxRz = rot[2];
+        maxFrame = i;
+      }
+      if (absRx > maxAbsRx) {
+        maxAbsRx = absRx;
+        maxAbsRxFrame = i;
+      }
+      if (absRy > maxAbsRy) {
+        maxAbsRy = absRy;
+        maxAbsRyFrame = i;
+      }
+      if (absRz > maxAbsRz) {
+        maxAbsRz = absRz;
+        maxAbsRzFrame = i;
       }
     }
 
-    return { magnitude: maxMag, rx: maxRx, ry: maxRy, rz: maxRz };
-  }, [animationData.displacementRot, animationData.metadata.frameCount, nodeId]);
+    return {
+      magnitude: maxMag,
+      rx: maxRx,
+      rxTime: maxAbsRxFrame * animationData.metadata.dt,
+      ry: maxRy,
+      ryTime: maxAbsRyFrame * animationData.metadata.dt,
+      rz: maxRz,
+      rzTime: maxAbsRzFrame * animationData.metadata.dt,
+      frame: maxFrame,
+      time: maxFrame * animationData.metadata.dt,
+    };
+  }, [animationData.displacementRot, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl overflow-hidden rounded-lg">
+    <div className="h-full w-full flex flex-col bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl overflow-hidden">
       <AnimatePresence>
         <motion.div
           className="p-3 space-y-3 text-xs flex-1 overflow-y-auto"
@@ -251,12 +385,6 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
             <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Location</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="font-medium text-neutral-700">Floor:</span>
-                <div className="text-neutral-600">
-                  {storyInfo.floorNumber} of {storyInfo.totalFloors}
-                </div>
-              </div>
-              <div>
                 <span className="font-medium text-neutral-700">Story ID:</span>
                 <div className="text-neutral-600 font-mono">{storyInfo.story}</div>
               </div>
@@ -266,11 +394,11 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Elevation:</span>
-                <div className="text-neutral-600">{storyInfo.elevation.toFixed(1)}"</div>
+                <div className="text-neutral-600">{(storyInfo.elevation / 12).toFixed(1)} ft</div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Story Height:</span>
-                <div className="text-neutral-600">{storyInfo.height.toFixed(1)}"</div>
+                <div className="text-neutral-600">{(storyInfo.height / 12).toFixed(1)} ft</div>
               </div>
             </div>
           </motion.div>
@@ -282,31 +410,42 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
             initial="hidden"
             animate="visible"
             className="border-t pt-2">
-            <span className="font-medium text-neutral-700">Position (in):</span>
-            <div className="text-neutral-600 font-mono text-[10px]">
-              X: {currentPos[0].toFixed(3)}
-              <br />
-              Y: {currentPos[1].toFixed(3)}
-              <br />
-              Z: {currentPos[2].toFixed(3)}
+            <h3 className="font-bold text-sm mb-2">Position (in)</h3>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <span className="font-medium text-neutral-700">X:</span>
+                <div className="text-neutral-600 font-mono">{currentPos[0].toFixed(3)}</div>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700">Y:</span>
+                <div className="text-neutral-600 font-mono">{currentPos[1].toFixed(3)}</div>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700">Z:</span>
+                <div className="text-neutral-600 font-mono">{currentPos[2].toFixed(3)}</div>
+              </div>
             </div>
           </motion.div>
 
           {/* DISPLACEMENT */}
-          <motion.div custom={2} variants={sectionVariants} initial="hidden" animate="visible">
-            <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Displacement (in)</h3>
+          <motion.div
+            custom={2}
+            variants={sectionVariants}
+            initial="hidden"
+            animate="visible"
+            className="border-t pt-2">
+            <h3 className="font-bold text-sm mb-2">Displacement (in)</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current Total:</span>
                 <div className="text-neutral-600 font-mono">{displacementMag.toFixed(3)}"</div>
               </div>
               <div>
-                <span className="font-medium text-neutral-700 flex items-center gap-1">
-                  <TrendingUpIcon className="size-3" />
-                  Peak Total:
-                </span>
-                <div className="text-neutral-600 font-mono">{peakDisplacement.magnitude.toFixed(3)}"</div>
-                <div className="text-neutral-500 text-[9px]">@ {peakDisplacement.time.toFixed(2)}s</div>
+                <span className="font-medium text-neutral-700">Peak Total:</span>
+                <div className="text-neutral-600 font-mono">
+                  {peakDisplacement.magnitude.toFixed(3)}"
+                  <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.time.toFixed(2)}s</span>
+                </div>
               </div>
             </div>
             <div className="mt-2 space-y-1">
@@ -316,7 +455,10 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
-                <span className="font-mono text-neutral-800">{peakDisplacement.x.toFixed(3)}"</span>
+                <span className="font-mono text-neutral-800">
+                  {peakDisplacement.x.toFixed(3)}"
+                  <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.xTime.toFixed(2)}s</span>
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
@@ -324,7 +466,10 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
-                <span className="font-mono text-neutral-800">{peakDisplacement.y.toFixed(3)}"</span>
+                <span className="font-mono text-neutral-800">
+                  {peakDisplacement.y.toFixed(3)}"
+                  <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.yTime.toFixed(2)}s</span>
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
@@ -332,123 +477,167 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
-                <span className="font-mono text-neutral-800">{peakDisplacement.z.toFixed(3)}"</span>
+                <span className="font-mono text-neutral-800">
+                  {peakDisplacement.z.toFixed(3)}"
+                  <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.zTime.toFixed(2)}s</span>
+                </span>
               </div>
             </div>
           </motion.div>
 
           {/* ROTATION */}
-          <motion.div
-            custom={3}
-            variants={sectionVariants}
-            initial="hidden"
-            animate="visible"
-            className="border-t pt-2">
-            <h3 className="font-bold text-sm mb-2">Rotation (rad)</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="font-medium text-neutral-700">Current Total:</span>
-                <div className="text-neutral-600 font-mono">{currentRotation.magnitude.toFixed(4)}</div>
+          {animationData.displacementRot && (
+            <motion.div
+              custom={3}
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+              className="border-t pt-2">
+              <h3 className="font-bold text-sm mb-2">Rotation (rad)</h3>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="font-medium text-neutral-700">Current Total:</span>
+                  <div className="text-neutral-600 font-mono">{currentRotation.magnitude.toFixed(4)}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-neutral-700">Peak Total:</span>
+                  <div className="text-neutral-600 font-mono">{peakRotation.magnitude.toFixed(4)}</div>
+                  <div className="text-neutral-500 text-[9px]"> @ {peakRotation.time.toFixed(2)}s</div>
+                </div>
               </div>
-              <div>
-                <span className="font-medium text-neutral-700">Peak Total:</span>
-                <div className="text-neutral-600 font-mono">{peakRotation.magnitude.toFixed(4)}</div>
+              <div className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
+                <div>
+                  <div className="text-neutral-600">Rx:</div>
+                  <div className="font-mono">{currentRotation.rx.toFixed(4)}</div>
+                  <div className="font-mono text-neutral-500">
+                    ({peakRotation.rx.toFixed(4)}
+                    <span className="text-neutral-500 text-[9px]"> @ {peakRotation.rxTime.toFixed(2)}s)</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-neutral-600">Ry:</div>
+                  <div className="font-mono">{currentRotation.ry.toFixed(4)}</div>
+                  <div className="font-mono text-neutral-500">
+                    ({peakRotation.ry.toFixed(4)}
+                    <span className="text-neutral-500 text-[9px]"> @ {peakRotation.ryTime.toFixed(2)}s)</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-neutral-600">Rz:</div>
+                  <div className="font-mono">{currentRotation.rz.toFixed(4)}</div>
+                  <div className="font-mono text-neutral-500">
+                    ({peakRotation.rz.toFixed(4)}
+                    <span className="text-neutral-500 text-[9px]"> @ {peakRotation.rzTime.toFixed(2)}s)</span>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
-              <div>
-                <div className="text-neutral-600">Rx:</div>
-                <div className="font-mono">{currentRotation.rx.toFixed(4)}</div>
-                <div className="font-mono text-neutral-500">({peakRotation.rx.toFixed(4)})</div>
-              </div>
-              <div>
-                <div className="text-neutral-600">Ry:</div>
-                <div className="font-mono">{currentRotation.ry.toFixed(4)}</div>
-                <div className="font-mono text-neutral-500">({peakRotation.ry.toFixed(4)})</div>
-              </div>
-              <div>
-                <div className="text-neutral-600">Rz:</div>
-                <div className="font-mono">{currentRotation.rz.toFixed(4)}</div>
-                <div className="font-mono text-neutral-500">({peakRotation.rz.toFixed(4)})</div>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
 
           {/* VELOCITY */}
-          {currentVelocity && (
+          {animationData.velocityLin && (
             <motion.div
               custom={4}
               variants={sectionVariants}
               initial="hidden"
               animate="visible"
-              className="bg-green-50 p-2 rounded">
+              className="border-t pt-2">
               <h3 className="font-bold text-sm mb-2">Velocity (in/s)</h3>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <span className="font-medium text-neutral-700">Current:</span>
-                  <div className="text-neutral-600 font-mono">{currentVelocity.magnitude.toFixed(3)}</div>
+                  <div className="text-neutral-600 font-mono">{currentVelocity!.magnitude.toFixed(3)}</div>
                 </div>
                 {peakVelocity && (
                   <div>
                     <span className="font-medium text-neutral-700">Peak:</span>
                     <div className="text-neutral-600 font-mono">{peakVelocity.magnitude.toFixed(3)}</div>
-                    <div className="text-neutral-500 text-[9px]">@ {peakVelocity.time.toFixed(2)}s</div>
+                    <div className="text-neutral-500 text-[9px]"> @ {peakVelocity.time.toFixed(2)}s</div>
                   </div>
                 )}
               </div>
               <div className="mt-1 grid grid-cols-3 gap-1 text-[10px]">
                 <div>
-                  X: <span className="font-mono">{currentVelocity.x.toFixed(3)}</span>
+                  X: <span className="font-mono">{currentVelocity!.x.toFixed(3)}</span>
                 </div>
                 <div>
-                  Y: <span className="font-mono">{currentVelocity.y.toFixed(3)}</span>
+                  Y: <span className="font-mono">{currentVelocity!.y.toFixed(3)}</span>
                 </div>
                 <div>
-                  Z: <span className="font-mono">{currentVelocity.z.toFixed(3)}</span>
+                  Z: <span className="font-mono">{currentVelocity!.z.toFixed(3)}</span>
                 </div>
               </div>
+              {peakVelocity && (
+                <div className="mt-1 text-[9px] text-neutral-500">
+                  Peak: X: {peakVelocity.x.toFixed(3)}
+                  <span className="text-neutral-500 text-[9px]"> @ {peakVelocity.xTime.toFixed(2)}s, Y: </span>
+                  {peakVelocity.y.toFixed(3)}
+                  <span className="text-neutral-500 text-[9px]">
+                    @ {peakVelocity.yTime.toFixed(2)}s, Z: {peakVelocity.z.toFixed(3)} @{" "}
+                  </span>
+                  {peakVelocity.zTime.toFixed(2)}s
+                </div>
+              )}
             </motion.div>
           )}
 
           {/* ACCELERATION */}
-          {currentAcceleration && (
+          {animationData.accelerationLin && (
             <motion.div
               custom={5}
               variants={sectionVariants}
               initial="hidden"
               animate="visible"
-              className="bg-red-50 p-2 rounded">
+              className="border-t pt-2">
               <h3 className="font-bold text-sm mb-2">Acceleration (in/s²)</h3>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <span className="font-medium text-neutral-700">Current:</span>
-                  <div className="text-neutral-600 font-mono">{currentAcceleration.magnitude.toFixed(3)}</div>
+                  <div className="text-neutral-600 font-mono">{currentAcceleration!.magnitude.toFixed(3)}</div>
                 </div>
                 {peakAcceleration && (
                   <div>
                     <span className="font-medium text-neutral-700">Peak:</span>
                     <div className="text-neutral-600 font-mono">{peakAcceleration.magnitude.toFixed(3)}</div>
-                    <div className="text-neutral-500 text-[9px]">@ {peakAcceleration.time.toFixed(2)}s</div>
+                    <div className="text-neutral-500 text-[9px]"> @ {peakAcceleration.time.toFixed(2)}s</div>
                   </div>
                 )}
               </div>
               <div className="mt-1 grid grid-cols-3 gap-1 text-[10px]">
                 <div>
-                  X: <span className="font-mono">{currentAcceleration.x.toFixed(3)}</span>
+                  X: <span className="font-mono">{currentAcceleration!.x.toFixed(3)}</span>
                 </div>
                 <div>
-                  Y: <span className="font-mono">{currentAcceleration.y.toFixed(3)}</span>
+                  Y: <span className="font-mono">{currentAcceleration!.y.toFixed(3)}</span>
                 </div>
                 <div>
-                  Z: <span className="font-mono">{currentAcceleration.z.toFixed(3)}</span>
+                  Z: <span className="font-mono">{currentAcceleration!.z.toFixed(3)}</span>
                 </div>
               </div>
+              {peakAcceleration && (
+                <div className="mt-1 text-[9px] text-neutral-500">
+                  Peak: X: {peakAcceleration.x.toFixed(3)}
+                  <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.xTime.toFixed(2)}s, Y: </span>
+                  {peakAcceleration.y.toFixed(3)}
+                  <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.yTime.toFixed(2)}s, Z: </span>
+                  {peakAcceleration.z.toFixed(3)}
+                  <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.zTime.toFixed(2)}s</span>
+                </div>
+              )}
             </motion.div>
           )}
 
           {/* STORY DRIFT */}
           {storyDrift && (
-            <motion.div custom={6} variants={sectionVariants} initial="hidden" animate="visible" className="">
+            <motion.div
+              custom={6}
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+              className="border-t pt-2">
               <h3 className="font-bold text-sm mb-2">Story Drift Ratio (%)</h3>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -470,7 +659,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
             initial="hidden"
             animate="visible"
             className="border-t pt-2">
-            <span className="font-medium text-neutral-700">Total Distance Traveled:</span>
+            <h3 className="font-bold text-sm mb-2">Total Distance Traveled</h3>
             <div className="text-neutral-600 font-mono">{totalDistanceTraveled.toFixed(3)}"</div>
           </motion.div>
 
@@ -481,9 +670,24 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
             initial="hidden"
             animate="visible"
             className="border-t pt-2">
-            <span className="font-medium text-neutral-700">Displacement Path (Top View):</span>
+            <h3 className="font-bold text-sm mb-2">Displacement Path (Top View)</h3>
             <MiniRibbon path={ribbonPath} dt={animationData.metadata.dt} />
+            <div className="text-neutral-400 text-[10px] italic flex gap-1">
+              <InfoIcon className="size-3" /> Number of points reduced for performance
+            </div>
           </motion.div>
+
+          <div>
+            {!animationData.displacementRot && (
+              <div className="text-neutral-400 text-[10px] italic">Rotations not loaded</div>
+            )}
+            {!animationData.velocityLin && (
+              <div className="text-neutral-400 text-[10px] italic">Velocities not loaded</div>
+            )}
+            {!animationData.accelerationLin && (
+              <div className="text-neutral-400 text-[10px] italic">Accelerations not loaded</div>
+            )}
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>

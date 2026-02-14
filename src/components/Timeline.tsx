@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { usePlayback } from "./playback/PlaybackContext";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
+import { formatFixed3 } from "@/lib/utils";
 
 // Configuration for available data channels
 const CHANNEL_CONFIG = {
@@ -40,7 +41,6 @@ const CHANNEL_CONFIG = {
 
 type ChannelKey = keyof typeof CHANNEL_CONFIG;
 
-// Fixed order for display regardless of selection order
 const CHANNEL_ORDER: ChannelKey[] = ["x", "y", "z", "magnitude"];
 
 function TooltipContent({
@@ -480,13 +480,13 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
           <span className="font-mono">{frameIndex + 1}</span>
           <span className="text-neutral-300">|</span>
           <span className="font-medium">Time:</span>
-          <span className="font-mono">{(frameIndex * animationData.metadata.dt).toFixed(3)}s</span>
+          <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)}s</span>
           <div className="flex items-center gap-2 flex-wrap">
             {chartData.seriesData.map((item) => (
               <div key={item.key} className="flex items-center gap-1 text-xs">
                 <div className="w-2 h-2 rounded-full" style={{ background: item.config.color }} />
                 <span className="font-medium text-neutral-500">{item.config.shortName}:</span>
-                <span className="font-mono">{item.accessor(frameIndex)?.toFixed(3)}</span>
+                <span className="font-mono">{formatFixed3(item.accessor(frameIndex) ?? 0)}</span>
               </div>
             ))}
           </div>

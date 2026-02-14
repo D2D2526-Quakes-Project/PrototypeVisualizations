@@ -174,7 +174,7 @@ export function BuildingScene() {
             <PointMaterial
               transparent
               vertexColors
-              size={20}
+              size={8}
               sizeAttenuation={true}
               depthTest={true}
               depthWrite={true}

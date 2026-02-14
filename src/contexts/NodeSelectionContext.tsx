@@ -1,12 +1,12 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
 import { DockviewApi } from "dockview";
 
 export interface NodeSelectionContextType {
-  selectedNode: number | null;
+  selectedNodes: number[];
   // We store the API here so the 3D scene can call it
   setDockviewApi: (api: DockviewApi) => void;
   selectNode: (nodeId: number) => void;
-  deselectNode: () => void;
+  deselectNode: (nodeId: number) => void;
 }
 
 const NodeSelectionContext = createContext<NodeSelectionContextType | undefined>(undefined);
@@ -20,18 +20,36 @@ export function useNodeSelection() {
 }
 
 export function NodeSelectionProvider({ children }: { children: ReactNode }) {
-  const [selectedNode, setSelectedNode] = useState<number | null>(null);
+  const [selectedNodes, setSelectedNodes] = useState<number[]>([]);
   const [api, setApi] = useState<DockviewApi | null>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const setDockviewApi = useCallback((dockviewApi: DockviewApi) => {
     setApi(dockviewApi);
+    
+    // Subscribe to panel close events to keep selection in sync
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+    }
+    
+    const disposable = dockviewApi.onDidRemovePanel((panel) => {
+      if (panel.id.startsWith('node-panel-')) {
+        const nodeId = parseInt(panel.id.replace('node-panel-', ''));
+        setSelectedNodes(prev => prev.filter(id => id !== nodeId));
+      }
+    });
+    
+    unsubscribeRef.current = () => disposable.dispose();
   }, []);
 
   const selectNode = useCallback(
     (nodeId: number) => {
       if (!api) return;
 
-      setSelectedNode(nodeId);
+      setSelectedNodes(prev => {
+        if (prev.includes(nodeId)) return prev;
+        return [...prev, nodeId];
+      });
 
       const panelId = `node-panel-${nodeId}`;
       const existingPanel = api.getPanel(panelId);
@@ -45,10 +63,10 @@ export function NodeSelectionProvider({ children }: { children: ReactNode }) {
       // Create the panel as a floating group initially
       api.addPanel({
         id: panelId,
-        component: "nodePanel", // We will register this in the next step
+        component: "nodePanel",
         tabComponent: "nodeTab",
         title: `Node ${nodeId}`,
-        params: { nodeId }, // Pass the nodeId to the component
+        params: { nodeId },
         maximumWidth: 300,
         position: { direction: "right" },
       });
@@ -56,14 +74,23 @@ export function NodeSelectionProvider({ children }: { children: ReactNode }) {
     [api],
   );
 
-  const deselectNode = useCallback(() => {
-    setSelectedNode(null);
-  }, []);
+  const deselectNode = useCallback((nodeId: number) => {
+    setSelectedNodes(prev => prev.filter(id => id !== nodeId));
+    
+    // Also close the panel if it exists
+    if (api) {
+      const panelId = `node-panel-${nodeId}`;
+      const panel = api.getPanel(panelId);
+      if (panel) {
+        panel.api.close();
+      }
+    }
+  }, [api]);
 
   return (
     <NodeSelectionContext.Provider
       value={{
-        selectedNode,
+        selectedNodes,
         setDockviewApi,
         selectNode,
         deselectNode,

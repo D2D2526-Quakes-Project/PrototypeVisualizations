@@ -1,7 +1,8 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useNodeSelection } from "@/contexts/NodeSelectionContext";
+import { getNodeColor } from "@/components/NodePanel";
 import { UNIT_SCALE } from "@/lib/utils";
-import { Text } from "@react-three/drei";
+import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { converter, interpolate } from "culori";
 import { useMemo, useRef, useState, useCallback } from "react";
@@ -19,7 +20,7 @@ const tempColor = new THREE.Color();
 export function BuildingScene() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { selectNode } = useNodeSelection();
+  const { selectedNodes, selectNode } = useNodeSelection();
   const { camera, gl: renderer } = useThree();
 
   const offsetX = -animationData.precomputed.boundingBox.center[0];
@@ -70,13 +71,10 @@ export function BuildingScene() {
     [camera, renderer, selectNode, positions],
   );
 
-  const handlePointerDown = useCallback(
-    (event: { instanceId?: number; stopPropagation: () => void }) => {
-      event.stopPropagation();
-      pointerDownNodeId.current = event.instanceId;
-    },
-    [],
-  );
+  const handlePointerDown = useCallback((event: { instanceId?: number; stopPropagation: () => void }) => {
+    event.stopPropagation();
+    pointerDownNodeId.current = event.instanceId;
+  }, []);
 
   const colors = useMemo(() => {
     const colors = new Float32Array(nodeCount * 3);
@@ -126,6 +124,19 @@ export function BuildingScene() {
     colorAttr.needsUpdate = true;
   });
 
+  // Get positions and colors for all selected nodes
+  const selectedNodesData = useMemo(() => {
+    return selectedNodes.map((nodeId) => {
+      const pos = animationData.initialPositions.at(nodeId);
+      const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
+      return {
+        nodeId,
+        position: [pos[0] + displacement[0], pos[1] + displacement[1], pos[2] + displacement[2]] as const,
+        color: getNodeColor(nodeId),
+      };
+    });
+  }, [selectedNodes, frameIndex, animationData]);
+
   return (
     <>
       <ambientLight intensity={2} />
@@ -150,6 +161,29 @@ export function BuildingScene() {
             </sphereGeometry>
             <meshBasicMaterial fog={false} toneMapped={false} vertexColors />
           </instancedMesh>
+
+          {/* Selected node highlights - one ring per selected node */}
+          {selectedNodesData.map(({ nodeId, position, color }) => (
+            <mesh key={nodeId} position={position}>
+              <torusGeometry args={[3, 0.3, 8, 32]} />
+              <meshBasicMaterial color={color} transparent opacity={0.8} />
+            </mesh>
+          ))}
+
+          <Points frustumCulled={false}>
+            <PointMaterial
+              transparent
+              vertexColors
+              size={20}
+              sizeAttenuation={true}
+              depthTest={true}
+              depthWrite={true}
+              toneMapped={false}
+            />
+            {selectedNodesData.map(({ nodeId, position, color }) => (
+              <Point key={nodeId} position={position} color={color}></Point>
+            ))}
+          </Points>
         </group>
       </group>
 

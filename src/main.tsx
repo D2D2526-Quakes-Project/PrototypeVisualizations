@@ -20,6 +20,7 @@ import { View3d } from "./pages/View3d/page";
 
 import { ViewVolumes } from "./pages/ViewVolumes/page";
 import { PlaybackProvider } from "./components/playback/PlaybackContext";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 const routes = [
   {
@@ -89,10 +90,12 @@ const router = createBrowserRouter([
     element: (
       <>
         <AnimationDataProvider>
-          <NavigationBar routes={routes} />
-          <PlaybackProvider>
-            <Outlet />
-          </PlaybackProvider>
+          <TooltipProvider>
+            <NavigationBar routes={routes} />
+            <PlaybackProvider>
+              <Outlet />
+            </PlaybackProvider>
+          </TooltipProvider>
         </AnimationDataProvider>
       </>
     ),

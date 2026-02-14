@@ -150,7 +150,7 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   // Default to Magnitude
-  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(["magnitude"]);
+  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(["x", "y"]);
 
   const maxFrame = animationData.metadata.frameCount - 1;
 
@@ -390,6 +390,7 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
     const convertToFrame = (pixelX: number) => {
       if (selectedKeys.length === 0) return null;
       const chartDom = chart.getDom();
+      if (!chartDom) return null;
       const rect = chartDom.getBoundingClientRect();
       const gridModel = chart.getModel().getComponent("grid", 0);
       if (!gridModel) return null;
@@ -470,12 +471,16 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
   return (
     <div className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full bg-white">
       {/* Top Bar Row 1: Controls & Time */}
-      <div className="flex justify-between items-start px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
+      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0 relative">
+        <div className="float-right ml-2 mt-0.5">
+          <CheckSelect options={CHANNEL_CONFIG} selected={selectedKeys} onChange={setSelectedKeys} />
+        </div>
         <div className="text-sm text-neutral-700 flex items-center gap-2 flex-wrap">
-          <span className="font-medium">Frame:</span> {frameIndex + 1}
+          <span className="font-medium">Frame:</span>
+          <span className="font-mono">{frameIndex + 1}</span>
           <span className="text-neutral-300">|</span>
-          <span className="font-medium">Time:</span> {(frameIndex * animationData.metadata.dt).toFixed(3)}s
-          <span className="text-neutral-300">|</span>
+          <span className="font-medium">Time:</span>
+          <span className="font-mono">{(frameIndex * animationData.metadata.dt).toFixed(3)}s</span>
           <div className="flex items-center gap-2 flex-wrap">
             {chartData.seriesData.map((item) => (
               <div key={item.key} className="flex items-center gap-1 text-xs">
@@ -486,7 +491,6 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
             ))}
           </div>
         </div>
-        <CheckSelect options={CHANNEL_CONFIG} selected={selectedKeys} onChange={setSelectedKeys} />
       </div>
 
       {/* Chart Area */}

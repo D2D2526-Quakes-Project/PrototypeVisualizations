@@ -4,6 +4,21 @@ import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockvi
 import { TrendingUpIcon, XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
+import { Vector3 } from "three";
+import { MiniRibbon } from "./MiniRibbon";
+
+// Generate a unique vibrant color based on node ID
+export function getNodeColor(nodeId: number): string {
+  // Use golden ratio for good distribution
+  const hue = (nodeId * 137.508) % 360;
+  return `hsl(${hue}, 70%, 45%)`;
+}
+
+// Generate a lighter version for backgrounds
+export function getNodeColorLight(nodeId: number): string {
+  const hue = (nodeId * 137.508) % 360;
+  return `hsl(${hue}, 70%, 90%)`;
+}
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 8 },
@@ -17,8 +32,6 @@ const sectionVariants = {
     },
   }),
 };
-import { Vector3 } from "three";
-import { MiniRibbon } from "./MiniRibbon";
 
 export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
   const { animationData } = useAnimationData();
@@ -237,33 +250,38 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
           <motion.div custom={0} variants={sectionVariants} initial="hidden" animate="visible">
             <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Location</h3>
             <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="font-medium text-neutral-700">Floor:</span>
-              <div className="text-neutral-600">
-                {storyInfo.floorNumber} of {storyInfo.totalFloors}
+              <div>
+                <span className="font-medium text-neutral-700">Floor:</span>
+                <div className="text-neutral-600">
+                  {storyInfo.floorNumber} of {storyInfo.totalFloors}
+                </div>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700">Story ID:</span>
+                <div className="text-neutral-600 font-mono">{storyInfo.story}</div>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700">Corner:</span>
+                <div className="text-neutral-600">{cornerInfo}</div>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700">Elevation:</span>
+                <div className="text-neutral-600">{storyInfo.elevation.toFixed(1)}"</div>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700">Story Height:</span>
+                <div className="text-neutral-600">{storyInfo.height.toFixed(1)}"</div>
               </div>
             </div>
-            <div>
-              <span className="font-medium text-neutral-700">Story ID:</span>
-              <div className="text-neutral-600 font-mono">{storyInfo.story}</div>
-            </div>
-            <div>
-              <span className="font-medium text-neutral-700">Corner:</span>
-              <div className="text-neutral-600">{cornerInfo}</div>
-            </div>
-            <div>
-              <span className="font-medium text-neutral-700">Elevation:</span>
-              <div className="text-neutral-600">{storyInfo.elevation.toFixed(1)}"</div>
-            </div>
-            <div>
-              <span className="font-medium text-neutral-700">Story Height:</span>
-              <div className="text-neutral-600">{storyInfo.height.toFixed(1)}"</div>
-            </div>
-          </div>
           </motion.div>
 
           {/* POSITION */}
-          <motion.div custom={1} variants={sectionVariants} initial="hidden" animate="visible" className="border-t pt-2">
+          <motion.div
+            custom={1}
+            variants={sectionVariants}
+            initial="hidden"
+            animate="visible"
+            className="border-t pt-2">
             <span className="font-medium text-neutral-700">Position (in):</span>
             <div className="text-neutral-600 font-mono text-[10px]">
               X: {currentPos[0].toFixed(3)}
@@ -320,7 +338,12 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
           </motion.div>
 
           {/* ROTATION */}
-          <motion.div custom={3} variants={sectionVariants} initial="hidden" animate="visible" className="border-t pt-2">
+          <motion.div
+            custom={3}
+            variants={sectionVariants}
+            initial="hidden"
+            animate="visible"
+            className="border-t pt-2">
             <h3 className="font-bold text-sm mb-2">Rotation (rad)</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -353,7 +376,12 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
           {/* VELOCITY */}
           {currentVelocity && (
-            <motion.div custom={4} variants={sectionVariants} initial="hidden" animate="visible" className="bg-green-50 p-2 rounded">
+            <motion.div
+              custom={4}
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+              className="bg-green-50 p-2 rounded">
               <h3 className="font-bold text-sm mb-2">Velocity (in/s)</h3>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -384,7 +412,12 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
           {/* ACCELERATION */}
           {currentAcceleration && (
-            <motion.div custom={5} variants={sectionVariants} initial="hidden" animate="visible" className="bg-red-50 p-2 rounded">
+            <motion.div
+              custom={5}
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+              className="bg-red-50 p-2 rounded">
               <h3 className="font-bold text-sm mb-2">Acceleration (in/s²)</h3>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -415,7 +448,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
           {/* STORY DRIFT */}
           {storyDrift && (
-            <motion.div custom={6} variants={sectionVariants} initial="hidden" animate="visible" className="bg-purple-50 p-2 rounded">
+            <motion.div custom={6} variants={sectionVariants} initial="hidden" animate="visible" className="">
               <h3 className="font-bold text-sm mb-2">Story Drift Ratio (%)</h3>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -431,13 +464,23 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
           )}
 
           {/* CUMULATIVE STATS */}
-          <motion.div custom={7} variants={sectionVariants} initial="hidden" animate="visible" className="border-t pt-2">
+          <motion.div
+            custom={7}
+            variants={sectionVariants}
+            initial="hidden"
+            animate="visible"
+            className="border-t pt-2">
             <span className="font-medium text-neutral-700">Total Distance Traveled:</span>
             <div className="text-neutral-600 font-mono">{totalDistanceTraveled.toFixed(3)}"</div>
           </motion.div>
 
           {/* RIBBONS */}
-          <motion.div custom={8} variants={sectionVariants} initial="hidden" animate="visible" className="border-t pt-2">
+          <motion.div
+            custom={8}
+            variants={sectionVariants}
+            initial="hidden"
+            animate="visible"
+            className="border-t pt-2">
             <span className="font-medium text-neutral-700">Displacement Path (Top View):</span>
             <MiniRibbon path={ribbonPath} dt={animationData.metadata.dt} />
           </motion.div>
@@ -449,22 +492,29 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
 export function NodeTab(props: IDockviewPanelHeaderProps<{ nodeId: number }>) {
   const nodeId = props.params.nodeId;
+  const color = getNodeColor(nodeId);
+  const lightColor = getNodeColorLight(nodeId);
 
   const handleClose = () => {
     props.api.close();
   };
 
   return (
-    <div className="flex items-center justify-between bg-neutral-100/50 px-3 py-2 border-b border-neutral-200 cursor-grab active:cursor-grabbing">
+    <div
+      className="flex items-center justify-between px-3 py-2 border-b cursor-grab active:cursor-grabbing transition-colors"
+      style={{ backgroundColor: lightColor, borderColor: color }}>
       <div className="flex items-center gap-2 pointer-events-none">
-        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-        <span className="text-sm font-medium text-neutral-800">Node {nodeId}</span>
+        <span className="text-sm font-semibold" style={{ color }}>
+          Node {nodeId}
+        </span>
       </div>
 
       <div className="flex items-center gap-1">
         <button
           onClick={handleClose}
-          className="p-1 hover:bg-red-100 rounded transition-colors text-neutral-600 hover:text-red-600">
+          className="p-1 rounded transition-colors hover:bg-white/50"
+          style={{ color }}
+          title="Close">
           <XIcon className="size-3" />
         </button>
       </div>

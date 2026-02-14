@@ -1,6 +1,7 @@
 import { DockviewWrapper } from "@/components/dockviewWrapper";
 import { MagicPanel, MagicPanelTab } from "@/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/components/NodePanel"; // Import your new panel
+import { CameraProvider } from "@/contexts/CameraContext";
 import { NodeSelectionProvider, useNodeSelection } from "@/contexts/NodeSelectionContext";
 import { DockviewApi, type DockviewReadyEvent } from "dockview";
 
@@ -19,7 +20,9 @@ export function View3d() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <NodeSelectionProvider>
-        <DockviewContainer />
+        <CameraProvider>
+          <DockviewContainer />
+        </CameraProvider>
       </NodeSelectionProvider>
     </div>
   );

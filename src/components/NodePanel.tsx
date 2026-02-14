@@ -14,7 +14,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
   const nodeId = props.params.nodeId;
 
   const initialPos = animationData.initialPositions.at(nodeId);
-  const currentDisp = animationData.displacement.atFrame(frameIndex).at(nodeId);
+  const currentDisp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
   const currentPos = [initialPos[0] + currentDisp[0], initialPos[1] + currentDisp[1], initialPos[2] + currentDisp[2]];
   const displacementMag = Math.hypot(currentDisp[0], currentDisp[1], currentDisp[2]);
 
@@ -22,11 +22,11 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
   const ribbonPath = useMemo(() => {
     const path = new Array(animationData.metadata.frameCount).fill(null).map(() => new Vector3(0, 0, 0));
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const pos = animationData.displacement.atFrame(i).at(nodeId);
+      const pos = animationData.displacementLin.atFrame(i).at(nodeId);
       path[i] = new Vector3(pos[0], pos[1], pos[2]);
     }
     return path;
-  }, [animationData.metadata.frameCount, animationData.displacement, nodeId]);
+  }, [animationData.metadata.frameCount, animationData.displacementLin, nodeId]);
 
   // PEAK DISPLACEMENT ACROSS ALL TIME
   const peakDisplacement = useMemo(() => {
@@ -37,7 +37,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
     let maxFrame = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const disp = animationData.displacement.atFrame(i).at(nodeId);
+      const disp = animationData.displacementLin.atFrame(i).at(nodeId);
       const mag = Math.hypot(disp[0], disp[1], disp[2]);
 
       if (mag > maxMag) {
@@ -61,23 +61,23 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   // VELOCITY (if available)
   const currentVelocity = useMemo(() => {
-    if (!animationData.velocity) return null;
-    const vel = animationData.velocity.atFrame(frameIndex).at(nodeId);
+    if (!animationData.velocityLin) return null;
+    const vel = animationData.velocityLin.atFrame(frameIndex).at(nodeId);
     return {
       x: vel[0],
       y: vel[1],
       z: vel[2],
       magnitude: Math.hypot(vel[0], vel[1], vel[2]),
     };
-  }, [animationData.velocity, frameIndex, nodeId]);
+  }, [animationData.velocityLin, frameIndex, nodeId]);
 
   const peakVelocity = useMemo(() => {
-    if (!animationData.velocity) return null;
+    if (!animationData.velocityLin) return null;
     let maxMag = 0;
     let maxFrame = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const vel = animationData.velocity.atFrame(i).at(nodeId);
+      const vel = animationData.velocityLin.atFrame(i).at(nodeId);
       const mag = Math.hypot(vel[0], vel[1], vel[2]);
       if (mag > maxMag) {
         maxMag = mag;
@@ -86,27 +86,27 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
     }
 
     return { magnitude: maxMag, frame: maxFrame, time: maxFrame * animationData.metadata.dt };
-  }, [animationData.velocity, nodeId]);
+  }, [animationData.velocityLin, nodeId]);
 
   // ACCELERATION (if available)
   const currentAcceleration = useMemo(() => {
-    if (!animationData.acceleration) return null;
-    const acc = animationData.acceleration.atFrame(frameIndex).at(nodeId);
+    if (!animationData.accelerationLin) return null;
+    const acc = animationData.accelerationLin.atFrame(frameIndex).at(nodeId);
     return {
       x: acc[0],
       y: acc[1],
       z: acc[2],
       magnitude: Math.hypot(acc[0], acc[1], acc[2]),
     };
-  }, [animationData.acceleration, frameIndex, nodeId]);
+  }, [animationData.accelerationLin, frameIndex, nodeId]);
 
   const peakAcceleration = useMemo(() => {
-    if (!animationData.acceleration) return null;
+    if (!animationData.accelerationLin) return null;
     let maxMag = 0;
     let maxFrame = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const acc = animationData.acceleration.atFrame(i).at(nodeId);
+      const acc = animationData.accelerationLin.atFrame(i).at(nodeId);
       const mag = Math.hypot(acc[0], acc[1], acc[2]);
       if (mag > maxMag) {
         maxMag = mag;
@@ -115,7 +115,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
     }
 
     return { magnitude: maxMag, frame: maxFrame, time: maxFrame * animationData.metadata.dt };
-  }, [animationData.acceleration, nodeId]);
+  }, [animationData.accelerationLin, nodeId]);
 
   // STRUCTURAL INFO
   const storyInfo = useMemo(() => {
@@ -168,8 +168,8 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
   const totalDistanceTraveled = useMemo(() => {
     let distance = 0;
     for (let i = 1; i < animationData.metadata.frameCount; i++) {
-      const prev = animationData.displacement.atFrame(i - 1).at(nodeId);
-      const curr = animationData.displacement.atFrame(i).at(nodeId);
+      const prev = animationData.displacementLin.atFrame(i - 1).at(nodeId);
+      const curr = animationData.displacementLin.atFrame(i).at(nodeId);
       const dx = curr[0] - prev[0];
       const dy = curr[1] - prev[1];
       const dz = curr[2] - prev[2];
@@ -180,23 +180,25 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   // ROTATION (current and peak)
   const currentRotation = useMemo(() => {
-    const rot = animationData.displacement.rotAt(frameIndex).at(nodeId);
+    if (!animationData.displacementRot) return { rx: 0, ry: 0, rz: 0, magnitude: 0 };
+    const rot = animationData.displacementRot.atFrame(frameIndex).at(nodeId);
     return {
       rx: rot[0],
       ry: rot[1],
       rz: rot[2],
       magnitude: Math.hypot(rot[0], rot[1], rot[2]),
     };
-  }, [animationData.displacement, frameIndex, nodeId]);
+  }, [animationData.displacementRot, frameIndex, nodeId]);
 
   const peakRotation = useMemo(() => {
+    if (!animationData.displacementRot) return { magnitude: 0, rx: 0, ry: 0, rz: 0 };
     let maxMag = 0;
     let maxRx = 0,
       maxRy = 0,
       maxRz = 0;
 
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const rot = animationData.displacement.rotAt(i).at(nodeId);
+      const rot = animationData.displacementRot.atFrame(i).at(nodeId);
       const mag = Math.hypot(rot[0], rot[1], rot[2]);
 
       if (mag > maxMag) {
@@ -208,7 +210,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
     }
 
     return { magnitude: maxMag, rx: maxRx, ry: maxRy, rz: maxRz };
-  }, [animationData.displacement, animationData.metadata.frameCount, nodeId]);
+  }, [animationData.displacementRot, animationData.metadata.frameCount, nodeId]);
 
   return (
     <div className="h-full w-full flex flex-col bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl overflow-hidden rounded-lg">

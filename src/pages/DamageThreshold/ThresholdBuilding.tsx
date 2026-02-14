@@ -43,7 +43,7 @@ export function ThresholdBuilding({
 
   const getNodePosition = (nodeIdx: number) => {
     const pos = animationData.initialPositions.at(nodeIdx);
-    const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+    const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
 
     return [pos[0] + displacement[0], pos[1] + displacement[1], pos[2] + displacement[2]];
   };

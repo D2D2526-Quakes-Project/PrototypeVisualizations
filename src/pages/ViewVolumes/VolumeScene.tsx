@@ -63,7 +63,7 @@ export function VolumeScene({
     // Get node positions for current floor (bottom corners)
     const bottomNodePositions = currentCornerIndices.map((nodeIdx) => {
       const initialPos = animationData.initialPositions.at(nodeIdx);
-      const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+      const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
 
       const posX = initialPos[0] + displacement[0] * displacementScale + offsetX;
       const posY = initialPos[1] + displacement[1] + offsetY;
@@ -75,7 +75,7 @@ export function VolumeScene({
     // Get node positions for next floor (top corners)
     const topNodePositions = nextCornerIndices.map((nodeIdx) => {
       const initialPos = animationData.initialPositions.at(nodeIdx);
-      const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+      const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
 
       const posX = initialPos[0] + displacement[0] * displacementScale + offsetX;
       const posY = initialPos[1] + displacement[1] + offsetY;
@@ -89,14 +89,14 @@ export function VolumeScene({
     let nextTotalDx = 0, nextTotalDy = 0, nextTotalDz = 0;
 
     for (const nodeIdx of currentNodeIndices) {
-      const disp = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+      const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
       currentTotalDx += disp[0];
       currentTotalDy += disp[1];
       currentTotalDz += disp[2];
     }
 
     for (const nodeIdx of nextNodeIndices) {
-      const disp = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+      const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
       nextTotalDx += disp[0];
       nextTotalDy += disp[1];
       nextTotalDz += disp[2];

@@ -99,26 +99,47 @@ export interface BuildingAnimationData {
   initialPositions: IndexAccessor;
 
   /**
-   * Displacement Data.
-   * Layout: Frame -> Node -> [x, y, z] for linear, [rx, ry, rz] for rotation
+   * Linear Displacement Data.
+   * Layout: Frame -> Node -> [x, y, z]
    * Access: (frameIndex * nodeCount * 3) + (nodeIndex * 3) + componentIndex
-   * Units: Inches (linear), Radians (rotation)
+   * Units: Inches
    */
-  displacement: TimeIndexAccessor;
+  displacementLin: TimeIndexAccessor;
 
   /**
-   * Velocity Data.
-   * Layout: Frame -> Node -> [x, y, z] for linear, [rx, ry, rz] for rotation
-   * Units: Inches/s (linear), Radians/s (rotation)
+   * Rotational Displacement Data.
+   * Layout: Frame -> Node -> [rx, ry, rz]
+   * Units: Radians
    */
-  velocity?: TimeIndexAccessor;
+  displacementRot?: TimeIndexAccessor;
 
   /**
-   * Acceleration Data.
-   * Layout: Frame -> Node -> [x, y, z] for linear, [rx, ry, rz] for rotation
-   * Units: Inches/s² (linear), Radians/s² (rotation)
+   * Linear Velocity Data.
+   * Layout: Frame -> Node -> [x, y, z]
+   * Units: Inches/s
    */
-  acceleration?: TimeIndexAccessor;
+  velocityLin?: TimeIndexAccessor;
+
+  /**
+   * Rotational Velocity Data.
+   * Layout: Frame -> Node -> [rx, ry, rz]
+   * Units: Radians/s
+   */
+  velocityRot?: TimeIndexAccessor;
+
+  /**
+   * Linear Acceleration Data.
+   * Layout: Frame -> Node -> [x, y, z]
+   * Units: Inches/s²
+   */
+  accelerationLin?: TimeIndexAccessor;
+
+  /**
+   * Rotational Acceleration Data.
+   * Layout: Frame -> Node -> [rx, ry, rz]
+   * Units: Radians/s²
+   */
+  accelerationRot?: TimeIndexAccessor;
 
   /**
    * Ground Motion Data.

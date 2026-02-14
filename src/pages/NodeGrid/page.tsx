@@ -64,7 +64,7 @@ export function ViewNodeGrid() {
     const displacements = new Map<number, number>();
     
     for (let i = 0; i < nodeCount; i++) {
-      const disp = animationData.displacement.atFrame(frameIndex).at(i);
+      const disp = animationData.displacementLin.atFrame(frameIndex).at(i);
       const mag = Math.hypot(disp[0], disp[1], disp[2]);
       displacements.set(i, mag);
     }
@@ -84,7 +84,7 @@ export function ViewNodeGrid() {
       let totalMag = 0;
 
       for (const nodeIdx of nodeIndices) {
-        const disp = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+        const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
         totalMag += Math.hypot(disp[0], disp[1], disp[2]);
       }
 

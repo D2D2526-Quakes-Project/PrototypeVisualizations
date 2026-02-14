@@ -617,13 +617,14 @@ def process_building(building):
     count_nodes = len(unique_ids)
 
     # 2. Prepare Binary Buffer (Only XYZ)
+    # Note: node_data.csv coordinates are in feet, convert to inches for binary format
     buffer = np.zeros(count_nodes * 3, dtype=np.float32)
     for _, row in df_nodes.iterrows():
         idx = id_to_index.get(row["Node ID"])
         if idx is not None:
-            buffer[idx * 3 + 0] = row["H1"]
-            buffer[idx * 3 + 1] = row["H2"]
-            buffer[idx * 3 + 2] = row["V"]
+            buffer[idx * 3 + 0] = row["H1"] * 12  # Convert feet to inches
+            buffer[idx * 3 + 1] = row["H2"] * 12  # Convert feet to inches
+            buffer[idx * 3 + 2] = row["V"] * 12   # Convert feet to inches
 
     # 3. Load Stories & Corners
     df_height = pd.read_csv(building["height"])

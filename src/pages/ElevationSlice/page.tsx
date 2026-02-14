@@ -23,7 +23,7 @@ function SliceView() {
       <group position={[offsetX, offsetY, offsetZ]}>
         {Array.from({ length: nodeCount }).map((_, nodeIdx) => {
           const initialPos = animationData.initialPositions.at(nodeIdx);
-          const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+          const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
 
           const currentPos: [number, number, number] = [
             initialPos[0] + displacement[0],

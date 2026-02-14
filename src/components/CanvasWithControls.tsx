@@ -11,7 +11,6 @@ import {
 } from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
-// This component goes INSIDE the Canvas
 function CameraManager({
   isOrthographic,
   orbitControlsRef,
@@ -23,59 +22,97 @@ function CameraManager({
 }) {
   const perspectiveCamRef = useRef<PerspectiveCameraImpl>(null);
   const orthoCamRef = useRef<OrthographicCameraImpl>(null);
+  const { animationData } = useAnimationData();
+
+  const buildingVerticalCenter =
+    ((animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) / 2) * UNIT_SCALE;
+  const cameraDistance = animationData.precomputed.boundingBox.radius * UNIT_SCALE;
 
   const { camera, set, size } = useThree();
 
+  // Initialize camera target on mount
   useEffect(() => {
     const controls = orbitControlsRef.current;
     const perspective = perspectiveCamRef.current;
     const ortho = orthoCamRef.current;
 
-    if (!controls || !perspective || !ortho) return;
+    if (!controls) return;
 
-    const distance = camera.position.distanceTo(controls.target);
+    controls.target.set(0, 0, buildingVerticalCenter);
 
-    if (isOrthographic) {
-      // --- PERSPECTIVE TO ORTHO ---
-      // Match the perspective FOV height at the target distance
-      const fovRadians = MathUtils.degToRad(perspective.fov);
-      // Formula: zoom = 1 / (tan(fov/2) * distance)
-      // We multiply by (size.height / 2) because Drei's OrthoCam uses viewport units
-      const newZoom = size.height / (2 * Math.tan(fovRadians / 2) * distance);
-
-      ortho.zoom = newZoom;
-      ortho.position.copy(camera.position);
-      ortho.updateProjectionMatrix();
-      set({ camera: ortho });
-    } else {
-      // --- ORTHO TO PERSPECTIVE ---
-      // Reverse the formula to find the distance the perspective cam needs to be
-      const fovRadians = MathUtils.degToRad(perspective.fov);
-      const targetDistance = size.height / (2 * Math.tan(fovRadians / 2) * ortho.zoom);
-
-      // Move the perspective camera position along the same vector to match the distance
-      const direction = new Vector3().subVectors(camera.position, controls.target).normalize();
-      const newPos = new Vector3().addVectors(controls.target, direction.multiplyScalar(targetDistance));
-
-      perspective.position.copy(newPos);
-      perspective.updateProjectionMatrix();
-      set({ camera: perspective });
+    // Make sure both cameras look at the target
+    if (perspective) {
+      perspective.lookAt(0, 0, buildingVerticalCenter);
     }
-  }, [orbitControlsRef, perspectiveCamRef, orthoCamRef]);
+    if (ortho) {
+      ortho.lookAt(0, 0, buildingVerticalCenter);
+    }
+
+    controls.update();
+  }, [buildingVerticalCenter, orbitControlsRef]);
+
+  // Handle camera switching
+  // useEffect(() => {
+  //   const controls = orbitControlsRef.current;
+  //   const perspective = perspectiveCamRef.current;
+  //   const ortho = orthoCamRef.current;
+
+  //   if (!controls || !perspective || !ortho) return;
+
+  //   const distance = camera.position.distanceTo(controls.target);
+
+  //   if (isOrthographic) {
+  //     // --- PERSPECTIVE TO ORTHO ---
+  //     // Match the perspective FOV height at the target distance
+  //     const fovRadians = MathUtils.degToRad(perspective.fov);
+  //     const newZoom = size.height / (2 * Math.tan(fovRadians / 2) * distance);
+
+  //     ortho.zoom = newZoom;
+  //     ortho.position.copy(camera.position);
+  //     ortho.updateProjectionMatrix();
+  //     set({ camera: ortho });
+  //   } else {
+  //     // --- ORTHO TO PERSPECTIVE ---
+  //     // Reverse the formula to find the distance the perspective cam needs to be
+  //     const fovRadians = MathUtils.degToRad(perspective.fov);
+  //     const targetDistance = size.height / (2 * Math.tan(fovRadians / 2) * ortho.zoom);
+
+  //     // Move the perspective camera position along the same vector to match the distance
+  //     const direction = new Vector3().subVectors(camera.position, controls.target).normalize();
+  //     const newPos = new Vector3().addVectors(controls.target, direction.multiplyScalar(targetDistance));
+
+  //     perspective.position.copy(newPos);
+  //     perspective.updateProjectionMatrix();
+  //     set({ camera: perspective });
+  //   }
+
+  //   // Force controls to update with the new camera
+  //   controls.update();
+  // }, [
+  //   isOrthographic,
+  //   camera,
+  //   orbitControlsRef,
+  //   perspectiveCamRef,
+  //   orthoCamRef,
+  //   buildingVerticalCenter,
+  //   cameraDistance,
+  //   set,
+  //   size,
+  // ]);
 
   return (
     <>
       <PerspectiveCamera
         ref={perspectiveCamRef}
         makeDefault={!isOrthographic}
-        position={[50, 50, 50]}
+        position={[cameraDistance, cameraDistance, buildingVerticalCenter + cameraDistance]}
         fov={75}
         up={[0, 0, 1]}
       />
       <OrthographicCamera
         ref={orthoCamRef}
         makeDefault={isOrthographic}
-        position={[50, 50, 50]}
+        position={[cameraDistance, cameraDistance, buildingVerticalCenter + cameraDistance]}
         zoom={50}
         up={[0, 0, 1]}
       />
@@ -127,7 +164,7 @@ export function ViewControls({
 
   const buildingVerticalCenter =
     ((animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) / 2) * UNIT_SCALE;
-  const cameraDistance = animationData.precomputed.boundingBox.radius * 1.5 * UNIT_SCALE;
+  const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
 
   const resetView = (viewType: "top" | "bottom" | "left" | "right" | "front" | "back") => {
     const viewPositions = {

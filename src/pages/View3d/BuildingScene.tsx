@@ -36,7 +36,7 @@ export function BuildingScene() {
 
     for (let i = 0; i < nodeCount; i++) {
       const pos = animationData.initialPositions.at(i);
-      const displacement = animationData.displacement.atFrame(frameIndex).at(i);
+      const displacement = animationData.displacementLin.atFrame(frameIndex).at(i);
       positions[i * 3 + 0] = pos[0] + displacement[0];
       positions[i * 3 + 1] = pos[1] + displacement[1];
       positions[i * 3 + 2] = pos[2] + displacement[2];
@@ -68,7 +68,7 @@ export function BuildingScene() {
   const colors = useMemo(() => {
     const colors = new Float32Array(nodeCount * 3);
     for (let i = 0; i < nodeCount; i++) {
-      const displacement = animationData.displacement.atFrame(frameIndex).at(i);
+      const displacement = animationData.displacementLin.atFrame(frameIndex).at(i);
       const mag = Math.hypot(displacement[0], displacement[1], displacement[2]);
       const displacementScale = mag / maxDisplacement;
       const color = rgbConverter(colorMap(displacementScale));

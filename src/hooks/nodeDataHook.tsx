@@ -62,7 +62,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     setLoading(true);
     setError(null);
     setProgress(0);
-    setFileProgress({ building: 0, displacement: 0, groundMotion: 0 });
+    setFileProgress({ building: 0, groundMotion: 0 });
     setProgressMessage("");
     setAnimationData(null);
 
@@ -80,7 +80,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
     // Helper to resolve URL - supports both full URLs (http/https) and relative paths
     const resolveUrl = (pathOrUrl: string, folder: string): string => {
-      console.log(pathOrUrl, folder);
       if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
         return pathOrUrl;
       }
@@ -272,13 +271,11 @@ function LoadingOverlay({
       const limit = performance.memory.jsHeapSizeLimit;
       // @ts-expect-error - performance.memory is not defined in Node
       const used = performance.memory.usedJSHeapSize;
-      console.log(`Memory: ${Math.round(used / 1024 / 1024)} MB / ${Math.round(limit / 1024 / 1024)} MB`);
       return {
         used: used,
         limit: limit,
       };
     }
-    console.log(progress);
     return undefined;
   }, [progress]);
 
@@ -339,8 +336,6 @@ function SimulationPickerOverlay({
 }) {
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
 
-  console.log(DataSources);
-
   return (
     <motion.div
       key="loadingoverlay"
@@ -360,8 +355,6 @@ function SimulationPickerOverlay({
           {DataSources.buildings.map((b) => {
             // Helper to check if a path is incomplete (starts with "*" but not a URL)
             const isIncomplete = (path: string) => !path.startsWith("http") && path.startsWith("*");
-
-            console.log(b);
 
             const incompleteWarning = isIncomplete(b.building_data);
             return (
@@ -412,7 +405,6 @@ function SimulationPickerOverlay({
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2, ease: "easeOut" }}>
                       {selectedBuilding.simulations.map((s) => {
-                        console.log(s);
                         const isIncomplete = (path: string) => !path.startsWith("http") && path.startsWith("*");
 
                         const incompleteWarning =

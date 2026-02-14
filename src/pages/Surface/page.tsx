@@ -43,7 +43,7 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
         // Calculate average displacement for this story at this frame
         let totalDx = 0, totalDy = 0, totalDz = 0;
         for (const nodeIdx of nodeIndices) {
-          const disp = animationData.displacement.atFrame(t).at(nodeIdx);
+          const disp = animationData.displacementLin.atFrame(t).at(nodeIdx);
           totalDx += disp[0];
           totalDy += disp[1];
           totalDz += disp[2];
@@ -65,7 +65,7 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
             const prevNodeIndices = stories[prevStoryId];
             let prevTotalDx = 0, prevTotalDy = 0, prevTotalDz = 0;
             for (const nodeIdx of prevNodeIndices) {
-              const disp = animationData.displacement.atFrame(t).at(nodeIdx);
+              const disp = animationData.displacementLin.atFrame(t).at(nodeIdx);
               prevTotalDx += disp[0];
               prevTotalDy += disp[1];
               prevTotalDz += disp[2];

@@ -11,18 +11,6 @@ const components = {
 };
 
 const tabComponents = {
-  default: (props: IDockviewPanelHeaderProps<{ title: string }>) => {
-    return (
-      <div className="my-custom-tab">
-        <span>{props.params.title}</span>
-        <span style={{ flexGrow: 1 }} />
-
-        <span className="my-custom-tab-icon material-symbols-outlined">minimize</span>
-        <span className="my-custom-tab-icon material-symbols-outlined">maximize</span>
-        <span className="my-custom-tab-icon material-symbols-outlined">close</span>
-      </div>
-    );
-  },
   nodeTab: NodeTab,
   magicPanelTab: MagicPanelTab,
 };
@@ -73,6 +61,7 @@ function DockviewContainer() {
     api.addPanel({
       id: "chart",
       component: "magicPanel",
+      tabComponent: "magicPanelTab",
       title: "Interstory Drift",
       position: { referencePanel: timelinePanel, direction: "right" },
       params: { panelType: "InterstoryDriftChart" },

@@ -28,7 +28,7 @@ export function ViewTexture() {
       let totalDz = 0;
 
       for (const nodeIdx of nodeIndices) {
-        const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+        const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
         totalDx += displacement[0];
         totalDy += displacement[1];
         totalDz += displacement[2];
@@ -54,7 +54,7 @@ export function ViewTexture() {
     const nodeCount = animationData.metadata.nodeCount;
     
     for (let i = 0; i < nodeCount; i++) {
-      const displacement = animationData.displacement.atFrame(frameIndex).at(i);
+      const displacement = animationData.displacementLin.atFrame(frameIndex).at(i);
       totalDx += displacement[0];
       totalDy += displacement[1];
       totalDz += displacement[2];

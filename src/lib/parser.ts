@@ -166,7 +166,6 @@ export async function buildAnimationDataFromBinary(
 
   function makeTimeAccessor(
     linData: Float32Array,
-    rotData: Float32Array | undefined,
     nodeCount: number,
   ): TimeIndexAccessor {
     const outerStride = nodeCount * 3; // Stride 3 for each file
@@ -182,19 +181,7 @@ export async function buildAnimationDataFromBinary(
         return makeAccessor(frameData, 3);
       },
       rotAt(frameIdx: number) {
-        if (!rotData) {
-          // Return zeros if no rotation data
-          return {
-            data: new Float32Array(3),
-            stride: 3,
-            at: () => new Float32Array(3),
-            xAt: () => 0,
-            yAt: () => 0,
-            zAt: () => 0,
-          };
-        }
-        const frameData = rotData.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride);
-        return makeAccessor(frameData, 3);
+        throw new Error("Rotation data not available - use displacementRot field instead");
       },
     };
   }
@@ -204,9 +191,12 @@ export async function buildAnimationDataFromBinary(
     metadata,
     precomputed,
     initialPositions: makeAccessor(bData.bodyView, 3), // [x, y, z...]
-    displacement: makeTimeAccessor(dispLinData.bodyView, dispRotData?.bodyView, metadata.nodeCount),
-    velocity: velLinData ? makeTimeAccessor(velLinData.bodyView, velRotData?.bodyView, metadata.nodeCount) : undefined,
-    acceleration: accelLinData ? makeTimeAccessor(accelLinData.bodyView, accelRotData?.bodyView, metadata.nodeCount) : undefined,
+    displacementLin: makeTimeAccessor(dispLinData.bodyView, metadata.nodeCount),
+    displacementRot: dispRotData ? makeTimeAccessor(dispRotData.bodyView, metadata.nodeCount) : undefined,
+    velocityLin: velLinData ? makeTimeAccessor(velLinData.bodyView, metadata.nodeCount) : undefined,
+    velocityRot: velRotData ? makeTimeAccessor(velRotData.bodyView, metadata.nodeCount) : undefined,
+    accelerationLin: accelLinData ? makeTimeAccessor(accelLinData.bodyView, metadata.nodeCount) : undefined,
+    accelerationRot: accelRotData ? makeTimeAccessor(accelRotData.bodyView, metadata.nodeCount) : undefined,
     groundMotion: makeAccessor(gmData.bodyView, 3), // [frame][x,y,z]
   };
 }

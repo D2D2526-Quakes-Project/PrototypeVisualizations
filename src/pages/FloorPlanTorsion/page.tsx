@@ -69,7 +69,7 @@ function PlaneShapes({
 
           const nodePositions = cornerNodes.map((nodeIdx) => {
             const initialPos = animationData.initialPositions.at(nodeIdx);
-            const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+            const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
             const corner = cornerSets.NW.has(nodeIdx) ? "NW" : 
                           cornerSets.NE.has(nodeIdx) ? "NE" : 
                           cornerSets.SW.has(nodeIdx) ? "SW" : "SE";
@@ -123,7 +123,7 @@ function PlaneShapes({
           // Calculate average displacement for this story
           let totalDx = 0, totalDy = 0, totalDz = 0;
           for (const nodeIdx of nodeIndices) {
-            const disp = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+            const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
             totalDx += disp[0];
             totalDy += disp[1];
             totalDz += disp[2];
@@ -225,7 +225,7 @@ export function FloorPlanTorsion() {
 
                   const locs: [number, number][] = nodeIndices.map((nodeIdx) => {
                     const initialPos = animationData.initialPositions.at(nodeIdx);
-                    const displacement = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+                    const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
 
                     const posX = initialPos[0] + displacement[0] * displacementScale;
                     const posZ = initialPos[2] + displacement[2] * displacementScale;
@@ -248,7 +248,7 @@ export function FloorPlanTorsion() {
                   // Calculate average displacement
                   let totalDx = 0, totalDy = 0, totalDz = 0;
                   for (const nodeIdx of nodeIndices) {
-                    const disp = animationData.displacement.atFrame(frameIndex).at(nodeIdx);
+                    const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
                     totalDx += disp[0];
                     totalDy += disp[1];
                     totalDz += disp[2];

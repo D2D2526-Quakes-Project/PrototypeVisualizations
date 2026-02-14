@@ -205,7 +205,7 @@ export function ViewTemporalRibbons() {
               
               for (const nodeIdx of nodeIndices) {
                 const initialPos = animationData.initialPositions.at(nodeIdx);
-                const displacement = animationData.displacement.atFrame(frameIdx).at(nodeIdx);
+                const displacement = animationData.displacementLin.atFrame(frameIdx).at(nodeIdx);
                 center.add(new Vector3(
                   initialPos[0] + displacement[0] + offsetX,
                   initialPos[1] + displacement[1] + offsetY,
@@ -224,7 +224,7 @@ export function ViewTemporalRibbons() {
 
           for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
             for (let nodeIdx = 0; nodeIdx < nodeCount; nodeIdx++) {
-              const displacement = animationData.displacement.atFrame(frameIdx).at(nodeIdx);
+              const displacement = animationData.displacementLin.atFrame(frameIdx).at(nodeIdx);
               paths.get(String(nodeIdx))?.push(new Vector3(
                 displacement[0],
                 displacement[1],

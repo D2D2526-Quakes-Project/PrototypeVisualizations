@@ -173,7 +173,7 @@ function FloorVolumeScene({
         )
         .map((nodeIdx) => {
           const initialPos = animationData.initialPositions.at(nodeIdx);
-          const displacement = animationData.displacement.atFrame(frameIdx).at(nodeIdx);
+          const displacement = animationData.displacementLin.atFrame(frameIdx).at(nodeIdx);
 
           let corner = "";
           if (corners.NW.includes(nodeIdx)) corner = "NW";
@@ -196,7 +196,7 @@ function FloorVolumeScene({
       // Calculate average displacement
       let totalDx = 0, totalDy = 0, totalDz = 0;
       for (const nodeIdx of nodeIndices) {
-        const disp = animationData.displacement.atFrame(frameIdx).at(nodeIdx);
+        const disp = animationData.displacementLin.atFrame(frameIdx).at(nodeIdx);
         totalDx += disp[0];
         totalDy += disp[1];
         totalDz += disp[2];

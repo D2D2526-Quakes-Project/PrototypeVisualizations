@@ -44,7 +44,7 @@ function DockviewContainer() {
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "3D View",
-      params: { panelType: "MainCanvas" },
+      params: { panelType: "Main Canvas" },
     });
 
     // Timeline at the bottom
@@ -64,7 +64,7 @@ function DockviewContainer() {
       tabComponent: "magicPanelTab",
       title: "Interstory Drift",
       position: { referencePanel: timelinePanel, direction: "right" },
-      params: { panelType: "InterstoryDriftChart" },
+      params: { panelType: "Interstory Drift Chart" },
     });
   };
 

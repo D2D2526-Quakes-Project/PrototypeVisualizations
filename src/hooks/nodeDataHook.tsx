@@ -66,9 +66,12 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     setProgressMessage("");
     setAnimationData(null);
 
+    const abortController = new AbortController();
+
     const progressRef = { current: { building: 0, displacementLin: 0, groundMotion: 0 } };
 
     const updateOverallProgress = () => {
+      if (abortController.signal.aborted) return;
       const values = Object.values(progressRef.current);
       const sum = values.reduce((a, b) => a + b, 0);
       const avg = sum / values.length;
@@ -87,6 +90,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     };
 
     try {
+      if (abortController.signal.aborted) return;
       setProgress(5);
       setProgressMessage("Initializing download...");
 
@@ -97,11 +101,15 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         dispLinBuffer,
         /* dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer,*/ gmBuffer,
       ] = await Promise.all([
-        fetchWithProgressAndCache(resolveUrl(building.building_data, building.folder), (p) => {
-          progressRef.current.building = p;
-          setFileProgress((prev) => ({ ...prev, building: p * 100 }));
-          updateOverallProgress();
-        }),
+        fetchWithProgressAndCache(
+          resolveUrl(building.building_data, building.folder),
+          (p) => {
+            progressRef.current.building = p;
+            setFileProgress((prev) => ({ ...prev, building: p * 100 }));
+            updateOverallProgress();
+          },
+          abortController.signal,
+        ),
         fetchWithProgressAndCache(
           resolveUrl(simulation.displacementLin, `${building.folder}/${simulation.folder}`),
           (p) => {
@@ -109,6 +117,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
             setFileProgress((prev) => ({ ...prev, displacementLin: p * 100 }));
             updateOverallProgress();
           },
+          abortController.signal,
         ),
         // Uncomment to load displacement rotation data:
         // simulation.displacementRot ? fetchWithProgressAndCache(
@@ -140,14 +149,21 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
             setFileProgress((prev) => ({ ...prev, groundMotion: p * 100 }));
             updateOverallProgress();
           },
+          abortController.signal,
         ),
       ]);
+
+      if (abortController.signal.aborted) return;
 
       setProgress(85);
       setProgressMessage("Decompressing & Parsing...");
 
       // Give the UI a moment to breathe before the heavy parsing starts
       await new Promise((r) => setTimeout(r, 10));
+
+      if (abortController.signal.aborted) return;
+
+      if (buildingBuffer === undefined || gmBuffer === undefined || dispLinBuffer === undefined) return;
 
       // Pass the ArrayBuffers to your parser
       // Add optional buffers when uncommenting above: dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer
@@ -161,18 +177,23 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         undefined, // accelLinBuffer
         undefined, // accelRotBuffer
         async (p: number, msg?: string) => {
+          if (abortController.signal.aborted) return;
           if (p !== -1) setProgress(85 + p * 0.15);
           if (msg) setProgressMessage(msg);
           await new Promise((r) => setTimeout(r, 0));
         },
       );
 
+      if (abortController.signal.aborted) return;
+
       setProgress(100);
       setProgressMessage("Done!");
       setAnimationData(built);
 
       // Short delay so user sees "Done!"
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 800));
+
+      if (abortController.signal.aborted) return;
 
       setLoading(false);
     } catch (err) {
@@ -180,6 +201,8 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       setError(err);
       setLoading(false);
     }
+
+    return () => abortController.abort();
   }, []);
 
   const loadSelection = useCallback(
@@ -189,7 +212,8 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       setNeedsSelection(false);
       updateUrl(building, simulation);
 
-      loadBinaryData(building, simulation as BinarySimulation);
+      const cleanup = loadBinaryData(building, simulation as BinarySimulation);
+      return cleanup;
     },
     [loadBinaryData],
   );

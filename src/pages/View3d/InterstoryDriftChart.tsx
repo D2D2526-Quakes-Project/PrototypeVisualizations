@@ -1,221 +1,275 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
-import { useEffect, useRef, useState } from "react";
+import ReactECharts from "echarts-for-react";
+import { useMemo } from "react";
+import { renderToString } from "react-dom/server";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
-// const amber400 = "oklch(82.8% 0.189 84.429)";
-// const red700 = "oklch(50.5% 0.213 27.518)";
-// const colorMap = interpolate([amber400, red700], "oklab");
-// const rgbConverter = converter("rgb");
+const cornerColors = {
+  NW: "#3b82f6",
+  NE: "#ef4444",
+  SW: "#10b981",
+  SE: "#f59e0b",
+};
+
+const MIN_X_AXIS_MAX = 0.01;
+
+function TooltipContent({
+  storyId,
+  elevationFt,
+  corners,
+  currentDrifts,
+  peakDrift,
+}: {
+  storyId: string;
+  elevationFt: number;
+  corners: Array<keyof typeof cornerColors>;
+  currentDrifts: Record<string, Record<string, number>>;
+  peakDrift: Record<string, Record<string, number>>;
+}) {
+  return (
+    <div style={{ minWidth: "200px" }}>
+      <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "13px" }}>
+        Story {storyId} ({elevationFt.toFixed(0)}ft)
+      </div>
+      {corners.map((corner) => {
+        const current = currentDrifts[storyId]?.[corner] || 0;
+        const peak = peakDrift[storyId]?.[corner] || 0;
+
+        return (
+          <div
+            key={corner}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "16px",
+              marginTop: "4px",
+            }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "2px",
+                  background: cornerColors[corner],
+                }}
+              />
+              <span style={{ color: "#6b7280", fontSize: "11px" }}>{corner}</span>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <span style={{ fontWeight: 500 }}>{current.toFixed(4)}%</span>
+              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>/ {peak.toFixed(4)}%</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function InterstoryDriftChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
+  const { precomputed } = animationData;
 
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 1, height: 1 });
+  const chartData = useMemo(() => {
+    const storyOrder = animationData.metadata.storyOrder;
+    const peakDrift = precomputed.peakStoryDrift;
+    const storyDrift = precomputed.storyDrift;
 
-  useEffect(() => {
-    if (!panelRef.current) return;
-    const resizeObserver = new ResizeObserver((entries) =>
-      setSize({ width: entries[0].contentRect.width, height: entries[0].contentRect.height }),
-    );
-    resizeObserver.observe(panelRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
+    const currentDrifts: Record<string, Record<string, number>> = {};
+    let maxCurrentRatio = 0.0001;
+    let maxPeakRatio = 0.0001;
 
-  const { corners, stories, storyHeights, storyOrder } = animationData.metadata;
+    storyOrder.forEach((storyId, storyIndex) => {
+      if (storyIndex === 0) return;
 
-  const cornerSets = {
-    NW: new Set(corners.NW),
-    NE: new Set(corners.NE),
-    SW: new Set(corners.SW),
-    SE: new Set(corners.SE),
-  };
-
-  const cornerNodes = new Map<
-    string,
-    {
-      NW: number;
-      NE: number;
-      SW: number;
-      SE: number;
-    }
-  >();
-
-  // story height, (story evelation - story below elevation)
-  const storyElevations = new Map<string, number>();
-
-  storyOrder.forEach((storyId, index) => {
-    const nodeIndices = stories[storyId];
-
-    const corners = {
-      NW: nodeIndices.find((n) => cornerSets.NW.has(n))!,
-      NE: nodeIndices.find((n) => cornerSets.NE.has(n))!,
-      SW: nodeIndices.find((n) => cornerSets.SW.has(n))!,
-      SE: nodeIndices.find((n) => cornerSets.SE.has(n))!,
-    };
-    cornerNodes.set(storyId, corners);
-
-    if (index > 0) {
-      let elevation = storyHeights[storyId];
-      storyOrder.forEach((storyId2, index2) => {
-        if (index2 < index) elevation += storyHeights[storyId2];
-      });
-      storyElevations.set(storyId, elevation);
-    }
-  });
-
-  const storyDrift = new Map<
-    string,
-    {
-      NW: (frame: number) => number;
-      NE: (frame: number) => number;
-      SW: (frame: number) => number;
-      SE: (frame: number) => number;
-    }
-  >();
-
-  for (let i = 1; i < storyOrder.length; i++) {
-    const storyId = storyOrder[i];
-    const belowId = storyOrder[i - 1];
-
-    const height = storyElevations.get(storyId)!;
-    const corners = cornerNodes.get(storyId)!;
-    const belowCorners = cornerNodes.get(belowId)!;
-
-    const makeStoryDriftAccessor = (height: number, nodeIdx: number, belowNodeIdx: number) => {
-      return (frame: number) => {
-        const frameData = animationData.displacementLin.atFrame(frame);
-        const current = frameData.at(nodeIdx);
-        const below = frameData.at(belowNodeIdx);
-
-        const driftMag = Math.hypot(current[0], current[1], current[2]);
-        const belowDriftMag = Math.hypot(below[0], below[1], below[2]);
-
-        return ((driftMag - belowDriftMag) / height) * 100;
+      const cornerDrifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
+      currentDrifts[storyId] = {
+        NW: cornerDrifts[0],
+        NE: cornerDrifts[1],
+        SW: cornerDrifts[2],
+        SE: cornerDrifts[3],
       };
-    };
 
-    storyDrift.set(storyId, {
-      NE: makeStoryDriftAccessor(height, corners.NE, belowCorners.NE),
-      NW: makeStoryDriftAccessor(height, corners.NW, belowCorners.NW),
-      SW: makeStoryDriftAccessor(height, corners.SW, belowCorners.SW),
-      SE: makeStoryDriftAccessor(height, corners.SE, belowCorners.SE),
+      maxCurrentRatio = Math.max(maxCurrentRatio, ...cornerDrifts);
+
+      const peakCornerDrifts = [
+        peakDrift[storyId]?.NW || 0,
+        peakDrift[storyId]?.NE || 0,
+        peakDrift[storyId]?.SW || 0,
+        peakDrift[storyId]?.SE || 0,
+      ];
+      maxPeakRatio = Math.max(maxPeakRatio, ...peakCornerDrifts);
     });
-  }
 
-  const maxRatio = Math.max(
-    ...Array.from(storyDrift.values()).flatMap((d) => [
-      d.NW(frameIndex),
-      d.NE(frameIndex),
-      d.SW(frameIndex),
-      d.SE(frameIndex),
-    ]),
-    0.000001,
-  );
+    return { currentDrifts, maxCurrentRatio, maxPeakRatio };
+  }, [animationData, precomputed, frameIndex]);
 
-  const maxHeight = storyElevations.get(storyOrder.at(-1) ?? "0") || 0;
+  const option = useMemo(() => {
+    console.log("running chartdata");
+    const { currentDrifts, maxPeakRatio } = chartData;
+    const { storyOrder, storyHeights } = animationData.metadata;
+    const { storyElevations, peakStoryDrift } = precomputed;
 
-  const padding = { top: 20, right: 120, bottom: 30, left: 40 };
-  const chartWidth = size.width - padding.left - padding.right;
-  const chartHeight = size.height - padding.top - padding.bottom;
+    const storyOrderWithoutGround = storyOrder.slice(1);
 
-  const cornerColors = {
-    NW: "#3b82f6", // blue
-    NE: "#ef4444", // red
-    SW: "#10b981", // green
-    SE: "#f59e0b", // amber
-  };
+    const yAxisData = storyOrderWithoutGround.map((storyId) => {
+      const heightIn = storyHeights[storyId] || 0;
+      const heightFt = heightIn / 12;
+      return `${storyId} (${heightFt.toFixed(0)}ft)`;
+    });
+
+    const corners: Array<keyof typeof cornerColors> = ["NW", "NE", "SW", "SE"];
+
+    // Create peak series first (render behind)
+    const peakSeries = corners.map((corner) => ({
+      name: `${corner}`,
+      type: "bar" as const,
+      stack: corner,
+      data: storyOrderWithoutGround.map((storyId) => peakStoryDrift[storyId][corner] - currentDrifts[storyId][corner]),
+      itemStyle: {
+        color: cornerColors[corner],
+        opacity: 0.3,
+        borderRadius: [0, 2, 2, 0],
+      },
+      barGap: "0%",
+      barCategoryGap: "20%",
+      silent: true,
+      z: 1,
+      legendHoverLink: false,
+    }));
+
+    // Current value series (render on top)
+    const currentSeries = corners.map((corner) => ({
+      name: corner,
+      type: "bar" as const,
+      stack: corner,
+      data: storyOrderWithoutGround.map((storyId) => currentDrifts[storyId][corner] || 0),
+      itemStyle: {
+        color: cornerColors[corner],
+        borderRadius: [0, 2, 2, 0],
+      },
+      barGap: "0%",
+      barCategoryGap: "20%",
+      z: 2,
+    }));
+
+    return {
+      tooltip: {
+        trigger: "axis",
+        axisPointer: {
+          type: "shadow",
+          shadowStyle: {
+            color: "rgba(0,0,0,0.05)",
+          },
+        },
+        backgroundColor: "rgba(255, 255, 255, 0.98)",
+        borderColor: "#d1d5db",
+        borderWidth: 1,
+        padding: 12,
+        textStyle: {
+          color: "#374151",
+          fontSize: 12,
+        },
+        transitionDuration: 0,
+        formatter: (params: any) => {
+          if (!params || params.length === 0) return "";
+
+          const storyIdx = params[0].dataIndex;
+          const storyId = storyOrderWithoutGround[storyIdx];
+          const heightIn = storyHeights[storyId] || 0;
+          const heightFt = heightIn / 12;
+
+          return renderToString(
+            <TooltipContent
+              storyId={storyId}
+              elevationFt={heightFt}
+              corners={corners}
+              currentDrifts={currentDrifts}
+              peakDrift={peakStoryDrift}
+            />,
+          );
+        },
+      },
+      legend: {
+        data: [
+          ...corners.map((corner) => ({
+            name: corner,
+            itemStyle: { color: cornerColors[corner] },
+          })),
+        ],
+        right: 0,
+        top: 0,
+        orient: "vertical" as const,
+        itemGap: 8,
+        textStyle: {
+          fontSize: 11,
+          color: "#374151",
+        },
+        itemWidth: 14,
+        itemHeight: 14,
+      },
+      grid: {
+        left: 0,
+        right: 0,
+        bottom: 0,
+        top: 0,
+        containLabel: false,
+      },
+      xAxis: {
+        type: "value" as const,
+        name: "Drift (%)",
+        nameLocation: "middle" as const,
+        nameGap: 25,
+        nameTextStyle: {
+          fontSize: 11,
+          color: "#4b5563",
+          fontWeight: 500,
+        },
+        max: Math.max(maxPeakRatio * 1.15, MIN_X_AXIS_MAX),
+        axisLine: {
+          lineStyle: {
+            color: "#d1d5db",
+          },
+        },
+        axisLabel: {
+          formatter: (value: number) => value.toFixed(3),
+          color: "#6b7280",
+          fontSize: 10,
+        },
+        splitLine: {
+          lineStyle: {
+            color: "#e5e7eb",
+            type: "dashed" as const,
+          },
+        },
+      },
+      yAxis: {
+        type: "category" as const,
+        data: yAxisData,
+        axisLine: {
+          lineStyle: {
+            color: "#d1d5db",
+          },
+        },
+        axisLabel: {
+          color: "#374151",
+          fontSize: 11,
+          fontWeight: 500,
+        },
+        axisTick: {
+          show: false,
+        },
+      },
+      series: [...currentSeries, ...peakSeries],
+      animation: false,
+    };
+  }, [chartData]);
 
   return (
-    <div ref={panelRef} className="h-full w-full relative">
-      <div className="absolute top-0 inset-x-0">Story Drift Ratio</div>
-      <svg width="100%" height="100%">
-        <g transform={`translate(${padding.left}, ${padding.top})`}>
-          {/* Y Axis (Height) */}
-          <line x1="0" y1="0" x2="0" y2={chartHeight} stroke="black" />
-          {Array.from({ length: 5 }).map((_, i) => {
-            const y = chartHeight - (i / 4) * chartHeight;
-            const height = (i / 4) * maxHeight;
-            return (
-              <g key={i}>
-                <line x1="-5" y1={y} x2="0" y2={y} stroke="black" />
-                <text x="-8" y={y + 3} textAnchor="end" fontSize="10">
-                  {height.toFixed(1)}in
-                </text>
-              </g>
-            );
-          })}
-
-          {/* X Axis (Drift Ratio) */}
-          <line x1="0" y1={chartHeight} x2={chartWidth} y2={chartHeight} stroke="black" />
-          {Array.from({ length: 5 }).map((_, i) => {
-            const x = (i / 4) * chartWidth;
-            const ratio = (i / 4) * maxRatio;
-            return (
-              <g key={i}>
-                <line x1={x} y1={chartHeight} x2={x} y2={chartHeight + 5} stroke="black" />
-                <text x={x} y={chartHeight + 15} textAnchor="middle" fontSize="10">
-                  {ratio.toFixed(3)}
-                </text>
-              </g>
-            );
-          })}
-          <text x={chartWidth / 2} y={size.height - padding.top} textAnchor="middle" fontSize="12">
-            Drift Ratio (in/in)
-          </text>
-
-          {/* Bars for each story and corner */}
-          {storyOrder.map((storyId) => {
-            const drift = storyDrift.get(storyId);
-            if (!drift) return null;
-
-            const elevation = storyElevations.get(storyId) || 0;
-
-            const barHeight = Math.max(0, chartHeight / storyOrder.length - 2);
-            const barY = chartHeight - (elevation / maxHeight) * chartHeight;
-            const barSpacing = barHeight / 4;
-
-            return (
-              <g key={storyId}>
-                {(["NW", "NE", "SW", "SE"] as const).map((corner, cornerIdx) => {
-                  const ratio = drift[corner](frameIndex);
-                  const barWidth = Math.max(0, (ratio / maxRatio) * chartWidth);
-                  const color = cornerColors[corner];
-                  const y = Math.max(0, barY + cornerIdx * barSpacing);
-
-                  return (
-                    <rect
-                      key={corner}
-                      x="0"
-                      y={y}
-                      width={barWidth}
-                      height={barSpacing - 1}
-                      fill={color}
-                      opacity={0.8}
-                    />
-                  );
-                })}
-              </g>
-            );
-          })}
-
-          {/* Legend */}
-          <g transform={`translate(${chartWidth + 10}, 0)`}>
-            <text x="0" y="0" fontSize="12" fontWeight="bold">
-              Corners
-            </text>
-            {(["NW", "NE", "SW", "SE"] as const).map((corner, i) => (
-              <g key={corner} transform={`translate(0, ${20 + i * 20})`}>
-                <rect x="0" y="-8" width="12" height="12" fill={cornerColors[corner]} />
-                <text x="18" y="3" fontSize="10">
-                  {corner}
-                </text>
-              </g>
-            ))}
-          </g>
-        </g>
-      </svg>
+    <div className="h-full w-full">
+      <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
     </div>
   );
 }

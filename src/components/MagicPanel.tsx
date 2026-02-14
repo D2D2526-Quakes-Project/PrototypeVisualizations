@@ -1,11 +1,7 @@
 import { InterstoryDriftChart } from "@/pages/View3d/InterstoryDriftChart";
 import { MainCanvasPanel } from "@/pages/View3d/MainCanvasPanel";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { SmallTimeline } from "./SmallTimeline";
 import { Timeline } from "./Timeline";
@@ -14,9 +10,9 @@ import { useState } from "react";
 
 const PanelCatalog = {
   Timeline: Timeline,
-  SmallTimeline: SmallTimeline,
-  InterstoryDriftChart: InterstoryDriftChart,
-  MainCanvas: MainCanvasPanel,
+  // SmallTimeline: SmallTimeline,
+  "Interstory Drift Chart": InterstoryDriftChart,
+  "Main Canvas": MainCanvasPanel,
 } as const;
 
 type PanelType = keyof typeof PanelCatalog;
@@ -85,63 +81,42 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
 
   return (
     <div className="flex z-10 justify-between w-full border-b-2 border-neutral-300 bg-neutral-200/80 backdrop-blur-sm px-2 py-1.5 items-center">
-      <select 
-        value={currentPanelType} 
+      <select
+        value={currentPanelType}
         onChange={handlePanelChange}
-        className="bg-transparent border border-neutral-400 rounded px-2 py-0.5 text-sm font-medium text-neutral-700 cursor-pointer hover:border-neutral-500 transition-colors outline-none focus:ring-1 focus:ring-neutral-400"
-      >
+        className="bg-transparent border-b border-neutral-400 px-2 py-0.5 text-sm font-medium text-neutral-700 cursor-pointer hover:border-neutral-500 transition-colors outline-none focus:ring-1 focus:ring-neutral-400">
         {Object.keys(PanelCatalog).map((panelType) => (
           <option key={panelType} value={panelType}>
             {panelType}
           </option>
         ))}
       </select>
-      
+
       <div className="flex items-center gap-0.5">
         <Button
           variant="ghost"
           size="icon-xs"
           onClick={handleSplitHorizontal}
-          title="Split horizontally (side by side)"
-        >
+          title="Split horizontally (side by side)">
           <Columns />
         </Button>
-        
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={handleSplitVertical}
-          title="Split vertically (stacked)"
-        >
+
+        <Button variant="ghost" size="icon-xs" onClick={handleSplitVertical} title="Split vertically (stacked)">
           <Columns className="rotate-90" />
         </Button>
-        
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={handleClose}
-          title="Close panel"
-        >
+
+        <Button variant="ghost" size="icon-xs" onClick={handleClose} title="Close panel">
           <X />
         </Button>
-        
+
         {isMaximized ? (
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={handleMinimize}
-            title="Restore"
-          >
+          <Button variant="ghost" size="icon-xs" onClick={handleMinimize} title="Restore">
             <Minimize2 />
           </Button>
         ) : (
           <Popover open={isMoreOpen} onOpenChange={setIsMoreOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                title="More options"
-              >
+              <Button variant="ghost" size="icon-xs" title="More options">
                 <MoreHorizontal />
               </Button>
             </PopoverTrigger>
@@ -154,8 +129,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
                   onClick={() => {
                     handleMaximize();
                     setIsMoreOpen(false);
-                  }}
-                >
+                  }}>
                   <Maximize2 className="mr-2 h-4 w-4" />
                   Maximize
                 </Button>
@@ -166,8 +140,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
                   onClick={() => {
                     handleSplitHorizontal();
                     setIsMoreOpen(false);
-                  }}
-                >
+                  }}>
                   <Columns className="mr-2 h-4 w-4" />
                   Split Right
                 </Button>
@@ -178,8 +151,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
                   onClick={() => {
                     handleSplitVertical();
                     setIsMoreOpen(false);
-                  }}
-                >
+                  }}>
                   <Columns className="mr-2 h-4 w-4 rotate-90" />
                   Split Down
                 </Button>

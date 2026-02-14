@@ -629,6 +629,8 @@ def process_building(building):
     # 3. Load Stories & Corners
     df_height = pd.read_csv(building["height"])
 
+    # Cumulative elevation from ground for each story (story level -> elevation in inches)
+    # This is the sum of all story heights from ground up to this story
     storiesElevations = {}
     for i, row in df_height.iterrows():
         story = row["Story level"]
@@ -708,6 +710,8 @@ def process_building(building):
         for corner, cornerData in storyCorners.items():
             corners[corner].append(cornerData["index"])
 
+    # Per-story height (story level -> height in inches)
+    # This is the height of each individual story, not cumulative
     storyHeights = {}
     for i, row in df_height.iterrows():
         story = row["Story level"]
@@ -717,7 +721,8 @@ def process_building(building):
     storyOrder.reverse()
     print(f"Story order: {storyOrder}")
 
-    # 4. Write
+    # 4. Write building binary file
+    # story_heights: per-story height in inches (not cumulative elevation)
     header = {"count_nodes": count_nodes, "stories": stories, "corners": corners, "story_heights": storyHeights, "story_order": storyOrder}
 
     write_bld_file("building.bld", header, buffer.tobytes(), building_output_dir)

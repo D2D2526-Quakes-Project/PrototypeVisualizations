@@ -108,5 +108,6 @@ createRoot(document.getElementById("root")!).render(
     <div className="h-screen flex flex-col bg-neutral-200">
       <RouterProvider router={router} />
     </div>
+    ,
   </StrictMode>,
 );

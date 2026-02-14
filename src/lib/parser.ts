@@ -237,28 +237,24 @@ function calculateStats(
   const radius = Math.sqrt(Math.pow(maxX - minX, 2) + Math.pow(maxY - minY, 2) + Math.pow(maxZ - minZ, 2)) / 2;
 
   // --- 2. STORY ELEVATIONS & HEIGHTS ---
+  // storyElevations: Cumulative elevation from ground for each story (in inches)
+  // Calculated by summing story heights from ground up, NOT from raw node Z positions
   const storyElevations: Record<string, number> = {};
+  // storyHeights: Height of each individual story (in inches) - use from metadata
   const storyHeights: Record<string, number> = {};
 
-  // Calculate average Z for each story
-  Object.entries(metadata.stories).forEach(([storyName, nodeIndices]) => {
-    if (nodeIndices.length === 0) return;
-
-    // Just grab the Z of the first node in the story (assuming flat floors)
-    // nodeIndices stores the node Index. Position index is nodeIndex * 3 + 2 (Z)
-    const firstNodeIdx = nodeIndices[0];
-    const zVal = positions[firstNodeIdx * 3 + 2];
-    storyElevations[storyName] = zVal;
+  // Use the per-story heights from metadata (which come from building_height.csv)
+  // These are the correct heights in inches
+  Object.entries(metadata.storyHeights).forEach(([storyName, height]) => {
+    storyHeights[storyName] = height;
   });
 
-  // Sort stories to calculate height diffs
-  const sortedStories = Object.entries(storyElevations).sort(([, zA], [, zB]) => zA - zB);
-
-  for (let i = 1; i < sortedStories.length; i++) {
-    const [upperName, upperZ] = sortedStories[i];
-    const [, lowerZ] = sortedStories[i - 1];
-    storyHeights[upperName] = upperZ - lowerZ;
-  }
+  // Calculate cumulative elevation by summing heights from ground (storyOrder is already bottom-up)
+  let cumulativeElevation = 0;
+  metadata.storyOrder.forEach((storyId) => {
+    storyElevations[storyId] = cumulativeElevation;
+    cumulativeElevation += storyHeights[storyId] || 0;
+  });
   // Base case for ground floor if needed, or handle generically
 
   // --- 3. SIMULATION MAXIMA (Vector Magnitude) ---
@@ -308,10 +304,9 @@ function calculateStats(
   };
 
   const cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
-  const cumulativeStoryElevations: Record<string, number> = {};
 
-  // Calculate cumulative elevations and corner nodes
-  metadata.storyOrder.forEach((storyId, index) => {
+  // Calculate corner nodes for each story
+  metadata.storyOrder.forEach((storyId) => {
     const nodeIndices = metadata.stories[storyId];
 
     // Find corner nodes for this story
@@ -322,15 +317,6 @@ function calculateStats(
       SE: nodeIndices.find((n) => cornerSets.SE.has(n))!,
     };
     cornerNodes[storyId] = corners;
-
-    // Calculate cumulative elevation (similar to hook lines 39-45)
-    if (index > 0) {
-      let elevation = metadata.storyHeights[storyId];
-      metadata.storyOrder.forEach((storyId2, index2) => {
-        if (index2 < index) elevation += metadata.storyHeights[storyId2];
-      });
-      cumulativeStoryElevations[storyId] = elevation;
-    }
   });
 
   // 5.2 Precompute all story drift values
@@ -344,7 +330,8 @@ function calculateStats(
     const storyId = metadata.storyOrder[storyIdx];
     const belowId = metadata.storyOrder[storyIdx - 1];
 
-    const height = cumulativeStoryElevations[storyId];
+    // storyHeights: height of this story only (in inches)
+    const storyHeight = metadata.storyHeights[storyId];
     const corners = cornerNodes[storyId];
     const belowCorners = cornerNodes[belowId];
 
@@ -364,7 +351,9 @@ function calculateStats(
         const currentMag = Math.hypot(dispLin[nodeOffset], dispLin[nodeOffset + 1], dispLin[nodeOffset + 2]);
         const belowMag = Math.hypot(dispLin[belowNodeOffset], dispLin[belowNodeOffset + 1], dispLin[belowNodeOffset + 2]);
 
-        const driftPercent = ((currentMag - belowMag) / height) * 100;
+        // Use absolute value to ensure positive drift (interstory drift is always a magnitude)
+        // storyHeight is in inches, drift is expressed as percentage
+        const driftPercent = (Math.abs(currentMag - belowMag) / storyHeight) * 100;
 
         // Store in Float32Array: [story][frame][corner]
         const arrayIndex = storyIdx * frameCount * cornerCount + frameIdx * cornerCount + cornerIdx;

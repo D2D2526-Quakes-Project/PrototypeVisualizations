@@ -100,9 +100,8 @@ export function ViewNodeGrid() {
 
       const currentAvg = avgDisps.get(storyId) || 0;
       const belowAvg = avgDisps.get(storyOrder[index - 1]) || 0;
-      const currentHeight = animationData.precomputed.storyElevations[storyId] || 0;
-      const belowHeight = animationData.precomputed.storyElevations[storyOrder[index - 1]] || 0;
-      const storyHeight = currentHeight - belowHeight;
+      // Use precomputed per-story height (in inches)
+      const storyHeight = animationData.precomputed.storyHeights[storyId] || 0;
 
       const drift = storyHeight > 0 ? Math.abs(currentAvg - belowAvg) / storyHeight : 0;
       drifts.set(storyId, drift);

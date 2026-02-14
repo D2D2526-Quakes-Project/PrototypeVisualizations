@@ -82,13 +82,15 @@ export const clearCache = async () => {
 export async function fetchWithProgressAndCache(
   url: string,
   onProgress?: (percent: number) => void,
-): Promise<ArrayBuffer> {
+  signal?: AbortSignal,
+): Promise<ArrayBuffer | undefined> {
   // A. Check Cache First
   const cached = await getFromCache(url);
   if (cached) {
     if (onProgress) onProgress(1.0); // 100% immediately
     return cached;
   }
+  if (signal?.aborted) return;
 
   // B. Perform Network Fetch
   const response = await fetch(url);
@@ -106,6 +108,7 @@ export async function fetchWithProgressAndCache(
     await saveToCache(url, buffer);
     return buffer;
   }
+  if (signal?.aborted) return;
 
   // C. Stream Reader for Progress
   const reader = response.body.getReader();
@@ -113,6 +116,7 @@ export async function fetchWithProgressAndCache(
   let receivedLength = 0;
 
   while (true) {
+    if (signal?.aborted) return;
     const { done, value } = await reader.read();
 
     if (done) {
@@ -138,6 +142,8 @@ export async function fetchWithProgressAndCache(
   }
 
   const finalBuffer = combined.buffer;
+
+  if (signal?.aborted) return;
 
   // E. Save to Cache for next time
   await saveToCache(url, finalBuffer);

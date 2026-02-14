@@ -54,7 +54,8 @@ export interface BuildingMetadata {
   count_nodes: number;
   stories: Record<string, number[]>; // Map "15" -> [nodeIndex, nodeIndex...]
   corners: Record<string, number[]>; // Map "NW" -> [nodeIndex, nodeIndex...]
-  story_heights: Record<string, number>; // Map "15" -> storyHeight
+  /** Height of each story (story id -> height in inches) */
+  story_heights: Record<string, number>; // Map "15" -> 156.0
   story_order: string[]; // Story order from bottom up
 }
 
@@ -74,6 +75,7 @@ export interface AnimationMetadata {
   nodeCount: number;
   frameCount: number;
   dt: number; // Time step (usually 0.01)
+  /** Height of each story (story id -> height in inches) */
   storyHeights: Record<string, number>;
   // Map from story id to a list of indices
   stories: Record<string, number[]>;
@@ -177,8 +179,10 @@ export interface ComputedStats {
   };
 
   // STRUCTURAL
+  /** Height of each story (story id -> height in inches) */
   storyHeights: Record<string, number>; // "15": 156.0 (inches)
-  storyElevations: Record<string, number>; // "15": 7194.0
+  /** Elevation of each story from ground (story id -> elevation in inches) */
+  storyElevations: Record<string, number>; // "15": 7194.0 (inches, cumulative from ground)
 
   // SIMULATION SCALARS
   maxDisplacement: number; // Max absolute drift (inches)

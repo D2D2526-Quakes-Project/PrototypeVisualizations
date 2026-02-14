@@ -1,6 +1,7 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useNodeSelection } from "@/contexts/NodeSelectionContext";
 import { UNIT_SCALE } from "@/lib/utils";
+import { Text } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { converter, interpolate } from "culori";
 import { useMemo, useRef, useState, useCallback } from "react";
@@ -153,6 +154,38 @@ export function BuildingScene() {
       {/* <axesHelper args={[75]} /> */}
 
       <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 20]} />
+
+      {/* Direction indicators */}
+      <Text position={[0, 116, 0]} fontSize={32} color="#eee" anchorX="center" anchorY="middle">
+        N
+      </Text>
+      <Text
+        position={[0, -116, 0]}
+        rotation={[0, 0, Math.PI]}
+        fontSize={32}
+        color="#eee"
+        anchorX="center"
+        anchorY="middle">
+        S
+      </Text>
+      <Text
+        position={[116, 0, 0]}
+        rotation={[0, 0, -Math.PI / 2]}
+        fontSize={32}
+        color="#eee"
+        anchorX="center"
+        anchorY="middle">
+        E
+      </Text>
+      <Text
+        position={[-116, 0, 0]}
+        rotation={[0, 0, Math.PI / 2]}
+        fontSize={32}
+        color="#eee"
+        anchorX="center"
+        anchorY="middle">
+        W
+      </Text>
     </>
   );
 }

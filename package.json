@@ -19,6 +19,7 @@
     "culori": "^4.0.2",
     "dockview": "^4.13.1",
     "dockview-react": "^4.13.1",
+    "echarts-for-react": "^3.0.6",
     "lucide-react": "^0.552.0",
     "motion": "^12.23.24",
     "radix-ui": "^1.4.3",

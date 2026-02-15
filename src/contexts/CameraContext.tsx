@@ -5,6 +5,7 @@ import * as THREE from "three";
 export interface CameraContextType {
   orbitControlsRef: React.RefObject<OrbitControlsImpl | null>;
   focusOnPosition: (position: [number, number, number]) => void;
+  setEnablePan: (enabled: boolean) => void;
 }
 
 const CameraContext = createContext<CameraContextType | undefined>(undefined);
@@ -12,7 +13,7 @@ const CameraContext = createContext<CameraContextType | undefined>(undefined);
 export function useCamera() {
   const context = useContext(CameraContext);
   if (!context) {
-    throw new Error("useCamera must be used within CameraProvider");
+    throw new Error("useCamera must be within CameraProvider");
   }
   return context;
 }
@@ -27,23 +28,25 @@ export function CameraProvider({ children }: { children: ReactNode }) {
     const camera = controls.object;
     const currentTarget = controls.target;
     
-    // Calculate the offset from current target to new target
     const offset = new THREE.Vector3(
       position[0] - currentTarget.x,
       position[1] - currentTarget.y,
       position[2] - currentTarget.z
     );
     
-    // Move camera by the same offset to maintain the same view angle
     camera.position.add(offset);
-    
-    // Set new target
     controls.target.set(position[0], position[1], position[2]);
     controls.update();
   }, []);
 
+  const setEnablePan = useCallback((enabled: boolean) => {
+    const controls = orbitControlsRef.current;
+    if (!controls) return;
+    controls.enablePan = enabled;
+  }, []);
+
   return (
-    <CameraContext.Provider value={{ orbitControlsRef, focusOnPosition }}>
+    <CameraContext.Provider value={{ orbitControlsRef, focusOnPosition, setEnablePan }}>
       {children}
     </CameraContext.Provider>
   );

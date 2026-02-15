@@ -1,14 +1,17 @@
 import { DockviewWrapper } from "@/components/dockviewWrapper";
 import { MagicPanel, MagicPanelTab } from "@/components/MagicPanel";
-import { NodePanel, NodeTab } from "@/components/NodePanel"; // Import your new panel
+import { NodePanel, NodeTab } from "@/components/NodePanel";
+import { SlicePanel } from "@/components/SlicePanel";
 import { CameraProvider } from "@/contexts/CameraContext";
 import { NodeSelectionProvider, useNodeSelection } from "@/contexts/NodeSelectionContext";
+import { useSliceSelection } from "@/contexts/visualization";
 import { DockviewApi, type DockviewReadyEvent } from "dockview";
+import { useState } from "react";
 
-// --- Components Map ---
 const components = {
-  nodePanel: NodePanel, // Register the node panel
+  nodePanel: NodePanel,
   magicPanel: MagicPanel,
+  slicePanel: SlicePanel,
 };
 
 const tabComponents = {
@@ -17,11 +20,13 @@ const tabComponents = {
 };
 
 export function View3d() {
+  const [, setDockApi] = useState<DockviewApi | null>(null);
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <NodeSelectionProvider>
         <CameraProvider>
-          <DockviewContainer />
+          <DockviewContainer setDockApi={setDockApi} />
         </CameraProvider>
       </NodeSelectionProvider>
     </div>
@@ -29,14 +34,14 @@ export function View3d() {
 }
 
 // Internal wrapper to access the NodeSelectionContext
-function DockviewContainer() {
+function DockviewContainer({ setDockApi }: { setDockApi: (api: DockviewApi) => void }) {
   const { setDockviewApi } = useNodeSelection();
+  const { setDockviewApi: setSliceDockviewApi } = useSliceSelection();
 
   const handleDockviewReady = (event: DockviewReadyEvent) => {
-    // 1. Give the API to our context so the 3D scene can use it
     setDockviewApi(event.api);
-
-    // 2. Create the default layout
+    setSliceDockviewApi(event.api);
+    setDockApi(event.api);
     createDefaultLayout(event.api);
   };
 

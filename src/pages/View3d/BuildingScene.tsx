@@ -42,9 +42,11 @@ export function BuildingScene() {
     addSelectedNodes,
   } = useNodeVisibility();
 
-  const offsetX = -animationData.precomputed.boundingBox.center[0];
-  const offsetY = -animationData.precomputed.boundingBox.center[1];
-  const offsetZ = -animationData.precomputed.boundingBox.min[2];
+  const offsets = useMemo(() => ({
+    x: -animationData.precomputed.boundingBox.center[0],
+    y: -animationData.precomputed.boundingBox.center[1],
+    z: -animationData.precomputed.boundingBox.min[2],
+  }), [animationData.precomputed.boundingBox]);
 
   const nodeCount = animationData.metadata.nodeCount;
 
@@ -149,7 +151,7 @@ export function BuildingScene() {
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
       };
-    }, [gl, camera, positions, visibleNodes, startBoxSelection, updateBoxSelection, setSelectedNodes, endBoxSelection]);
+    }, [gl, camera, visibleNodes, startBoxSelection, updateBoxSelection, setSelectedNodes, endBoxSelection]);
 
     return null;
   }
@@ -168,27 +170,20 @@ export function BuildingScene() {
   const [hovered, setHovered] = useState<number | undefined>(undefined);
   const pointerDownNodeId = useRef<number | undefined>(undefined);
 
-  const positions = useMemo(() => {
+  const basePositions = useMemo(() => {
     const positions = new Float32Array(visibleNodes.length * 3);
-
     for (let i = 0; i < visibleNodes.length; i++) {
       const nodeId = visibleNodes[i];
       const initialPos = animationData.initialPositions.at(nodeId);
-      const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-      const exploded = getExplodedPosition(
-        nodeId,
-        [initialPos[0], initialPos[1], initialPos[2]],
-        [displacement[0], displacement[1], displacement[2]],
-        [offsetX, offsetY, offsetZ],
-        animationData.metadata,
-      );
-      // Apply group offset and scale (same as renderer does)
-      positions[i * 3 + 0] = exploded[0];
-      positions[i * 3 + 1] = exploded[1];
-      positions[i * 3 + 2] = exploded[2];
+      positions[i * 3 + 0] = initialPos[0];
+      positions[i * 3 + 1] = initialPos[1];
+      positions[i * 3 + 2] = initialPos[2];
     }
     return positions;
-  }, [frameIndex, animationData, visibleNodes, getExplodedPosition, offsetX, offsetY, offsetZ]);
+  }, [visibleNodes, animationData.initialPositions]);
+
+  const frameIndexRef = useRef(frameIndex);
+  frameIndexRef.current = frameIndex;
 
   const handleNodeClick = useCallback(
     (event: { instanceId?: number; stopPropagation: () => void }) => {
@@ -201,19 +196,24 @@ export function BuildingScene() {
       const nodeId = visibleNodes[event.instanceId];
       if (nodeId === undefined) return;
 
-      // Get the world position of the clicked node
-      const worldPos = new THREE.Vector3(
-        positions[event.instanceId * 3 + 0],
-        positions[event.instanceId * 3 + 1],
-        positions[event.instanceId * 3 + 2],
+      // Compute displaced position on-demand
+      const initialPos = animationData.initialPositions.at(nodeId);
+      const displacement = animationData.displacementLin.atFrame(frameIndexRef.current).at(nodeId);
+      const exploded = getExplodedPosition(
+        nodeId,
+        [initialPos[0], initialPos[1], initialPos[2]],
+        [displacement[0], displacement[1], displacement[2]],
+        [offsets.x, offsets.y, offsets.z],
+        animationData.metadata,
       );
+      const worldPos = new THREE.Vector3(exploded[0], exploded[1], exploded[2]);
 
       // Convert world coordinates to screen coordinates
       const vector = worldPos.clone();
       vector.project(camera);
       selectNode(nodeId);
     },
-    [camera, selectNode, positions, visibleNodes],
+    [camera, selectNode, visibleNodes, animationData, getExplodedPosition, offsets],
   );
 
   const handleNodeContextMenu = useCallback(
@@ -243,18 +243,6 @@ export function BuildingScene() {
     pointerDownNodeId.current = event.instanceId;
   }, []);
 
-  const colors = useMemo(() => {
-    const colors = new Float32Array(visibleNodes.length * 3);
-    for (let i = 0; i < visibleNodes.length; i++) {
-      const nodeId = visibleNodes[i];
-      const color = getNodeColor(nodeId);
-      colors[i * 3 + 0] = color.r;
-      colors[i * 3 + 1] = color.g;
-      colors[i * 3 + 2] = color.b;
-    }
-    return colors;
-  }, [visibleNodes, getNodeColor]);
-
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
   // Build a Set of instance indices that are box-selected (for O(1) lookup)
@@ -274,8 +262,25 @@ export function BuildingScene() {
     const colorAttr = meshRef.current.geometry.attributes.color;
     if (!colorAttr) return;
 
+    const currentFrame = frameIndexRef.current;
+
     for (let i = 0; i < visibleNodes.length; i++) {
-      tempObject.position.set(positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2]);
+      const nodeId = visibleNodes[i];
+      
+      // Compute displaced position directly
+      const initX = basePositions[i * 3 + 0];
+      const initY = basePositions[i * 3 + 1];
+      const initZ = basePositions[i * 3 + 2];
+      const displacement = animationData.displacementLin.atFrame(currentFrame).at(nodeId);
+      const exploded = getExplodedPosition(
+        nodeId,
+        [initX, initY, initZ],
+        [displacement[0], displacement[1], displacement[2]],
+        [offsets.x, offsets.y, offsets.z],
+        animationData.metadata,
+      );
+
+      tempObject.position.set(exploded[0], exploded[1], exploded[2]);
 
       const scale = hovered === i ? 50 : 1 / UNIT_SCALE;
       tempObject.scale.set(scale, scale, scale);
@@ -283,16 +288,15 @@ export function BuildingScene() {
       tempObject.updateMatrix();
       meshRef.current.setMatrixAt(i, tempObject.matrix);
 
-      ///
-
-      if (i === hovered || boxSelectedIndices.has(i)) tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
-      // else tempColor.set(colors[i * 3 + 0], colors[i * 3 + 1], colors[i * 3 + 2]);
-      else tempColor.fromArray(colors, i * 3);
+      // Compute color directly in the loop
+      if (i === hovered || boxSelectedIndices.has(i)) {
+        tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
+      } else {
+        const color = getNodeColor(nodeId, currentFrame);
+        tempColor.setRGB(color.r, color.g, color.b);
+      }
 
       tempColor.toArray(colorAttr.array, i * 3);
-
-      // meshRef.current.setColorAt(i, tempColor);
-      // meshRef.current.geometry.attributes.color.needsUpdate = true;
     }
 
     meshRef.current.instanceMatrix.needsUpdate = true;
@@ -319,7 +323,7 @@ export function BuildingScene() {
       <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
 
       <group scale={UNIT_SCALE}>
-        <group position={[offsetX, offsetY, offsetZ]}>
+        <group position={[offsets.x, offsets.y, offsets.z]}>
           {/* Render based on view mode */}
           {mode === "floor-slabs" && <FloorSlabsRenderer nodeIds={visibleNodes} />}
 
@@ -337,7 +341,7 @@ export function BuildingScene() {
                 <sphereGeometry args={[1, 4, 2]}>
                   <instancedBufferAttribute
                     attach="attributes-color"
-                    args={[colors.slice(), 3]}
+                    args={[new Float32Array(visibleNodes.length * 3).fill(1), 3]}
                     usage={THREE.DynamicDrawUsage}
                   />
                 </sphereGeometry>
@@ -360,7 +364,7 @@ export function BuildingScene() {
               <sphereGeometry args={[1, 4, 2]}>
                 <instancedBufferAttribute
                   attach="attributes-color"
-                  args={[colors.slice(), 3]}
+                  args={[new Float32Array(visibleNodes.length * 3).fill(1), 3]}
                   usage={THREE.DynamicDrawUsage}
                 />
               </sphereGeometry>
@@ -392,19 +396,6 @@ export function BuildingScene() {
           </Points>
         </group>
       </group>
-
-      {/* <InSceneGraph frameIndex={frameIndex} scale={scale} displacementScale={displacementScale} /> */}
-
-      {/* <arrowHelper
-        args={[
-          new Vector3(...animationData.groundMotion.at(frameIndex)),
-          new Vector3(0, 0, 0),
-          Math.hypot(...animationData.groundMotion.at(frameIndex)) * 10000,
-          0xffff00,
-        ]}
-      /> */}
-
-      {/* <axesHelper args={[75]} /> */}
 
       <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 20]} />
 

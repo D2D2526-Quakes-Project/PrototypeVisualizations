@@ -35,7 +35,7 @@ export function PlaybackControls() {
 }
 
 export function SmallPlaybackControls() {
-  const { playing, handlePlayPause, skipToStart, skipToEnd } = usePlayback();
+  const { playing, handlePlayPause, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
 
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5 origin-right">
@@ -57,6 +57,18 @@ export function SmallPlaybackControls() {
         title="Skip to End">
         <SkipForwardIcon />
       </button>
+      {playing && (
+        <div className="flex items-center gap-1 pl-1 border-l border-neutral-300">
+          <span className="text-[10px] font-medium text-neutral-700" title="Frames per second">
+            {fps} fps
+          </span>
+          {skippedPerFrame > 0 && (
+            <span className="text-[10px] text-red-600" title="Frames skipped this update">
+              +{skippedPerFrame}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

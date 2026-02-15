@@ -2,8 +2,8 @@ import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
 import { InfoIcon, XIcon } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import { useMemo } from "react";
+import { motion } from "motion/react";
+import { useMemo, useRef } from "react";
 import { Vector3 } from "three";
 import { MiniRibbon } from "./MiniRibbon";
 
@@ -39,10 +39,20 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   const nodeId = props.params.nodeId;
 
+  const frameIndexRef = useRef(frameIndex);
+  frameIndexRef.current = frameIndex;
+
   const initialPos = animationData.initialPositions.at(nodeId);
   const currentDisp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-  const currentPos = [initialPos[0] + currentDisp[0], initialPos[1] + currentDisp[1], initialPos[2] + currentDisp[2]];
-  const displacementMag = Math.hypot(currentDisp[0], currentDisp[1], currentDisp[2]);
+  
+  const currentPos = useMemo(() => 
+    [initialPos[0] + currentDisp[0], initialPos[1] + currentDisp[1], initialPos[2] + currentDisp[2]] as const,
+    [initialPos, currentDisp]
+  );
+  const displacementMag = useMemo(() => 
+    Math.hypot(currentDisp[0], currentDisp[1], currentDisp[2]),
+    [currentDisp]
+  );
 
   // RIBBONS AND PATHS
   const ribbonPath = useMemo(() => {
@@ -374,14 +384,9 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   return (
     <div className="h-full w-full flex flex-col bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl overflow-hidden">
-      <AnimatePresence>
-        <motion.div
-          className="p-3 space-y-3 text-xs flex-1 overflow-y-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}>
+        <div className="p-3 space-y-3 text-xs flex-1 overflow-y-auto animate-fade-in">
           {/* LOCATION INFO */}
-          <motion.div custom={0} variants={sectionVariants} initial="hidden" animate="visible">
+          <div className="border-t pt-2">
             <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Location</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -401,15 +406,10 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                 <div className="text-neutral-600">{(storyInfo.height / 12).toFixed(1)} ft</div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* POSITION */}
-          <motion.div
-            custom={1}
-            variants={sectionVariants}
-            initial="hidden"
-            animate="visible"
-            className="border-t pt-2">
+          <div className="border-t pt-2">
             <h3 className="font-bold text-sm mb-2">Position (in)</h3>
             <div className="grid grid-cols-3 gap-2">
               <div>
@@ -425,10 +425,10 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                 <div className="text-neutral-600 font-mono">{currentPos[2].toFixed(3)}</div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* DISPLACEMENT */}
-          <motion.div
+          <div
             custom={2}
             variants={sectionVariants}
             initial="hidden"
@@ -483,11 +483,11 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                 </span>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* ROTATION */}
           {animationData.displacementRot && (
-            <motion.div
+            <div
               custom={3}
               variants={sectionVariants}
               initial="hidden"
@@ -532,12 +532,12 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* VELOCITY */}
           {animationData.velocityLin && (
-            <motion.div
+            <div
               custom={4}
               variants={sectionVariants}
               initial="hidden"
@@ -580,12 +580,12 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                   {peakVelocity.zTime.toFixed(2)}s
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* ACCELERATION */}
           {animationData.accelerationLin && (
-            <motion.div
+            <div
               custom={5}
               variants={sectionVariants}
               initial="hidden"
@@ -627,12 +627,12 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                   <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.zTime.toFixed(2)}s</span>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* STORY DRIFT */}
           {storyDrift && (
-            <motion.div
+            <div
               custom={6}
               variants={sectionVariants}
               initial="hidden"
@@ -649,11 +649,11 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
                   <div className="text-neutral-600 font-mono">{storyDrift.peak.toFixed(4)}%</div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* CUMULATIVE STATS */}
-          <motion.div
+          <div
             custom={7}
             variants={sectionVariants}
             initial="hidden"
@@ -661,10 +661,10 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
             className="border-t pt-2">
             <h3 className="font-bold text-sm mb-2">Total Distance Traveled</h3>
             <div className="text-neutral-600 font-mono">{totalDistanceTraveled.toFixed(3)}"</div>
-          </motion.div>
+          </div>
 
           {/* RIBBONS */}
-          <motion.div
+          <div
             custom={8}
             variants={sectionVariants}
             initial="hidden"
@@ -675,7 +675,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
             <div className="text-neutral-400 text-[10px] italic flex gap-1">
               <InfoIcon className="size-3" /> Number of points reduced for performance
             </div>
-          </motion.div>
+          </div>
 
           <div>
             {!animationData.displacementRot && (
@@ -688,8 +688,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
               <div className="text-neutral-400 text-[10px] italic">Accelerations not loaded</div>
             )}
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
     </div>
   );
 }

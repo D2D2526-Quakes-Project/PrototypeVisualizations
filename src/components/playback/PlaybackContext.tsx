@@ -8,6 +8,8 @@ export type PlaybackControlParams = {
   handlePlayPause: () => void;
   skipToStart: () => void;
   skipToEnd: () => void;
+  fps: number;
+  skippedPerFrame: number;
 };
 
 const PlaybackContext = createContext<PlaybackControlParams | undefined>(undefined);
@@ -19,11 +21,18 @@ export const PlaybackProvider = ({ children }: { children: ReactNode }) => {
 
   const [frameIndex, setFrameIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [fps, setFps] = useState(0);
+  const [skippedPerFrame, setSkippedPerFrame] = useState(0);
 
   const requestedAnimationFrameRef = useRef<number | null>(null);
   const lastDisplayedFrameTimeRef = useRef<number>(0);
   const playbackStartFrameRef = useRef<number>(0);
   const playbackStartTimeRef = useRef<number>(0);
+  
+  const frameCountRef = useRef(0);
+  const lastFpsUpdateRef = useRef(0);
+  const lastFrameIndexRef = useRef(0);
+  const expectedFrameRef = useRef(0);
 
   const resetPlaybackRefs = useCallback((newFrame: number) => {
     lastDisplayedFrameTimeRef.current = 0;
@@ -76,6 +85,10 @@ export const PlaybackProvider = ({ children }: { children: ReactNode }) => {
     const animate = (currentTime: number) => {
       if (lastDisplayedFrameTimeRef.current === 0) {
         lastDisplayedFrameTimeRef.current = currentTime;
+        frameCountRef.current = 0;
+        lastFpsUpdateRef.current = currentTime;
+        lastFrameIndexRef.current = frameIndex;
+        expectedFrameRef.current = frameIndex;
       }
 
       const deltaTime = currentTime - lastDisplayedFrameTimeRef.current;
@@ -86,6 +99,16 @@ export const PlaybackProvider = ({ children }: { children: ReactNode }) => {
           playbackStartFrameRef.current + ((currentTime - playbackStartTimeRef.current) / 1000) * frameRate;
         const newFrameIndex = Math.round(expectedFrame);
 
+        // Track skipped frames per update (how many frames we jumped)
+        const framesSkipped = newFrameIndex - expectedFrameRef.current;
+        if (framesSkipped > 0) {
+          setSkippedPerFrame(framesSkipped);
+        } else {
+          setSkippedPerFrame(0);
+        }
+        expectedFrameRef.current = newFrameIndex;
+        lastFrameIndexRef.current = newFrameIndex;
+
         if (newFrameIndex >= 0 && newFrameIndex < totalFrames) {
           setFrameIndex(newFrameIndex);
         } else {
@@ -93,6 +116,16 @@ export const PlaybackProvider = ({ children }: { children: ReactNode }) => {
           setPlaying(false);
         }
         lastDisplayedFrameTimeRef.current = currentTime;
+
+        // Update FPS every 500ms
+        frameCountRef.current++;
+        if (currentTime - lastFpsUpdateRef.current >= 500) {
+          const elapsed = currentTime - lastFpsUpdateRef.current;
+          const currentFps = (frameCountRef.current / elapsed) * 1000;
+          setFps(Math.round(currentFps));
+          frameCountRef.current = 0;
+          lastFpsUpdateRef.current = currentTime;
+        }
       }
 
       requestedAnimationFrameRef.current = requestAnimationFrame(animate);
@@ -105,7 +138,7 @@ export const PlaybackProvider = ({ children }: { children: ReactNode }) => {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
     };
-  }, [playing, totalFrames, frameRate]);
+  }, [playing, totalFrames, frameRate, frameIndex]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -134,6 +167,8 @@ export const PlaybackProvider = ({ children }: { children: ReactNode }) => {
     handlePlayPause,
     skipToStart,
     skipToEnd,
+    fps,
+    skippedPerFrame,
   };
 
   return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;

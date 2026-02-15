@@ -13,10 +13,11 @@ export function FloorSlabsRenderer({ nodeIds }: FloorSlabsRendererProps) {
   const { frameIndex } = usePlayback();
   const { getExplodedPosition } = useExplodedView();
 
-  const offsetX = -animationData.precomputed.boundingBox.center[0];
-  const offsetY = -animationData.precomputed.boundingBox.center[1];
-  const offsetZ = -animationData.precomputed.boundingBox.min[2];
-  const offset: [number, number, number] = [offsetX, offsetY, offsetZ];
+  const offset = useMemo((): [number, number, number] => [
+    -animationData.precomputed.boundingBox.center[0],
+    -animationData.precomputed.boundingBox.center[1],
+    -animationData.precomputed.boundingBox.min[2],
+  ], [animationData.precomputed.boundingBox]);
 
   const stories = useMemo(() => {
     const storyMap = new Map<string, number[]>();
@@ -107,7 +108,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }
     geom.translate(0, 0, avgZ);
 
     // Average color of all nodes
-    const colors = nodeIds.map(nid => getNodeColor(nid));
+    const colors = nodeIds.map(nid => getNodeColor(nid, frameIndex));
     const avgColor = new THREE.Color(
       colors.reduce((s, c) => s + c.r, 0) / colors.length,
       colors.reduce((s, c) => s + c.g, 0) / colors.length,

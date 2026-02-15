@@ -13,10 +13,11 @@ export function VerticalConnectionsRenderer({ nodeIds }: VerticalConnectionsRend
   const { frameIndex } = usePlayback();
   const { getExplodedPosition } = useExplodedView();
 
-  const offsetX = -animationData.precomputed.boundingBox.center[0];
-  const offsetY = -animationData.precomputed.boundingBox.center[1];
-  const offsetZ = -animationData.precomputed.boundingBox.min[2];
-  const offset: [number, number, number] = [offsetX, offsetY, offsetZ];
+  const offset = useMemo((): [number, number, number] => [
+    -animationData.precomputed.boundingBox.center[0],
+    -animationData.precomputed.boundingBox.center[1],
+    -animationData.precomputed.boundingBox.min[2],
+  ], [animationData.precomputed.boundingBox]);
 
   const connections = useMemo(() => {
     const nodePositions = new Map<string, number[]>();

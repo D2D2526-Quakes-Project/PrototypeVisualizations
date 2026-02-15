@@ -1,13 +1,12 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useAnimationData } from '@/hooks/nodeDataHook';
-import { usePlayback } from '@/components/playback/PlaybackContext';
 import { COLOR_SCALES, type ColorMetric, createInterpolator, interpolateColor } from '@/lib/colors';
 import * as THREE from 'three';
 
 interface ColorContextType {
   currentMetric: ColorMetric;
   setColorMetric: (metric: ColorMetric) => void;
-  getNodeColor: (nodeId: number) => THREE.Color;
+  getNodeColor: (nodeId: number, frameIndex: number) => THREE.Color;
   getColorScale: () => typeof COLOR_SCALES[ColorMetric];
   isMetricAvailable: (metric: ColorMetric) => boolean;
   availableMetrics: ColorMetric[];
@@ -25,7 +24,6 @@ export function useColor() {
 
 export function ColorProvider({ children }: { children: ReactNode }) {
   const { animationData } = useAnimationData();
-  const { frameIndex } = usePlayback();
   const [currentMetric, setCurrentMetric] = useState<ColorMetric>('displacement');
 
   const interpolator = useMemo(() => {
@@ -69,7 +67,7 @@ export function ColorProvider({ children }: { children: ReactNode }) {
     return maxValues[metric];
   }, [animationData.precomputed, maxValues]);
 
-  const getNodeColor = useCallback((nodeId: number): THREE.Color => {
+  const getNodeColor = useCallback((nodeId: number, frameIndex: number): THREE.Color => {
     const maxValue = getMaxValue(currentMetric);
     if (maxValue === 0) return new THREE.Color(1, 0, 0);
 
@@ -169,7 +167,7 @@ export function ColorProvider({ children }: { children: ReactNode }) {
     const normalizedValue = Math.min(value / maxValue, 1);
     const rgbColor = interpolateColor(interpolator, normalizedValue);
     return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);
-  }, [animationData, frameIndex, currentMetric, getMaxValue, interpolator]);
+  }, [animationData, currentMetric, getMaxValue, interpolator]);
 
   const isMetricAvailable = useCallback((metric: ColorMetric): boolean => {
     if (metric === 'displacement' || 

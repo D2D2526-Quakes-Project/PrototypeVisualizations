@@ -32,8 +32,15 @@ export function BuildingScene() {
   const { openSlicePanel, sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
   const { camera } = useThree();
   const { setEnablePan } = useCamera();
-  const { selectedNodeIds, boxSelection, startBoxSelection, updateBoxSelection, endBoxSelection, setSelectedNodes } =
-    useNodeVisibility();
+  const {
+    selectedNodeIds,
+    boxSelection,
+    startBoxSelection,
+    updateBoxSelection,
+    endBoxSelection,
+    setSelectedNodes,
+    addSelectedNodes,
+  } = useNodeVisibility();
 
   const offsetX = -animationData.precomputed.boundingBox.center[0];
   const offsetY = -animationData.precomputed.boundingBox.center[1];
@@ -84,6 +91,7 @@ export function BuildingScene() {
   }, [setEnablePan]);
   // Ref to track mouse state for box selection
   const isMouseDownRef = useRef(false);
+  const shiftHeldRef = useRef(false);
 
   // Component to attach mouse handlers to the canvas element
   function BoxSelectionHandler() {
@@ -100,6 +108,7 @@ export function BuildingScene() {
 
       const handleMouseDown = (e: MouseEvent) => {
         if (e.ctrlKey || e.metaKey) {
+          shiftHeldRef.current = e.shiftKey;
           const rect = domElement.getBoundingClientRect();
           const x = (e.clientX - rect.left) / rect.width;
           const y = (e.clientY - rect.top) / rect.height;
@@ -121,7 +130,11 @@ export function BuildingScene() {
         // Process selection if we were dragging (regardless of whether Ctrl is still held)
         if (isMouseDownRef.current && boxSelectionRef.current) {
           const selected = performBoxSelection(camera, meshRef, boxSelectionRef.current, visibleNodes);
-          setSelectedNodes(new Set(selected));
+          if (shiftHeldRef.current) {
+            addSelectedNodes(selected);
+          } else {
+            setSelectedNodes(new Set(selected));
+          }
           endBoxSelection();
         }
         isMouseDownRef.current = false;

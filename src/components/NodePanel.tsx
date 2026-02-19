@@ -2,8 +2,7 @@ import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
 import { InfoIcon, XIcon } from "lucide-react";
-import { motion } from "motion/react";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { Vector3 } from "three";
 import { MiniRibbon } from "./MiniRibbon";
 
@@ -20,38 +19,28 @@ export function getNodeColorLight(nodeId: number): string {
   return `hsl(${hue}, 70%, 90%)`;
 }
 
-const sectionVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.05,
-      duration: 0.3,
-      ease: [0.25, 0.46, 0.45, 0.94] as const,
-    },
-  }),
-};
-
 export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
 
   const nodeId = props.params.nodeId;
 
-  const frameIndexRef = useRef(frameIndex);
-  frameIndexRef.current = frameIndex;
+  const initialPosRaw = animationData.initialPositions.at(nodeId);
+  const currentDispRaw = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
 
-  const initialPos = animationData.initialPositions.at(nodeId);
-  const currentDisp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-  
-  const currentPos = useMemo(() => 
-    [initialPos[0] + currentDisp[0], initialPos[1] + currentDisp[1], initialPos[2] + currentDisp[2]] as const,
-    [initialPos, currentDisp]
+  const currentPos = useMemo(
+    () =>
+      [
+        initialPosRaw[0] + currentDispRaw[0],
+        initialPosRaw[1] + currentDispRaw[1],
+        initialPosRaw[2] + currentDispRaw[2],
+      ] as const,
+    [initialPosRaw, currentDispRaw],
   );
-  const displacementMag = useMemo(() => 
-    Math.hypot(currentDisp[0], currentDisp[1], currentDisp[2]),
-    [currentDisp]
+
+  const displacementMag = useMemo(
+    () => Math.hypot(currentDispRaw[0], currentDispRaw[1], currentDispRaw[2]),
+    [currentDispRaw],
   );
 
   // RIBBONS AND PATHS
@@ -384,311 +373,276 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
 
   return (
     <div className="h-full w-full flex flex-col bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl overflow-hidden">
-        <div className="p-3 space-y-3 text-xs flex-1 overflow-y-auto animate-fade-in">
-          {/* LOCATION INFO */}
-          <div className="border-t pt-2">
-            <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Location</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="font-medium text-neutral-700">Story ID:</span>
-                <div className="text-neutral-600 font-mono">{storyInfo.story}</div>
-              </div>
-              <div>
-                <span className="font-medium text-neutral-700">Corner:</span>
-                <div className="text-neutral-600">{cornerInfo}</div>
-              </div>
-              <div>
-                <span className="font-medium text-neutral-700">Elevation:</span>
-                <div className="text-neutral-600">{(storyInfo.elevation / 12).toFixed(1)} ft</div>
-              </div>
-              <div>
-                <span className="font-medium text-neutral-700">Story Height:</span>
-                <div className="text-neutral-600">{(storyInfo.height / 12).toFixed(1)} ft</div>
+      <div className="p-3 space-y-3 text-xs flex-1 overflow-y-auto">
+        {/* LOCATION INFO */}
+        <div className="border-t pt-2 animate-fade-in">
+          <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Location</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="font-medium text-neutral-700">Story ID:</span>
+              <div className="text-neutral-600 font-mono">{storyInfo.story}</div>
+            </div>
+            <div>
+              <span className="font-medium text-neutral-700">Corner:</span>
+              <div className="text-neutral-600">{cornerInfo}</div>
+            </div>
+            <div>
+              <span className="font-medium text-neutral-700">Elevation:</span>
+              <div className="text-neutral-600">{(storyInfo.elevation / 12).toFixed(1)} ft</div>
+            </div>
+            <div>
+              <span className="font-medium text-neutral-700">Story Height:</span>
+              <div className="text-neutral-600">{(storyInfo.height / 12).toFixed(1)} ft</div>
+            </div>
+          </div>
+        </div>
+
+        {/* POSITION */}
+        <div className="border-t pt-2 animate-fade-in">
+          <h3 className="font-bold text-sm mb-2">Position (in)</h3>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <span className="font-medium text-neutral-700">X:</span>
+              <div className="text-neutral-600 font-mono">{currentPos[0].toFixed(3)}</div>
+            </div>
+            <div>
+              <span className="font-medium text-neutral-700">Y:</span>
+              <div className="text-neutral-600 font-mono">{currentPos[1].toFixed(3)}</div>
+            </div>
+            <div>
+              <span className="font-medium text-neutral-700">Z:</span>
+              <div className="text-neutral-600 font-mono">{currentPos[2].toFixed(3)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* DISPLACEMENT */}
+        <div className="border-t pt-2 animate-fade-in">
+          <h3 className="font-bold text-sm mb-2">Displacement (in)</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="font-medium text-neutral-700">Current Total:</span>
+              <div className="text-neutral-600 font-mono">{displacementMag.toFixed(3)}"</div>
+            </div>
+            <div>
+              <span className="font-medium text-neutral-700">Peak Total:</span>
+              <div className="text-neutral-600 font-mono">
+                {peakDisplacement.magnitude.toFixed(3)}"
+                <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.time.toFixed(2)}s</span>
               </div>
             </div>
           </div>
-
-          {/* POSITION */}
-          <div className="border-t pt-2">
-            <h3 className="font-bold text-sm mb-2">Position (in)</h3>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <span className="font-medium text-neutral-700">X:</span>
-                <div className="text-neutral-600 font-mono">{currentPos[0].toFixed(3)}</div>
-              </div>
-              <div>
-                <span className="font-medium text-neutral-700">Y:</span>
-                <div className="text-neutral-600 font-mono">{currentPos[1].toFixed(3)}</div>
-              </div>
-              <div>
-                <span className="font-medium text-neutral-700">Z:</span>
-                <div className="text-neutral-600 font-mono">{currentPos[2].toFixed(3)}</div>
-              </div>
+          <div className="mt-2 space-y-1">
+            <div className="grid grid-cols-2 gap-1">
+              <span className="text-neutral-600">Current X:</span>
+              <span className="font-mono text-neutral-800">{currentDispRaw[0].toFixed(3)}"</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <span className="text-neutral-600">Peak X:</span>
+              <span className="font-mono text-neutral-800">
+                {peakDisplacement.x.toFixed(3)}"
+                <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.xTime.toFixed(2)}s</span>
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <span className="text-neutral-600">Current Y:</span>
+              <span className="font-mono text-neutral-800">{currentDispRaw[1].toFixed(3)}"</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <span className="text-neutral-600">Peak Y:</span>
+              <span className="font-mono text-neutral-800">
+                {peakDisplacement.y.toFixed(3)}"
+                <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.yTime.toFixed(2)}s</span>
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <span className="text-neutral-600">Current Z:</span>
+              <span className="font-mono text-neutral-800">{currentDispRaw[2].toFixed(3)}"</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <span className="text-neutral-600">Peak Z:</span>
+              <span className="font-mono text-neutral-800">
+                {peakDisplacement.z.toFixed(3)}"
+                <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.zTime.toFixed(2)}s</span>
+              </span>
             </div>
           </div>
+        </div>
 
-          {/* DISPLACEMENT */}
-          <div
-            custom={2}
-            variants={sectionVariants}
-            initial="hidden"
-            animate="visible"
-            className="border-t pt-2">
-            <h3 className="font-bold text-sm mb-2">Displacement (in)</h3>
+        {/* ROTATION */}
+        {animationData.displacementRot && (
+          <div className="border-t pt-2 animate-fade-in">
+            <h3 className="font-bold text-sm mb-2">Rotation (rad)</h3>
+
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current Total:</span>
-                <div className="text-neutral-600 font-mono">{displacementMag.toFixed(3)}"</div>
+                <div className="text-neutral-600 font-mono">{currentRotation.magnitude.toFixed(4)}</div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Peak Total:</span>
-                <div className="text-neutral-600 font-mono">
-                  {peakDisplacement.magnitude.toFixed(3)}"
-                  <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.time.toFixed(2)}s</span>
-                </div>
+                <div className="text-neutral-600 font-mono">{peakRotation.magnitude.toFixed(4)}</div>
+                <div className="text-neutral-500 text-[9px]"> @ {peakRotation.time.toFixed(2)}s</div>
               </div>
             </div>
-            <div className="mt-2 space-y-1">
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current X:</span>
-                <span className="font-mono text-neutral-800">{currentDisp[0].toFixed(3)}"</span>
+            <div className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
+              <div>
+                <div className="text-neutral-600">Rx:</div>
+                <div className="font-mono">{currentRotation.rx.toFixed(4)}</div>
+                <div className="font-mono text-neutral-500">
+                  ({peakRotation.rx.toFixed(4)}
+                  <span className="text-neutral-500 text-[9px]"> @ {peakRotation.rxTime.toFixed(2)}s)</span>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak X:</span>
-                <span className="font-mono text-neutral-800">
-                  {peakDisplacement.x.toFixed(3)}"
-                  <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.xTime.toFixed(2)}s</span>
-                </span>
+              <div>
+                <div className="text-neutral-600">Ry:</div>
+                <div className="font-mono">{currentRotation.ry.toFixed(4)}</div>
+                <div className="font-mono text-neutral-500">
+                  ({peakRotation.ry.toFixed(4)}
+                  <span className="text-neutral-500 text-[9px]"> @ {peakRotation.ryTime.toFixed(2)}s)</span>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current Y:</span>
-                <span className="font-mono text-neutral-800">{currentDisp[1].toFixed(3)}"</span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak Y:</span>
-                <span className="font-mono text-neutral-800">
-                  {peakDisplacement.y.toFixed(3)}"
-                  <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.yTime.toFixed(2)}s</span>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current Z:</span>
-                <span className="font-mono text-neutral-800">{currentDisp[2].toFixed(3)}"</span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak Z:</span>
-                <span className="font-mono text-neutral-800">
-                  {peakDisplacement.z.toFixed(3)}"
-                  <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.zTime.toFixed(2)}s</span>
-                </span>
+              <div>
+                <div className="text-neutral-600">Rz:</div>
+                <div className="font-mono">{currentRotation.rz.toFixed(4)}</div>
+                <div className="font-mono text-neutral-500">
+                  ({peakRotation.rz.toFixed(4)}
+                  <span className="text-neutral-500 text-[9px]"> @ {peakRotation.rzTime.toFixed(2)}s)</span>
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          {/* ROTATION */}
-          {animationData.displacementRot && (
-            <div
-              custom={3}
-              variants={sectionVariants}
-              initial="hidden"
-              animate="visible"
-              className="border-t pt-2">
-              <h3 className="font-bold text-sm mb-2">Rotation (rad)</h3>
+        {/* VELOCITY */}
+        {animationData.velocityLin && (
+          <div className="border-t pt-2 animate-fade-in">
+            <h3 className="font-bold text-sm mb-2">Velocity (in/s)</h3>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="font-medium text-neutral-700">Current Total:</span>
-                  <div className="text-neutral-600 font-mono">{currentRotation.magnitude.toFixed(4)}</div>
-                </div>
-                <div>
-                  <span className="font-medium text-neutral-700">Peak Total:</span>
-                  <div className="text-neutral-600 font-mono">{peakRotation.magnitude.toFixed(4)}</div>
-                  <div className="text-neutral-500 text-[9px]"> @ {peakRotation.time.toFixed(2)}s</div>
-                </div>
-              </div>
-              <div className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
-                <div>
-                  <div className="text-neutral-600">Rx:</div>
-                  <div className="font-mono">{currentRotation.rx.toFixed(4)}</div>
-                  <div className="font-mono text-neutral-500">
-                    ({peakRotation.rx.toFixed(4)}
-                    <span className="text-neutral-500 text-[9px]"> @ {peakRotation.rxTime.toFixed(2)}s)</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-neutral-600">Ry:</div>
-                  <div className="font-mono">{currentRotation.ry.toFixed(4)}</div>
-                  <div className="font-mono text-neutral-500">
-                    ({peakRotation.ry.toFixed(4)}
-                    <span className="text-neutral-500 text-[9px]"> @ {peakRotation.ryTime.toFixed(2)}s)</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-neutral-600">Rz:</div>
-                  <div className="font-mono">{currentRotation.rz.toFixed(4)}</div>
-                  <div className="font-mono text-neutral-500">
-                    ({peakRotation.rz.toFixed(4)}
-                    <span className="text-neutral-500 text-[9px]"> @ {peakRotation.rzTime.toFixed(2)}s)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VELOCITY */}
-          {animationData.velocityLin && (
-            <div
-              custom={4}
-              variants={sectionVariants}
-              initial="hidden"
-              animate="visible"
-              className="border-t pt-2">
-              <h3 className="font-bold text-sm mb-2">Velocity (in/s)</h3>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="font-medium text-neutral-700">Current:</span>
-                  <div className="text-neutral-600 font-mono">{currentVelocity!.magnitude.toFixed(3)}</div>
-                </div>
-                {peakVelocity && (
-                  <div>
-                    <span className="font-medium text-neutral-700">Peak:</span>
-                    <div className="text-neutral-600 font-mono">{peakVelocity.magnitude.toFixed(3)}</div>
-                    <div className="text-neutral-500 text-[9px]"> @ {peakVelocity.time.toFixed(2)}s</div>
-                  </div>
-                )}
-              </div>
-              <div className="mt-1 grid grid-cols-3 gap-1 text-[10px]">
-                <div>
-                  X: <span className="font-mono">{currentVelocity!.x.toFixed(3)}</span>
-                </div>
-                <div>
-                  Y: <span className="font-mono">{currentVelocity!.y.toFixed(3)}</span>
-                </div>
-                <div>
-                  Z: <span className="font-mono">{currentVelocity!.z.toFixed(3)}</span>
-                </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="font-medium text-neutral-700">Current:</span>
+                <div className="text-neutral-600 font-mono">{currentVelocity!.magnitude.toFixed(3)}</div>
               </div>
               {peakVelocity && (
-                <div className="mt-1 text-[9px] text-neutral-500">
-                  Peak: X: {peakVelocity.x.toFixed(3)}
-                  <span className="text-neutral-500 text-[9px]"> @ {peakVelocity.xTime.toFixed(2)}s, Y: </span>
-                  {peakVelocity.y.toFixed(3)}
-                  <span className="text-neutral-500 text-[9px]">
-                    @ {peakVelocity.yTime.toFixed(2)}s, Z: {peakVelocity.z.toFixed(3)} @{" "}
-                  </span>
-                  {peakVelocity.zTime.toFixed(2)}s
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ACCELERATION */}
-          {animationData.accelerationLin && (
-            <div
-              custom={5}
-              variants={sectionVariants}
-              initial="hidden"
-              animate="visible"
-              className="border-t pt-2">
-              <h3 className="font-bold text-sm mb-2">Acceleration (in/s²)</h3>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="font-medium text-neutral-700">Current:</span>
-                  <div className="text-neutral-600 font-mono">{currentAcceleration!.magnitude.toFixed(3)}</div>
-                </div>
-                {peakAcceleration && (
-                  <div>
-                    <span className="font-medium text-neutral-700">Peak:</span>
-                    <div className="text-neutral-600 font-mono">{peakAcceleration.magnitude.toFixed(3)}</div>
-                    <div className="text-neutral-500 text-[9px]"> @ {peakAcceleration.time.toFixed(2)}s</div>
-                  </div>
-                )}
-              </div>
-              <div className="mt-1 grid grid-cols-3 gap-1 text-[10px]">
-                <div>
-                  X: <span className="font-mono">{currentAcceleration!.x.toFixed(3)}</span>
-                </div>
-                <div>
-                  Y: <span className="font-mono">{currentAcceleration!.y.toFixed(3)}</span>
-                </div>
-                <div>
-                  Z: <span className="font-mono">{currentAcceleration!.z.toFixed(3)}</span>
-                </div>
-              </div>
-              {peakAcceleration && (
-                <div className="mt-1 text-[9px] text-neutral-500">
-                  Peak: X: {peakAcceleration.x.toFixed(3)}
-                  <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.xTime.toFixed(2)}s, Y: </span>
-                  {peakAcceleration.y.toFixed(3)}
-                  <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.yTime.toFixed(2)}s, Z: </span>
-                  {peakAcceleration.z.toFixed(3)}
-                  <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.zTime.toFixed(2)}s</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* STORY DRIFT */}
-          {storyDrift && (
-            <div
-              custom={6}
-              variants={sectionVariants}
-              initial="hidden"
-              animate="visible"
-              className="border-t pt-2">
-              <h3 className="font-bold text-sm mb-2">Story Drift Ratio (%)</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="font-medium text-neutral-700">Current:</span>
-                  <div className="text-neutral-600 font-mono">{storyDrift.current.toFixed(4)}%</div>
-                </div>
                 <div>
                   <span className="font-medium text-neutral-700">Peak:</span>
-                  <div className="text-neutral-600 font-mono">{storyDrift.peak.toFixed(4)}%</div>
+                  <div className="text-neutral-600 font-mono">{peakVelocity.magnitude.toFixed(3)}</div>
+                  <div className="text-neutral-500 text-[9px]"> @ {peakVelocity.time.toFixed(2)}s</div>
                 </div>
+              )}
+            </div>
+            <div className="mt-1 grid grid-cols-3 gap-1 text-[10px]">
+              <div>
+                X: <span className="font-mono">{currentVelocity!.x.toFixed(3)}</span>
+              </div>
+              <div>
+                Y: <span className="font-mono">{currentVelocity!.y.toFixed(3)}</span>
+              </div>
+              <div>
+                Z: <span className="font-mono">{currentVelocity!.z.toFixed(3)}</span>
               </div>
             </div>
-          )}
-
-          {/* CUMULATIVE STATS */}
-          <div
-            custom={7}
-            variants={sectionVariants}
-            initial="hidden"
-            animate="visible"
-            className="border-t pt-2">
-            <h3 className="font-bold text-sm mb-2">Total Distance Traveled</h3>
-            <div className="text-neutral-600 font-mono">{totalDistanceTraveled.toFixed(3)}"</div>
+            {peakVelocity && (
+              <div className="mt-1 text-[9px] text-neutral-500">
+                Peak: X: {peakVelocity.x.toFixed(3)}
+                <span className="text-neutral-500 text-[9px]"> @ {peakVelocity.xTime.toFixed(2)}s, Y: </span>
+                {peakVelocity.y.toFixed(3)}
+                <span className="text-neutral-500 text-[9px]">
+                  @ {peakVelocity.yTime.toFixed(2)}s, Z: {peakVelocity.z.toFixed(3)} @{" "}
+                </span>
+                {peakVelocity.zTime.toFixed(2)}s
+              </div>
+            )}
           </div>
+        )}
 
-          {/* RIBBONS */}
-          <div
-            custom={8}
-            variants={sectionVariants}
-            initial="hidden"
-            animate="visible"
-            className="border-t pt-2">
-            <h3 className="font-bold text-sm mb-2">Displacement Path (Top View)</h3>
-            <MiniRibbon path={ribbonPath} dt={animationData.metadata.dt} />
-            <div className="text-neutral-400 text-[10px] italic flex gap-1">
-              <InfoIcon className="size-3" /> Number of points reduced for performance
+        {/* ACCELERATION */}
+        {animationData.accelerationLin && (
+          <div className="border-t pt-2 animate-fade-in">
+            <h3 className="font-bold text-sm mb-2">Acceleration (in/s²)</h3>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="font-medium text-neutral-700">Current:</span>
+                <div className="text-neutral-600 font-mono">{currentAcceleration!.magnitude.toFixed(3)}</div>
+              </div>
+              {peakAcceleration && (
+                <div>
+                  <span className="font-medium text-neutral-700">Peak:</span>
+                  <div className="text-neutral-600 font-mono">{peakAcceleration.magnitude.toFixed(3)}</div>
+                  <div className="text-neutral-500 text-[9px]"> @ {peakAcceleration.time.toFixed(2)}s</div>
+                </div>
+              )}
+            </div>
+            <div className="mt-1 grid grid-cols-3 gap-1 text-[10px]">
+              <div>
+                X: <span className="font-mono">{currentAcceleration!.x.toFixed(3)}</span>
+              </div>
+              <div>
+                Y: <span className="font-mono">{currentAcceleration!.y.toFixed(3)}</span>
+              </div>
+              <div>
+                Z: <span className="font-mono">{currentAcceleration!.z.toFixed(3)}</span>
+              </div>
+            </div>
+            {peakAcceleration && (
+              <div className="mt-1 text-[9px] text-neutral-500">
+                Peak: X: {peakAcceleration.x.toFixed(3)}
+                <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.xTime.toFixed(2)}s, Y: </span>
+                {peakAcceleration.y.toFixed(3)}
+                <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.yTime.toFixed(2)}s, Z: </span>
+                {peakAcceleration.z.toFixed(3)}
+                <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.zTime.toFixed(2)}s</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STORY DRIFT */}
+        {storyDrift && (
+          <div className="border-t pt-2 animate-fade-in">
+            <h3 className="font-bold text-sm mb-2">Story Drift Ratio (%)</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="font-medium text-neutral-700">Current:</span>
+                <div className="text-neutral-600 font-mono">{storyDrift.current.toFixed(4)}%</div>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700">Peak:</span>
+                <div className="text-neutral-600 font-mono">{storyDrift.peak.toFixed(4)}%</div>
+              </div>
             </div>
           </div>
+        )}
 
-          <div>
-            {!animationData.displacementRot && (
-              <div className="text-neutral-400 text-[10px] italic">Rotations not loaded</div>
-            )}
-            {!animationData.velocityLin && (
-              <div className="text-neutral-400 text-[10px] italic">Velocities not loaded</div>
-            )}
-            {!animationData.accelerationLin && (
-              <div className="text-neutral-400 text-[10px] italic">Accelerations not loaded</div>
-            )}
+        {/* CUMULATIVE STATS */}
+        <div className="border-t pt-2 animate-fade-in">
+          <h3 className="font-bold text-sm mb-2">Total Distance Traveled</h3>
+          <div className="text-neutral-600 font-mono">{totalDistanceTraveled.toFixed(3)}"</div>
+        </div>
+
+        {/* RIBBONS */}
+        <div className="border-t pt-2 animate-fade-in">
+          <h3 className="font-bold text-sm mb-2">Displacement Path (Top View)</h3>
+          <MiniRibbon path={ribbonPath} dt={animationData.metadata.dt} />
+          <div className="text-neutral-400 text-[10px] italic flex gap-1">
+            <InfoIcon className="size-3" /> Number of points reduced for performance
           </div>
         </div>
+
+        <div>
+          {!animationData.displacementRot && (
+            <div className="text-neutral-400 text-[10px] italic">Rotations not loaded</div>
+          )}
+          {!animationData.velocityLin && (
+            <div className="text-neutral-400 text-[10px] italic">Velocities not loaded</div>
+          )}
+          {!animationData.accelerationLin && (
+            <div className="text-neutral-400 text-[10px] italic">Accelerations not loaded</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

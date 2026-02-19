@@ -1,5 +1,14 @@
 import { InterstoryDriftChart } from "@/pages/View3d/InterstoryDriftChart";
 import { MainCanvasPanel } from "@/pages/View3d/MainCanvasPanel";
+import { HistogramChart } from "@/pages/View3d/HistogramChart";
+import { PeakValuesPanel } from "@/pages/View3d/PeakValuesPanel";
+import { DataTablePanel } from "@/pages/View3d/DataTablePanel";
+import { FloorDisplacementChart } from "@/pages/View3d/FloorDisplacementChart";
+import { StatisticsPanel } from "@/pages/View3d/StatisticsPanel";
+import { CorrelationMatrix } from "@/pages/View3d/CorrelationMatrix";
+import { VelocityTimeChart } from "@/pages/View3d/VelocityTimeChart";
+import { StoryDriftHeatmap } from "@/pages/View3d/StoryDriftHeatmap";
+import { PeakResponseTimePanel } from "@/pages/View3d/PeakResponseTimePanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
@@ -9,9 +18,17 @@ import { useState } from "react";
 
 const PanelCatalog = {
   Timeline: Timeline,
-  // SmallTimeline: SmallTimeline,
   "Interstory Drift Chart": InterstoryDriftChart,
   "Main Canvas": MainCanvasPanel,
+  "Histogram Chart": HistogramChart,
+  "Peak Values": PeakValuesPanel,
+  "Data Table": DataTablePanel,
+  "Floor Displacement": FloorDisplacementChart,
+  Statistics: StatisticsPanel,
+  "Correlation Matrix": CorrelationMatrix,
+  "Velocity Time": VelocityTimeChart,
+  "Story Drift Heatmap": StoryDriftHeatmap,
+  "Peak Response Time": PeakResponseTimePanel,
 } as const;
 
 type PanelType = keyof typeof PanelCatalog;

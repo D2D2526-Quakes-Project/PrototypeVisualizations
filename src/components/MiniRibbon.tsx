@@ -164,7 +164,7 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
         {/* Draw colored line segments as static elements */}
         <g>
           {segments.map((seg, idx) => (
-            <line
+            <motion.line
               key={idx}
               x1={seg.x1}
               y1={seg.z1}
@@ -173,6 +173,11 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
               stroke={seg.color}
               strokeWidth="0.8"
               strokeLinecap="round"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                opacity: { duration: 0.3, delay: 0.2 + idx * 0.003 },
+              }}
             />
           ))}
         </g>

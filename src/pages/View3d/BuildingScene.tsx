@@ -18,6 +18,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
+import { ThresholdBuildingScene } from "./ThresholdBuildingScene";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
@@ -374,6 +375,8 @@ export function BuildingScene() {
               <meshBasicMaterial fog={false} toneMapped={false} vertexColors />
             </instancedMesh>
           )}
+
+          {mode === "threshold" && <ThresholdBuildingScene />}
 
           {/* Selected node highlights - one ring per selected node */}
           {selectedNodesData.map(({ nodeId, position, color }) => (

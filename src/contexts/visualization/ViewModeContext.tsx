@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import type { AnimationMetadata, IndexAccessor } from "@/lib/types";
 
-export type ViewMode = "all-nodes" | "floor-slabs" | "exterior-only" | "corners-only" | "vertical-connections";
+export type ViewMode = "all-nodes" | "floor-slabs" | "exterior-only" | "corners-only" | "vertical-connections" | "threshold";
 
 interface ViewModeContextType {
   mode: ViewMode;
@@ -45,6 +45,7 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
       case "all-nodes":
       case "exterior-only":
       case "vertical-connections":
+      case "threshold":
         nodes = Array.from({ length: nodeCount }, (_, i) => i);
         break;
 

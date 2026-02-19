@@ -59,6 +59,16 @@ function DockviewContainer({ setDockApi }: { setDockApi: (api: DockviewApi) => v
       params: { panelType: "Main Canvas" },
     });
 
+    // Damage Threshold panel to the right of the canvas
+    api.addPanel({
+      id: "damage-threshold",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Damage Threshold",
+      position: { referencePanel: "main-canvas", direction: "right" },
+      params: { panelType: "Damage Threshold" },
+    });
+
     // Timeline at the bottom
     const timelinePanel = api.addPanel({
       id: "timeline",

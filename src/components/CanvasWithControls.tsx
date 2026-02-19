@@ -25,6 +25,39 @@ import {
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { SmallPlaybackControls } from "./playback/PlaybackControls";
 
+function ThresholdSlider({
+  label,
+  value,
+  unit,
+  onChange,
+  max,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  onChange: (value: number) => void;
+  max: number;
+}) {
+  const step = max > 1 ? 0.1 : 0.001;
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-[10px] text-neutral-500 w-16 shrink-0">{label}</span>
+      <input
+        type="range"
+        min="0"
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="flex-1 h-1"
+      />
+      <span className="text-[10px] text-neutral-500 w-14 text-right shrink-0">
+        {value.toFixed(max > 1 ? 1 : 3)} {unit}
+      </span>
+    </div>
+  );
+}
+
 function CameraManager({
   isOrthographic,
   enableSmoothing,
@@ -345,6 +378,7 @@ export function ViewControls({
                   <option value="floor-slabs">Floor Slabs</option>
                   <option value="corners-only">Corners Only</option>
                   <option value="vertical-connections">Vertical Connections</option>
+                  <option value="threshold">Damage Threshold</option>
                 </select>
               </motion.div>
               <motion.div
@@ -564,36 +598,221 @@ export function ViewControls({
                   <span className="text-xs font-medium text-neutral-700">Thresholds</span>
                 </div>
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-neutral-500 w-16">Disp</span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="5"
-                      step="0.01"
-                      value={thresholds.displacement}
-                      onChange={(e) => setThreshold("displacement", parseFloat(e.target.value))}
-                      className="flex-1 h-1"
-                    />
-                    <span className="text-[10px] text-neutral-500 w-14 text-right">
-                      {thresholds.displacement.toFixed(2)} {thresholdUnits.displacement}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-neutral-500 w-16">ISD</span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="5"
-                      step="0.01"
-                      value={thresholds.interstoryDrift}
-                      onChange={(e) => setThreshold("interstoryDrift", parseFloat(e.target.value))}
-                      className="flex-1 h-1"
-                    />
-                    <span className="text-[10px] text-neutral-500 w-14 text-right">
-                      {thresholds.interstoryDrift.toFixed(2)} {thresholdUnits.interstoryDrift}
-                    </span>
-                  </div>
+                  {/* Displacement Thresholds */}
+                  <ThresholdSlider
+                    label="Disp"
+                    value={thresholds.displacementMag}
+                    unit={thresholdUnits.displacementMag}
+                    onChange={(v) => setThreshold("displacementMag", v)}
+                    max={animationData.precomputed.maxDisplacement * 1.2}
+                  />
+                  <ThresholdSlider
+                    label="Disp X"
+                    value={thresholds.displacementX}
+                    unit={thresholdUnits.displacementX}
+                    onChange={(v) => setThreshold("displacementX", v)}
+                    max={animationData.precomputed.maxDisplacement * 1.2}
+                  />
+                  <ThresholdSlider
+                    label="Disp Y"
+                    value={thresholds.displacementY}
+                    unit={thresholdUnits.displacementY}
+                    onChange={(v) => setThreshold("displacementY", v)}
+                    max={animationData.precomputed.maxDisplacement * 1.2}
+                  />
+                  <ThresholdSlider
+                    label="Disp Z"
+                    value={thresholds.displacementZ}
+                    unit={thresholdUnits.displacementZ}
+                    onChange={(v) => setThreshold("displacementZ", v)}
+                    max={animationData.precomputed.maxDisplacement * 1.2}
+                  />
+
+                  {/* Rotation Thresholds - only show if displacementRot data exists */}
+                  {animationData.displacementRot && (
+                    <>
+                      <ThresholdSlider
+                        label="Rot"
+                        value={thresholds.rotationMag}
+                        unit={thresholdUnits.rotationMag}
+                        onChange={(v) => setThreshold("rotationMag", v)}
+                        max={0.05}
+                      />
+                      <ThresholdSlider
+                        label="Rot X"
+                        value={thresholds.rotationX}
+                        unit={thresholdUnits.rotationX}
+                        onChange={(v) => setThreshold("rotationX", v)}
+                        max={0.05}
+                      />
+                      <ThresholdSlider
+                        label="Rot Y"
+                        value={thresholds.rotationY}
+                        unit={thresholdUnits.rotationY}
+                        onChange={(v) => setThreshold("rotationY", v)}
+                        max={0.05}
+                      />
+                      <ThresholdSlider
+                        label="Rot Z"
+                        value={thresholds.rotationZ}
+                        unit={thresholdUnits.rotationZ}
+                        onChange={(v) => setThreshold("rotationZ", v)}
+                        max={0.05}
+                      />
+                    </>
+                  )}
+
+                  {/* Velocity Thresholds - only show if velocityLin data exists */}
+                  {animationData.velocityLin && (
+                    <>
+                      <ThresholdSlider
+                        label="Vel"
+                        value={thresholds.velocityMag}
+                        unit={thresholdUnits.velocityMag}
+                        onChange={(v) => setThreshold("velocityMag", v)}
+                        max={(animationData.precomputed.maxVelocity ?? 10) * 1.2}
+                      />
+                      <ThresholdSlider
+                        label="Vel X"
+                        value={thresholds.velocityX}
+                        unit={thresholdUnits.velocityX}
+                        onChange={(v) => setThreshold("velocityX", v)}
+                        max={(animationData.precomputed.maxVelocity ?? 10) * 1.2}
+                      />
+                      <ThresholdSlider
+                        label="Vel Y"
+                        value={thresholds.velocityY}
+                        unit={thresholdUnits.velocityY}
+                        onChange={(v) => setThreshold("velocityY", v)}
+                        max={(animationData.precomputed.maxVelocity ?? 10) * 1.2}
+                      />
+                      <ThresholdSlider
+                        label="Vel Z"
+                        value={thresholds.velocityZ}
+                        unit={thresholdUnits.velocityZ}
+                        onChange={(v) => setThreshold("velocityZ", v)}
+                        max={(animationData.precomputed.maxVelocity ?? 10) * 1.2}
+                      />
+                    </>
+                  )}
+
+                  {/* Rotation Velocity Thresholds - only show if velocityRot data exists */}
+                  {animationData.velocityRot && (
+                    <>
+                      <ThresholdSlider
+                        label="RVel"
+                        value={thresholds.rotationVelocityMag}
+                        unit={thresholdUnits.rotationVelocityMag}
+                        onChange={(v) => setThreshold("rotationVelocityMag", v)}
+                        max={0.5}
+                      />
+                      <ThresholdSlider
+                        label="RVel X"
+                        value={thresholds.rotationVelocityX}
+                        unit={thresholdUnits.rotationVelocityX}
+                        onChange={(v) => setThreshold("rotationVelocityX", v)}
+                        max={0.5}
+                      />
+                      <ThresholdSlider
+                        label="RVel Y"
+                        value={thresholds.rotationVelocityY}
+                        unit={thresholdUnits.rotationVelocityY}
+                        onChange={(v) => setThreshold("rotationVelocityY", v)}
+                        max={0.5}
+                      />
+                      <ThresholdSlider
+                        label="RVel Z"
+                        value={thresholds.rotationVelocityZ}
+                        unit={thresholdUnits.rotationVelocityZ}
+                        onChange={(v) => setThreshold("rotationVelocityZ", v)}
+                        max={0.5}
+                      />
+                    </>
+                  )}
+
+                  {/* Acceleration Thresholds - only show if accelerationLin data exists */}
+                  {animationData.accelerationLin && (
+                    <>
+                      <ThresholdSlider
+                        label="Acc"
+                        value={thresholds.accelerationMag}
+                        unit={thresholdUnits.accelerationMag}
+                        onChange={(v) => setThreshold("accelerationMag", v)}
+                        max={(animationData.precomputed.maxAcceleration ?? 20) * 1.2}
+                      />
+                      <ThresholdSlider
+                        label="Acc X"
+                        value={thresholds.accelerationX}
+                        unit={thresholdUnits.accelerationX}
+                        onChange={(v) => setThreshold("accelerationX", v)}
+                        max={(animationData.precomputed.maxAcceleration ?? 20) * 1.2}
+                      />
+                      <ThresholdSlider
+                        label="Acc Y"
+                        value={thresholds.accelerationY}
+                        unit={thresholdUnits.accelerationY}
+                        onChange={(v) => setThreshold("accelerationY", v)}
+                        max={(animationData.precomputed.maxAcceleration ?? 20) * 1.2}
+                      />
+                      <ThresholdSlider
+                        label="Acc Z"
+                        value={thresholds.accelerationZ}
+                        unit={thresholdUnits.accelerationZ}
+                        onChange={(v) => setThreshold("accelerationZ", v)}
+                        max={(animationData.precomputed.maxAcceleration ?? 20) * 1.2}
+                      />
+                    </>
+                  )}
+
+                  {/* Rotation Acceleration Thresholds - only show if accelerationRot data exists */}
+                  {animationData.accelerationRot && (
+                    <>
+                      <ThresholdSlider
+                        label="RAcc"
+                        value={thresholds.rotationAccelerationMag}
+                        unit={thresholdUnits.rotationAccelerationMag}
+                        onChange={(v) => setThreshold("rotationAccelerationMag", v)}
+                        max={2}
+                      />
+                      <ThresholdSlider
+                        label="RAcc X"
+                        value={thresholds.rotationAccelerationX}
+                        unit={thresholdUnits.rotationAccelerationX}
+                        onChange={(v) => setThreshold("rotationAccelerationX", v)}
+                        max={2}
+                      />
+                      <ThresholdSlider
+                        label="RAcc Y"
+                        value={thresholds.rotationAccelerationY}
+                        unit={thresholdUnits.rotationAccelerationY}
+                        onChange={(v) => setThreshold("rotationAccelerationY", v)}
+                        max={2}
+                      />
+                      <ThresholdSlider
+                        label="RAcc Z"
+                        value={thresholds.rotationAccelerationZ}
+                        unit={thresholdUnits.rotationAccelerationZ}
+                        onChange={(v) => setThreshold("rotationAccelerationZ", v)}
+                        max={2}
+                      />
+                    </>
+                  )}
+
+                  {/* Interstory Drift Thresholds */}
+                  <ThresholdSlider
+                    label="ISD Peak"
+                    value={thresholds.interstoryDrift}
+                    unit={thresholdUnits.interstoryDrift}
+                    onChange={(v) => setThreshold("interstoryDrift", v)}
+                    max={5}
+                  />
+                  <ThresholdSlider
+                    label="ISD Avg"
+                    value={thresholds.interstoryDriftAvg}
+                    unit={thresholdUnits.interstoryDriftAvg}
+                    onChange={(v) => setThreshold("interstoryDriftAvg", v)}
+                    max={5}
+                  />
                 </div>
               </motion.div>
               <motion.div

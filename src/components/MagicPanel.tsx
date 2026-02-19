@@ -9,6 +9,7 @@ import { CorrelationMatrix } from "@/pages/View3d/CorrelationMatrix";
 import { VelocityTimeChart } from "@/pages/View3d/VelocityTimeChart";
 import { StoryDriftHeatmap } from "@/pages/View3d/StoryDriftHeatmap";
 import { PeakResponseTimePanel } from "@/pages/View3d/PeakResponseTimePanel";
+import { DamageThresholdPanel } from "@/pages/View3d/DamageThresholdPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
@@ -29,6 +30,7 @@ const PanelCatalog = {
   "Velocity Time": VelocityTimeChart,
   "Story Drift Heatmap": StoryDriftHeatmap,
   "Peak Response Time": PeakResponseTimePanel,
+  "Damage Threshold": DamageThresholdPanel,
 } as const;
 
 type PanelType = keyof typeof PanelCatalog;

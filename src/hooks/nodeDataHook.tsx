@@ -2,7 +2,7 @@ import DataSources from "@/data/index";
 import type { BinaryBuilding, BinarySimulation, Building, BuildingAnimationData, Simulation } from "@/lib/types";
 import { XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 // import { buildAnimationData, type BuildingAnimationData } from "../lib/parser";
 import { fetchWithProgressAndCache } from "@/lib/dataLoader";
 import { buildAnimationDataFromBinary } from "@/lib/parser";
@@ -42,6 +42,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
   const [needsSelection, setNeedsSelection] = useState(false);
+  const initializedRef = useRef(false);
 
   const updateUrl = (building: BinaryBuilding | null, simulation: BinarySimulation | null) => {
     const url = new URL(window.location.href);
@@ -158,7 +159,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         undefined, // velRotBuffer
         undefined, // accelLinBuffer
         undefined, // accelRotBuffer
-        async (p: number, msg?: string) => {
+        async (_p: number, msg?: string) => {
           if (abortController.signal.aborted) return;
           if (msg) setProgressMessage(msg);
           await new Promise((r) => setTimeout(r, 0));
@@ -206,6 +207,9 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   }, []);
 
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     const params = new URLSearchParams(location.search);
     const building = params.get("building");
     const simulation = params.get("simulation");
@@ -215,15 +219,19 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       if (b) {
         const s = b.simulations.find((s: Simulation) => s.folder === simulation);
         if (s) {
-          setCurrentBuilding(b);
-          setCurrentSimulation(s);
-          loadBinaryData(b, s);
+          queueMicrotask(() => {
+            setCurrentBuilding(b);
+            setCurrentSimulation(s);
+            loadBinaryData(b, s);
+          });
           return;
         }
       }
     }
 
-    setNeedsSelection(true);
+    queueMicrotask(() => {
+      setNeedsSelection(true);
+    });
   }, [loadBinaryData]);
 
   const providerValue = {

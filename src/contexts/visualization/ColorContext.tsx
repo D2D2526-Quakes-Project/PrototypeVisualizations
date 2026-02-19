@@ -34,38 +34,25 @@ export function ColorProvider({ children }: { children: ReactNode }) {
   const maxValues = useMemo(() => {
     const result: Record<ColorMetric, number> = {
       displacement: animationData.precomputed.maxDisplacement,
-      'displacement-x': animationData.precomputed.maxDisplacement,
-      'displacement-y': animationData.precomputed.maxDisplacement,
-      'displacement-z': animationData.precomputed.maxDisplacement,
+      'displacement-x': animationData.precomputed.maxDisplacementX,
+      'displacement-y': animationData.precomputed.maxDisplacementY,
+      'displacement-z': animationData.precomputed.maxDisplacementZ,
       velocity: animationData.precomputed.maxVelocity ?? 0,
-      'velocity-x': animationData.precomputed.maxVelocity ?? 0,
-      'velocity-y': animationData.precomputed.maxVelocity ?? 0,
-      'velocity-z': animationData.precomputed.maxVelocity ?? 0,
+      'velocity-x': animationData.precomputed.maxVelocityX ?? 0,
+      'velocity-y': animationData.precomputed.maxVelocityY ?? 0,
+      'velocity-z': animationData.precomputed.maxVelocityZ ?? 0,
       acceleration: animationData.precomputed.maxAcceleration ?? 0,
-      'acceleration-x': animationData.precomputed.maxAcceleration ?? 0,
-      'acceleration-y': animationData.precomputed.maxAcceleration ?? 0,
-      'acceleration-z': animationData.precomputed.maxAcceleration ?? 0,
-      'story-drift': 0,
+      'acceleration-x': animationData.precomputed.maxAccelerationX ?? 0,
+      'acceleration-y': animationData.precomputed.maxAccelerationY ?? 0,
+      'acceleration-z': animationData.precomputed.maxAccelerationZ ?? 0,
+      'story-drift': animationData.precomputed.maxStoryDrift,
     };
     return result;
   }, [animationData.precomputed]);
 
   const getMaxValue = useCallback((metric: ColorMetric): number => {
-    if (metric === 'story-drift') {
-      let max = 0;
-      const { storyDrift } = animationData.precomputed;
-      for (let s = 0; s < storyDrift.storyCount; s++) {
-        for (let f = 0; f < storyDrift.frameCount; f++) {
-          const drifts = storyDrift.getStoryDrift(s, f);
-          for (let c = 0; c < drifts.length; c++) {
-            max = Math.max(max, Math.abs(drifts[c]));
-          }
-        }
-      }
-      return max;
-    }
     return maxValues[metric];
-  }, [animationData.precomputed, maxValues]);
+  }, [maxValues]);
 
   const getNodeColor = useCallback((nodeId: number, frameIndex: number): THREE.Color => {
     const maxValue = getMaxValue(currentMetric);

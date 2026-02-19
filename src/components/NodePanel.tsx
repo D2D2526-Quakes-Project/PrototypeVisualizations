@@ -241,6 +241,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
   }, [animationData.accelerationLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   // STRUCTURAL INFO
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const storyInfo = useMemo(() => {
     for (const [storyName, nodeIds] of Object.entries(animationData.metadata.stories)) {
       if (nodeIds.includes(nodeId)) {
@@ -255,13 +256,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       }
     }
     return { story: "Unknown", height: 0, elevation: 0, floorNumber: 0, totalFloors: 0 };
-  }, [
-    animationData.metadata.stories,
-    animationData.metadata.storyHeights,
-    animationData.metadata.storyOrder,
-    animationData.precomputed.storyElevations,
-    nodeId,
-  ]);
+  }, [animationData, nodeId]);
 
   const cornerInfo = useMemo(() => {
     for (const [cornerName, nodeIds] of Object.entries(animationData.metadata.corners)) {

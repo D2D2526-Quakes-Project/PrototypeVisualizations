@@ -215,9 +215,43 @@ export interface ComputedStats {
   storyElevations: Record<string, number>; // "15": 7194.0 (inches, cumulative from ground)
 
   // SIMULATION SCALARS
-  maxDisplacement: number; // Max absolute drift (inches)
-  maxVelocity?: number; // Max velocity
-  maxAcceleration?: number; // Max acceleration (g)
+  maxDisplacement: number; // Max absolute displacement (inches)
+  maxDisplacementX: number; // Max X component
+  maxDisplacementY: number; // Max Y component
+  maxDisplacementZ: number; // Max Z component
+  minDisplacement: number; // Min displacement
+  maxVelocity?: number; // Max velocity magnitude
+  maxVelocityX?: number; // Max velocity X component
+  maxVelocityY?: number; // Max velocity Y component
+  maxVelocityZ?: number; // Max velocity Z component
+  minVelocity?: number; // Min velocity
+  maxAcceleration?: number; // Max acceleration magnitude
+  maxAccelerationX?: number; // Max acceleration X component
+  maxAccelerationY?: number; // Max acceleration Y component
+  maxAccelerationZ?: number; // Max acceleration Z component
+  minAcceleration?: number; // Min acceleration
+
+  // ROTATION VALUES (if displacementRot data exists)
+  maxRotation?: number; // Max rotation magnitude (radians)
+  maxRotationX?: number; // Max rotation about X
+  maxRotationY?: number; // Max rotation about Y
+  maxRotationZ?: number; // Max rotation about Z
+
+  // ROTATION VELOCITY VALUES (if velocityRot data exists)
+  maxRotationVelocity?: number; // Max rotation velocity magnitude
+  maxRotationVelocityX?: number;
+  maxRotationVelocityY?: number;
+  maxRotationVelocityZ?: number;
+
+  // ROTATION ACCELERATION VALUES (if accelerationRot data exists)
+  maxRotationAcceleration?: number; // Max rotation acceleration magnitude
+  maxRotationAccelerationX?: number;
+  maxRotationAccelerationY?: number;
+  maxRotationAccelerationZ?: number;
+
+  // STORY DRIFT
+  maxStoryDrift: number; // Max interstory drift across all stories/frames (%)
+  avgStoryDrift: number; // Average interstory drift across all stories/frames (%)
 
   // GROUND MOTION
   groundMotion: {
@@ -255,4 +289,39 @@ export interface ComputedStats {
   peakNodeDisplacementY: Float32Array;
   /** For each node, the Z component of peak displacement */
   peakNodeDisplacementZ: Float32Array;
+
+  // PER-FRAME AGGREGATES (arrays of length frameCount)
+  /** Average displacement per frame across all nodes */
+  avgDisplacementPerFrame: {
+    x: Float32Array;
+    y: Float32Array;
+    z: Float32Array;
+    mag: Float32Array;
+  };
+  /** Average velocity per frame (if velocity data available) */
+  avgVelocityPerFrame?: {
+    x: Float32Array;
+    y: Float32Array;
+    z: Float32Array;
+    mag: Float32Array;
+  };
+  /** Average acceleration per frame (if acceleration data available) */
+  avgAccelerationPerFrame?: {
+    x: Float32Array;
+    y: Float32Array;
+    z: Float32Array;
+    mag: Float32Array;
+  };
+
+  // PER-STORY AGGREGATES
+  /** Average displacement per story (array indexed by storyIndex * frameCount + frameIndex) */
+  avgDisplacementPerStory: Float32Array;
+  /** Average velocity per story (optional) */
+  avgVelocityPerStory?: Float32Array;
+  /** Average acceleration per story (optional) */
+  avgAccelerationPerStory?: Float32Array;
+
+  // PERCENTILES
+  /** 90th percentile velocity across all nodes/frames */
+  velocityPercentile90?: number;
 }

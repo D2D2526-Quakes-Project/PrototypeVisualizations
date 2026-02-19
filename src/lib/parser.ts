@@ -140,9 +140,11 @@ export async function buildAnimationDataFromBinary(
     gmData.bodyView,
     bData.bodyView,
     dispLinData.bodyView,
-    // dispRotData?.bodyView,
+    dispRotData?.bodyView,
     velLinData?.bodyView,
+    velRotData?.bodyView,
     accelLinData?.bodyView,
+    accelRotData?.bodyView,
   );
 
   function makeAccessor(data: Float32Array, stride: number): IndexAccessor {
@@ -200,9 +202,11 @@ function calculateStats(
   gm: Float32Array,
   positions: Float32Array,
   dispLin: Float32Array,
-  // dispRot?: Float32Array,
+  dispRot?: Float32Array,
   velLin?: Float32Array,
+  velRot?: Float32Array,
   accelLin?: Float32Array,
+  accelRot?: Float32Array,
 ): ComputedStats {
   // --- 1. GEOMETRY BOUNDS ---
   let minX = Infinity,
@@ -264,6 +268,35 @@ function calculateStats(
       if (magSq > maxSq) maxSq = magSq;
     }
     return Math.sqrt(maxSq);
+  };
+
+  // Helper to find max absolute component in a stride-3 buffer
+  const getMaxComp = (buffer: Float32Array): [number, number, number] => {
+    let maxX = 0;
+    let maxY = 0;
+    let maxZ = 0;
+    for (let i = 0; i < buffer.length; i += 3) {
+      const x = Math.abs(buffer[i]);
+      const y = Math.abs(buffer[i + 1]);
+      const z = Math.abs(buffer[i + 2]);
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+      if (z > maxZ) maxZ = z;
+    }
+    return [maxX, maxY, maxZ];
+  };
+
+  // Helper to find min value in a stride-3 buffer
+  const getMinMag = (buffer: Float32Array) => {
+    let minSq = Infinity;
+    for (let i = 0; i < buffer.length; i += 3) {
+      const x = buffer[i];
+      const y = buffer[i + 1];
+      const z = buffer[i + 2];
+      const magSq = x * x + y * y + z * z;
+      if (magSq < minSq) minSq = magSq;
+    }
+    return Math.sqrt(minSq);
   };
 
   // --- 4. GROUND MOTION PEAKS ---
@@ -461,13 +494,206 @@ function calculateStats(
     }
   }
 
+  // --- 7. STORY DRIFT MAX & AVG ---
+  let maxStoryDrift = 0;
+  let totalStoryDrift = 0;
+  let storyDriftCount = 0;
+
+  for (let i = 0; i < storyDriftData.length; i++) {
+    const val = storyDriftData[i];
+    if (val > maxStoryDrift) maxStoryDrift = val;
+    totalStoryDrift += val;
+    storyDriftCount++;
+  }
+  const avgStoryDrift = storyDriftCount > 0 ? totalStoryDrift / storyDriftCount : 0;
+
+  // --- 8. COMPUTE MAX VALUES FOR ALL COMPONENTS ---
+  const [maxDispX, maxDispY, maxDispZ] = getMaxComp(dispLin);
+  const [maxVelX, maxVelY, maxVelZ] = velLin ? getMaxComp(velLin) : [0, 0, 0];
+  const [maxAccelX, maxAccelY, maxAccelZ] = accelLin ? getMaxComp(accelLin) : [0, 0, 0];
+  const [maxRotX, maxRotY, maxRotZ] = dispRot ? getMaxComp(dispRot) : [0, 0, 0];
+  const [maxRotVelX, maxRotVelY, maxRotVelZ] = velRot ? getMaxComp(velRot) : [0, 0, 0];
+  const [maxRotAccelX, maxRotAccelY, maxRotAccelZ] = accelRot ? getMaxComp(accelRot) : [0, 0, 0];
+
+  // --- 9. MIN VALUES ---
+  const minDisplacement = getMinMag(dispLin);
+  const minVelocity = velLin ? getMinMag(velLin) : undefined;
+  const minAcceleration = accelLin ? getMinMag(accelLin) : undefined;
+
+  // --- 10. PER-FRAME AGGREGATES ---
+  const avgDispPerFrameX = new Float32Array(frameCount);
+  const avgDispPerFrameY = new Float32Array(frameCount);
+  const avgDispPerFrameZ = new Float32Array(frameCount);
+  const avgDispPerFrameMag = new Float32Array(frameCount);
+
+  const avgVelPerFrameX = velLin ? new Float32Array(frameCount) : undefined;
+  const avgVelPerFrameY = velLin ? new Float32Array(frameCount) : undefined;
+  const avgVelPerFrameZ = velLin ? new Float32Array(frameCount) : undefined;
+  const avgVelPerFrameMag = velLin ? new Float32Array(frameCount) : undefined;
+
+  const avgAccelPerFrameX = accelLin ? new Float32Array(frameCount) : undefined;
+  const avgAccelPerFrameY = accelLin ? new Float32Array(frameCount) : undefined;
+  const avgAccelPerFrameZ = accelLin ? new Float32Array(frameCount) : undefined;
+  const avgAccelPerFrameMag = accelLin ? new Float32Array(frameCount) : undefined;
+
+  // Accumulate sums per frame
+  for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+    const frameOffset = frameIdx * nodeCount * 3;
+    let sumDispX = 0, sumDispY = 0, sumDispZ = 0;
+    let sumVelX = 0, sumVelY = 0, sumVelZ = 0;
+    let sumAccelX = 0, sumAccelY = 0, sumAccelZ = 0;
+
+    for (let nodeIdx = 0; nodeIdx < nodeCount; nodeIdx++) {
+      const offset = frameOffset + nodeIdx * 3;
+      sumDispX += dispLin[offset];
+      sumDispY += dispLin[offset + 1];
+      sumDispZ += dispLin[offset + 2];
+
+      if (velLin && avgVelPerFrameX) {
+        sumVelX += velLin[offset];
+        sumVelY += velLin[offset + 1];
+        sumVelZ += velLin[offset + 2];
+      }
+
+      if (accelLin && avgAccelPerFrameX) {
+        sumAccelX += accelLin[offset];
+        sumAccelY += accelLin[offset + 1];
+        sumAccelZ += accelLin[offset + 2];
+      }
+    }
+
+    avgDispPerFrameX[frameIdx] = sumDispX / nodeCount;
+    avgDispPerFrameY[frameIdx] = sumDispY / nodeCount;
+    avgDispPerFrameZ[frameIdx] = sumDispZ / nodeCount;
+    avgDispPerFrameMag[frameIdx] = Math.sqrt(
+      avgDispPerFrameX[frameIdx] ** 2 + avgDispPerFrameY[frameIdx] ** 2 + avgDispPerFrameZ[frameIdx] ** 2
+    );
+
+    if (velLin && avgVelPerFrameX && avgVelPerFrameY && avgVelPerFrameZ && avgVelPerFrameMag) {
+      avgVelPerFrameX[frameIdx] = sumVelX / nodeCount;
+      avgVelPerFrameY[frameIdx] = sumVelY / nodeCount;
+      avgVelPerFrameZ[frameIdx] = sumVelZ / nodeCount;
+      avgVelPerFrameMag[frameIdx] = Math.sqrt(
+        avgVelPerFrameX[frameIdx] ** 2 + avgVelPerFrameY[frameIdx] ** 2 + avgVelPerFrameZ[frameIdx] ** 2
+      );
+    }
+
+    if (accelLin && avgAccelPerFrameX && avgAccelPerFrameY && avgAccelPerFrameZ && avgAccelPerFrameMag) {
+      avgAccelPerFrameX[frameIdx] = sumAccelX / nodeCount;
+      avgAccelPerFrameY[frameIdx] = sumAccelY / nodeCount;
+      avgAccelPerFrameZ[frameIdx] = sumAccelZ / nodeCount;
+      avgAccelPerFrameMag[frameIdx] = Math.sqrt(
+        avgAccelPerFrameX[frameIdx] ** 2 + avgAccelPerFrameY[frameIdx] ** 2 + avgAccelPerFrameZ[frameIdx] ** 2
+      );
+    }
+  }
+
+  // --- 11. PER-STORY AGGREGATES ---
+  const avgDispPerStory = new Float32Array(storyCount * frameCount);
+  const avgVelPerStory = velLin ? new Float32Array(storyCount * frameCount) : undefined;
+  const avgAccelPerStory = accelLin ? new Float32Array(storyCount * frameCount) : undefined;
+
+  // Get node indices per story
+  const storyNodeIndices: number[][] = [];
+  for (let s = 0; s < storyCount; s++) {
+    const storyId = metadata.storyOrder[s];
+    storyNodeIndices.push(metadata.stories[storyId] || []);
+  }
+
+  for (let storyIdx = 0; storyIdx < storyCount; storyIdx++) {
+    const nodes = storyNodeIndices[storyIdx];
+    if (nodes.length === 0) continue;
+
+    for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+      const frameOffset = frameIdx * nodeCount * 3;
+      let sumDispX = 0, sumDispY = 0, sumDispZ = 0;
+      let sumVelX = 0, sumVelY = 0, sumVelZ = 0;
+      let sumAccelX = 0, sumAccelY = 0, sumAccelZ = 0;
+
+      for (const nodeIdx of nodes) {
+        const offset = frameOffset + nodeIdx * 3;
+        sumDispX += dispLin[offset];
+        sumDispY += dispLin[offset + 1];
+        sumDispZ += dispLin[offset + 2];
+
+        if (velLin && avgVelPerStory) {
+          sumVelX += velLin[offset];
+          sumVelY += velLin[offset + 1];
+          sumVelZ += velLin[offset + 2];
+        }
+
+        if (accelLin && avgAccelPerStory) {
+          sumAccelX += accelLin[offset];
+          sumAccelY += accelLin[offset + 1];
+          sumAccelZ += accelLin[offset + 2];
+        }
+      }
+
+      const idx = storyIdx * frameCount + frameIdx;
+      const count = nodes.length;
+      avgDispPerStory[idx] = Math.sqrt(
+        (sumDispX / count) ** 2 + (sumDispY / count) ** 2 + (sumDispZ / count) ** 2
+      );
+
+      if (velLin && avgVelPerStory) {
+        avgVelPerStory[idx] = Math.sqrt(
+          (sumVelX / count) ** 2 + (sumVelY / count) ** 2 + (sumVelZ / count) ** 2
+        );
+      }
+
+      if (accelLin && avgAccelPerStory) {
+        avgAccelPerStory[idx] = Math.sqrt(
+          (sumAccelX / count) ** 2 + (sumAccelY / count) ** 2 + (sumAccelZ / count) ** 2
+        );
+      }
+    }
+  }
+
+  // --- 12. VELOCITY PERCENTILE 90 ---
+  let velocityPercentile90: number | undefined;
+  if (velLin) {
+    const velocities: number[] = [];
+    for (let i = 0; i < velLin.length; i += 3) {
+      velocities.push(Math.sqrt(velLin[i] ** 2 + velLin[i + 1] ** 2 + velLin[i + 2] ** 2));
+    }
+    velocities.sort((a, b) => a - b);
+    const percentileIdx = Math.floor(velocities.length * 0.9);
+    velocityPercentile90 = velocities[percentileIdx];
+  }
+
   return {
     boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
     storyElevations,
     storyHeights,
     maxDisplacement: getMaxMag(dispLin),
+    maxDisplacementX: maxDispX,
+    maxDisplacementY: maxDispY,
+    maxDisplacementZ: maxDispZ,
+    minDisplacement,
     maxVelocity: velLin ? getMaxMag(velLin) : undefined,
+    maxVelocityX: velLin ? maxVelX : undefined,
+    maxVelocityY: velLin ? maxVelY : undefined,
+    maxVelocityZ: velLin ? maxVelZ : undefined,
+    minVelocity,
     maxAcceleration: accelLin ? getMaxMag(accelLin) : undefined,
+    maxAccelerationX: accelLin ? maxAccelX : undefined,
+    maxAccelerationY: accelLin ? maxAccelY : undefined,
+    maxAccelerationZ: accelLin ? maxAccelZ : undefined,
+    minAcceleration,
+    maxRotation: dispRot ? getMaxMag(dispRot) : undefined,
+    maxRotationX: dispRot ? maxRotX : undefined,
+    maxRotationY: dispRot ? maxRotY : undefined,
+    maxRotationZ: dispRot ? maxRotZ : undefined,
+    maxRotationVelocity: velRot ? getMaxMag(velRot) : undefined,
+    maxRotationVelocityX: velRot ? maxRotVelX : undefined,
+    maxRotationVelocityY: velRot ? maxRotVelY : undefined,
+    maxRotationVelocityZ: velRot ? maxRotVelZ : undefined,
+    maxRotationAcceleration: accelRot ? getMaxMag(accelRot) : undefined,
+    maxRotationAccelerationX: accelRot ? maxRotAccelX : undefined,
+    maxRotationAccelerationY: accelRot ? maxRotAccelY : undefined,
+    maxRotationAccelerationZ: accelRot ? maxRotAccelZ : undefined,
+    maxStoryDrift,
+    avgStoryDrift,
     groundMotion: {
       min: gmMin,
       max: gmMax,
@@ -491,5 +717,27 @@ function calculateStats(
     peakNodeDisplacementX,
     peakNodeDisplacementY,
     peakNodeDisplacementZ,
+    avgDisplacementPerFrame: {
+      x: avgDispPerFrameX,
+      y: avgDispPerFrameY,
+      z: avgDispPerFrameZ,
+      mag: avgDispPerFrameMag,
+    },
+    avgVelocityPerFrame: velLin && avgVelPerFrameX && avgVelPerFrameY && avgVelPerFrameZ && avgVelPerFrameMag ? {
+      x: avgVelPerFrameX,
+      y: avgVelPerFrameY,
+      z: avgVelPerFrameZ,
+      mag: avgVelPerFrameMag,
+    } : undefined,
+    avgAccelerationPerFrame: accelLin && avgAccelPerFrameX && avgAccelPerFrameY && avgAccelPerFrameZ && avgAccelPerFrameMag ? {
+      x: avgAccelPerFrameX,
+      y: avgAccelPerFrameY,
+      z: avgAccelPerFrameZ,
+      mag: avgAccelPerFrameMag,
+    } : undefined,
+    avgDisplacementPerStory: avgDispPerStory,
+    avgVelocityPerStory: avgVelPerStory,
+    avgAccelerationPerStory: avgAccelPerStory,
+    velocityPercentile90,
   };
 }

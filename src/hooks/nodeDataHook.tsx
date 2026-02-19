@@ -1,11 +1,11 @@
-import type { BinaryBuilding, BinarySimulation, Building, Simulation, BuildingAnimationData } from "@/lib/types";
 import DataSources from "@/data/index";
+import type { BinaryBuilding, BinarySimulation, Building, BuildingAnimationData, Simulation } from "@/lib/types";
 import { XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 // import { buildAnimationData, type BuildingAnimationData } from "../lib/parser";
-import { buildAnimationDataFromBinary } from "@/lib/parser";
 import { fetchWithProgressAndCache } from "@/lib/dataLoader";
+import { buildAnimationDataFromBinary } from "@/lib/parser";
 
 export type AnimationDataContextType = {
   animationData: BuildingAnimationData;
@@ -33,7 +33,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const [currentBuilding, setCurrentBuilding] = useState<BinaryBuilding | null>(null);
   const [currentSimulation, setCurrentSimulation] = useState<BinarySimulation | null>(null);
 
-  const [progress, setProgress] = useState<number>(0);
   const [fileProgress, setFileProgress] = useState<Record<string, number>>({
     building: 0,
     displacementLin: 0,
@@ -61,7 +60,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const loadBinaryData = useCallback(async (building: BinaryBuilding, simulation: BinarySimulation) => {
     setLoading(true);
     setError(null);
-    setProgress(0);
     setFileProgress({ building: 0, groundMotion: 0 });
     setProgressMessage("");
     setAnimationData(null);
@@ -69,17 +67,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     const abortController = new AbortController();
 
     const progressRef = { current: { building: 0, displacementLin: 0, groundMotion: 0 } };
-
-    const updateOverallProgress = () => {
-      if (abortController.signal.aborted) return;
-      const values = Object.values(progressRef.current);
-      const sum = values.reduce((a, b) => a + b, 0);
-      const avg = sum / values.length;
-
-      // Map 0-1 download to 5-80% of total bar (leaving 20% for parsing)
-      setProgress(5 + avg * 75);
-      setProgressMessage(`Downloading... ${Math.round(avg * 100)}%`);
-    };
 
     // Helper to resolve URL - supports both full URLs (http/https) and relative paths
     const resolveUrl = (pathOrUrl: string, folder: string): string => {
@@ -91,7 +78,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
     try {
       if (abortController.signal.aborted) return;
-      setProgress(5);
       setProgressMessage("Initializing download...");
 
       // Fetch required files (building, displacementLin, groundMotion)
@@ -106,7 +92,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           (p) => {
             progressRef.current.building = p;
             setFileProgress((prev) => ({ ...prev, building: p * 100 }));
-            updateOverallProgress();
           },
           abortController.signal,
         ),
@@ -115,7 +100,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           (p) => {
             progressRef.current.displacementLin = p;
             setFileProgress((prev) => ({ ...prev, displacementLin: p * 100 }));
-            updateOverallProgress();
           },
           abortController.signal,
         ),
@@ -147,7 +131,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           (p) => {
             progressRef.current.groundMotion = p;
             setFileProgress((prev) => ({ ...prev, groundMotion: p * 100 }));
-            updateOverallProgress();
           },
           abortController.signal,
         ),
@@ -155,7 +138,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
       if (abortController.signal.aborted) return;
 
-      setProgress(85);
       setProgressMessage("Decompressing & Parsing...");
 
       // Give the UI a moment to breathe before the heavy parsing starts
@@ -178,7 +160,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         undefined, // accelRotBuffer
         async (p: number, msg?: string) => {
           if (abortController.signal.aborted) return;
-          if (p !== -1) setProgress(85 + p * 0.15);
           if (msg) setProgressMessage(msg);
           await new Promise((r) => setTimeout(r, 0));
         },
@@ -186,7 +167,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
       if (abortController.signal.aborted) return;
 
-      setProgress(100);
       setProgressMessage("Done!");
       setAnimationData(built);
 
@@ -261,12 +241,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         <SimulationPickerOverlay onSelect={loadSelection} />
       ) : (
         (loading || error != null || needsSelection) && (
-          <LoadingOverlay
-            progress={progress}
-            progressMessage={progressMessage}
-            error={error}
-            fileProgress={fileProgress}
-          />
+          <LoadingOverlay progressMessage={progressMessage} error={error} fileProgress={fileProgress} />
         )
       )}
       {animationData && (
@@ -279,29 +254,25 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 }
 
 function LoadingOverlay({
-  progress,
   progressMessage,
   error,
   fileProgress,
 }: {
-  progress: number;
   progressMessage: string;
   error?: unknown;
   fileProgress: Record<string, number>;
 }) {
-  const memory = useMemo(() => {
-    if ("memory" in performance) {
-      // @ts-expect-error - performance.memory is not defined in Node
-      const limit = performance.memory.jsHeapSizeLimit;
-      // @ts-expect-error - performance.memory is not defined in Node
-      const used = performance.memory.usedJSHeapSize;
-      return {
-        used: used,
-        limit: limit,
-      };
-    }
-    return undefined;
-  }, [progress]);
+  let memory = undefined;
+  if ("memory" in performance) {
+    // @ts-expect-error - performance.memory is not defined in Node
+    const limit = performance.memory.jsHeapSizeLimit;
+    // @ts-expect-error - performance.memory is not defined in Node
+    const used = performance.memory.usedJSHeapSize;
+    memory = {
+      used: used,
+      limit: limit,
+    };
+  }
 
   return (
     <motion.div

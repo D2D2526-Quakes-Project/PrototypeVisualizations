@@ -1,3 +1,33 @@
+/**
+ * VelocityTimeChart Component
+ * =============================================================================
+ *
+ * PURPOSE:
+ * Shows the average velocity of all nodes over time, derived from
+ * displacement data. Helps understand the rate of movement in the building.
+ *
+ * WHAT IT SHOWS:
+ * - X-axis: Time (seconds)
+ * - Y-axis: Average velocity (inches/second)
+ * - Multiple lines for X, Y, Z components and speed (magnitude)
+ * - Red vertical line: Current frame marker
+ * - Scrubbing: Click/drag to change frame
+ *
+ * DATA SOURCES:
+ * - Velocity: Derived from animationData.displacementLin
+ * - Calculation: (pos[t] - pos[t-1]) / dt
+ *
+ * UNITS:
+ * - Velocity: inches/second
+ * - Time: seconds
+ *
+ * IMPORTANCE:
+ * Velocity indicates how fast the building is moving. High velocities
+ * can indicate rapid load changes. Used alongside displacement to
+ * understand the dynamic response of the structure.
+ * =============================================================================
+ */
+
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
@@ -9,6 +39,7 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown } from "lucide-react";
 import { renderToString } from "react-dom/server";
 import { formatFixed3 } from "@/lib/utils";
+import type { EChartsOption } from "echarts";
 
 const CHANNEL_CONFIG = {
   x: { id: "x", label: "X Velocity", shortName: "X", color: "#f87171" },
@@ -31,7 +62,14 @@ function TooltipContent({
 }) {
   return (
     <div style={{ minWidth: "180px" }}>
-      <div style={{ fontWeight: 600, marginBottom: "6px", borderBottom: "1px solid #e5e7eb", paddingBottom: "4px", fontSize: "13px" }}>
+      <div
+        style={{
+          fontWeight: 600,
+          marginBottom: "6px",
+          borderBottom: "1px solid #e5e7eb",
+          paddingBottom: "4px",
+          fontSize: "13px",
+        }}>
         Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span>{" "}
         {parseFloat(time.toString()).toFixed(3)}s
       </div>
@@ -79,7 +117,9 @@ function CheckSelect({
       <PopoverTrigger asChild>
         <Button variant="outline" size="xs" className="min-w-16">
           <span className="truncate flex-1">{labelText}</span>
-          <ChevronDown className={`w-3 h-3 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`w-3 h-3 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-48 p-1">
@@ -111,7 +151,7 @@ export function VelocityTimeChart() {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(["magnitude"]);
-  const chartRef = useRef<any>(null);
+  const chartRef = useRef<ReactECharts>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const maxFrame = animationData.metadata.frameCount - 1;
@@ -177,13 +217,13 @@ export function VelocityTimeChart() {
     [velocityData],
   );
 
-  const option = useMemo(() => {
+  const option: EChartsOption = useMemo((): EChartsOption => {
     const activeKeys = CHANNEL_ORDER.filter((k) => selectedKeys.includes(k));
-    const grids: any[] = [];
-    const xAxes: any[] = [];
-    const yAxes: any[] = [];
-    const series: any[] = [];
-    const titles: any[] = [];
+    const grids: EChartsOption["grid"] = [];
+    const xAxes: EChartsOption["xAxis"] = [];
+    const yAxes: EChartsOption["yAxis"] = [];
+    const series: EChartsOption["series"] = [];
+    const titles: EChartsOption["title"] = [];
 
     const LEFT_MARGIN = 45;
     const RIGHT_MARGIN = 20;
@@ -275,21 +315,21 @@ export function VelocityTimeChart() {
         borderWidth: 1,
         padding: 10,
         textStyle: { color: "#374151", fontSize: 11 },
-        formatter: (params: any) => {
-          if (!params || params.length === 0) return "";
-          const time = params[0].axisValue;
+        formatter: (params) => {
+          if (!params || !Array.isArray(params) || params.length === 0) return "";
+          const time = params[0].value as number;
           const frame = Math.round(time / animationData.metadata.dt);
-          const values = params.map((p: any) => ({
-            name: p.seriesName,
-            color: CHANNEL_CONFIG[p.seriesName.toLowerCase().split(" ")[0] as ChannelKey]?.color || p.color,
-            value: p.data[1],
+          const values = params.map((p) => ({
+            name: p.seriesName!,
+            color: CHANNEL_CONFIG[p.seriesName?.toLowerCase().split(" ")[0] as ChannelKey]?.color || p.color,
+            value: (p.data as number[])[1],
           }));
           return renderToString(<TooltipContent frame={frame} time={time} values={values} />);
         },
       },
       animation: false,
     };
-  }, [selectedKeys, velocityData, frameIndex, animationData.metadata.dt, maxFrame, times, getChannelData]);
+  }, [selectedKeys, frameIndex, animationData.metadata.dt, maxFrame, times, getChannelData]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();

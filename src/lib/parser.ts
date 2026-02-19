@@ -391,6 +391,76 @@ function calculateStats(
     ];
   };
 
+  // --- 6. PEAK NODE VALUES ---
+  const nodeCount = metadata.nodeCount;
+  const peakNodeDisplacement = new Float32Array(nodeCount);
+  const peakNodeDisplacementFrame = new Uint32Array(nodeCount);
+  const peakNodeDisplacementX = new Float32Array(nodeCount);
+  const peakNodeDisplacementY = new Float32Array(nodeCount);
+  const peakNodeDisplacementZ = new Float32Array(nodeCount);
+  let peakNodeVelocity: Float32Array | undefined;
+  let peakNodeAcceleration: Float32Array | undefined;
+
+  // Initialize with zeros
+  peakNodeDisplacement.fill(0);
+  peakNodeDisplacementFrame.fill(0);
+  peakNodeDisplacementX.fill(0);
+  peakNodeDisplacementY.fill(0);
+  peakNodeDisplacementZ.fill(0);
+
+  if (velLin) {
+    peakNodeVelocity = new Float32Array(nodeCount);
+    peakNodeVelocity.fill(0);
+  }
+
+  if (accelLin) {
+    peakNodeAcceleration = new Float32Array(nodeCount);
+    peakNodeAcceleration.fill(0);
+  }
+
+  // Calculate peak values for each node
+  for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+    const frameOffset = frameIdx * nodeCount * 3;
+
+    for (let nodeIdx = 0; nodeIdx < nodeCount; nodeIdx++) {
+      const nodeOffset = frameOffset + nodeIdx * 3;
+      const dx = dispLin[nodeOffset];
+      const dy = dispLin[nodeOffset + 1];
+      const dz = dispLin[nodeOffset + 2];
+      const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      if (mag > peakNodeDisplacement[nodeIdx]) {
+        peakNodeDisplacement[nodeIdx] = mag;
+        peakNodeDisplacementFrame[nodeIdx] = frameIdx;
+        peakNodeDisplacementX[nodeIdx] = dx;
+        peakNodeDisplacementY[nodeIdx] = dy;
+        peakNodeDisplacementZ[nodeIdx] = dz;
+      }
+
+      if (velLin && peakNodeVelocity) {
+        const velOffset = frameIdx * nodeCount * 3 + nodeIdx * 3;
+        const vx = velLin[velOffset];
+        const vy = velLin[velOffset + 1];
+        const vz = velLin[velOffset + 2];
+        const velMag = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        if (velMag > peakNodeVelocity[nodeIdx]) {
+          peakNodeVelocity[nodeIdx] = velMag;
+        }
+      }
+
+      if (accelLin && peakNodeAcceleration) {
+        const accelOffset = frameIdx * nodeCount * 3 + nodeIdx * 3;
+        const ax = accelLin[accelOffset];
+        const ay = accelLin[accelOffset + 1];
+        const az = accelLin[accelOffset + 2];
+        const accelMag = Math.sqrt(ax * ax + ay * ay + az * az);
+        if (accelMag > peakNodeAcceleration[nodeIdx]) {
+          peakNodeAcceleration[nodeIdx] = accelMag;
+        }
+      }
+    }
+  }
+
   return {
     boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
     storyElevations,
@@ -414,5 +484,12 @@ function calculateStats(
       getStoryDrift,
     },
     peakStoryDrift,
+    peakNodeDisplacement,
+    peakNodeVelocity,
+    peakNodeAcceleration,
+    peakNodeDisplacementFrame,
+    peakNodeDisplacementX,
+    peakNodeDisplacementY,
+    peakNodeDisplacementZ,
   };
 }

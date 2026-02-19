@@ -13,16 +13,19 @@ export function FloorSlabsRenderer({ nodeIds }: FloorSlabsRendererProps) {
   const { frameIndex } = usePlayback();
   const { getExplodedPosition } = useExplodedView();
 
-  const offset = useMemo((): [number, number, number] => [
-    -animationData.precomputed.boundingBox.center[0],
-    -animationData.precomputed.boundingBox.center[1],
-    -animationData.precomputed.boundingBox.min[2],
-  ], [animationData.precomputed.boundingBox]);
+  const offset = useMemo(
+    (): [number, number, number] => [
+      -animationData.precomputed.boundingBox.center[0],
+      -animationData.precomputed.boundingBox.center[1],
+      -animationData.precomputed.boundingBox.min[2],
+    ],
+    [animationData.precomputed.boundingBox],
+  );
 
   const stories = useMemo(() => {
     const storyMap = new Map<string, number[]>();
-    
-    nodeIds.forEach(nodeId => {
+
+    nodeIds.forEach((nodeId) => {
       for (const [storyId, nodes] of Object.entries(animationData.metadata.stories)) {
         if (nodes.includes(nodeId)) {
           if (!storyMap.has(storyId)) {
@@ -42,10 +45,10 @@ export function FloorSlabsRenderer({ nodeIds }: FloorSlabsRendererProps) {
   return (
     <group>
       {stories.map(([storyId, nodes]) => (
-        <FloorSlab 
-          key={storyId} 
-          storyId={storyId} 
-          nodeIds={nodes} 
+        <FloorSlab
+          key={storyId}
+          storyId={storyId}
+          nodeIds={nodes}
           frameIndex={frameIndex}
           getExplodedPosition={getExplodedPosition}
           offset={offset}
@@ -59,7 +62,7 @@ interface FloorSlabProps {
   storyId: string;
   nodeIds: number[];
   frameIndex: number;
-  getExplodedPosition: ReturnType<typeof useExplodedView>['getExplodedPosition'];
+  getExplodedPosition: ReturnType<typeof useExplodedView>["getExplodedPosition"];
   offset: [number, number, number];
 }
 
@@ -75,7 +78,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }
       return { geometry: null, color: new THREE.Color(0.5, 0.5, 0.5) };
     }
 
-    const positions = nodeIds.map(nodeId => {
+    const positions = nodeIds.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
       const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       const exploded = getExplodedPosition(
@@ -83,20 +86,20 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }
         [pos[0], pos[1], pos[2]],
         [disp[0], disp[1], disp[2]],
         offset,
-        animationData.metadata
+        animationData.metadata,
       );
       return new THREE.Vector3(exploded[0], exploded[1], exploded[2]);
     });
 
     // Find bounding box in 2D (X-Y plane)
-    const minX = Math.min(...positions.map(p => p.x));
-    const maxX = Math.max(...positions.map(p => p.x));
-    const minY = Math.min(...positions.map(p => p.y));
-    const maxY = Math.max(...positions.map(p => p.y));
+    const minX = Math.min(...positions.map((p) => p.x));
+    const maxX = Math.max(...positions.map((p) => p.x));
+    const minY = Math.min(...positions.map((p) => p.y));
+    const maxY = Math.max(...positions.map((p) => p.y));
 
     // Create a simple quad for the floor
     const avgZ = positions.reduce((sum, p) => sum + p.z, 0) / positions.length;
-    
+
     const shape = new THREE.Shape();
     shape.moveTo(minX, minY);
     shape.lineTo(maxX, minY);
@@ -108,21 +111,21 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }
     geom.translate(0, 0, avgZ);
 
     // Average color of all nodes
-    const colors = nodeIds.map(nid => getNodeColor(nid, frameIndex));
+    const colors = nodeIds.map((nid) => getNodeColor(nid, frameIndex));
     const avgColor = new THREE.Color(
       colors.reduce((s, c) => s + c.r, 0) / colors.length,
       colors.reduce((s, c) => s + c.g, 0) / colors.length,
-      colors.reduce((s, c) => s + c.b, 0) / colors.length
+      colors.reduce((s, c) => s + c.b, 0) / colors.length,
     );
 
     return { geometry: geom, color: avgColor };
   }, [nodeIds, frameIndex, animationData, getNodeColor, getExplodedPosition, offset]);
 
-  const handlePointerOver = (e: any) => {
+  const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();
     setHovered({
       id: `floor-${storyId}`,
-      type: 'floor',
+      type: "floor",
       value: storyId,
       nodeIds,
       label: `Floor ${storyId}`,
@@ -130,16 +133,16 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }
     });
   };
 
-  const handlePointerOut = (e: any) => {
+  const handlePointerOut = (e: PointerEvent) => {
     e.stopPropagation();
     setHovered(null);
   };
 
-  const handleClick = (e: any) => {
+  const handleClick = (e: PointerEvent) => {
     e.stopPropagation();
     selectSlice({
       id: `floor-${storyId}`,
-      type: 'floor',
+      type: "floor",
       value: storyId,
       nodeIds,
       label: `Floor ${storyId}`,
@@ -150,18 +153,8 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }
   if (!geometry) return null;
 
   return (
-    <mesh 
-      geometry={geometry}
-      onPointerOver={handlePointerOver}
-      onPointerOut={handlePointerOut}
-      onClick={handleClick}
-    >
-      <meshBasicMaterial 
-        color={color} 
-        transparent 
-        opacity={isHovered ? 0.9 : 0.6} 
-        side={THREE.DoubleSide}
-      />
+    <mesh geometry={geometry} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick}>
+      <meshBasicMaterial color={color} transparent opacity={isHovered ? 0.9 : 0.6} side={THREE.DoubleSide} />
     </mesh>
   );
 }

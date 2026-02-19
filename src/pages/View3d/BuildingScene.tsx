@@ -42,11 +42,14 @@ export function BuildingScene() {
     addSelectedNodes,
   } = useNodeVisibility();
 
-  const offsets = useMemo(() => ({
-    x: -animationData.precomputed.boundingBox.center[0],
-    y: -animationData.precomputed.boundingBox.center[1],
-    z: -animationData.precomputed.boundingBox.min[2],
-  }), [animationData.precomputed.boundingBox]);
+  const offsets = useMemo(
+    () => ({
+      x: -animationData.precomputed.boundingBox.center[0],
+      y: -animationData.precomputed.boundingBox.center[1],
+      z: -animationData.precomputed.boundingBox.min[2],
+    }),
+    [animationData.precomputed.boundingBox],
+  );
 
   const nodeCount = animationData.metadata.nodeCount;
 
@@ -103,7 +106,7 @@ export function BuildingScene() {
     // Update ref when boxSelection changes
     useEffect(() => {
       boxSelectionRef.current = boxSelection;
-    }, [boxSelection]);
+    }, []);
 
     useEffect(() => {
       const domElement = gl.domElement;
@@ -151,7 +154,7 @@ export function BuildingScene() {
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
       };
-    }, [gl, camera, visibleNodes, startBoxSelection, updateBoxSelection, setSelectedNodes, endBoxSelection]);
+    }, [gl]);
 
     return null;
   }
@@ -266,7 +269,7 @@ export function BuildingScene() {
 
     for (let i = 0; i < visibleNodes.length; i++) {
       const nodeId = visibleNodes[i];
-      
+
       // Compute displaced position directly
       const initX = basePositions[i * 3 + 0];
       const initY = basePositions[i * 3 + 1];

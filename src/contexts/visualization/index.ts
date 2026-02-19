@@ -13,3 +13,12 @@ export {
   useNodeVisibility, 
   performBoxSelection 
 } from './NodeVisibilityContext';
+export { 
+  ThresholdProvider, 
+  useThresholds,
+  type ThresholdType
+} from './ThresholdContext';
+export { 
+  FloorVisibilityProvider, 
+  useFloorVisibility 
+} from './FloorVisibilityContext';

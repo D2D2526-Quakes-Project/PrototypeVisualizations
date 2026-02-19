@@ -1,5 +1,6 @@
 import type { IDockviewPanelProps } from "dockview";
 import ReactECharts from "echarts-for-react";
+import { type EChartsOption } from "echarts";
 import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
@@ -146,7 +147,7 @@ function CheckSelect({
 export function Timeline({ api: _api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
-  const chartRef = useRef<any>(null);
+  const chartRef = useRef<ReactECharts>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // Default to Magnitude
@@ -205,18 +206,18 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
     });
 
     return { seriesData };
-  }, [animationData, maxFrame, selectedKeys]);
+  }, [maxFrame, selectedKeys, getChannelData, times]);
 
   // 2. Build ECharts Option
-  const option = useMemo(() => {
+  const option: EChartsOption = useMemo((): EChartsOption => {
     const { seriesData } = chartData;
     const count = seriesData.length;
 
-    const grids: any[] = [];
-    const xAxes: any[] = [];
-    const yAxes: any[] = [];
-    const series: any[] = [];
-    const titles: any[] = [];
+    const grids: EChartsOption["grid"] = [];
+    const xAxes: EChartsOption["xAxis"] = [];
+    const yAxes: EChartsOption["yAxis"] = [];
+    const series: EChartsOption["series"] = [];
+    const titles: EChartsOption["title"] = [];
 
     // Layout Constants
     const LEFT_MARGIN = 45;
@@ -325,7 +326,7 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
             borderColor: "#fff",
             borderWidth: 2,
           },
-          data: [{ coord: [0, 0] }],
+          data: [{ coord: [0, 0], name: "Playhead" }],
         },
       });
     });
@@ -338,7 +339,6 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
       series,
       // Axis Pointer synchronizes hover across all charts
       axisPointer: {
-        link: { xAxisIndex: "all" },
         label: { backgroundColor: "#777" },
       },
       tooltip: {
@@ -354,23 +354,24 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
           lineStyle: { color: "#9ca3af", width: 1, type: "dashed" },
         },
         // Custom formatter to show ALL series regardless of which graph is hovered
-        formatter: (params: any) => {
+        formatter: (params) => {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
 
           const firstParam = params[0];
-          const time = firstParam.axisValue;
+          const time = firstParam.value as number;
           const frame = Math.round(time / animationData.metadata.dt);
 
           const values: Array<{ name: string; color: string; value: number }> = [];
 
-          params.forEach((p: any) => {
+          params.forEach((p) => {
+            if (!p || !p.seriesName || !p.data) return;
             if (p.seriesName.includes("Marker") || p.seriesName === "Playhead") return;
 
             const configKey = Object.keys(CHANNEL_CONFIG).find(
               (key) => CHANNEL_CONFIG[key as ChannelKey].label === p.seriesName,
             );
-            const color = configKey ? CHANNEL_CONFIG[configKey as ChannelKey].color : p.color;
-            const value = p.data[1];
+            const color = configKey ? CHANNEL_CONFIG[configKey as ChannelKey].color : (p.color as string);
+            const value = (p.data as number[])[1];
 
             values.push({ name: p.seriesName, color, value });
           });
@@ -392,8 +393,6 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
       const chartDom = chart.getDom();
       if (!chartDom) return null;
       const rect = chartDom.getBoundingClientRect();
-      const gridModel = chart.getModel().getComponent("grid", 0);
-      if (!gridModel) return null;
 
       const pointInGrid = chart.convertFromPixel({ seriesIndex: 0 }, [pixelX - rect.left, 0]);
       if (!pointInGrid) return null;
@@ -434,7 +433,7 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [chartRef.current, isDragging, animationData.metadata.dt, maxFrame, setFrameIndex, selectedKeys.length]);
+  }, [isDragging, animationData.metadata.dt, maxFrame, setFrameIndex, selectedKeys.length]);
 
   // Update for MarkLine and MarkPoint
   useEffect(() => {

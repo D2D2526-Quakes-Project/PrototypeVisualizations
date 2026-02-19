@@ -38,10 +38,6 @@ function TimeFloorPlane({
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  if (!floorData.cornerNodes || floorData.cornerNodes.length !== 4) {
-    return null;
-  }
-
   // Apply centering to positions
   const positions = useMemo(() => {
     if (floorData.cornerNodes.length !== 4) return new Float32Array();
@@ -55,26 +51,10 @@ function TimeFloorPlane({
 
     if (!nw || !ne || !se || !sw) return new Float32Array();
 
-    const nwPos = [
-      nw.position[0] + offsetX,
-      yPosition,
-      nw.position[2] + offsetZ,
-    ];
-    const nePos = [
-      ne.position[0] + offsetX,
-      yPosition,
-      ne.position[2] + offsetZ,
-    ];
-    const sePos = [
-      se.position[0] + offsetX,
-      yPosition,
-      se.position[2] + offsetZ,
-    ];
-    const swPos = [
-      sw.position[0] + offsetX,
-      yPosition,
-      sw.position[2] + offsetZ,
-    ];
+    const nwPos = [nw.position[0] + offsetX, yPosition, nw.position[2] + offsetZ];
+    const nePos = [ne.position[0] + offsetX, yPosition, ne.position[2] + offsetZ];
+    const sePos = [se.position[0] + offsetX, yPosition, se.position[2] + offsetZ];
+    const swPos = [sw.position[0] + offsetX, yPosition, sw.position[2] + offsetZ];
 
     return new Float32Array([
       // Triangle 1: NE, NW, SE
@@ -125,6 +105,10 @@ function TimeFloorPlane({
     return geo;
   }, [positions, colors]);
 
+  if (!floorData.cornerNodes || floorData.cornerNodes.length !== 4) {
+    return null;
+  }
+
   if (!geometry) return null;
 
   return (
@@ -167,9 +151,12 @@ function FloorVolumeScene({
       // Get only corner nodes
       const { corners } = animationData.metadata;
       const cornerNodes = nodeIndices
-        .filter((idx) => 
-          corners.NW.includes(idx) || corners.NE.includes(idx) || 
-          corners.SW.includes(idx) || corners.SE.includes(idx)
+        .filter(
+          (idx) =>
+            corners.NW.includes(idx) ||
+            corners.NE.includes(idx) ||
+            corners.SW.includes(idx) ||
+            corners.SE.includes(idx),
         )
         .map((nodeIdx) => {
           const initialPos = animationData.initialPositions.at(nodeIdx);
@@ -194,7 +181,9 @@ function FloorVolumeScene({
         });
 
       // Calculate average displacement
-      let totalDx = 0, totalDy = 0, totalDz = 0;
+      let totalDx = 0,
+        totalDy = 0,
+        totalDz = 0;
       for (const nodeIdx of nodeIndices) {
         const disp = animationData.displacementLin.atFrame(frameIdx).at(nodeIdx);
         totalDx += disp[0];
@@ -206,11 +195,7 @@ function FloorVolumeScene({
         frameIndex: frameIdx,
         time: frameIdx * dt,
         cornerNodes,
-        averageDisplacement: [
-          totalDx / nodeIndices.length,
-          totalDy / nodeIndices.length,
-          totalDz / nodeIndices.length,
-        ],
+        averageDisplacement: [totalDx / nodeIndices.length, totalDy / nodeIndices.length, totalDz / nodeIndices.length],
       });
     }
 
@@ -345,7 +330,7 @@ export default function FloorTimeVolumePage() {
   const { animationData } = useAnimationData();
   const storyOrder = animationData.metadata.storyOrder;
   const defaultStory = storyOrder[Math.floor(storyOrder.length / 2)] || "8";
-  
+
   const [selectedStory, setSelectedStory] = useState(defaultStory);
   const [maxFrames, setMaxFrames] = useState(100);
   const [displacementScale, setDisplacementScale] = useState(1);

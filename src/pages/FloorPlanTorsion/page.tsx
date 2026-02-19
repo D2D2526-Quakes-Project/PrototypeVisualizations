@@ -25,7 +25,7 @@ function PlaneShapes({
   const { frameIndex } = usePlayback();
 
   const { stories, storyOrder, corners } = animationData.metadata;
-  
+
   const offsetX = -animationData.precomputed.boundingBox.center[0];
   const offsetY = -animationData.precomputed.boundingBox.center[1];
   const offsetZ = -animationData.precomputed.boundingBox.min[2];
@@ -33,12 +33,15 @@ function PlaneShapes({
   const maxDisplacement = animationData.precomputed.maxDisplacement;
 
   // Create corner sets for quick lookup
-  const cornerSets = useMemo(() => ({
-    NW: new Set(corners.NW),
-    NE: new Set(corners.NE),
-    SW: new Set(corners.SW),
-    SE: new Set(corners.SE),
-  }), [corners]);
+  const cornerSets = useMemo(
+    () => ({
+      NW: new Set(corners.NW),
+      NE: new Set(corners.NE),
+      SW: new Set(corners.SW),
+      SE: new Set(corners.SE),
+    }),
+    [corners],
+  );
 
   // Get building dimensions
   const buildingWidth = animationData.precomputed.boundingBox.max[0] - animationData.precomputed.boundingBox.min[0];
@@ -60,9 +63,9 @@ function PlaneShapes({
       <group>
         {storyOrder.map((storyId) => {
           const nodeIndices = stories[storyId];
-          const cornerNodes = nodeIndices.filter((idx) => 
-            cornerSets.NW.has(idx) || cornerSets.NE.has(idx) || 
-            cornerSets.SW.has(idx) || cornerSets.SE.has(idx)
+          const cornerNodes = nodeIndices.filter(
+            (idx) =>
+              cornerSets.NW.has(idx) || cornerSets.NE.has(idx) || cornerSets.SW.has(idx) || cornerSets.SE.has(idx),
           );
 
           if (cornerNodes.length !== 4) return null;
@@ -70,9 +73,13 @@ function PlaneShapes({
           const nodePositions = cornerNodes.map((nodeIdx) => {
             const initialPos = animationData.initialPositions.at(nodeIdx);
             const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
-            const corner = cornerSets.NW.has(nodeIdx) ? "NW" : 
-                          cornerSets.NE.has(nodeIdx) ? "NE" : 
-                          cornerSets.SW.has(nodeIdx) ? "SW" : "SE";
+            const corner = cornerSets.NW.has(nodeIdx)
+              ? "NW"
+              : cornerSets.NE.has(nodeIdx)
+                ? "NE"
+                : cornerSets.SW.has(nodeIdx)
+                  ? "SW"
+                  : "SE";
 
             const posX = initialPos[0] + displacement[0] * displacementScale + offsetX;
             const posY = initialPos[1] + displacement[1] + offsetY;
@@ -121,14 +128,20 @@ function PlaneShapes({
           ]);
 
           // Calculate average displacement for this story
-          let totalDx = 0, totalDy = 0, totalDz = 0;
+          let totalDx = 0,
+            totalDy = 0,
+            totalDz = 0;
           for (const nodeIdx of nodeIndices) {
             const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
             totalDx += disp[0];
             totalDy += disp[1];
             totalDz += disp[2];
           }
-          const avgDisp = Math.hypot(totalDx / nodeIndices.length, totalDy / nodeIndices.length, totalDz / nodeIndices.length);
+          const avgDisp = Math.hypot(
+            totalDx / nodeIndices.length,
+            totalDy / nodeIndices.length,
+            totalDz / nodeIndices.length,
+          );
           const floorColor = formatHex(colorMap(avgDisp / maxDisplacement));
 
           return (
@@ -219,9 +232,9 @@ export function FloorPlanTorsion() {
               <div className="w-full text-xs text-neutral-600 flex flex-col p-2 gap-1">
                 {storyOrder.map((storyId) => {
                   const nodeIndices = stories[storyId];
-                  
-                  let minPoint = [Number.MAX_VALUE, Number.MAX_VALUE];
-                  let maxPoint = [Number.MIN_VALUE, Number.MIN_VALUE];
+
+                  const minPoint = [Number.MAX_VALUE, Number.MAX_VALUE];
+                  const maxPoint = [Number.MIN_VALUE, Number.MIN_VALUE];
 
                   const locs: [number, number][] = nodeIndices.map((nodeIdx) => {
                     const initialPos = animationData.initialPositions.at(nodeIdx);
@@ -246,14 +259,20 @@ export function FloorPlanTorsion() {
                   const height = maxPoint[1] - minPoint[1];
 
                   // Calculate average displacement
-                  let totalDx = 0, totalDy = 0, totalDz = 0;
+                  let totalDx = 0,
+                    totalDy = 0,
+                    totalDz = 0;
                   for (const nodeIdx of nodeIndices) {
                     const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
                     totalDx += disp[0];
                     totalDy += disp[1];
                     totalDz += disp[2];
                   }
-                  const avgDisp = Math.hypot(totalDx / nodeIndices.length, totalDy / nodeIndices.length, totalDz / nodeIndices.length);
+                  const avgDisp = Math.hypot(
+                    totalDx / nodeIndices.length,
+                    totalDy / nodeIndices.length,
+                    totalDz / nodeIndices.length,
+                  );
                   const floorColor = colorMap(avgDisp / animationData.precomputed.maxDisplacement);
 
                   return (

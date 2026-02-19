@@ -1,16 +1,58 @@
+/**
+ * FloorDisplacementChart Component
+ * =============================================================================
+ *
+ * PURPOSE:
+ * Displays average displacement per floor/story in a horizontal bar chart.
+ * Shows X, Y, Z components and magnitude for each story level.
+ *
+ * WHAT IT SHOWS:
+ * - Y-axis: Story levels from bottom to top
+ * - X-axis: Displacement magnitude (inches)
+ * - Bars for X (red), Y (green), Z (blue) components
+ * - Line for overall magnitude (amber)
+ *
+ * DATA SOURCES:
+ * - Story order: animationData.metadata.storyOrder
+ * - Node-to-story mapping: animationData.metadata.stories
+ * - Story heights: animationData.metadata.storyHeights
+ * - Displacement data: animationData.displacementLin
+ * - Max displacement: animationData.precomputed.maxDisplacement (for stable axis)
+ *
+ * UNITS:
+ * - Displacement: inches
+ * - Elevation: feet (converted from inches)
+ *
+ * IMPORTANCE:
+ * Helps engineers understand how displacement varies across building height,
+ * identifying which floors experience the most movement. Critical for
+ * assessing interstory drift and overall building response.
+ * =============================================================================
+ */
+
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
 import { useMemo } from "react";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { useFloorVisibility } from "@/contexts/visualization";
+import type { EChartsOption } from "echarts";
 
 export function FloorDisplacementChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
+  const { getVisibleStoryOrder } = useFloorVisibility();
+
+  const xAxisMax = useMemo(() => {
+    const maxDisp = animationData.precomputed.maxDisplacement;
+    return Math.max(maxDisp * 1.2, 0.1);
+  }, [animationData.precomputed.maxDisplacement]);
 
   const chartData = useMemo(() => {
-    const { storyOrder, stories, storyHeights } = animationData.metadata;
+    const { stories, storyHeights } = animationData.metadata;
     const { displacementLin } = animationData;
     const frameData = displacementLin.atFrame(frameIndex);
+
+    const visibleStories = getVisibleStoryOrder().slice(1);
 
     const storyData: Array<{
       story: string;
@@ -21,9 +63,7 @@ export function FloorDisplacementChart() {
       avgMag: number;
     }> = [];
 
-    const storyOrderWithoutGround = storyOrder.slice(1);
-
-    storyOrderWithoutGround.forEach((storyId) => {
+    visibleStories.forEach((storyId) => {
       const nodes = stories[storyId] || [];
       const heightIn = storyHeights[storyId] || 0;
       const heightFt = heightIn / 12;
@@ -54,9 +94,9 @@ export function FloorDisplacementChart() {
     });
 
     return storyData;
-  }, [animationData, frameIndex]);
+  }, [animationData, frameIndex, getVisibleStoryOrder]);
 
-  const option = useMemo(() => {
+  const option: EChartsOption = useMemo((): EChartsOption => {
     return {
       tooltip: {
         trigger: "axis",
@@ -66,15 +106,15 @@ export function FloorDisplacementChart() {
         padding: 10,
         textStyle: { color: "#374151", fontSize: 11 },
         axisPointer: { type: "shadow" },
-        formatter: (params: any) => {
-          if (!params || params.length === 0) return "";
+        formatter: (params) => {
+          if (!params || !Array.isArray(params) || params.length === 0) return "";
           const data = chartData[params[0].dataIndex];
           return `
             <div style="font-weight: 600; margin-bottom: 6px;">Story ${data.story} (${data.elevation.toFixed(0)}ft)</div>
-            <div>X: ${data.avgX.toFixed(4)}</div>
-            <div>Y: ${data.avgY.toFixed(4)}</div>
-            <div>Z: ${data.avgZ.toFixed(4)}</div>
-            <div>Mag: ${data.avgMag.toFixed(4)}</div>
+            <div>X: ${data.avgX.toFixed(4)} in</div>
+            <div>Y: ${data.avgY.toFixed(4)} in</div>
+            <div>Z: ${data.avgZ.toFixed(4)} in</div>
+            <div>Mag: ${data.avgMag.toFixed(4)} in</div>
           `;
         },
       },
@@ -96,6 +136,8 @@ export function FloorDisplacementChart() {
         nameLocation: "middle",
         nameGap: 25,
         nameTextStyle: { fontSize: 11, color: "#4b5563" },
+        min: 0,
+        max: xAxisMax,
         axisLine: { lineStyle: { color: "#d1d5db" } },
         axisLabel: { color: "#6b7280", fontSize: 10, formatter: (v: number) => v.toFixed(2) },
         splitLine: { lineStyle: { color: "#e5e7eb", type: "dashed" } },
@@ -144,7 +186,7 @@ export function FloorDisplacementChart() {
       ],
       animation: false,
     };
-  }, [chartData]);
+  }, [chartData, xAxisMax]);
 
   return (
     <div className="h-full w-full flex flex-col bg-white">

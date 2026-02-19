@@ -1,3 +1,32 @@
+/**
+ * DataTablePanel Component
+ * =============================================================================
+ * 
+ * PURPOSE:
+ * Provides a paginated tabular view of all node displacement data for the
+ * current frame. Allows engineers to see exact numerical values.
+ * 
+ * WHAT IT SHOWS:
+ * - Node index
+ * - Story assignment
+ * - X, Y, Z displacement components (inches)
+ * - Displacement magnitude (inches)
+ * 
+ * DATA SOURCES:
+ * - Displacement: animationData.displacementLin
+ * - Node-to-story mapping: animationData.metadata.stories
+ * 
+ * UNITS:
+ * - Displacement: inches
+ * - Magnitude: inches
+ * 
+ * IMPORTANCE:
+ * Provides raw numerical access to simulation data for verification,
+ * debugging, and detailed analysis. Essential for engineers who need
+ * exact values rather than visual representations.
+ * =============================================================================
+ */
+
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useMemo, useState } from "react";

@@ -1,4 +1,3 @@
-import type { Size } from "@react-three/fiber";
 import { createContext, useContext, useState, useCallback, type ReactNode, type RefObject } from "react";
 import * as THREE from "three";
 

@@ -1,6 +1,34 @@
+/**
+ * CorrelationMatrix Component
+ * =============================================================================
+ *
+ * PURPOSE:
+ * Shows the correlation between displacement components (X, Y, Z) and
+ * magnitude across all nodes and frames. Helps identify coupled responses.
+ *
+ * WHAT IT SHOWS:
+ * - Heatmap of Pearson correlation coefficients (-1 to +1)
+ * - Correlations between X, Y, Z displacement components
+ * - Correlations with displacement magnitude
+ *
+ * DATA SOURCES:
+ * - Displacement: animationData.displacementLin (sampled across frames/nodes)
+ *
+ * CALCULATION:
+ * - Pearson correlation coefficient between displacement time series
+ * - Samples frames and nodes for computational efficiency
+ *
+ * IMPORTANCE:
+ * Reveals how displacement components are related. High correlation
+ * between X and Y might indicate directional coupling in the building's
+ * response. Low correlation suggests independent behavior.
+ * =============================================================================
+ */
+
 import ReactECharts from "echarts-for-react";
 import { useMemo } from "react";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import type { EChartsOption } from "echarts";
 
 export function CorrelationMatrix() {
   const { animationData } = useAnimationData();
@@ -59,7 +87,7 @@ export function CorrelationMatrix() {
     return { labels, matrix };
   }, [animationData]);
 
-  const option = useMemo(() => {
+  const option: EChartsOption = useMemo((): EChartsOption => {
     const { labels, matrix } = correlationData;
 
     const data: Array<[number, number, number]> = [];
@@ -76,8 +104,10 @@ export function CorrelationMatrix() {
         borderColor: "#d1d5db",
         borderWidth: 1,
         padding: 10,
-        formatter: (params: any) => {
-          const [i, j, value] = params.data;
+        formatter: (params) => {
+          if (!params || !Array.isArray(params) || params.length === 0) return "";
+          const paramsData = params[0].data as { value: number[] };
+          const [i, j, value] = paramsData.value as number[];
           return `<div style="font-weight: 600;">${labels[i]} vs ${labels[j]}</div><div>Correlation: ${value.toFixed(4)}</div>`;
         },
       },
@@ -117,7 +147,11 @@ export function CorrelationMatrix() {
           data: data,
           label: {
             show: true,
-            formatter: (params: any) => params.data[2].toFixed(2),
+            formatter: (params) => {
+              if (!params || !Array.isArray(params) || params.length === 0) return "";
+              const value = params.data as number[];
+              return value[2].toFixed(2);
+            },
             fontSize: 11,
           },
           emphasis: {

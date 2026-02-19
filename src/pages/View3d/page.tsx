@@ -4,7 +4,7 @@ import { NodePanel, NodeTab } from "@/components/NodePanel";
 import { SlicePanel } from "@/components/SlicePanel";
 import { CameraProvider } from "@/contexts/CameraContext";
 import { NodeSelectionProvider, useNodeSelection } from "@/contexts/NodeSelectionContext";
-import { useSliceSelection } from "@/contexts/visualization";
+import { useSliceSelection, ThresholdProvider, FloorVisibilityProvider } from "@/contexts/visualization";
 import { DockviewApi, type DockviewReadyEvent } from "dockview";
 import { useState } from "react";
 
@@ -24,11 +24,15 @@ export function View3d() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <NodeSelectionProvider>
-        <CameraProvider>
-          <DockviewContainer setDockApi={setDockApi} />
-        </CameraProvider>
-      </NodeSelectionProvider>
+      <ThresholdProvider>
+        <FloorVisibilityProvider>
+          <NodeSelectionProvider>
+            <CameraProvider>
+              <DockviewContainer setDockApi={setDockApi} />
+            </CameraProvider>
+          </NodeSelectionProvider>
+        </FloorVisibilityProvider>
+      </ThresholdProvider>
     </div>
   );
 }

@@ -19,11 +19,9 @@ export function getNodeColorLight(nodeId: number): string {
   return `hsl(${hue}, 70%, 90%)`;
 }
 
-export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
+export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: number }>) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-
-  const nodeId = props.params.nodeId;
 
   const initialPosRaw = animationData.initialPositions.at(nodeId);
   const currentDispRaw = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
@@ -257,7 +255,13 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
       }
     }
     return { story: "Unknown", height: 0, elevation: 0, floorNumber: 0, totalFloors: 0 };
-  }, [nodeId, animationData]);
+  }, [
+    animationData.metadata.stories,
+    animationData.metadata.storyHeights,
+    animationData.metadata.storyOrder,
+    animationData.precomputed.storyElevations,
+    nodeId,
+  ]);
 
   const cornerInfo = useMemo(() => {
     for (const [cornerName, nodeIds] of Object.entries(animationData.metadata.corners)) {
@@ -274,8 +278,8 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
     if (storyIndex <= 0) return null; // No drift for ground floor
 
     // const corners = animationData.precomputed.cornerNodes[storyInfo.story];
-    const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
-    const cornerIndex = cornerOrder.indexOf(cornerInfo as any);
+    const cornerOrder = ["NW", "NE", "SW", "SE"];
+    const cornerIndex = cornerOrder.indexOf(cornerInfo);
 
     if (cornerIndex === -1) return null;
 
@@ -287,7 +291,7 @@ export function NodePanel(props: IDockviewPanelProps<{ nodeId: number }>) {
       current: currentDrift,
       peak: peakDrift,
     };
-  }, [cornerInfo, storyInfo, frameIndex, animationData, nodeId]);
+  }, [cornerInfo, storyInfo, frameIndex, animationData]);
 
   // DISTANCE TRAVELED
   const totalDistanceTraveled = useMemo(() => {

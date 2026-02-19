@@ -99,7 +99,7 @@ export function ViewDamageThreshold() {
     }
 
     return thresholds;
-  }, [storyDrift, warningThreshold]);
+  }, [storyDrift, warningThreshold, storyOrder]);
 
   // This is the max for the current frame.
   // const maxRatioPerFrame = useMemo(() => {

@@ -1,6 +1,61 @@
+/**
+ * StatisticsPanel Component
+ * =============================================================================
+ * 
+ * PURPOSE:
+ * Displays comprehensive statistics about the simulation and current frame
+ * state. Aggregates both precomputed and real-time calculated values.
+ * 
+ * WHAT IT SHOWS:
+ * - Simulation metadata: node count, frame count, duration, time step
+ * - Current frame info: frame number, time
+ * - Current displacement statistics: range, min, max, average per axis
+ * - Ground motion values for current frame
+ * - Peak values (all-time): max displacement, velocity, acceleration
+ * 
+ * DATA SOURCES:
+ * - Metadata: animationData.metadata
+ * - Displacement: animationData.displacementLin
+ * - Ground motion: animationData.groundMotion
+ * - Precomputed stats: animationData.precomputed
+ * 
+ * UNITS:
+ * - Displacement: inches
+ * - Velocity: inches/second
+ * - Acceleration: inches/second²
+ * - Time: seconds
+ * 
+ * IMPORTANCE:
+ * Provides a quick overview of simulation state and key metrics.
+ * Engineers use this to verify simulation parameters and track
+ * current response levels relative to peak values.
+ * =============================================================================
+ */
+
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useMemo } from "react";
+
+function StatRow({ label, value, unit = "" }: { label: string; value: string | number; unit?: string }) {
+  return (
+    <div className="flex justify-between py-1 border-b border-neutral-100">
+      <span className="text-neutral-500 text-xs">{label}</span>
+      <span className="font-mono text-xs">
+        {value}
+        {unit && <span className="text-neutral-400 ml-1">{unit}</span>}
+      </span>
+    </div>
+  );
+}
+
+function StatGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-3">
+      <div className="text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wide">{title}</div>
+      <div className="bg-neutral-50 rounded px-2 py-1">{children}</div>
+    </div>
+  );
+}
 
 export function StatisticsPanel() {
   const { animationData } = useAnimationData();
@@ -64,23 +119,6 @@ export function StatisticsPanel() {
       precomputed,
     };
   }, [animationData, frameIndex]);
-
-  const StatRow = ({ label, value, unit = "" }: { label: string; value: string | number; unit?: string }) => (
-    <div className="flex justify-between py-1 border-b border-neutral-100">
-      <span className="text-neutral-500 text-xs">{label}</span>
-      <span className="font-mono text-xs">
-        {value}
-        {unit && <span className="text-neutral-400 ml-1">{unit}</span>}
-      </span>
-    </div>
-  );
-
-  const StatGroup = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="mb-3">
-      <div className="text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wide">{title}</div>
-      <div className="bg-neutral-50 rounded px-2 py-1">{children}</div>
-    </div>
-  );
 
   return (
     <div className="h-full w-full flex flex-col bg-white overflow-auto">

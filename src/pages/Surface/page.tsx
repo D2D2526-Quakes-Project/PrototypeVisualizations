@@ -39,9 +39,11 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
       for (let s = 0; s < numStories; s++) {
         const storyId = storyOrder[s];
         const nodeIndices = stories[storyId];
-        
+
         // Calculate average displacement for this story at this frame
-        let totalDx = 0, totalDy = 0, totalDz = 0;
+        let totalDx = 0,
+          totalDy = 0,
+          totalDz = 0;
         for (const nodeIdx of nodeIndices) {
           const disp = animationData.displacementLin.atFrame(t).at(nodeIdx);
           totalDx += disp[0];
@@ -51,28 +53,34 @@ function SurfacePlot({ metric }: { metric: "displacement" | "drift" }) {
         const avgDisp = [totalDx / nodeIndices.length, totalDy / nodeIndices.length, totalDz / nodeIndices.length];
         const displacement = Math.hypot(...avgDisp);
 
-        let value = 0;
+        let value;
         if (metric === "displacement") {
           value = displacement;
         } else {
           // drift
           const storyElevation = animationData.precomputed.storyElevations[storyId] || 0;
-          
+
           if (s === 0) {
             value = storyElevation > 0 ? displacement / storyElevation : 0;
           } else {
             const prevStoryId = storyOrder[s - 1];
             const prevNodeIndices = stories[prevStoryId];
-            let prevTotalDx = 0, prevTotalDy = 0, prevTotalDz = 0;
+            let prevTotalDx = 0,
+              prevTotalDy = 0,
+              prevTotalDz = 0;
             for (const nodeIdx of prevNodeIndices) {
               const disp = animationData.displacementLin.atFrame(t).at(nodeIdx);
               prevTotalDx += disp[0];
               prevTotalDy += disp[1];
               prevTotalDz += disp[2];
             }
-            const prevAvgDisp = [prevTotalDx / prevNodeIndices.length, prevTotalDy / prevNodeIndices.length, prevTotalDz / prevNodeIndices.length];
+            const prevAvgDisp = [
+              prevTotalDx / prevNodeIndices.length,
+              prevTotalDy / prevNodeIndices.length,
+              prevTotalDz / prevNodeIndices.length,
+            ];
             const prevDisp = Math.hypot(...prevAvgDisp);
-            
+
             const prevElevation = animationData.precomputed.storyElevations[prevStoryId] || 0;
             const interStoryHeight = storyElevation - prevElevation;
             const drift = Math.abs(displacement - prevDisp);

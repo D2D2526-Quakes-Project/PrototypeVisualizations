@@ -1,43 +1,94 @@
-import { useAnimationData } from "@/hooks/nodeDataHook";
-import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp } from "lucide-react";
+/**
+ * PeakResponseTimePanel Component
+ * =============================================================================
+ * 
+ * PURPOSE:
+ * Shows when each story and corner reaches its peak interstory drift,
+ * helping engineers understand the timing and location of maximum response.
+ * 
+ * WHAT IT SHOWS:
+ * - Story ID and elevation
+ * - Peak drift value for each corner (NW, NE, SW, SE)
+ * - Frame and time when peak occurred
+ * - Color-coded corner indicators matching the building visualization
+ * 
+ * DATA SOURCES:
+ * - Story drift: animationData.precomputed.storyDrift
+ * - Peak drift: animationData.precomputed.peakStoryDrift
+ * - Story heights: animationData.metadata.storyHeights
+ * 
+ * UNITS:
+ * - Drift: percentage
+ * - Elevation: feet
+ * - Time: seconds
+ * 
+ * IMPORTANCE:
+ * Identifies critical moments in the earthquake response when different
+ * parts of the building experience their maximum drift. This helps
+ * engineers understand the propagation of damage through the structure.
+ * =============================================================================
+ */
 
-type SortKey = "story" | "peakDrift" | "peakFrame" | "peakTime";
-type SortDir = "asc" | "desc";
+import { useAnimationData } from "@/hooks/nodeDataHook";
+import { useMemo } from "react";
+import { formatHex, interpolate } from "culori";
+
+const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
+const blue400 = formatHex("oklch(70.7% 0.165 254.624)")!;
+const white = formatHex("#fff")!;
+const red400 = formatHex("oklch(70.4% 0.191 22.216)")!;
+const red900 = formatHex("oklch(39.6% 0.141 25.723)")!;
+const colorMap = interpolate(
+  [
+    [blue900, -1],
+    [blue400, -0.5],
+    [white, 0],
+    [red400, 0.5],
+    [red900, 1],
+  ],
+  "oklab",
+);
+
+const cornerColors = {
+  NW: { bg: "#dbeafe", text: "#1e40af" },
+  NE: { bg: "#fee2e2", text: "#991b1b" },
+  SW: { bg: "#dcfce7", text: "#166534" },
+  SE: { bg: "#fef3c7", text: "#92400e" },
+};
 
 export function PeakResponseTimePanel() {
   const { animationData } = useAnimationData();
-  const [sortKey, setSortKey] = useState<SortKey>("peakDrift");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const peakData = useMemo(() => {
-    const { storyOrder, storyHeights } = animationData.metadata;
+    const { storyOrder, storyHeights, frameCount, dt } = animationData.metadata;
     const { storyDrift } = animationData.precomputed;
     const storyOrderWithoutGround = storyOrder.slice(1);
 
     const data: Array<{
       story: string;
       elevation: number;
-      peakDrift: number;
-      peakCorner: string;
-      peakFrame: number;
-      peakTime: number;
+      corners: {
+        NW: { drift: number; frame: number; time: number };
+        NE: { drift: number; frame: number; time: number };
+        SW: { drift: number; frame: number; time: number };
+        SE: { drift: number; frame: number; time: number };
+      };
     }> = [];
 
-    const corners = ["NW", "NE", "SW", "SE"];
-
     storyOrderWithoutGround.forEach((storyId, storyIdx) => {
-      let maxDrift = 0;
-      let maxFrame = 0;
-      let peakCorner = "NW";
+      const corners = { NW: { drift: 0, frame: 0, time: 0 }, NE: { drift: 0, frame: 0, time: 0 }, SW: { drift: 0, frame: 0, time: 0 }, SE: { drift: 0, frame: 0, time: 0 } };
+      const cornerNames = ["NW", "NE", "SW", "SE"] as const;
 
-      for (let frame = 0; frame < animationData.metadata.frameCount; frame++) {
+      for (let frame = 0; frame < frameCount; frame++) {
         const drifts = storyDrift.getStoryDrift(storyIdx + 1, frame);
         drifts.forEach((d, i) => {
-          if (d > maxDrift) {
-            maxDrift = d;
-            maxFrame = frame;
-            peakCorner = corners[i];
+          const corner = cornerNames[i];
+          if (d > corners[corner].drift) {
+            corners[corner] = {
+              drift: d,
+              frame,
+              time: frame * dt,
+            };
           }
         });
       }
@@ -46,101 +97,70 @@ export function PeakResponseTimePanel() {
       data.push({
         story: storyId,
         elevation: heightIn / 12,
-        peakDrift: maxDrift,
-        peakCorner,
-        peakFrame: maxFrame,
-        peakTime: maxFrame * animationData.metadata.dt,
+        corners,
       });
     });
 
     return data;
   }, [animationData]);
 
-  const sortedData = useMemo(() => {
-    return [...peakData].sort((a, b) => {
-      const aVal = a[sortKey];
-      const bVal = b[sortKey];
-      if (typeof aVal === "string") {
-        return sortDir === "asc" ? aVal.localeCompare(bVal as string) : (bVal as string).localeCompare(aVal);
-      }
-      return sortDir === "asc" ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
-    });
-  }, [peakData, sortKey, sortDir]);
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
-  };
-
-  const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
-    <th className="px-2 py-1.5 text-left cursor-pointer hover:bg-neutral-100 select-none" onClick={() => toggleSort(k)}>
-      <div className="flex items-center gap-1">
-        {label}
-        {sortKey === k && (sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
-      </div>
-    </th>
-  );
+  const maxDriftOverall = useMemo(() => {
+    return Math.max(...Object.values(animationData.precomputed.peakStoryDrift).flatMap((s) => Object.values(s)));
+  }, [animationData.precomputed.peakStoryDrift]);
 
   return (
     <div className="h-full w-full flex flex-col bg-white">
       <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
         <div className="text-sm text-neutral-700">
           <span className="font-medium">Peak Response Time</span>
-          <span className="text-neutral-400 ml-2">- When each story reaches max drift</span>
+          <span className="text-neutral-400 ml-2">- When each corner reaches max drift</span>
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full text-xs">
-          <thead className="sticky top-0 bg-neutral-50 border-b border-neutral-200">
-            <tr className="font-medium text-neutral-600">
-              <SortHeader label="Story" k="story" />
-              <th className="px-2 py-1.5 text-left">Elev (ft)</th>
-              <SortHeader label="Peak Drift" k="peakDrift" />
-              <th className="px-2 py-1.5 text-left">Corner</th>
-              <SortHeader label="Frame" k="peakFrame" />
-              <SortHeader label="Time" k="peakTime" />
-            </tr>
-          </thead>
-          <tbody>
-            {sortedData.map((row) => (
-              <tr key={row.story} className="border-b border-neutral-100 hover:bg-neutral-50">
-                <td className="px-2 py-1 font-medium">{row.story}</td>
-                <td className="px-2 py-1 font-mono text-neutral-500">{row.elevation.toFixed(0)}</td>
-                <td className="px-2 py-1 font-mono font-medium">{row.peakDrift.toFixed(4)}%</td>
-                <td className="px-2 py-1">
-                  <span
-                    className="px-1.5 py-0.5 rounded text-xs font-medium"
-                    style={{
-                      background:
-                        row.peakCorner === "NW"
-                          ? "#dbeafe"
-                          : row.peakCorner === "NE"
-                            ? "#fee2e2"
-                            : row.peakCorner === "SW"
-                              ? "#dcfce7"
-                              : "#fef3c7",
-                      color:
-                        row.peakCorner === "NW"
-                          ? "#1e40af"
-                          : row.peakCorner === "NE"
-                            ? "#991b1b"
-                            : row.peakCorner === "SW"
-                              ? "#166534"
-                              : "#92400e",
-                    }}>
-                    {row.peakCorner}
-                  </span>
-                </td>
-                <td className="px-2 py-1 font-mono text-neutral-500">{row.peakFrame + 1}</td>
-                <td className="px-2 py-1 font-mono text-neutral-500">{row.peakTime.toFixed(3)}s</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="text-xs text-neutral-500 grid grid-cols-[auto_1fr] gap-x-2 p-2 border-b border-neutral-200 bg-neutral-50 sticky top-0">
+          <span>Story</span>
+          <div className="grid grid-cols-4 gap-1 text-center">
+            <span className="text-blue-600">NW</span>
+            <span className="text-red-600">NE</span>
+            <span className="text-green-600">SW</span>
+            <span className="text-amber-600">SE</span>
+          </div>
+        </div>
+        {peakData.map((row) => (
+          <div key={row.story} className="grid grid-cols-[auto_1fr] gap-x-2 p-2 border-b border-neutral-100 hover:bg-neutral-50">
+            <div className="flex flex-col">
+              <span className="font-medium text-sm">{row.story}</span>
+              <span className="text-xs text-neutral-400">{row.elevation.toFixed(0)} ft</span>
+            </div>
+            <div className="grid grid-cols-4 gap-1">
+              {(["NW", "NE", "SW", "SE"] as const).map((corner) => {
+                const data = row.corners[corner];
+                const ratio = data.drift / maxDriftOverall;
+                return (
+                  <div
+                    key={corner}
+                    className="flex flex-col items-center p-1 rounded text-[10px]"
+                    style={{ background: cornerColors[corner].bg }}>
+                    <div
+                      className="w-4 h-4 rounded-full border border-black/10"
+                      style={{ background: formatHex(colorMap(ratio)) }}
+                      title={`Drift: ${data.drift.toFixed(4)}%`}
+                    />
+                    <span className="font-mono font-medium" style={{ color: cornerColors[corner].text }}>
+                      {data.drift.toFixed(3)}%
+                    </span>
+                    <span className="text-neutral-500">
+                      {data.time.toFixed(2)}s
+                    </span>
+                    <span className="text-neutral-400">
+                      F{data.frame + 1}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

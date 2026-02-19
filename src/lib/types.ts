@@ -1,3 +1,35 @@
+/**
+ * =============================================================================
+ * ALL VALUES DEFINITION
+ * =============================================================================
+ *
+ * Throughout this application, "all values" refers to the complete set of
+ * simulation data available for analysis and visualization. These include:
+ *
+ * PRIMARY VALUES (from simulation data files):
+ * - Displacement (linear): X, Y, Z components and magnitude - Units: inches
+ * - Displacement (rotation): RX, RY, RZ components and magnitude - Units: radians
+ * - Velocity (linear): X, Y, Z components and magnitude - Units: inches/second
+ * - Velocity (rotation): RX, RY, RZ components and magnitude - Units: radians/second
+ * - Acceleration (linear): X, Y, Z components and magnitude - Units: inches/second²
+ * - Acceleration (rotation): RX, RY, RZ components and magnitude - Units: radians/second²
+ *
+ * DERIVED VALUES (computed from primary values):
+ * - Interstory Drift (ISD): Per-story drift ratio for each corner (NW, NE, SW, SE)
+ *   - Units: percentage (drift/height * 100)
+ *   - Computed as relative displacement between adjacent floors
+ * - ISD Ratio: Current drift / Peak drift for each corner
+ *   - Unitless ratio, useful for threshold-based visualization
+ *
+ * GROUND MOTION:
+ * - X, Y, Z components and magnitude - Units: inches
+ * - Represents the input earthquake motion at the base
+ *
+ * When implementing features that show "all values", consider all of the above
+ * metrics unless explicitly stated otherwise.
+ * =============================================================================
+ */
+
 export type BuildingIndex = {
   size: number;
   buildings: Building[];
@@ -207,4 +239,20 @@ export interface ComputedStats {
     getStoryDrift: (storyIndex: number, frameIndex: number) => [number, number, number, number]; // [NW, NE, SW, SE]
   };
   peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }>; // Precomputed max values
+
+  // PEAK NODE VALUES (precomputed for all nodes)
+  /** Peak displacement magnitude for each node across all frames */
+  peakNodeDisplacement: Float32Array;
+  /** Peak velocity magnitude for each node (if velocity data available) */
+  peakNodeVelocity?: Float32Array;
+  /** Peak acceleration magnitude for each node (if acceleration data available) */
+  peakNodeAcceleration?: Float32Array;
+  /** Frame index where each node reached peak displacement */
+  peakNodeDisplacementFrame: Uint32Array;
+  /** For each node, the X component of peak displacement */
+  peakNodeDisplacementX: Float32Array;
+  /** For each node, the Y component of peak displacement */
+  peakNodeDisplacementY: Float32Array;
+  /** For each node, the Z component of peak displacement */
+  peakNodeDisplacementZ: Float32Array;
 }

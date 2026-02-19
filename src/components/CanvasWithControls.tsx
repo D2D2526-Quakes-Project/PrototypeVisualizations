@@ -2,11 +2,19 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useCamera } from "@/contexts/CameraContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
-import { useColor, useViewMode, useExplodedView, useSliceSelection, useNodeVisibility } from "@/contexts/visualization";
+import {
+  useColor,
+  useViewMode,
+  useExplodedView,
+  useSliceSelection,
+  useNodeVisibility,
+  useThresholds,
+  useFloorVisibility,
+} from "@/contexts/visualization";
 import { UNIT_SCALE } from "@/lib/utils";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { BoxSelect, ChevronDown, Grid3X3, LayoutGrid, Palette, ScanEye } from "lucide-react";
+import { BoxSelect, ChevronDown, Grid3X3, LayoutGrid, Palette, ScanEye, Sliders, Layers } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
@@ -17,7 +25,15 @@ import {
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { SmallPlaybackControls } from "./playback/PlaybackControls";
 
-function CameraManager({ isOrthographic, enableSmoothing, enablePan }: { isOrthographic: boolean; enableSmoothing: boolean; enablePan: boolean }) {
+function CameraManager({
+  isOrthographic,
+  enableSmoothing,
+  enablePan,
+}: {
+  isOrthographic: boolean;
+  enableSmoothing: boolean;
+  enablePan: boolean;
+}) {
   const { orbitControlsRef } = useCamera();
   const perspectiveCamRef = useRef<PerspectiveCameraImpl>(null);
   const orthoCamRef = useRef<OrthographicCameraImpl>(null);
@@ -60,7 +76,7 @@ function CameraManager({ isOrthographic, enableSmoothing, enablePan }: { isOrtho
 
     controls.target.copy(targetRef.current);
     controls.update();
-  }, [isOrthographic, cameraDistance]);
+  }, [isOrthographic, cameraDistance, orbitControlsRef]);
 
   useFrame(() => {
     const controls = orbitControlsRef.current;
@@ -85,7 +101,7 @@ function CameraManager({ isOrthographic, enableSmoothing, enablePan }: { isOrtho
         zoom={50}
         up={[0, 0, 1]}
       />
-      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={targetRef.current} />
+      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} />
     </>
   );
 }
@@ -107,7 +123,7 @@ export function CanvasWithControls({
 }) {
   const [isOrthographic, setIsOrthographic] = useState(false);
   const [enableSmoothing, setEnableSmoothing] = useState(false);
-  const [enablePan, setEnablePan] = useState(true);
+  const [enablePan, _setEnablePan] = useState(true);
   const { orbitControlsRef } = useCamera();
 
   // Expose setEnablePan to children via a ref or context if needed
@@ -120,29 +136,23 @@ export function CanvasWithControls({
   }, [enablePan, orbitControlsRef]);
 
   // Calculate box overlay styles
-  const boxStyle = boxSelection ? {
-    left: `${Math.min(boxSelection.start.x, boxSelection.end.x) * 100}%`,
-    top: `${Math.min(boxSelection.start.y, boxSelection.end.y) * 100}%`,
-    width: `${Math.abs(boxSelection.end.x - boxSelection.start.x) * 100}%`,
-    height: `${Math.abs(boxSelection.end.y - boxSelection.start.y) * 100}%`,
-  } : null;
+  const boxStyle = boxSelection
+    ? {
+        left: `${Math.min(boxSelection.start.x, boxSelection.end.x) * 100}%`,
+        top: `${Math.min(boxSelection.start.y, boxSelection.end.y) * 100}%`,
+        width: `${Math.abs(boxSelection.end.x - boxSelection.start.x) * 100}%`,
+        height: `${Math.abs(boxSelection.end.y - boxSelection.start.y) * 100}%`,
+      }
+    : null;
 
   return (
-    <div 
-      className="relative w-full h-full"
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-    >
+    <div className="relative w-full h-full" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
       <Canvas>
         {children}
         <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan={enablePan} />
       </Canvas>
       {boxStyle && (
-        <div 
-          className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none"
-          style={boxStyle}
-        />
+        <div className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none" style={boxStyle} />
       )}
       <ViewControls
         orbitControlsRef={orbitControlsRef}
@@ -188,6 +198,8 @@ export function ViewControls({
   const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
     useSliceSelection();
   const { selectedNodeIds, clearSelection } = useNodeVisibility();
+  const { thresholds, setThreshold, thresholdUnits } = useThresholds();
+  const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -541,6 +553,86 @@ export function ViewControls({
                     </div>
                   </div>
                 )}
+              </motion.div>
+              <motion.div
+                className="pt-2 border-t border-neutral-200 mt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}>
+                <div className="flex items-center gap-1 mb-1">
+                  <Sliders size={12} className="text-neutral-500" />
+                  <span className="text-xs font-medium text-neutral-700">Thresholds</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-neutral-500 w-16">Disp</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="5"
+                      step="0.01"
+                      value={thresholds.displacement}
+                      onChange={(e) => setThreshold("displacement", parseFloat(e.target.value))}
+                      className="flex-1 h-1"
+                    />
+                    <span className="text-[10px] text-neutral-500 w-14 text-right">
+                      {thresholds.displacement.toFixed(2)} {thresholdUnits.displacement}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-neutral-500 w-16">ISD</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="5"
+                      step="0.01"
+                      value={thresholds.interstoryDrift}
+                      onChange={(e) => setThreshold("interstoryDrift", parseFloat(e.target.value))}
+                      className="flex-1 h-1"
+                    />
+                    <span className="text-[10px] text-neutral-500 w-14 text-right">
+                      {thresholds.interstoryDrift.toFixed(2)} {thresholdUnits.interstoryDrift}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+              <motion.div
+                className="pt-2 border-t border-neutral-200 mt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.325 }}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1">
+                    <Layers size={12} className="text-neutral-500" />
+                    <span className="text-xs font-medium text-neutral-700">Floors</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={showAllFloors}
+                      className="text-[10px] px-1 py-0.5 bg-neutral-100 hover:bg-neutral-200 rounded border border-neutral-300">
+                      All
+                    </button>
+                    <button
+                      onClick={hideAllFloors}
+                      className="text-[10px] px-1 py-0.5 bg-neutral-100 hover:bg-neutral-200 rounded border border-neutral-300">
+                      None
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 gap-0.5 max-h-32 overflow-y-auto">
+                  {animationData.metadata.storyOrder.map((storyId) => (
+                    <button
+                      key={storyId}
+                      onClick={() => toggleFloor(storyId)}
+                      className={`text-[9px] px-1 py-0.5 rounded border transition-colors ${
+                        visibleFloors.has(storyId)
+                          ? "bg-blue-100 border-blue-300 text-blue-700"
+                          : "bg-neutral-100 border-neutral-300 text-neutral-400"
+                      }`}>
+                      {storyId}
+                    </button>
+                  ))}
+                </div>
               </motion.div>
               {selectedNodeIds.size > 0 && (
                 <motion.div

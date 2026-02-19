@@ -1,8 +1,44 @@
+/**
+ * InterstoryDriftChart Component
+ * =============================================================================
+ *
+ * PURPOSE:
+ * Displays interstory drift ratio for each floor, showing both current
+ * and peak values. Essential for assessing structural damage potential.
+ *
+ * WHAT IT SHOWS:
+ * - Y-axis: Story levels from bottom to top
+ * - X-axis: Drift ratio (percentage)
+ * - Solid bars: Current drift at selected frame
+ * - Transparent bars: Peak drift (showing margin to peak)
+ * - Four corners per story: NW (blue), NE (red), SW (green), SE (amber)
+ *
+ * DATA SOURCES:
+ * - Story drift: animationData.precomputed.storyDrift
+ * - Peak drift: animationData.precomputed.peakStoryDrift
+ * - Story heights: animationData.metadata.storyHeights
+ *
+ * CALCULATION:
+ * - Drift = |displacement_top - displacement_bottom| / story_height * 100
+ * - Computed for each corner node pair between adjacent floors
+ *
+ * UNITS:
+ * - Drift: percentage
+ * - Elevation: feet
+ *
+ * IMPORTANCE:
+ * Interstory drift ratio is the primary metric for assessing structural
+ * damage. Higher values indicate potential yielding or damage to structural
+ * elements. Engineers compare against code limits (typically 1-2%).
+ * =============================================================================
+ */
+
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { renderToString } from "react-dom/server";
 import { useAnimationData } from "../../hooks/nodeDataHook";
+import type { EChartsOption } from "echarts";
 
 const cornerColors = {
   NW: "#3b82f6",
@@ -110,7 +146,7 @@ export function InterstoryDriftChart() {
   const { storyOrderWithoutGround, yAxisData, maxPeakRatio, peakStoryDrift, storyHeights } = staticConfig;
 
   // Current drifts that change with frameIndex
-  const currentDriftsRef = useRef<Record<string, Record<string, number>>>({});
+  // const [currentDrifts, setCurrentDrifts] = useState<Record<string, Record<string, number>>>({});
 
   const chartData = useMemo(() => {
     const { storyDrift } = precomputed;
@@ -129,14 +165,14 @@ export function InterstoryDriftChart() {
       maxCurrentRatio = Math.max(maxCurrentRatio, ...cornerDrifts);
     });
 
-    currentDriftsRef.current = currentDrifts;
+    // setCurrentDrifts(currentDrifts);
     return { currentDrifts, maxCurrentRatio };
   }, [precomputed, frameIndex, storyOrderWithoutGround]);
 
   const { currentDrifts, maxCurrentRatio } = chartData;
 
   // Static parts of the option that don't depend on frameIndex
-  const baseOption = useMemo(() => {
+  const baseOption: EChartsOption = useMemo((): EChartsOption => {
     return {
       tooltip: {
         trigger: "axis" as const,
@@ -155,8 +191,8 @@ export function InterstoryDriftChart() {
           fontSize: 12,
         },
         transitionDuration: 0,
-        formatter: (params: any) => {
-          if (!params || params.length === 0) return "";
+        formatter: (params) => {
+          if (!params || !Array.isArray(params) || params.length === 0) return "";
 
           const storyIdx = params[0].dataIndex;
           const storyId = storyOrderWithoutGround[storyIdx];
@@ -168,7 +204,7 @@ export function InterstoryDriftChart() {
               storyId={storyId}
               elevationFt={heightFt}
               corners={corners}
-              currentDrifts={currentDriftsRef.current}
+              currentDrifts={currentDrifts}
               peakDrift={peakStoryDrift}
             />,
           );
@@ -216,7 +252,7 @@ export function InterstoryDriftChart() {
       },
       animation: false,
     };
-  }, [storyOrderWithoutGround, yAxisData, storyHeights, peakStoryDrift]);
+  }, [storyOrderWithoutGround, yAxisData, storyHeights, peakStoryDrift, currentDrifts]);
 
   // Dynamic parts that change with frameIndex
   const seriesData = useMemo(() => {

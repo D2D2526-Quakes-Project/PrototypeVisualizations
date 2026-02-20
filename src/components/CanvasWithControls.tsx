@@ -29,6 +29,22 @@ const red400 = formatHex("oklch(70.4% 0.191 22.216)")!;
 const red600 = formatHex("oklch(57.7% 0.245 27.325)")!;
 const red900 = formatHex("oklch(39.6% 0.141 25.723)")!;
 
+const metricToThresholdKey: Record<string, string> = {
+  displacement: "displacementMag",
+  "displacement-x": "displacementX",
+  "displacement-y": "displacementY",
+  "displacement-z": "displacementZ",
+  velocity: "velocityMag",
+  "velocity-x": "velocityX",
+  "velocity-y": "velocityY",
+  "velocity-z": "velocityZ",
+  acceleration: "accelerationMag",
+  "acceleration-x": "accelerationX",
+  "acceleration-y": "accelerationY",
+  "acceleration-z": "accelerationZ",
+  "story-drift": "interstoryDrift",
+};
+
 import {
   OrthographicCamera as OrthographicCameraImpl,
   PerspectiveCamera as PerspectiveCameraImpl,
@@ -440,111 +456,123 @@ export function ViewControls({
                     </option>
                   ))}
                 </select>
-                
+
                 {/* Color Scale Bar - always visible */}
                 <div className="mt-2">
                   <div className="text-[10px] text-neutral-500 mb-1">Color Scale</div>
-                  {thresholdHighlighting ? (
-                    /* Threshold-aware diverging scale: blue -> white -> red */
-                    (() => {
-                      const maxDisp = animationData.precomputed.maxDisplacement * 1.2;
-                      const threshold = thresholds.displacementMag;
-                      const thresholdRatio = maxDisp > 0 ? threshold / maxDisp : 0;
+                  {(() => {
+                    const isMagnitude = ["displacement", "velocity", "acceleration", "story-drift"].includes(
+                      currentMetric,
+                    );
 
-                      const stops: string[] = [];
-                      stops.push(`${blue900} 0%`);
-                      stops.push(`${blue600} ${(1 - thresholdRatio) * 50 - 0.1}%`);
-                      stops.push(`${blue400} ${(1 - thresholdRatio) * 50}%`);
-                      stops.push(`${white} 50%`);
-                      stops.push(`${red400} ${thresholdRatio * 50 + 50}%`);
-                      stops.push(`${red600} ${thresholdRatio * 50 + 50.1}%`);
-                      stops.push(`${red900} 100%`);
+                    let maxValue: number;
+                    let unit: string;
 
-                      return (
-                        <>
-                          <div
-                            className="relative h-3 rounded-sm"
-                            style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
-                          <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                    if (currentMetric === "displacement") {
+                      maxValue = animationData.precomputed.maxDisplacement;
+                      unit = "in";
+                    } else if (currentMetric === "velocity") {
+                      maxValue = animationData.precomputed.maxVelocity ?? 0;
+                      unit = "in/s";
+                    } else if (currentMetric === "acceleration") {
+                      maxValue = animationData.precomputed.maxAcceleration ?? 0;
+                      unit = "in/s²";
+                    } else if (currentMetric === "story-drift") {
+                      maxValue = animationData.precomputed.maxStoryDrift;
+                      unit = "%";
+                    } else {
+                      const maxX = animationData.precomputed.maxDisplacementX;
+                      const maxY = animationData.precomputed.maxDisplacementY;
+                      const maxZ = animationData.precomputed.maxDisplacementZ;
+                      maxValue = Math.max(Math.abs(maxX), Math.abs(maxY), Math.abs(maxZ));
+                      unit = "in";
+                    }
+
+                    const displayMax = maxValue * 1.2;
+
+                    // Build color bar based on mode and threshold highlighting
+                    let stops: string[];
+                    let labels: React.ReactNode;
+
+                    if (thresholdHighlighting) {
+                      const thresholdKey = metricToThresholdKey[currentMetric];
+                      const thresholdValue = thresholdKey
+                        ? ((thresholds as unknown as Record<string, number>)[thresholdKey] ?? 0)
+                        : 0;
+                      const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
+
+                      if (isMagnitude) {
+                        // Magnitude with threshold: white -> red only (no blue)
+                        stops = [
+                          `${white} 0%`,
+                          `${red400} ${thresholdRatio * 100}%`,
+                          `${red600} ${thresholdRatio * 100 + 0.1}%`,
+                          `${red900} 100%`,
+                        ];
+                        labels = (
+                          <>
                             <span>0</span>
                             <span>
-                              {threshold.toFixed(2)} {thresholdUnits.displacementMag}
+                              {thresholdValue.toFixed(2)} {unit}
                             </span>
-                            <span>{maxDisp.toFixed(2)}</span>
-                          </div>
+                            <span>{displayMax.toFixed(2)}</span>
+                          </>
+                        );
+                      } else {
+                        // Directional with threshold: blue -> white -> red
+                        stops = [
+                          `${blue900} 0%`,
+                          `${blue600} ${(1 - thresholdRatio) * 50 - 0.1}%`,
+                          `${blue400} ${(1 - thresholdRatio) * 50}%`,
+                          `${white} 50%`,
+                          `${red400} ${thresholdRatio * 50 + 50}%`,
+                          `${red600} ${thresholdRatio * 50 + 50.1}%`,
+                          `${red900} 100%`,
+                        ];
+                        labels = (
+                          <>
+                            <span>0</span>
+                            <span>
+                              {thresholdValue.toFixed(2)} {unit}
+                            </span>
+                            <span>{displayMax.toFixed(2)}</span>
+                          </>
+                        );
+                      }
+                    } else if (isMagnitude) {
+                      // Magnitude without threshold: white -> red
+                      stops = [`${white} 0%`, `${red400} 100%`];
+                      labels = (
+                        <>
+                          <span>0</span>
+                          <span>
+                            {maxValue.toFixed(2)} {unit}
+                          </span>
                         </>
                       );
-                    })()
-                  ) : (
-                    /* Simple scale: for magnitude metrics show 0 to max, for directional show -max to max */
-                    (() => {
-                      const isMagnitude = ['displacement', 'velocity', 'acceleration', 'story-drift'].includes(currentMetric);
-                      
-                      let maxValue: number;
-                      let unit: string;
-                      
-                      if (currentMetric === 'displacement') {
-                        maxValue = animationData.precomputed.maxDisplacement;
-                        unit = 'in';
-                      } else if (currentMetric === 'velocity') {
-                        maxValue = animationData.precomputed.maxVelocity ?? 0;
-                        unit = 'in/s';
-                      } else if (currentMetric === 'acceleration') {
-                        maxValue = animationData.precomputed.maxAcceleration ?? 0;
-                        unit = 'in/s²';
-                      } else if (currentMetric === 'story-drift') {
-                        maxValue = animationData.precomputed.maxStoryDrift;
-                        unit = '%';
-                      } else {
-                        // For directional metrics, get the max absolute value
-                        const maxX = animationData.precomputed.maxDisplacementX;
-                        const maxY = animationData.precomputed.maxDisplacementY;
-                        const maxZ = animationData.precomputed.maxDisplacementZ;
-                        maxValue = Math.max(Math.abs(maxX), Math.abs(maxY), Math.abs(maxZ));
-                        unit = 'in';
-                      }
-                      
-                      if (isMagnitude) {
-                        // Magnitude: simple gradient from white to red (no blue - no negative values)
-                        const stops = [
-                          `${white} 0%`,
-                          `${red400} 100%`
-                        ];
-                        return (
-                          <>
-                            <div
-                              className="relative h-3 rounded-sm"
-                              style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
-                            <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
-                              <span>0</span>
-                              <span>{maxValue.toFixed(2)} {unit}</span>
-                            </div>
-                          </>
-                        );
-                      } else {
-                        // Directional: diverging scale -max to 0 to max
-                        const stops = [
-                          `${blue900} 0%`,
-                          `${blue600} 24%`,
-                          `${white} 50%`,
-                          `${red400} 76%`,
-                          `${red900} 100%`
-                        ];
-                        return (
-                          <>
-                            <div
-                              className="relative h-3 rounded-sm"
-                              style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
-                            <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
-                              <span>-{maxValue.toFixed(2)}</span>
-                              <span>0</span>
-                              <span>{maxValue.toFixed(2)} {unit}</span>
-                            </div>
-                          </>
-                        );
-                      }
-                    })()
-                  )}
+                    } else {
+                      // Directional without threshold: blue -> white -> red
+                      stops = [`${blue900} 0%`, `${blue600} 24%`, `${white} 50%`, `${red400} 76%`, `${red900} 100%`];
+                      labels = (
+                        <>
+                          <span>-{maxValue.toFixed(2)}</span>
+                          <span>0</span>
+                          <span>
+                            {maxValue.toFixed(2)} {unit}
+                          </span>
+                        </>
+                      );
+                    }
+
+                    return (
+                      <>
+                        <div
+                          className="relative h-3 rounded-sm"
+                          style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
+                        <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">{labels}</div>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />

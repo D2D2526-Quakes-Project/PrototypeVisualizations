@@ -215,6 +215,7 @@ Apply consistent scientific visualization standards across all charts and plots.
 - [ ] Add tooltips to all controls
 - [ ] Create in-app help overlay
 - [ ] Add tutorial/onboarding for new users
+- [ ] Show keyboard and mouse shortcuts in the bottom left of the 3JS window
 
 ---
 

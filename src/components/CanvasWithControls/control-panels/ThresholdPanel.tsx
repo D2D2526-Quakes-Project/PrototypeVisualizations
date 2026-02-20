@@ -1,7 +1,6 @@
 import { useThresholds } from "@/contexts/visualization";
-import { ThresholdSlider } from "../helpers/ThresholdSlider";
 import { Layers } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ThresholdSlider } from "../helpers/ThresholdSlider";
 
 interface ThresholdPanelProps {
   setThreshold: (type: string, value: number) => void;
@@ -156,7 +155,13 @@ interface FloorsPanelProps {
   storyOrder: string[];
 }
 
-export function FloorsPanel({ visibleFloors, toggleFloor, showAllFloors, hideAllFloors, storyOrder }: FloorsPanelProps) {
+export function FloorsPanel({
+  visibleFloors,
+  toggleFloor,
+  showAllFloors,
+  hideAllFloors,
+  storyOrder,
+}: FloorsPanelProps) {
   return (
     <>
       <div className="flex items-center justify-between mb-1">

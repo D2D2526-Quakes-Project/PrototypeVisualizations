@@ -63,33 +63,67 @@ function getThresholdAwareColor(value: number, maxValue: number, threshold: numb
   const normalized = value / maxValue;
 
   const oklab = colorMap(normalized, thresholdRatio);
-  const rgbC = rgb(oklab);
+  const rgbC = rgb(oklab ?? "gray");
   return [rgbC.r, rgbC.g, rgbC.b];
 }
 
 /**
- * Get color for magnitude values (always positive) using diverging scale.
- * Maps: 0 -> blue, 0.5*max -> white, max -> red
- * This is the standard way to visualize magnitude data.
+ * Get color for magnitude values (always positive) using positive-only scale.
+ * Maps: 0 -> white, max -> red
+ * This is the standard way to visualize magnitude data (no negative values).
  */
 function getMagnitudeColor(value: number, maxValue: number): [number, number, number] {
   if (maxValue <= 0) {
     return [0.5, 0.5, 0.5]; // gray
   }
-  // Use thresholdRatio of 0.5 to put white at the midpoint
-  return getThresholdAwareColor(value, maxValue, maxValue * 0.5);
+  const t = Math.min(value / maxValue, 1);
+  const oklab = inerpolateWhiteRed400(t);
+  const rgbC = rgb(oklab ?? "gray");
+  return [rgbC.r, rgbC.g, rgbC.b];
+}
+
+/**
+ * Color map for magnitude values with threshold highlighting (no negative side)
+ */
+function colorMapMagnitude(t: number, thresholdRatio: number) {
+  const x = Math.max(0, Math.min(1, t));
+  const th = Math.max(0, Math.min(1, thresholdRatio));
+
+  const mid = th; // threshold position in the scale
+
+  if (x <= mid) {
+    // Below threshold: white -> red400
+    const local = x / mid;
+    return inerpolateWhiteRed400(local);
+  } else {
+    // Above threshold: red400 -> red900
+    const local = (x - mid) / (1 - mid);
+    return interpolateRed600Red900(local);
+  }
+}
+
+/**
+ * Get color for magnitude values with threshold highlighting.
+ * Maps: 0 -> white, threshold -> light red, max -> dark red
+ */
+function getMagnitudeThresholdColor(value: number, maxValue: number, threshold: number): [number, number, number] {
+  if (maxValue <= 0 || threshold <= 0) {
+    return [0.5, 0.5, 0.5]; // gray
+  }
+
+  const t = Math.min(value / maxValue, 1);
+  const thresholdRatio = threshold / maxValue;
+
+  const oklab = colorMapMagnitude(t, thresholdRatio);
+  const rgbC = rgb(oklab ?? { mode: "oklab", l: 0.5, a: 0, b: 0 });
+  return [rgbC.r, rgbC.g, rgbC.b];
 }
 
 /**
  * Check if a metric is a magnitude (always positive) type vs directional (can be negative)
  */
 function isMagnitudeMetric(metric: ColorMetric): boolean {
-  const magnitudeMetrics: ColorMetric[] = [
-    'displacement',
-    'velocity',
-    'acceleration',
-    'story-drift'
-  ];
+  const magnitudeMetrics: ColorMetric[] = ["displacement", "velocity", "acceleration", "story-drift"];
   return magnitudeMetrics.includes(metric);
 }
 
@@ -272,25 +306,19 @@ export function ColorProvider({ children }: { children: ReactNode }) {
         const thresholdKey = metricToThresholdKey[currentMetric];
         const thresholdValue = thresholdKey ? thresholds[thresholdKey] : undefined;
 
-        // if (frameIndex === 0 && nodeId < 5) {
-        //   console.log(
-        //     `[DEBUG COLOR] nodeId=${nodeId}, currentMetric=${currentMetric}, thresholdKey=${thresholdKey}, thresholdValue=${thresholdValue}, maxValue=${maxValue.toFixed(4)}, value=${value.toFixed(4)}`,
-        //   );
-        // }
-
         if (thresholdKey && thresholdValue !== undefined && thresholdValue > 0 && maxValue > 0) {
+          // For magnitude metrics, use magnitude-aware threshold coloring (no blue)
+          if (isMagnitudeMetric(currentMetric)) {
+            const rgb = getMagnitudeThresholdColor(value, maxValue, thresholdValue);
+            return new THREE.Color(rgb[0], rgb[1], rgb[2]);
+          }
+          // For directional metrics, use the diverging scale
           const rgb = getThresholdAwareColor(value, maxValue, thresholdValue);
-
-          // if (frameIndex === 0 && nodeId < 5) {
-          //   console.log(`[DEBUG COLOR] -> RGB=[${rgb[0].toFixed(3)}, ${rgb[1].toFixed(3)}, ${rgb[2].toFixed(3)}]`);
-          // }
-
           return new THREE.Color(rgb[0], rgb[1], rgb[2]);
         }
       }
 
-      // For magnitude metrics (always positive), use diverging scale (blue->white->red)
-      // This ensures small values show as blue/white, not just blue
+      // For magnitude metrics (always positive), use white -> red scale
       if (isMagnitudeMetric(currentMetric)) {
         const rgb = getMagnitudeColor(value, maxValue);
         return new THREE.Color(rgb[0], rgb[1], rgb[2]);

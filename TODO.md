@@ -409,6 +409,7 @@ Every number with a unit should be hoverable with conversions.
 - [x] The UI panel state should be saved and restored
 - [x] A share URL should be avilable that can be shared with others
 - [x] Load the panel configuration from the share URL
+      `
 
 ---
 
@@ -416,11 +417,11 @@ Every number with a unit should be hoverable with conversions.
 
 ### 18.1 Timeline Interaction
 
-- [ ] Intermittent failure when clicking or dragging the timeline scrubber; fixed by using ZRender events and refs to avoid race conditions during HMR (Hint: When the option checkbox changes, the mouse stuff starts working again)
-- [ ] Interstory Drift chart bars can excede their peak bars. This is a big red flag that something is wrong with the data reading / precomputation.
+- [x] Intermittent failure when clicking or dragging the timeline scrubber; fixed by using ZRender events and refs to avoid race conditions during HMR (Hint: When the option checkbox changes, the mouse stuff starts working again)
+- [x] Interstory Drift chart bars can excede their peak bars. This is a big red flag that something is wrong with the data reading / precomputation.
 - [x] Floors in the Building Scene don't hide when floor is toggled off. (Fixed: Added floor visibility filtering in BuildingScene.tsx)
 - [x] Color mapping doesn't update when slider changes, only when coloring is toggled or the color metric changes. (Fixed: Now uses threshold-aware coloring for magnitude metrics by default)
-- [ ] Story drift heatmap updates every frame and doesn't need to
+- [x] Story drift heatmap updates every frame and doesn't need to
 - [x] Each color by needs its own threshold color maps (Fixed: Now magnitude metrics use diverging blue-white-red scale)
 
 _Last Updated: February 2026_

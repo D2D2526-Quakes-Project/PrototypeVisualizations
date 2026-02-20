@@ -505,13 +505,10 @@ export function ViewControls({
                       }
                       
                       if (isMagnitude) {
-                        // Magnitude: simple gradient from blue to red
+                        // Magnitude: simple gradient from white to red (no blue - no negative values)
                         const stops = [
-                          `${blue900} 0%`,
-                          `${blue600} 25%`,
-                          `${white} 50%`,
-                          `${red400} 75%`,
-                          `${red900} 100%`
+                          `${white} 0%`,
+                          `${red400} 100%`
                         ];
                         return (
                           <>

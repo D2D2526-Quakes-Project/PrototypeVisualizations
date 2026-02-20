@@ -44,6 +44,8 @@ export function StoryDriftHeatmap() {
   const { frameIndex } = usePlayback();
   const { getVisibleStoryOrder } = useFloorVisibility();
   const chartRef = useRef<ReactECharts>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
 
   const visibleStories = useMemo(() => getVisibleStoryOrder().slice(1), [getVisibleStoryOrder]);
 
@@ -162,24 +164,18 @@ export function StoryDriftHeatmap() {
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
-    if (!chart) return;
+    if (!chart || !playheadRef.current) return;
 
-    const currentTimeIndex = Math.floor(frameIndex / heatmapData.timeStep);
+    try {
+      const currentTimeIndex = Math.floor(frameIndex / heatmapData.timeStep);
+      const grid = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [currentTimeIndex, 0]);
 
-    chart.setOption({
-      series: [
-        {
-          markLine: {
-            silent: true,
-            symbol: "none",
-            data: [{ xAxis: currentTimeIndex }],
-            lineStyle: { color: "#ef4444", width: 2, type: "solid" },
-            label: { show: false },
-            animation: false,
-          },
-        },
-      ],
-    });
+      if (grid) {
+        playheadRef.current.style.left = `${grid[0]}px`;
+      }
+    } catch {
+      // Chart not fully initialized yet
+    }
   }, [frameIndex, heatmapData.timeStep]);
 
   return (
@@ -190,12 +186,20 @@ export function StoryDriftHeatmap() {
           <span className="text-neutral-400 ml-2">- Max corner drift over time</span>
         </div>
       </div>
-      <div className="flex-1 min-h-0 w-full">
+      <div ref={containerRef} className="flex-1 min-h-0 w-full relative">
         <ReactECharts
           ref={chartRef}
           option={baseOption}
           style={{ height: "100%", width: "100%" }}
           opts={{ renderer: "canvas" }}
+        />
+        <div
+          ref={playheadRef}
+          className="absolute top-0 bottom-8 w-0.5 bg-red-500 pointer-events-none"
+          style={{
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
         />
       </div>
     </div>

@@ -12,7 +12,7 @@ import {
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { UNIT_SCALE } from "@/lib/utils";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { BoxSelect, ChevronDown, Grid3X3, ScanEye } from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
 import { useEffect, useRef, useState, type RefObject } from "react";
@@ -153,9 +153,16 @@ export function CanvasWithControls({
       }
     : null;
 
+  function NoFog() {
+    const { scene } = useThree();
+    scene.fog = null;
+    return null;
+  }
+
   return (
     <div className="relative w-full h-full" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
-      <Canvas>
+      <Canvas linear flat>
+        <NoFog />
         <color attach="background" args={["#dcdcdc"]} />
         {children}
         <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan={enablePan} />

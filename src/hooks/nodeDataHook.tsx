@@ -6,6 +6,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 // import { buildAnimationData, type BuildingAnimationData } from "../lib/parser";
 import { fetchWithProgressAndCache } from "@/lib/dataLoader";
 import { buildAnimationDataFromBinary } from "@/lib/parser";
+import { useViewStoreRaw } from "@/stores";
 
 export type AnimationDataContextType = {
   animationData: BuildingAnimationData;
@@ -43,6 +44,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const [error, setError] = useState<unknown>(null);
   const [needsSelection, setNeedsSelection] = useState(false);
   const initializedRef = useRef(false);
+  const viewStore = useViewStoreRaw();
 
   const updateUrl = (building: BinaryBuilding | null, simulation: BinarySimulation | null) => {
     const url = new URL(window.location.href);
@@ -170,6 +172,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
       setProgressMessage("Done!");
       setAnimationData(built);
+      viewStore.getState().setThresholdsFromPrecomputed(built.precomputed);
 
       // Short delay so user sees "Done!"
       await new Promise((r) => setTimeout(r, 800));

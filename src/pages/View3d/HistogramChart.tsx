@@ -36,13 +36,14 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
 import { useMemo, useState } from "react";
-import { useAnimationData } from "../../hooks/nodeDataHook";
+import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useThresholds, useFloorVisibility } from "@/contexts/visualization";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { ChevronDown } from "lucide-react";
 import type { EChartsOption } from "echarts";
+import { renderToString } from "react-dom/server";
 
 const POSITION_AXIS_CONFIG = {
   x: { id: "x", label: "X Position", color: "#f87171" },
@@ -51,10 +52,15 @@ const POSITION_AXIS_CONFIG = {
 } as const;
 
 const VALUE_TYPE_CONFIG = {
-  displacement: { id: "displacement", label: "Displacement", unit: "in" },
-  velocity: { id: "velocity", label: "Velocity", unit: "in/s" },
-  acceleration: { id: "acceleration", label: "Acceleration", unit: "in/s²" },
-  interstoryDrift: { id: "interstoryDrift", label: "Interstory Drift", unit: "%" },
+  displacement: { id: "displacement", label: "Displacement", unit: "in", thresholdKey: "displacement" as const },
+  velocity: { id: "velocity", label: "Velocity", unit: "in/s", thresholdKey: "velocity" as const },
+  acceleration: { id: "acceleration", label: "Acceleration", unit: "in/s²", thresholdKey: "acceleration" as const },
+  interstoryDrift: {
+    id: "interstoryDrift",
+    label: "Interstory Drift",
+    unit: "%",
+    thresholdKey: "interstoryDrift" as const,
+  },
 } as const;
 
 type PositionAxis = keyof typeof POSITION_AXIS_CONFIG;
@@ -104,27 +110,91 @@ function SimpleSelect<T extends string>({
   );
 }
 
+function TooltipContent({
+  positionLabel,
+  positionValue,
+  exceeding,
+  total,
+  exceedingPercentage,
+}: {
+  positionLabel: string;
+  positionValue: number;
+  exceeding: number;
+  total: number;
+  exceedingPercentage: string;
+}) {
+  return (
+    <div style={{ minWidth: "180px" }}>
+      <div style={{ fontWeight: 600, marginBottom: "6px", fontSize: "12px" }}>
+        {positionLabel}: {positionValue.toFixed(1)} in
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "16px" }}>
+        <span style={{ color: "#6b7280", fontSize: "11px" }}>Exceeding:</span>
+        <span style={{ fontWeight: 500, fontSize: "11px" }}>
+          {exceeding} / {total} ({exceedingPercentage}%)
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function HistogramChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { thresholds, setThreshold, thresholdUnits } = useThresholds();
-  const { isFloorVisible } = useFloorVisibility();
-  const [positionAxis, setPositionAxis] = useState<PositionAxis>("z");
+  const { visibleFloors } = useFloorVisibility();
+  const [positionAxis, setPositionAxis] = useState<PositionAxis>("x");
   const [valueType, setValueType] = useState<ValueType>("displacement");
 
-  const histogramData = useMemo(() => {
+  const staticConfig = useMemo(() => {
     const { nodeCount, stories, storyOrder } = animationData.metadata;
-    const { displacementLin, velocityLin, accelerationLin, initialPositions, precomputed } = animationData;
+    const { initialPositions } = animationData;
+
+    const getAxisIndex = (axis: PositionAxis) => (axis === "x" ? 0 : axis === "y" ? 1 : 2);
+    const axisIdx = getAxisIndex(positionAxis);
+
+    const nodeStoryMap: number[] = [];
+    const positionValues: number[] = [];
+
+    for (let i = 0; i < nodeCount; i++) {
+      const nodeStory = storyOrder.find((sid) => stories[sid]?.includes(i));
+      if (!nodeStory || !visibleFloors.has(nodeStory)) continue;
+
+      const pos = initialPositions.at(i);
+      positionValues.push(pos[axisIdx]);
+      nodeStoryMap.push(storyOrder.indexOf(nodeStory));
+    }
+
+    const minPos = positionValues.length > 0 ? Math.min(...positionValues) : 0;
+    const maxPos = positionValues.length > 0 ? Math.max(...positionValues) : 1;
+    const range = maxPos - minPos || 1;
+
+    const bins = 25;
+    const binWidth = range / bins;
+    const binEdges: number[] = [];
+    for (let i = 0; i <= bins; i++) {
+      binEdges.push(minPos + i * binWidth);
+    }
+
+    return {
+      positionValues,
+      nodeStoryMap,
+      binEdges,
+      bins,
+      binWidth,
+      minPos,
+      maxPos,
+    };
+  }, [animationData, visibleFloors, positionAxis]);
+
+  const histogramData = useMemo(() => {
+    const { displacementLin, velocityLin, accelerationLin, precomputed } = animationData;
+    const { binEdges, bins, binWidth, minPos, nodeStoryMap, positionValues } = staticConfig;
     const threshold = thresholds[valueType];
 
     const frameData = displacementLin.atFrame(frameIndex);
     const velFrameData = velocityLin?.atFrame(frameIndex);
     const accelFrameData = accelerationLin?.atFrame(frameIndex);
-
-    const bins = 25;
-
-    const positionValues: number[] = [];
-    const exceedingNodes: number[] = [];
 
     const getNodeValue = (nodeIdx: number): number | null => {
       switch (valueType) {
@@ -143,9 +213,9 @@ export function HistogramChart() {
           return Math.sqrt(accel[0] ** 2 + accel[1] ** 2 + accel[2] ** 2);
         }
         case "interstoryDrift": {
-          const storyIdx = storyOrder.findIndex((id) => stories[id]?.includes(nodeIdx));
-          if (storyIdx <= 0) return null;
-          const drifts = precomputed.storyDrift.getStoryDrift(storyIdx, frameIndex);
+          const nodeStoryIdx = nodeStoryMap[nodeIdx];
+          if (nodeStoryIdx <= 0) return null;
+          const drifts = precomputed.storyDrift.getStoryDrift(nodeStoryIdx, frameIndex);
           return Math.max(...drifts);
         }
         default:
@@ -153,50 +223,23 @@ export function HistogramChart() {
       }
     };
 
-    for (let i = 0; i < nodeCount; i++) {
-      // Check if node belongs to a visible floor
-      const nodeStory = storyOrder.find((sid) => stories[sid]?.includes(i));
-      if (!nodeStory || !isFloorVisible(nodeStory)) continue;
-
-      const pos = initialPositions.at(i);
-      const positionValue = pos[positionAxis === "x" ? 0 : positionAxis === "y" ? 1 : 2];
-      positionValues.push(positionValue);
-
-      const value = getNodeValue(i);
-      if (value !== null && value >= threshold) {
-        exceedingNodes.push(positionValue);
-      }
-    }
-
-    const minPos = Math.min(...positionValues);
-    const maxPos = Math.max(...positionValues);
-    const range = maxPos - minPos || 1;
-    const binWidth = range / bins;
-
-    const binEdges: number[] = [];
-    for (let i = 0; i <= bins; i++) {
-      binEdges.push(minPos + i * binWidth);
-    }
-
     const totalCounts = new Array(bins).fill(0);
     const exceedingCounts = new Array(bins).fill(0);
 
-    positionValues.forEach((v) => {
-      let binIndex = Math.floor((v - minPos) / binWidth);
-      if (binIndex >= bins) binIndex = bins - 1;
-      if (binIndex < 0) binIndex = 0;
+    for (let i = 0; i < positionValues.length; i++) {
+      const nodeValue = getNodeValue(i);
+      if (nodeValue === null) continue;
+
+      const binIndex = Math.min(Math.max(Math.floor((positionValues[i] - minPos) / binWidth), 0), bins - 1);
       totalCounts[binIndex]++;
-    });
 
-    exceedingNodes.forEach((v) => {
-      let binIndex = Math.floor((v - minPos) / binWidth);
-      if (binIndex >= bins) binIndex = bins - 1;
-      if (binIndex < 0) binIndex = 0;
-      exceedingCounts[binIndex]++;
-    });
+      if (nodeValue >= threshold) {
+        exceedingCounts[binIndex]++;
+      }
+    }
 
-    const exceedingCount = exceedingNodes.length;
-    const totalCount = positionValues.length;
+    const exceedingCount = exceedingCounts.reduce((a, b) => a + b, 0);
+    const totalCount = totalCounts.reduce((a, b) => a + b, 0);
 
     return {
       binEdges,
@@ -206,17 +249,12 @@ export function HistogramChart() {
       totalCount,
       percentage: ((exceedingCount / totalCount) * 100).toFixed(1),
     };
-  }, [animationData, frameIndex, positionAxis, valueType, thresholds, isFloorVisible]);
+  }, [animationData, staticConfig, frameIndex, valueType, thresholds]);
 
-  const option: EChartsOption = useMemo((): EChartsOption => {
-    const { binEdges, totalCounts, exceedingCounts } = histogramData;
-
-    const barData = binEdges.slice(0, -1).map((edge, i) => ({
-      value: [(edge + binEdges[i + 1]) / 2, exceedingCounts[i], totalCounts[i]],
-    }));
-
+  // Base option - static parts
+  const baseOption: EChartsOption = useMemo((): EChartsOption => {
     const posLabel = POSITION_AXIS_CONFIG[positionAxis].label;
-    const valLabel = VALUE_TYPE_CONFIG[valueType].label;
+    const valConfig = VALUE_TYPE_CONFIG[valueType];
 
     return {
       tooltip: {
@@ -224,18 +262,29 @@ export function HistogramChart() {
         backgroundColor: "rgba(255, 255, 255, 0.98)",
         borderColor: "#d1d5db",
         borderWidth: 1,
-        padding: 10,
+        padding: 12,
         textStyle: { color: "#374151", fontSize: 11 },
         axisPointer: { type: "shadow" },
+        transitionDuration: 0,
         formatter: (params) => {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
-          const paramsData = params[0].data as { value: number[] };
-          const [pos, exceeding, total] = paramsData.value as number[];
+          const totalSeries = params[0].data as [number, number]; // Just the first series
+          const exceedingThresholdSeries = params[1].data as [number, number];
+
+          const pos = totalSeries[0];
+          const total = totalSeries[1];
+          const exceeding = exceedingThresholdSeries[1];
           const pct = total > 0 ? ((exceeding / total) * 100).toFixed(1) : "0";
-          return `
-            <div style="font-weight: 600; margin-bottom: 4px;">${posLabel}: ${pos.toFixed(1)} in</div>
-            <div>Exceeding: ${exceeding} / ${total} (${pct}%)</div>
-          `;
+
+          return renderToString(
+            <TooltipContent
+              positionLabel={posLabel}
+              positionValue={pos}
+              exceeding={exceeding}
+              total={total}
+              exceedingPercentage={pct}
+            />,
+          );
         },
       },
       grid: {
@@ -245,7 +294,7 @@ export function HistogramChart() {
         bottom: 40,
       },
       title: {
-        text: `Nodes Exceeding ${valLabel} Threshold`,
+        text: `Nodes Exceeding ${valConfig.label} Threshold`,
         left: 60,
         top: 5,
         textStyle: { fontSize: 12, fontWeight: "bold", color: "#374151" },
@@ -256,10 +305,14 @@ export function HistogramChart() {
         nameLocation: "middle",
         nameGap: 30,
         nameTextStyle: { fontSize: 11, color: "#4b5563" },
-        min: histogramData.binEdges[0],
-        max: histogramData.binEdges[histogramData.binEdges.length - 1],
+        min: Math.floor(staticConfig.minPos / 12) * 12,
+        max: Math.ceil(staticConfig.maxPos / 12) * 12,
         axisLine: { lineStyle: { color: "#d1d5db" } },
-        axisLabel: { color: "#6b7280", fontSize: 10, formatter: (v: number) => (v / 12).toFixed(0) + " ft" },
+        axisLabel: {
+          color: "#6b7280",
+          fontSize: 10,
+          formatter: (v: number) => (v / 12).toFixed(0) + " ft",
+        },
         splitLine: { show: true, lineStyle: { color: "#f3f4f6" } },
       },
       yAxis: {
@@ -272,27 +325,50 @@ export function HistogramChart() {
         axisLabel: { color: "#6b7280", fontSize: 10 },
         splitLine: { lineStyle: { color: "#f3f4f6" } },
       },
-      series: [
-        {
-          name: "Total Nodes",
-          type: "bar",
-          data: barData.map((d) => [d.value[0], d.value[2]]),
-          itemStyle: { color: "#e5e7eb", opacity: 0.5 },
-          barGap: "-100%",
-          z: 1,
-          silent: true,
-        },
-        {
-          name: "Exceeding Threshold",
-          type: "bar",
-          data: barData.map((d) => [d.value[0], d.value[1]]),
-          itemStyle: { color: POSITION_AXIS_CONFIG[positionAxis].color, opacity: 0.9 },
-          z: 2,
-        },
-      ],
       animation: false,
     };
-  }, [histogramData, positionAxis, valueType]);
+  }, [positionAxis, valueType, staticConfig]);
+
+  // Series data - dynamic parts
+  const seriesData = useMemo(() => {
+    const { binEdges, totalCounts, exceedingCounts } = histogramData;
+
+    const barData = binEdges.slice(0, -1).map((edge, i) => ({
+      value: [(edge + binEdges[i + 1]) / 2, exceedingCounts[i], totalCounts[i]],
+    }));
+
+    return [
+      {
+        name: "Total Nodes",
+        type: "bar" as const,
+        data: barData.map((d) => [d.value[0], d.value[2]]),
+        itemStyle: { color: "#e5e7eb", opacity: 0.5 },
+        emphasis: { itemStyle: { color: "#9ca3af", opacity: 0.7 } },
+        barGap: "-100%",
+        z: 1,
+        silent: true,
+      },
+      {
+        name: "Exceeding Threshold",
+        type: "bar" as const,
+        data: barData.map((d) => [d.value[0], d.value[1]]),
+        itemStyle: { color: POSITION_AXIS_CONFIG[positionAxis].color, opacity: 0.9 },
+        emphasis: { itemStyle: { color: POSITION_AXIS_CONFIG[positionAxis].color, opacity: 1 } },
+        z: 2,
+      },
+    ];
+  }, [histogramData, positionAxis]);
+
+  // Final option combining base and series
+  const option: EChartsOption = useMemo(() => {
+    return {
+      ...baseOption,
+      series: seriesData,
+    };
+  }, [baseOption, seriesData]);
+
+  const thresholdKey = VALUE_TYPE_CONFIG[valueType].thresholdKey;
+  const precomputed = animationData.precomputed;
 
   return (
     <div className="h-full w-full flex flex-col bg-white">
@@ -322,15 +398,23 @@ export function HistogramChart() {
         </div>
         <div className="flex items-center gap-2 mt-1 text-xs text-neutral-600">
           <span>
-            Threshold: {thresholds[valueType].toFixed(3)} {thresholdUnits[valueType]}
+            Threshold: {thresholds[thresholdKey].toFixed(3)} {thresholdUnits[thresholdKey]}
           </span>
           <input
             type="range"
-            min={valueType === "interstoryDrift" ? 0 : 0}
-            max={valueType === "interstoryDrift" ? 5 : 10}
+            min={0}
+            max={
+              valueType === "interstoryDrift"
+                ? Math.max(precomputed.maxStoryDrift * 1.2, 0.5)
+                : valueType === "velocity"
+                  ? Math.max((precomputed.maxVelocity ?? 1) * 1.2, 1)
+                  : valueType === "acceleration"
+                    ? Math.max((precomputed.maxAcceleration ?? 2) * 1.2, 2)
+                    : Math.max(precomputed.maxDisplacement * 1.2, 0.1)
+            }
             step={valueType === "interstoryDrift" ? 0.01 : 0.05}
-            value={thresholds[valueType]}
-            onChange={(e) => setThreshold(valueType, parseFloat(e.target.value))}
+            value={thresholds[thresholdKey]}
+            onChange={(e) => setThreshold(thresholdKey, parseFloat(e.target.value))}
             className="w-24 h-1"
           />
           <span className="ml-auto">
@@ -339,7 +423,7 @@ export function HistogramChart() {
         </div>
       </div>
       <div className="flex-1 min-h-0 w-full">
-        <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "canvas" }} />
+        <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
       </div>
     </div>
   );

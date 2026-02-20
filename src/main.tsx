@@ -20,10 +20,30 @@ import { View3d } from "./pages/View3d/page";
 
 import { ViewVolumes } from "./pages/ViewVolumes/page";
 import { PlaybackProvider } from "./components/playback/PlaybackContext";
-import { ColorProvider, ViewModeProvider, ExplodedViewProvider, SliceSelectionProvider, NodeVisibilityProvider, ThresholdProvider } from "./contexts/visualization";
+import {
+  ColorProvider,
+  ViewModeProvider,
+  ExplodedViewProvider,
+  SliceSelectionProvider,
+  NodeVisibilityProvider,
+  ThresholdProvider,
+} from "./contexts/visualization";
 import { ViewProvider } from "./stores";
 import { TooltipProvider } from "./components/ui/tooltip";
-import { Box, Database, LayoutGrid, Layers, Grid3x3, Image, Waves, Gauge, Scissors, Rotate3D, Boxes, Timer } from "lucide-react";
+import {
+  Box,
+  Database,
+  LayoutGrid,
+  Layers,
+  Grid3x3,
+  Image,
+  Waves,
+  Gauge,
+  Scissors,
+  Rotate3D,
+  Boxes,
+  Timer,
+} from "lucide-react";
 
 const routes = [
   {
@@ -104,9 +124,9 @@ const router = createBrowserRouter([
   {
     element: (
       <>
-        <AnimationDataProvider>
-          <TooltipProvider>
-            <ViewProvider>
+        <ViewProvider>
+          <AnimationDataProvider>
+            <TooltipProvider>
               <NavigationBar routes={routes} />
               <PlaybackProvider>
                 <ThresholdProvider>
@@ -123,9 +143,9 @@ const router = createBrowserRouter([
                   </ColorProvider>
                 </ThresholdProvider>
               </PlaybackProvider>
-            </ViewProvider>
-          </TooltipProvider>
-        </AnimationDataProvider>
+            </TooltipProvider>
+          </AnimationDataProvider>
+        </ViewProvider>
       </>
     ),
     errorElement: <ErrorPage />,

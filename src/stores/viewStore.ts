@@ -3,6 +3,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 import type { ColorMetric } from "@/lib/colors";
 import type { ViewMode } from "@/contexts/visualization/ViewModeContext";
 import type { SerializedDockview } from "dockview";
+import type { ComputedStats } from "@/lib/types";
 
 export type ThresholdType =
   | "displacement"
@@ -153,6 +154,7 @@ export interface ViewState {
   // Thresholds
   thresholds: ThresholdState;
   setThreshold: (type: ThresholdType, value: number) => void;
+  setThresholdsFromPrecomputed: (precomputed: ComputedStats) => void;
 
   // Color
   currentMetric: ColorMetric;
@@ -226,6 +228,44 @@ export const createViewStore = () =>
       setThreshold: (type, value) =>
         set((state) => ({
           thresholds: { ...state.thresholds, [type]: value },
+        })),
+      setThresholdsFromPrecomputed: (precomputed) =>
+        set((state) => ({
+          thresholds: {
+            ...state.thresholds,
+            displacement: precomputed.maxDisplacement / 4,
+            displacementX: precomputed.maxDisplacementX / 4,
+            displacementY: precomputed.maxDisplacementY / 4,
+            displacementZ: precomputed.maxDisplacementZ / 4,
+            displacementMag: precomputed.maxDisplacement / 4,
+            velocity: (precomputed.maxVelocity ?? 10) / 4,
+            velocityX: (precomputed.maxVelocityX ?? 10) / 4,
+            velocityY: (precomputed.maxVelocityY ?? 10) / 4,
+            velocityZ: (precomputed.maxVelocityZ ?? 10) / 4,
+            velocityMag: (precomputed.maxVelocity ?? 10) / 4,
+            acceleration: (precomputed.maxAcceleration ?? 20) / 4,
+            accelerationX: (precomputed.maxAccelerationX ?? 20) / 4,
+            accelerationY: (precomputed.maxAccelerationY ?? 20) / 4,
+            accelerationZ: (precomputed.maxAccelerationZ ?? 20) / 4,
+            accelerationMag: (precomputed.maxAcceleration ?? 20) / 4,
+            rotation: (precomputed.maxRotation ?? 0.05) / 4,
+            rotationX: (precomputed.maxRotationX ?? 0.05) / 4,
+            rotationY: (precomputed.maxRotationY ?? 0.05) / 4,
+            rotationZ: (precomputed.maxRotationZ ?? 0.05) / 4,
+            rotationMag: (precomputed.maxRotation ?? 0.05) / 4,
+            rotationVelocity: (precomputed.maxRotationVelocity ?? 0.5) / 4,
+            rotationVelocityX: (precomputed.maxRotationVelocityX ?? 0.5) / 4,
+            rotationVelocityY: (precomputed.maxRotationVelocityY ?? 0.5) / 4,
+            rotationVelocityZ: (precomputed.maxRotationVelocityZ ?? 0.5) / 4,
+            rotationVelocityMag: (precomputed.maxRotationVelocity ?? 0.5) / 4,
+            rotationAcceleration: (precomputed.maxRotationAcceleration ?? 2) / 4,
+            rotationAccelerationX: (precomputed.maxRotationAccelerationX ?? 2) / 4,
+            rotationAccelerationY: (precomputed.maxRotationAccelerationY ?? 2) / 4,
+            rotationAccelerationZ: (precomputed.maxRotationAccelerationZ ?? 2) / 4,
+            rotationAccelerationMag: (precomputed.maxRotationAcceleration ?? 2) / 4,
+            interstoryDrift: precomputed.maxStoryDrift / 4,
+            interstoryDriftAvg: precomputed.avgStoryDrift / 4,
+          },
         })),
 
       // Color
@@ -304,7 +344,7 @@ export const createViewStore = () =>
       // Dockview Layout
       dockviewLayout: null,
       setDockviewLayout: (dockviewLayout) => set({ dockviewLayout }),
-    }))
+    })),
   );
 
 export type ViewStore = ReturnType<typeof createViewStore>;

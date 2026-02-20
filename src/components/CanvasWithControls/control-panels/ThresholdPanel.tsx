@@ -16,6 +16,13 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
   const maxVel = (animationData.precomputed.maxVelocity ?? 10) * 1.2;
   const maxAcc = (animationData.precomputed.maxAcceleration ?? 20) * 1.2;
 
+  const maxRot = (animationData.precomputed.maxRotation ?? 0.05) * 1.2;
+  const maxRotVel = (animationData.precomputed.maxRotationVelocity ?? 0.5) * 1.2;
+  const maxRotAcc = (animationData.precomputed.maxRotationAcceleration ?? 2) * 1.2;
+
+  const maxISD = (animationData.precomputed.maxStoryDrift ?? 5) * 1.2;
+  const maxISDAvg = (animationData.precomputed.avgStoryDrift ?? 5) * 1.2;
+
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1 mb-1">
@@ -63,7 +70,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationMag}
             unit={thresholdUnits.rotationMag}
             onChange={(v) => setThreshold("rotationMag", v)}
-            max={0.05}
+            max={maxRot}
             tooltip="Combined rotation magnitude threshold (radians)"
           />
           <ThresholdSlider
@@ -71,7 +78,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationX}
             unit={thresholdUnits.rotationX}
             onChange={(v) => setThreshold("rotationX", v)}
-            max={0.05}
+            max={maxRot}
             tooltip="Rotation threshold about X axis (radians)"
           />
           <ThresholdSlider
@@ -79,7 +86,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationY}
             unit={thresholdUnits.rotationY}
             onChange={(v) => setThreshold("rotationY", v)}
-            max={0.05}
+            max={maxRot}
             tooltip="Rotation threshold about Y axis (radians)"
           />
           <ThresholdSlider
@@ -87,7 +94,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationZ}
             unit={thresholdUnits.rotationZ}
             onChange={(v) => setThreshold("rotationZ", v)}
-            max={0.05}
+            max={maxRot}
             tooltip="Rotation threshold about Z axis (radians)"
           />
         </>
@@ -137,7 +144,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationVelocityMag}
             unit={thresholdUnits.rotationVelocityMag}
             onChange={(v) => setThreshold("rotationVelocityMag", v)}
-            max={0.5}
+            max={maxRotVel}
             tooltip="Angular velocity magnitude threshold (radians/second)"
           />
           <ThresholdSlider
@@ -145,7 +152,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationVelocityX}
             unit={thresholdUnits.rotationVelocityX}
             onChange={(v) => setThreshold("rotationVelocityX", v)}
-            max={0.5}
+            max={maxRotVel}
             tooltip="Angular velocity threshold about X axis (radians/second)"
           />
           <ThresholdSlider
@@ -153,7 +160,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationVelocityY}
             unit={thresholdUnits.rotationVelocityY}
             onChange={(v) => setThreshold("rotationVelocityY", v)}
-            max={0.5}
+            max={maxRotVel}
             tooltip="Angular velocity threshold about Y axis (radians/second)"
           />
           <ThresholdSlider
@@ -161,7 +168,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationVelocityZ}
             unit={thresholdUnits.rotationVelocityZ}
             onChange={(v) => setThreshold("rotationVelocityZ", v)}
-            max={0.5}
+            max={maxRotVel}
             tooltip="Angular velocity threshold about Z axis (radians/second)"
           />
         </>
@@ -211,7 +218,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationAccelerationMag}
             unit={thresholdUnits.rotationAccelerationMag}
             onChange={(v) => setThreshold("rotationAccelerationMag", v)}
-            max={2}
+            max={maxRotAcc}
             tooltip="Angular acceleration magnitude threshold (radians/second²)"
           />
           <ThresholdSlider
@@ -219,7 +226,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationAccelerationX}
             unit={thresholdUnits.rotationAccelerationX}
             onChange={(v) => setThreshold("rotationAccelerationX", v)}
-            max={2}
+            max={maxRotAcc}
             tooltip="Angular acceleration threshold about X axis (radians/second²)"
           />
           <ThresholdSlider
@@ -227,7 +234,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationAccelerationY}
             unit={thresholdUnits.rotationAccelerationY}
             onChange={(v) => setThreshold("rotationAccelerationY", v)}
-            max={2}
+            max={maxRotAcc}
             tooltip="Angular acceleration threshold about Y axis (radians/second²)"
           />
           <ThresholdSlider
@@ -235,7 +242,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
             value={thresholds.rotationAccelerationZ}
             unit={thresholdUnits.rotationAccelerationZ}
             onChange={(v) => setThreshold("rotationAccelerationZ", v)}
-            max={2}
+            max={maxRotAcc}
             tooltip="Angular acceleration threshold about Z axis (radians/second²)"
           />
         </>
@@ -246,7 +253,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
         value={thresholds.interstoryDrift}
         unit={thresholdUnits.interstoryDrift}
         onChange={(v) => setThreshold("interstoryDrift", v)}
-        max={5}
+        max={maxISD}
         tooltip="Peak interstory drift ratio threshold - floors exceeding this % will be highlighted"
       />
       <ThresholdSlider
@@ -254,7 +261,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
         value={thresholds.interstoryDriftAvg}
         unit={thresholdUnits.interstoryDriftAvg}
         onChange={(v) => setThreshold("interstoryDriftAvg", v)}
-        max={5}
+        max={maxISDAvg}
         tooltip="Average interstory drift ratio threshold across all floors (%)"
       />
     </div>

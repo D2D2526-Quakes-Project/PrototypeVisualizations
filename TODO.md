@@ -34,7 +34,7 @@ The threshold context currently only has displacement and interstory drift. It n
 - [x] Use threshold values in 3D coloring logic
 - [x] Add threshold-based highlighting in charts
 - [x] Ensure threshold changes propagate to all views
-- [ ] Default thresholds should be 1/4 of the max value
+- [x] Default thresholds should be 1/4 of the max value
 - [ ] Provide the `currentlyUsed` variable to the `ThresholdSlider` component by the metric
 
 ---
@@ -50,7 +50,7 @@ For optional metrics, they should be conditionally shown based on if that data i
 - [ ] Add rotation metrics (RX, RY, RZ, Magnitude)
 - [ ] Add velocity metrics (X, Y, Z, Magnitude)
 - [ ] Add rotation velocity metrics (RX, RY, RZ, Magnitude)
-- [ ] Add acceleration metrics (X, Y, Z, Magnitude)
+- [ ] Add acceleration metrics s(X, Y, Z, Magnitude)
 - [ ] Add rotation acceleration metrics (RX, RY, RZ, Magnitude)
 - [ ] Add interstory drift average metric
 - [ ] Add corner selector for Story Drift heat map to choose data from a specific corner (NW, NE, SE, SW) instead of only using the max across four
@@ -60,7 +60,7 @@ For optional metrics, they should be conditionally shown based on if that data i
 - [ ] Add metric selector dropdown options for new metrics
 - [ ] Add color bar legend to 3D view when metric is selected
 - [ ] Ensure color scale adapts to metric value ranges
-
+- [ ] ColorScaleBar doesn't show the max / min for that metric but the max / min of a general value. It should show the max / min of the metric value range
 - [ ] Colorize Interstory Drift chart to show distinct colors per data range instead of monotone styling
 
 ---
@@ -415,7 +415,6 @@ Every number with a unit should be hoverable with conversions.
 - [x] A share URL should be avilable that can be shared with others
 - [x] Load the panel configuration from the share URL
 - [ ] Camera position and orientation should be saved and restored
-- [ ]
 
 ---
 
@@ -427,7 +426,7 @@ Every number with a unit should be hoverable with conversions.
 - [x] Color mapping doesn't update when slider changes, only when coloring is toggled or the color metric changes. (Fixed: Now uses threshold-aware coloring for magnitude metrics by default)
 - [x] Story drift heatmap updates every frame and doesn't need to
 - [x] Each color by needs its own threshold color maps (Fixed: Now magnitude metrics use diverging blue-white-red scale)
-- [ ] Threshold sliders don't use the max value for the slider range.
+- [x] Threshold sliders don't use the max value for the slider range.
 - [ ] Floor Displacement graph is not showing negative values.
 - [ ] Floor slab renderer doesn't use the 'no lighting' 'no tone mapping' options
 - [ ] Camera position gets reset when switching between ortho and perspective

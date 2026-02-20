@@ -82,7 +82,7 @@ export function BuildingScene() {
   const visibleNodes = useMemo(() => {
     const visibleStoryOrder = getVisibleStoryOrder();
     const visibleStorySet = new Set(visibleStoryOrder);
-    
+
     return visibleNodesBasedOnMode.filter((nodeId) => {
       // Check which floor this node belongs to
       for (const storyId of visibleStorySet) {
@@ -370,7 +370,7 @@ export function BuildingScene() {
                     usage={THREE.DynamicDrawUsage}
                   />
                 </sphereGeometry>
-                <meshBasicMaterial fog={false} toneMapped={false} vertexColors />
+                <meshBasicMaterial fog={false} vertexColors />
               </instancedMesh>
               <VerticalConnectionsRenderer nodeIds={visibleNodes} />
             </>
@@ -393,7 +393,7 @@ export function BuildingScene() {
                   usage={THREE.DynamicDrawUsage}
                 />
               </sphereGeometry>
-              <meshBasicMaterial fog={false} toneMapped={false} vertexColors />
+              <meshBasicMaterial fog={false} vertexColors />
             </instancedMesh>
           )}
 
@@ -415,7 +415,6 @@ export function BuildingScene() {
               sizeAttenuation={true}
               depthTest={true}
               depthWrite={true}
-              toneMapped={false}
             />
             {selectedNodesData.map(({ nodeId, position, color }) => (
               <Point key={nodeId} position={position} color={color}></Point>
@@ -427,14 +426,14 @@ export function BuildingScene() {
       <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 20]} />
 
       {/* Direction indicators */}
-      <Text position={[0, 116, 0]} fontSize={32} color="#eee" anchorX="center" anchorY="middle">
+      <Text position={[0, 116, 0]} fontSize={32} color="#fff" anchorX="center" anchorY="middle">
         N
       </Text>
       <Text
         position={[0, -116, 0]}
         rotation={[0, 0, Math.PI]}
         fontSize={32}
-        color="#eee"
+        color="#fff"
         anchorX="center"
         anchorY="middle">
         S
@@ -443,7 +442,7 @@ export function BuildingScene() {
         position={[116, 0, 0]}
         rotation={[0, 0, -Math.PI / 2]}
         fontSize={32}
-        color="#eee"
+        color="#fff"
         anchorX="center"
         anchorY="middle">
         E
@@ -452,7 +451,7 @@ export function BuildingScene() {
         position={[-116, 0, 0]}
         rotation={[0, 0, Math.PI / 2]}
         fontSize={32}
-        color="#eee"
+        color="#fff"
         anchorX="center"
         anchorY="middle">
         W

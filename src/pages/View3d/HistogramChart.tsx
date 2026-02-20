@@ -37,12 +37,14 @@ import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
 import { useMemo, useState } from "react";
 import { useAnimationData } from "@/hooks/nodeDataHook";
-import { useThresholds, useFloorVisibility } from "@/contexts/visualization";
+import { useThresholds, useFloorVisibility, useColor } from "@/contexts/visualization";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { ChevronDown } from "lucide-react";
+import type { ThresholdType } from "@/stores/viewStore";
 import type { EChartsOption } from "echarts";
+import { COLOR_SCALES } from "@/lib/colors";
 import { renderToString } from "react-dom/server";
 
 const POSITION_AXIS_CONFIG = {
@@ -51,20 +53,7 @@ const POSITION_AXIS_CONFIG = {
   z: { id: "z", label: "Z Position (Elevation)", color: "#60a5fa" },
 } as const;
 
-const VALUE_TYPE_CONFIG = {
-  displacement: { id: "displacement", label: "Displacement", unit: "in", thresholdKey: "displacement" as const },
-  velocity: { id: "velocity", label: "Velocity", unit: "in/s", thresholdKey: "velocity" as const },
-  acceleration: { id: "acceleration", label: "Acceleration", unit: "in/s²", thresholdKey: "acceleration" as const },
-  interstoryDrift: {
-    id: "interstoryDrift",
-    label: "Interstory Drift",
-    unit: "%",
-    thresholdKey: "interstoryDrift" as const,
-  },
-} as const;
-
 type PositionAxis = keyof typeof POSITION_AXIS_CONFIG;
-type ValueType = keyof typeof VALUE_TYPE_CONFIG;
 
 function SimpleSelect<T extends string>({
   options,
@@ -143,8 +132,86 @@ export function HistogramChart() {
   const { frameIndex } = usePlayback();
   const { thresholds, setThreshold, thresholdUnits } = useThresholds();
   const { visibleFloors } = useFloorVisibility();
+  const { availableMetrics } = useColor();
+
+  const valueOptions = useMemo(() => {
+    return availableMetrics.map((metric) => {
+      let thresholdKey: ThresholdType;
+      let dataKey: string;
+
+      switch (metric) {
+        case "displacement":
+          thresholdKey = "displacement";
+          dataKey = "displacement";
+          break;
+        case "displacement-x":
+          thresholdKey = "displacementX";
+          dataKey = "displacementX";
+          break;
+        case "displacement-y":
+          thresholdKey = "displacementY";
+          dataKey = "displacementY";
+          break;
+        case "displacement-z":
+          thresholdKey = "displacementZ";
+          dataKey = "displacementZ";
+          break;
+        case "velocity":
+          thresholdKey = "velocity";
+          dataKey = "velocity";
+          break;
+        case "velocity-x":
+          thresholdKey = "velocityX";
+          dataKey = "velocityX";
+          break;
+        case "velocity-y":
+          thresholdKey = "velocityY";
+          dataKey = "velocityY";
+          break;
+        case "velocity-z":
+          thresholdKey = "velocityZ";
+          dataKey = "velocityZ";
+          break;
+        case "acceleration":
+          thresholdKey = "acceleration";
+          dataKey = "acceleration";
+          break;
+        case "acceleration-x":
+          thresholdKey = "accelerationX";
+          dataKey = "accelerationX";
+          break;
+        case "acceleration-y":
+          thresholdKey = "accelerationY";
+          dataKey = "accelerationY";
+          break;
+        case "acceleration-z":
+          thresholdKey = "accelerationZ";
+          dataKey = "accelerationZ";
+          break;
+        case "story-drift":
+          thresholdKey = "interstoryDrift";
+          dataKey = "interstoryDrift";
+          break;
+        default:
+          thresholdKey = "displacement";
+          dataKey = "displacement";
+      }
+
+      return {
+        id: metric,
+        label: COLOR_SCALES[metric].label,
+        unit: COLOR_SCALES[metric].unit,
+        thresholdKey,
+        dataKey,
+      };
+    });
+  }, [availableMetrics]);
+
   const [positionAxis, setPositionAxis] = useState<PositionAxis>("x");
-  const [valueType, setValueType] = useState<ValueType>("displacement");
+  const [valueType, setValueType] = useState<string>(() => {
+    const defaultOption = valueOptions.find((v) => v.id === "displacement") ?? valueOptions[0];
+    return defaultOption?.id ?? "displacement";
+  });
 
   const staticConfig = useMemo(() => {
     const { nodeCount, stories, storyOrder } = animationData.metadata;
@@ -190,27 +257,72 @@ export function HistogramChart() {
   const histogramData = useMemo(() => {
     const { displacementLin, velocityLin, accelerationLin, precomputed } = animationData;
     const { binEdges, bins, binWidth, minPos, nodeStoryMap, positionValues } = staticConfig;
-    const threshold = thresholds[valueType];
+    const currentOption = valueOptions.find((v) => v.id === valueType) ?? valueOptions[0];
+    const threshold = thresholds[currentOption?.thresholdKey as ThresholdType] ?? 0;
 
     const frameData = displacementLin.atFrame(frameIndex);
     const velFrameData = velocityLin?.atFrame(frameIndex);
     const accelFrameData = accelerationLin?.atFrame(frameIndex);
 
     const getNodeValue = (nodeIdx: number): number | null => {
-      switch (valueType) {
+      const dataKey = currentOption?.dataKey ?? "displacement";
+
+      switch (dataKey) {
         case "displacement": {
           const pos = frameData.at(nodeIdx);
           return Math.sqrt(pos[0] ** 2 + pos[1] ** 2 + pos[2] ** 2);
+        }
+        case "displacementX": {
+          const pos = frameData.at(nodeIdx);
+          return Math.abs(pos[0]);
+        }
+        case "displacementY": {
+          const pos = frameData.at(nodeIdx);
+          return Math.abs(pos[1]);
+        }
+        case "displacementZ": {
+          const pos = frameData.at(nodeIdx);
+          return Math.abs(pos[2]);
         }
         case "velocity": {
           if (!velFrameData) return null;
           const vel = velFrameData.at(nodeIdx);
           return Math.sqrt(vel[0] ** 2 + vel[1] ** 2 + vel[2] ** 2);
         }
+        case "velocityX": {
+          if (!velFrameData) return null;
+          const vel = velFrameData.at(nodeIdx);
+          return Math.abs(vel[0]);
+        }
+        case "velocityY": {
+          if (!velFrameData) return null;
+          const vel = velFrameData.at(nodeIdx);
+          return Math.abs(vel[1]);
+        }
+        case "velocityZ": {
+          if (!velFrameData) return null;
+          const vel = velFrameData.at(nodeIdx);
+          return Math.abs(vel[2]);
+        }
         case "acceleration": {
           if (!accelFrameData) return null;
           const accel = accelFrameData.at(nodeIdx);
           return Math.sqrt(accel[0] ** 2 + accel[1] ** 2 + accel[2] ** 2);
+        }
+        case "accelerationX": {
+          if (!accelFrameData) return null;
+          const accel = accelFrameData.at(nodeIdx);
+          return Math.abs(accel[0]);
+        }
+        case "accelerationY": {
+          if (!accelFrameData) return null;
+          const accel = accelFrameData.at(nodeIdx);
+          return Math.abs(accel[1]);
+        }
+        case "accelerationZ": {
+          if (!accelFrameData) return null;
+          const accel = accelFrameData.at(nodeIdx);
+          return Math.abs(accel[2]);
         }
         case "interstoryDrift": {
           const nodeStoryIdx = nodeStoryMap[nodeIdx];
@@ -249,12 +361,12 @@ export function HistogramChart() {
       totalCount,
       percentage: ((exceedingCount / totalCount) * 100).toFixed(1),
     };
-  }, [animationData, staticConfig, frameIndex, valueType, thresholds]);
+  }, [animationData, staticConfig, frameIndex, valueType, valueOptions, thresholds]);
 
   // Base option - static parts
   const baseOption: EChartsOption = useMemo((): EChartsOption => {
     const posLabel = POSITION_AXIS_CONFIG[positionAxis].label;
-    const valConfig = VALUE_TYPE_CONFIG[valueType];
+    const currentOption = valueOptions.find((v) => v.id === valueType) ?? valueOptions[0];
 
     return {
       tooltip: {
@@ -294,7 +406,7 @@ export function HistogramChart() {
         bottom: 40,
       },
       title: {
-        text: `Nodes Exceeding ${valConfig.label} Threshold`,
+        text: `Nodes Exceeding ${currentOption?.label ?? "Value"} Threshold`,
         left: 60,
         top: 5,
         textStyle: { fontSize: 12, fontWeight: "bold", color: "#374151" },
@@ -327,7 +439,7 @@ export function HistogramChart() {
       },
       animation: false,
     };
-  }, [positionAxis, valueType, staticConfig]);
+  }, [positionAxis, valueType, valueOptions, staticConfig]);
 
   // Series data - dynamic parts
   const seriesData = useMemo(() => {
@@ -367,7 +479,8 @@ export function HistogramChart() {
     };
   }, [baseOption, seriesData]);
 
-  const thresholdKey = VALUE_TYPE_CONFIG[valueType].thresholdKey;
+  const currentValueOption = valueOptions.find((v) => v.id === valueType) ?? valueOptions[0];
+  const thresholdKey = (currentValueOption?.thresholdKey ?? "displacement") as ThresholdType;
   const precomputed = animationData.precomputed;
 
   return (
@@ -389,10 +502,10 @@ export function HistogramChart() {
           <div className="flex items-center gap-1">
             <span className="text-xs text-neutral-500">Value:</span>
             <SimpleSelect
-              options={["displacement", "velocity", "acceleration", "interstoryDrift"] as const}
+              options={valueOptions.map((v) => v.id) as readonly string[]}
               value={valueType}
-              onChange={setValueType}
-              labelFn={(v) => VALUE_TYPE_CONFIG[v].label}
+              onChange={(val) => setValueType(val)}
+              labelFn={(v) => valueOptions.find((opt) => opt.id === v)?.label ?? v}
             />
           </div>
         </div>
@@ -404,15 +517,17 @@ export function HistogramChart() {
             type="range"
             min={0}
             max={
-              valueType === "interstoryDrift"
+              currentValueOption?.dataKey === "interstoryDrift"
                 ? Math.max(precomputed.maxStoryDrift * 1.2, 0.5)
-                : valueType === "velocity"
-                  ? Math.max((precomputed.maxVelocity ?? 1) * 1.2, 1)
-                  : valueType === "acceleration"
-                    ? Math.max((precomputed.maxAcceleration ?? 2) * 1.2, 2)
-                    : Math.max(precomputed.maxDisplacement * 1.2, 0.1)
+                : currentValueOption?.dataKey?.startsWith("velocity")
+                  ? Math.max((precomputed[`max${currentValueOption.dataKey.charAt(0).toUpperCase() + currentValueOption.dataKey.slice(1)}` as keyof typeof precomputed] as number ?? 1) * 1.2, 1)
+                  : currentValueOption?.dataKey?.startsWith("acceleration")
+                    ? Math.max((precomputed[`max${currentValueOption.dataKey.charAt(0).toUpperCase() + currentValueOption.dataKey.slice(1)}` as keyof typeof precomputed] as number ?? 2) * 1.2, 2)
+                    : currentValueOption?.dataKey?.startsWith("displacement")
+                      ? Math.max((precomputed[`max${currentValueOption.dataKey.charAt(0).toUpperCase() + currentValueOption.dataKey.slice(1)}` as keyof typeof precomputed] as number ?? 0.1) * 1.2, 0.1)
+                      : Math.max(precomputed.maxDisplacement * 1.2, 0.1)
             }
-            step={valueType === "interstoryDrift" ? 0.01 : 0.05}
+            step={currentValueOption?.dataKey === "interstoryDrift" ? 0.01 : 0.05}
             value={thresholds[thresholdKey]}
             onChange={(e) => setThreshold(thresholdKey, parseFloat(e.target.value))}
             className="w-24 h-1"

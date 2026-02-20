@@ -1,14 +1,14 @@
 interface ViewsPanelProps {
-  resetView: (view: string) => void;
+  resetView: (view: "top" | "bottom" | "left" | "right" | "front" | "back") => void;
 }
 
-const viewButtons = [
-  { view: "front", label: "Front" },
-  { view: "back", label: "Back" },
-  { view: "left", label: "Left" },
-  { view: "right", label: "Right" },
+const viewButtons: { view: "top" | "bottom" | "left" | "right" | "front" | "back"; label: string }[] = [
+  { view: "front", label: "North" },
+  { view: "right", label: "East" },
+  { view: "back", label: "South" },
+  { view: "left", label: "West" },
   { view: "top", label: "Top" },
-  { view: "iso", label: "Iso" },
+  { view: "bottom", label: "Bottom" },
 ];
 
 export function ViewsPanel({ resetView }: ViewsPanelProps) {

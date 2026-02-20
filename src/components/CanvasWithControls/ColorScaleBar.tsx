@@ -1,24 +1,25 @@
 import { blue900, blue600, blue400, white, red400, red600, red900, isMagnitudeMetric } from "./constants";
 import type { ColorMetric } from "@/lib/colors";
+import type { ThresholdState } from "@/stores";
 
 interface ColorScaleBarProps {
   currentMetric: ColorMetric;
   thresholdHighlighting: boolean;
-  thresholds: Record<string, number>;
+  thresholds: ThresholdState;
   animationData: {
     precomputed: {
       maxDisplacement: number;
       maxDisplacementX: number;
       maxDisplacementY: number;
       maxDisplacementZ: number;
-      maxVelocity: number | null;
-      maxVelocityX: number | null;
-      maxVelocityY: number | null;
-      maxVelocityZ: number | null;
-      maxAcceleration: number | null;
-      maxAccelerationX: number | null;
-      maxAccelerationY: number | null;
-      maxAccelerationZ: number | null;
+      maxVelocity?: number | null;
+      maxVelocityX?: number | null;
+      maxVelocityY?: number | null;
+      maxVelocityZ?: number | null;
+      maxAcceleration?: number | null;
+      maxAccelerationX?: number | null;
+      maxAccelerationY?: number | null;
+      maxAccelerationZ?: number | null;
       maxStoryDrift: number;
     };
   };
@@ -57,7 +58,22 @@ export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds
   let labels: React.ReactNode;
 
   if (thresholdHighlighting) {
-    const thresholdKey = currentMetric; // simplified - would need proper mapping
+    const metricToThresholdKey: Record<string, keyof ThresholdState> = {
+      displacement: "displacementMag",
+      "displacement-x": "displacementX",
+      "displacement-y": "displacementY",
+      "displacement-z": "displacementZ",
+      velocity: "velocityMag",
+      "velocity-x": "velocityX",
+      "velocity-y": "velocityY",
+      "velocity-z": "velocityZ",
+      acceleration: "accelerationMag",
+      "acceleration-x": "accelerationX",
+      "acceleration-y": "accelerationY",
+      "acceleration-z": "accelerationZ",
+      "story-drift": "interstoryDrift",
+    };
+    const thresholdKey = metricToThresholdKey[currentMetric] ?? "displacementMag";
     const thresholdValue = thresholds[thresholdKey] ?? 0;
     const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
 

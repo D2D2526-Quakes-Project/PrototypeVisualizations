@@ -2,6 +2,7 @@ import { Switch } from "@/components/ui/switch";
 import { Palette } from "lucide-react";
 import { ColorScaleBar } from "../ColorScaleBar";
 import type { ColorMetric } from "@/lib/colors";
+import type { ThresholdState } from "@/stores";
 
 interface ColorPanelProps {
   currentMetric: ColorMetric;
@@ -9,21 +10,21 @@ interface ColorPanelProps {
   availableMetrics: ColorMetric[];
   thresholdHighlighting: boolean;
   setThresholdHighlighting: (enabled: boolean) => void;
-  thresholds: Record<string, number>;
+  thresholds: ThresholdState;
   animationData: {
     precomputed: {
       maxDisplacement: number;
       maxDisplacementX: number;
       maxDisplacementY: number;
       maxDisplacementZ: number;
-      maxVelocity: number | null;
-      maxVelocityX: number | null;
-      maxVelocityY: number | null;
-      maxVelocityZ: number | null;
-      maxAcceleration: number | null;
-      maxAccelerationX: number | null;
-      maxAccelerationY: number | null;
-      maxAccelerationZ: number | null;
+      maxVelocity?: number | null;
+      maxVelocityX?: number | null;
+      maxVelocityY?: number | null;
+      maxVelocityZ?: number | null;
+      maxAcceleration?: number | null;
+      maxAccelerationX?: number | null;
+      maxAccelerationY?: number | null;
+      maxAccelerationZ?: number | null;
       maxStoryDrift: number;
     };
   };
@@ -72,18 +73,19 @@ export function ColorPanel({
       </select>
 
       <div className="mt-2">
-        <div className="text-[10px] text-neutral-500 mb-1">Color Scale</div>
+        <div className="flex items-center gap-2 justify-between mb-1">
+          <div className="text-[10px] text-neutral-500">Color Scale</div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-neutral-500">Show Threshold</span>
+            <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />
+          </div>
+        </div>
         <ColorScaleBar
           currentMetric={currentMetric}
           thresholdHighlighting={thresholdHighlighting}
           thresholds={thresholds}
           animationData={animationData}
         />
-      </div>
-
-      <div className="flex items-center gap-2 mt-1">
-        <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />
-        <span className="text-[10px] text-neutral-500">Highlight exceeding threshold</span>
       </div>
     </>
   );

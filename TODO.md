@@ -34,6 +34,8 @@ The threshold context currently only has displacement and interstory drift. It n
 - [x] Use threshold values in 3D coloring logic
 - [x] Add threshold-based highlighting in charts
 - [x] Ensure threshold changes propagate to all views
+- [ ] Default thresholds should be 1/4 of the max value
+- [ ] Provide the `currentlyUsed` variable to the `ThresholdSlider` component by the metric
 
 ---
 
@@ -209,6 +211,8 @@ Apply consistent scientific visualization standards across all charts and plots.
 - [ ] Improve panel drag/resize handles
 - [ ] Add color bar on the left side of the CanvasWithControls
 - [ ] Add view option for changing background color
+- [ ] Change the views menu popover to be a sidebar that takes up space next to the canvas
+- [x] Reorder the Thresholds sliders to be above Exploded View toggle
 
 ### 9.2 Help & Documentation
 
@@ -410,13 +414,12 @@ Every number with a unit should be hoverable with conversions.
 - [x] The UI panel state should be saved and restored
 - [x] A share URL should be avilable that can be shared with others
 - [x] Load the panel configuration from the share URL
-      `
+- [ ] Camera position and orientation should be saved and restored
+- [ ]
 
 ---
 
 ## 18. Known Bugs
-
-### 18.1 Timeline Interaction
 
 - [x] Intermittent failure when clicking or dragging the timeline scrubber; fixed by using ZRender events and refs to avoid race conditions during HMR (Hint: When the option checkbox changes, the mouse stuff starts working again)
 - [x] Interstory Drift chart bars can excede their peak bars. This is a big red flag that something is wrong with the data reading / precomputation.
@@ -426,5 +429,8 @@ Every number with a unit should be hoverable with conversions.
 - [x] Each color by needs its own threshold color maps (Fixed: Now magnitude metrics use diverging blue-white-red scale)
 - [ ] Threshold sliders don't use the max value for the slider range.
 - [ ] Floor Displacement graph is not showing negative values.
+- [ ] Floor slab renderer doesn't use the 'no lighting' 'no tone mapping' options
+- [ ] Camera position gets reset when switching between ortho and perspective
+- [ ] Using `target={targetRef.current}` is bad practice apparently, but I don't know another way to do this, because it works like this
 
 _Last Updated: February 2026_

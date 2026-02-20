@@ -148,12 +148,24 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const chartRef = useRef<ReactECharts>(null);
+  const isDraggingRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
 
   // Default to Magnitude
   const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(["x", "y"]);
 
   const maxFrame = animationData.metadata.frameCount - 1;
+  const dt = animationData.metadata.dt;
+
+  const dtRef = useRef(dt);
+  const maxFrameRef = useRef(maxFrame);
+  const selectedKeysRef = useRef(selectedKeys);
+
+  useEffect(() => {
+    dtRef.current = dt;
+    maxFrameRef.current = maxFrame;
+    selectedKeysRef.current = selectedKeys;
+  }, [dt, maxFrame, selectedKeys]);
 
   const times = useMemo(() => {
     const times: number[] = [];
@@ -358,8 +370,10 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
 
           const firstParam = params[0];
-          const time = firstParam.value as number;
-          const frame = Math.round(time / animationData.metadata.dt);
+          const value = firstParam.value as [number, number];
+          const time = value[0];
+          const dt = animationData.metadata.dt;
+          const frame = Math.round(time / dt);
 
           const values: Array<{ name: string; color: string; value: number }> = [];
 
@@ -383,13 +397,15 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
     };
   }, [chartData, maxFrame, animationData.metadata.dt]);
 
-  // Scrubbing logic
+  // Scrubbing logic - uses refs to access current values and tracks chart instance changes
   useEffect(() => {
-    const chart = chartRef.current?.getEchartsInstance();
-    if (!chart) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let zr: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let currentChart: any = null;
 
-    const convertToFrame = (pixelX: number) => {
-      if (selectedKeys.length === 0) return null;
+    const convertToFrame = (pixelX: number, chart: NonNullable<typeof currentChart>) => {
+      if (selectedKeysRef.current.length === 0) return null;
       const chartDom = chart.getDom();
       if (!chartDom) return null;
       const rect = chartDom.getBoundingClientRect();
@@ -398,42 +414,74 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
       if (!pointInGrid) return null;
 
       const time = pointInGrid[0];
-      const frame = Math.round(time / animationData.metadata.dt);
+      const frame = Math.round(time / dtRef.current);
 
-      return Math.max(0, Math.min(maxFrame, frame));
+      return Math.max(0, Math.min(maxFrameRef.current, frame));
     };
 
-    const handleMouseDown = (e: MouseEvent) => {
-      const newFrame = convertToFrame(e.clientX);
+    const handleMouseDown = (e: { event?: MouseEvent }) => {
+      if (!e.event) return;
+      const chart = chartRef.current?.getEchartsInstance();
+      if (!chart) return;
+      const newFrame = convertToFrame(e.event.clientX, chart);
       if (newFrame !== null) {
+        isDraggingRef.current = true;
         setIsDragging(true);
         setFrameIndex(newFrame);
       }
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const newFrame = convertToFrame(e.clientX);
+    const handleMouseMove = (e: { event?: MouseEvent }) => {
+      if (!isDraggingRef.current || !e.event) return;
+      const chart = chartRef.current?.getEchartsInstance();
+      if (!chart) return;
+      const newFrame = convertToFrame(e.event.clientX, chart);
       if (newFrame !== null) {
         setFrameIndex(newFrame);
       }
     };
 
     const handleMouseUp = () => {
+      isDraggingRef.current = false;
       setIsDragging(false);
     };
 
-    const chartDom = chart.getDom();
-    chartDom.addEventListener("mousedown", handleMouseDown);
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    const attachListeners = () => {
+      const chart = chartRef.current?.getEchartsInstance();
+      if (!chart || chart === currentChart) return;
+
+      if (zr) {
+        zr.off("mousedown", handleMouseDown);
+        zr.off("mousemove", handleMouseMove);
+        zr.off("mouseup", handleMouseUp);
+      }
+
+      currentChart = chart;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      zr = chart.getZr() as any;
+      if (!zr) return;
+
+      zr.on("mousedown", handleMouseDown);
+      zr.on("mousemove", handleMouseMove);
+      zr.on("mouseup", handleMouseUp);
+      window.addEventListener("mouseup", handleMouseUp);
+    };
+
+    attachListeners();
+
+    const intervalId = setInterval(attachListeners, 100);
 
     return () => {
-      chartDom.removeEventListener("mousedown", handleMouseDown);
-      window.removeEventListener("mousemove", handleMouseMove);
+      clearInterval(intervalId);
+      if (zr) {
+        zr.off("mousedown", handleMouseDown);
+        zr.off("mousemove", handleMouseMove);
+        zr.off("mouseup", handleMouseUp);
+      }
       window.removeEventListener("mouseup", handleMouseUp);
+      currentChart = null;
     };
-  }, [isDragging, animationData.metadata.dt, maxFrame, setFrameIndex, selectedKeys.length]);
+  }, [setFrameIndex]);
 
   // Update for MarkLine and MarkPoint
   useEffect(() => {

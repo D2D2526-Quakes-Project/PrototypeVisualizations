@@ -38,6 +38,7 @@ import ReactECharts from "echarts-for-react";
 import { useMemo } from "react";
 import { renderToString } from "react-dom/server";
 import { useAnimationData } from "../../hooks/nodeDataHook";
+import { useFloorVisibility } from "@/contexts/visualization";
 import type { EChartsOption } from "echarts";
 
 const cornerColors = {
@@ -109,12 +110,14 @@ export function InterstoryDriftChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { precomputed } = animationData;
+  const { getVisibleStoryOrder } = useFloorVisibility();
 
   // Static configuration that doesn't change with frameIndex
   const staticConfig = useMemo(() => {
-    const { storyOrder, storyHeights } = animationData.metadata;
+    const { storyHeights } = animationData.metadata;
     const { peakStoryDrift } = precomputed;
-    const storyOrderWithoutGround = storyOrder.slice(1);
+    const visibleStoryOrder = getVisibleStoryOrder();
+    const storyOrderWithoutGround = visibleStoryOrder.filter((id) => id !== "G"); // Filter out ground
 
     const yAxisData = storyOrderWithoutGround.map((storyId) => {
       const heightIn = storyHeights[storyId] || 0;
@@ -124,7 +127,7 @@ export function InterstoryDriftChart() {
 
     // Pre-compute max peak ratio
     let maxPeakRatio = 0.0001;
-    storyOrder.forEach((storyId) => {
+    storyOrderWithoutGround.forEach((storyId) => {
       const peakCornerDrifts = [
         peakStoryDrift[storyId]?.NW || 0,
         peakStoryDrift[storyId]?.NE || 0,
@@ -141,7 +144,7 @@ export function InterstoryDriftChart() {
       peakStoryDrift,
       storyHeights,
     };
-  }, [animationData.metadata, precomputed]);
+  }, [animationData.metadata, precomputed, getVisibleStoryOrder]);
 
   const { storyOrderWithoutGround, yAxisData, maxPeakRatio, peakStoryDrift, storyHeights } = staticConfig;
 
@@ -261,7 +264,11 @@ export function InterstoryDriftChart() {
       name: `${corner}`,
       type: "bar" as const,
       stack: corner,
-      data: storyOrderWithoutGround.map((storyId) => peakStoryDrift[storyId][corner] - currentDrifts[storyId][corner]),
+      data: storyOrderWithoutGround.map((storyId) => {
+        const peak = peakStoryDrift[storyId]?.[corner] ?? 0;
+        const current = currentDrifts[storyId]?.[corner] ?? 0;
+        return peak - current;
+      }),
       itemStyle: {
         color: cornerColors[corner],
         opacity: 0.3,
@@ -279,7 +286,7 @@ export function InterstoryDriftChart() {
       name: corner,
       type: "bar" as const,
       stack: corner,
-      data: storyOrderWithoutGround.map((storyId) => currentDrifts[storyId][corner] || 0),
+      data: storyOrderWithoutGround.map((storyId) => currentDrifts[storyId]?.[corner] ?? 0),
       itemStyle: {
         color: cornerColors[corner],
         borderRadius: [0, 2, 2, 0] as [number, number, number, number],

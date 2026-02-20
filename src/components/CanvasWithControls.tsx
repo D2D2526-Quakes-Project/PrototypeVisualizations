@@ -1,22 +1,33 @@
-import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCamera } from "@/contexts/CameraContext";
-import { useAnimationData } from "@/hooks/nodeDataHook";
 import {
   useColor,
-  useViewMode,
   useExplodedView,
-  useSliceSelection,
-  useNodeVisibility,
-  useThresholds,
   useFloorVisibility,
+  useNodeVisibility,
+  useSliceSelection,
+  useThresholds,
+  useViewMode,
 } from "@/contexts/visualization";
+import { useAnimationData } from "@/hooks/nodeDataHook";
 import { UNIT_SCALE } from "@/lib/utils";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { BoxSelect, ChevronDown, Grid3X3, LayoutGrid, Palette, ScanEye, Sliders, Layers } from "lucide-react";
+import { formatHex } from "culori";
+import { BoxSelect, ChevronDown, Grid3X3, Layers, LayoutGrid, Palette, ScanEye, Sliders } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type RefObject } from "react";
+
+const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
+const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
+const blue400 = formatHex("oklch(70.7% 0.165 254.624)")!;
+const white = formatHex("#fff")!;
+const red400 = formatHex("oklch(70.4% 0.191 22.216)")!;
+const red600 = formatHex("oklch(57.7% 0.245 27.325)")!;
+const red900 = formatHex("oklch(39.6% 0.141 25.723)")!;
+
 import {
   OrthographicCamera as OrthographicCameraImpl,
   PerspectiveCamera as PerspectiveCameraImpl,
@@ -31,17 +42,28 @@ function ThresholdSlider({
   unit,
   onChange,
   max,
+  tooltip,
 }: {
   label: string;
   value: number;
   unit: string;
   onChange: (value: number) => void;
   max: number;
+  tooltip?: string;
 }) {
   const step = max > 1 ? 0.1 : 0.001;
   return (
     <div className="flex items-center gap-1">
-      <span className="text-[10px] text-neutral-500 w-16 shrink-0">{label}</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="text-[10px] text-neutral-500 w-16 shrink-0 cursor-help text-left">{label}</span>
+        </TooltipTrigger>
+        {tooltip && (
+          <TooltipContent side="top" className="max-w-xs">
+            {tooltip}
+          </TooltipContent>
+        )}
+      </Tooltip>
       <input
         type="range"
         min="0"
@@ -219,7 +241,8 @@ export function ViewControls({
   setEnableSmoothing: (value: boolean) => void;
 }) {
   const { animationData } = useAnimationData();
-  const { currentMetric, setColorMetric, availableMetrics } = useColor();
+  const { currentMetric, setColorMetric, availableMetrics, thresholdHighlighting, setThresholdHighlighting } =
+    useColor();
   const { mode, setMode } = useViewMode();
   const {
     state: explodedState,
@@ -416,6 +439,50 @@ export function ViewControls({
                     </option>
                   ))}
                 </select>
+                <div className="flex items-center gap-2 mt-1">
+                  <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />
+                  <span className="text-[10px] text-neutral-500">Highlight exceeding threshold</span>
+                </div>
+                {thresholdHighlighting &&
+                  (() => {
+                    const maxDisp = animationData.precomputed.maxDisplacement * 1.2;
+                    const threshold = thresholds.displacementMag;
+                    const thresholdRatio = maxDisp > 0 ? threshold / maxDisp : 0;
+
+                    // Build a white to red gradient that shows threshold-aware coloring
+                    const stops: string[] = [];
+                    // // Below threshold: white → light red
+                    // stops.push(`${white} 0%`);
+                    // stops.push(`${red400} ${thresholdRatio * 100}%`);
+                    // // Above threshold: red → dark red
+                    // stops.push(`${red600} ${thresholdRatio * 100 + 0.1}%`);
+                    // stops.push(`${red900} 100%`);
+
+                    // Build a Blue to white to Red gradient that shows threshold-aware coloring
+                    stops.push(`${blue900} 0%`);
+                    stops.push(`${blue600} ${(1 - thresholdRatio) * 50 - 0.1}%`);
+                    stops.push(`${blue400} ${(1 - thresholdRatio) * 50}%`);
+                    stops.push(`${white} 50%`);
+                    stops.push(`${red400} ${thresholdRatio * 50 + 50}%`);
+                    stops.push(`${red600} ${thresholdRatio * 50 + 50.1}%`);
+                    stops.push(`${red900} 100%`);
+
+                    return (
+                      <div className="mt-2">
+                        <div className="text-[10px] text-neutral-500 mb-1">Color Scale</div>
+                        <div
+                          className="relative h-3 rounded-sm"
+                          style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
+                        <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                          <span>0</span>
+                          <span>
+                            {threshold.toFixed(2)} {thresholdUnits.displacementMag}
+                          </span>
+                          <span>{maxDisp.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
               </motion.div>
               <motion.div
                 className="pt-2 border-t border-neutral-200 mt-2"
@@ -605,6 +672,7 @@ export function ViewControls({
                     unit={thresholdUnits.displacementMag}
                     onChange={(v) => setThreshold("displacementMag", v)}
                     max={animationData.precomputed.maxDisplacement * 1.2}
+                    tooltip="Displacement magnitude threshold - nodes above this value will be highlighted"
                   />
                   <ThresholdSlider
                     label="Disp X"
@@ -612,6 +680,7 @@ export function ViewControls({
                     unit={thresholdUnits.displacementX}
                     onChange={(v) => setThreshold("displacementX", v)}
                     max={animationData.precomputed.maxDisplacement * 1.2}
+                    tooltip="Displacement threshold in X direction (horizontal)"
                   />
                   <ThresholdSlider
                     label="Disp Y"
@@ -619,6 +688,7 @@ export function ViewControls({
                     unit={thresholdUnits.displacementY}
                     onChange={(v) => setThreshold("displacementY", v)}
                     max={animationData.precomputed.maxDisplacement * 1.2}
+                    tooltip="Displacement threshold in Y direction (horizontal)"
                   />
                   <ThresholdSlider
                     label="Disp Z"
@@ -626,6 +696,7 @@ export function ViewControls({
                     unit={thresholdUnits.displacementZ}
                     onChange={(v) => setThreshold("displacementZ", v)}
                     max={animationData.precomputed.maxDisplacement * 1.2}
+                    tooltip="Displacement threshold in Z direction (vertical)"
                   />
 
                   {/* Rotation Thresholds - only show if displacementRot data exists */}
@@ -637,6 +708,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationMag}
                         onChange={(v) => setThreshold("rotationMag", v)}
                         max={0.05}
+                        tooltip="Combined rotation magnitude threshold (radians)"
                       />
                       <ThresholdSlider
                         label="Rot X"
@@ -644,6 +716,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationX}
                         onChange={(v) => setThreshold("rotationX", v)}
                         max={0.05}
+                        tooltip="Rotation threshold about X axis (radians)"
                       />
                       <ThresholdSlider
                         label="Rot Y"
@@ -651,6 +724,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationY}
                         onChange={(v) => setThreshold("rotationY", v)}
                         max={0.05}
+                        tooltip="Rotation threshold about Y axis (radians)"
                       />
                       <ThresholdSlider
                         label="Rot Z"
@@ -658,6 +732,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationZ}
                         onChange={(v) => setThreshold("rotationZ", v)}
                         max={0.05}
+                        tooltip="Rotation threshold about Z axis (radians)"
                       />
                     </>
                   )}
@@ -671,6 +746,7 @@ export function ViewControls({
                         unit={thresholdUnits.velocityMag}
                         onChange={(v) => setThreshold("velocityMag", v)}
                         max={(animationData.precomputed.maxVelocity ?? 10) * 1.2}
+                        tooltip="Velocity magnitude threshold (inches/second)"
                       />
                       <ThresholdSlider
                         label="Vel X"
@@ -678,6 +754,7 @@ export function ViewControls({
                         unit={thresholdUnits.velocityX}
                         onChange={(v) => setThreshold("velocityX", v)}
                         max={(animationData.precomputed.maxVelocity ?? 10) * 1.2}
+                        tooltip="Velocity threshold in X direction (inches/second)"
                       />
                       <ThresholdSlider
                         label="Vel Y"
@@ -685,6 +762,7 @@ export function ViewControls({
                         unit={thresholdUnits.velocityY}
                         onChange={(v) => setThreshold("velocityY", v)}
                         max={(animationData.precomputed.maxVelocity ?? 10) * 1.2}
+                        tooltip="Velocity threshold in Y direction (inches/second)"
                       />
                       <ThresholdSlider
                         label="Vel Z"
@@ -692,6 +770,7 @@ export function ViewControls({
                         unit={thresholdUnits.velocityZ}
                         onChange={(v) => setThreshold("velocityZ", v)}
                         max={(animationData.precomputed.maxVelocity ?? 10) * 1.2}
+                        tooltip="Velocity threshold in Z direction (inches/second)"
                       />
                     </>
                   )}
@@ -705,6 +784,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationVelocityMag}
                         onChange={(v) => setThreshold("rotationVelocityMag", v)}
                         max={0.5}
+                        tooltip="Angular velocity magnitude threshold (radians/second)"
                       />
                       <ThresholdSlider
                         label="RVel X"
@@ -712,6 +792,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationVelocityX}
                         onChange={(v) => setThreshold("rotationVelocityX", v)}
                         max={0.5}
+                        tooltip="Angular velocity threshold about X axis (radians/second)"
                       />
                       <ThresholdSlider
                         label="RVel Y"
@@ -719,6 +800,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationVelocityY}
                         onChange={(v) => setThreshold("rotationVelocityY", v)}
                         max={0.5}
+                        tooltip="Angular velocity threshold about Y axis (radians/second)"
                       />
                       <ThresholdSlider
                         label="RVel Z"
@@ -726,6 +808,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationVelocityZ}
                         onChange={(v) => setThreshold("rotationVelocityZ", v)}
                         max={0.5}
+                        tooltip="Angular velocity threshold about Z axis (radians/second)"
                       />
                     </>
                   )}
@@ -739,6 +822,7 @@ export function ViewControls({
                         unit={thresholdUnits.accelerationMag}
                         onChange={(v) => setThreshold("accelerationMag", v)}
                         max={(animationData.precomputed.maxAcceleration ?? 20) * 1.2}
+                        tooltip="Acceleration magnitude threshold (inches/second²)"
                       />
                       <ThresholdSlider
                         label="Acc X"
@@ -746,6 +830,7 @@ export function ViewControls({
                         unit={thresholdUnits.accelerationX}
                         onChange={(v) => setThreshold("accelerationX", v)}
                         max={(animationData.precomputed.maxAcceleration ?? 20) * 1.2}
+                        tooltip="Acceleration threshold in X direction (inches/second²)"
                       />
                       <ThresholdSlider
                         label="Acc Y"
@@ -753,6 +838,7 @@ export function ViewControls({
                         unit={thresholdUnits.accelerationY}
                         onChange={(v) => setThreshold("accelerationY", v)}
                         max={(animationData.precomputed.maxAcceleration ?? 20) * 1.2}
+                        tooltip="Acceleration threshold in Y direction (inches/second²)"
                       />
                       <ThresholdSlider
                         label="Acc Z"
@@ -760,6 +846,7 @@ export function ViewControls({
                         unit={thresholdUnits.accelerationZ}
                         onChange={(v) => setThreshold("accelerationZ", v)}
                         max={(animationData.precomputed.maxAcceleration ?? 20) * 1.2}
+                        tooltip="Acceleration threshold in Z direction (inches/second²)"
                       />
                     </>
                   )}
@@ -773,6 +860,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationAccelerationMag}
                         onChange={(v) => setThreshold("rotationAccelerationMag", v)}
                         max={2}
+                        tooltip="Angular acceleration magnitude threshold (radians/second²)"
                       />
                       <ThresholdSlider
                         label="RAcc X"
@@ -780,6 +868,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationAccelerationX}
                         onChange={(v) => setThreshold("rotationAccelerationX", v)}
                         max={2}
+                        tooltip="Angular acceleration threshold about X axis (radians/second²)"
                       />
                       <ThresholdSlider
                         label="RAcc Y"
@@ -787,6 +876,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationAccelerationY}
                         onChange={(v) => setThreshold("rotationAccelerationY", v)}
                         max={2}
+                        tooltip="Angular acceleration threshold about Y axis (radians/second²)"
                       />
                       <ThresholdSlider
                         label="RAcc Z"
@@ -794,6 +884,7 @@ export function ViewControls({
                         unit={thresholdUnits.rotationAccelerationZ}
                         onChange={(v) => setThreshold("rotationAccelerationZ", v)}
                         max={2}
+                        tooltip="Angular acceleration threshold about Z axis (radians/second²)"
                       />
                     </>
                   )}
@@ -805,6 +896,7 @@ export function ViewControls({
                     unit={thresholdUnits.interstoryDrift}
                     onChange={(v) => setThreshold("interstoryDrift", v)}
                     max={5}
+                    tooltip="Peak interstory drift ratio threshold - floors exceeding this % will be highlighted"
                   />
                   <ThresholdSlider
                     label="ISD Avg"
@@ -812,6 +904,7 @@ export function ViewControls({
                     unit={thresholdUnits.interstoryDriftAvg}
                     onChange={(v) => setThreshold("interstoryDriftAvg", v)}
                     max={5}
+                    tooltip="Average interstory drift ratio threshold across all floors (%)"
                   />
                 </div>
               </motion.div>

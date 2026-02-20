@@ -27,13 +27,13 @@ The threshold context currently only has displacement and interstory drift. It n
 - [x] Add rotation acceleration threshold slider(s)
 - [x] Add interstory drift average threshold
 - [x] Group sliders logically in the UI
-- [ ] Add tooltips explaining each threshold
+- [x] Add tooltips explaining each threshold
 
 ### 1.3 Integrate Thresholds into Visualization
 
-- [ ] Use threshold values in 3D coloring logic
-- [ ] Add threshold-based highlighting in charts
-- [ ] Ensure threshold changes propagate to all views
+- [x] Use threshold values in 3D coloring logic
+- [x] Add threshold-based highlighting in charts
+- [x] Ensure threshold changes propagate to all views
 
 ---
 
@@ -49,12 +49,15 @@ The color metric system needs to support all key values for 3D visualization.
 - [ ] Add acceleration metrics (X, Y, Z, Magnitude)
 - [ ] Add rotation acceleration metrics (RX, RY, RZ, Magnitude)
 - [ ] Add interstory drift average metric
+- [ ] Add corner selector for Story Drift heat map to choose data from a specific corner (NW, NE, SE, SW) instead of only using the max across four
 
 ### 2.2 Update Color UI
 
 - [ ] Add metric selector dropdown options for new metrics
 - [ ] Add color bar legend to 3D view when metric is selected
 - [ ] Ensure color scale adapts to metric value ranges
+
+- [ ] Colorize Interstory Drift chart to show distinct colors per data range instead of monotone styling
 
 ---
 
@@ -76,9 +79,9 @@ Ensure all views and panels are properly synchronized through context.
 
 ### 3.3 Threshold Context Sync
 
-- [ ] Verify threshold changes reflect in 3D view immediately
-- [ ] Verify threshold changes reflect in all charts
-- [ ] Add threshold synchronization between DamageThresholdPanel and CanvasWithControls
+- [x] Verify threshold changes reflect in 3D view immediately
+- [x] Verify threshold changes reflect in all charts
+- [x] Add threshold synchronization between DamageThresholdPanel and CanvasWithControls
 
 ---
 
@@ -124,6 +127,8 @@ Apply consistent scientific visualization standards across all charts and plots.
 - [ ] Add peak value annotations
 - [ ] Add average value lines
 - [ ] Improve axis labeling consistency
+- [ ] Scrap the correlation matrix
+- [ ] Statistics panel should clamp frame index to [0, lastFrame], defaulting to 0 when out of range
 
 ---
 
@@ -200,6 +205,8 @@ Apply consistent scientific visualization standards across all charts and plots.
 - [ ] Add undo/redo for selections
 - [ ] Add "reset to defaults" button
 - [ ] Improve panel drag/resize handles
+- [ ] Add color bar on the left side of the CanvasWithControls
+- [ ] Add view option for changing background color
 
 ### 9.2 Help & Documentation
 
@@ -311,15 +318,16 @@ The view mode system has incompatibilities and incomplete features. Need to unif
 
 ### 13.1 Threshold Integration
 
-- [ ] Implement threshold-based coloring in all charts
+- [x] Implement threshold-based coloring in all charts
 - [ ] Add threshold lines to time series charts
-- [ ] Make thresholds affect all visualizations consistently
+- [x] Make thresholds affect all visualizations consistently
 
 ### 13.2 Floor Visibility
 
-- [ ] Implement floor hide/show in ALL graphs across the app
-- [ ] Sync floor visibility with 3D view
-- [ ] Add floor toggle to all relevant panels
+- [x] Implement floor hide/show in ALL graphs across the app
+- [x] Sync floor visibility with 3D view
+- [x] Add floor toggle to all relevant panels
+- [ ] Ensure floor toggling hides floors in the Building Scene
 
 ### 13.3 Slice & Exploded View
 
@@ -401,3 +409,11 @@ Every number with a unit should be hoverable with conversions.
 - [ ] Load the panel configuration from the share URL
 
 _Last Updated: February 2026_
+
+---
+
+## 18. Known Bugs
+
+### 18.1 Timeline Interaction
+
+- [ ] Intermittent failure when clicking or dragging the timeline scrubber; fixed by using ZRender events and refs to avoid race conditions during HMR (Hint: When the option checkbox changes, the mouse stuff starts working again)

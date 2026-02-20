@@ -20,68 +20,81 @@ import { View3d } from "./pages/View3d/page";
 
 import { ViewVolumes } from "./pages/ViewVolumes/page";
 import { PlaybackProvider } from "./components/playback/PlaybackContext";
-import { ColorProvider, ViewModeProvider, ExplodedViewProvider, SliceSelectionProvider, NodeVisibilityProvider } from "./contexts/visualization";
+import { ColorProvider, ViewModeProvider, ExplodedViewProvider, SliceSelectionProvider, NodeVisibilityProvider, ThresholdProvider } from "./contexts/visualization";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { Box, Database, LayoutGrid, Layers, Grid3x3, Image, Waves, Gauge, Scissors, Rotate3D, Boxes, Timer } from "lucide-react";
 
 const routes = [
   {
     path: "/",
     label: "3D View",
+    icon: Box,
     element: <View3d />,
   },
   {
     path: "/explorer",
     label: "Data Explorer",
+    icon: Database,
     element: <ViewDataExplorer />,
   },
   {
     path: "/hamburger",
     label: "Hamburger",
+    icon: LayoutGrid,
     element: <ViewHamburger />,
   },
   {
     path: "/surface",
     label: "Surface",
+    icon: Layers,
     element: <ViewSurface />,
   },
   {
     path: "/nodegrid",
     label: "Node Grid",
+    icon: Grid3x3,
     element: <ViewNodeGrid />,
   },
   {
     path: "/texture",
     label: "Texture",
+    icon: Image,
     element: <ViewTexture />,
   },
   {
     path: "/ribbons",
     label: "Ribbons",
+    icon: Waves,
     element: <ViewTemporalRibbons />,
   },
   {
     path: "/threshold",
     label: "Thresholds",
+    icon: Gauge,
     element: <ViewDamageThreshold />,
   },
   {
     path: "/slice",
     label: "Elevation Slice",
+    icon: Scissors,
     element: <ElevationSlice />,
   },
   {
     path: "/torsion",
     label: "Floor Torsion",
+    icon: Rotate3D,
     element: <FloorPlanTorsion />,
   },
   {
     path: "/volumes",
     label: "Volumes",
+    icon: Boxes,
     element: <ViewVolumes />,
   },
   {
     path: "/timevolumes",
     label: "Time Volumes",
+    icon: Timer,
     element: <FloorTimeVolumePage />,
   },
 ];
@@ -94,17 +107,19 @@ const router = createBrowserRouter([
           <TooltipProvider>
             <NavigationBar routes={routes} />
             <PlaybackProvider>
-              <ColorProvider>
-                <ViewModeProvider>
-                  <ExplodedViewProvider>
-                    <SliceSelectionProvider>
-                      <NodeVisibilityProvider>
-                        <Outlet />
-                      </NodeVisibilityProvider>
-                    </SliceSelectionProvider>
-                  </ExplodedViewProvider>
-                </ViewModeProvider>
-              </ColorProvider>
+              <ThresholdProvider>
+                <ColorProvider>
+                  <ViewModeProvider>
+                    <ExplodedViewProvider>
+                      <SliceSelectionProvider>
+                        <NodeVisibilityProvider>
+                          <Outlet />
+                        </NodeVisibilityProvider>
+                      </SliceSelectionProvider>
+                    </ExplodedViewProvider>
+                  </ViewModeProvider>
+                </ColorProvider>
+              </ThresholdProvider>
             </PlaybackProvider>
           </TooltipProvider>
         </AnimationDataProvider>

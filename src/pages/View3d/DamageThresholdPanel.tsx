@@ -1,8 +1,8 @@
 import { formatHex, interpolate } from "culori";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
-import { useFloorVisibility } from "@/contexts/visualization";
+import { useFloorVisibility, useThresholds } from "@/contexts/visualization";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -29,13 +29,12 @@ export function DamageThresholdPanel() {
   const { storyOrder } = animationData.metadata;
   const { frameIndex } = usePlayback();
   const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
-
-  const [warningThreshold, setWarningThreshold] = useState(0.01);
+  const { thresholds, setThreshold, thresholdUnits } = useThresholds();
 
   const { storyDrift, peakStoryDrift } = animationData.precomputed;
 
   const storyThresholdFrame = useMemo(() => {
-    const thresholds = new Map();
+    const storyThresholds = new Map();
 
     for (let i = 0; i < storyDrift.storyCount; i++) {
       const storyId = storyOrder[i];
@@ -53,16 +52,16 @@ export function DamageThresholdPanel() {
         const sw = story[2];
         const se = story[3];
 
-        if (nw > warningThreshold && time.NW === null) {
+        if (nw > thresholds.interstoryDrift && time.NW === null) {
           time.NW = f;
         }
-        if (ne > warningThreshold && time.NE === null) {
+        if (ne > thresholds.interstoryDrift && time.NE === null) {
           time.NE = f;
         }
-        if (sw > warningThreshold && time.SW === null) {
+        if (sw > thresholds.interstoryDrift && time.SW === null) {
           time.SW = f;
         }
-        if (se > warningThreshold && time.SE === null) {
+        if (se > thresholds.interstoryDrift && time.SE === null) {
           time.SE = f;
         }
         if (time.NW !== null && time.NE !== null && time.SW !== null && time.SE !== null) {
@@ -70,11 +69,11 @@ export function DamageThresholdPanel() {
         }
       }
 
-      thresholds.set(storyId, time);
+      storyThresholds.set(storyId, time);
     }
 
-    return thresholds;
-  }, [storyDrift, warningThreshold, storyOrder]);
+    return storyThresholds;
+  }, [storyDrift, thresholds.interstoryDrift, storyOrder]);
 
   return (
     <div className="h-full w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar">
@@ -85,14 +84,14 @@ export function DamageThresholdPanel() {
 
       <div className="flex flex-col gap-2">
         <label className="flex flex-col">
-          <span className="font-semibold">Warning Threshold ({warningThreshold.toFixed(3)})</span>
+          <span className="font-semibold">Warning Threshold ({thresholds.interstoryDrift.toFixed(3)} {thresholdUnits.interstoryDrift})</span>
           <input
             type="range"
             min="0"
             max="0.05"
             step="0.001"
-            value={warningThreshold}
-            onChange={(e) => setWarningThreshold(parseFloat(e.target.value))}
+            value={thresholds.interstoryDrift}
+            onChange={(e) => setThreshold("interstoryDrift", parseFloat(e.target.value))}
           />
         </label>
       </div>

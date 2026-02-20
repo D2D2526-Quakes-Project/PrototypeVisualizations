@@ -37,7 +37,7 @@ import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
 import { useMemo, useState } from "react";
 import { useAnimationData } from "../../hooks/nodeDataHook";
-import { useThresholds } from "@/contexts/visualization/ThresholdContext";
+import { useThresholds, useFloorVisibility } from "@/contexts/visualization";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
@@ -108,6 +108,7 @@ export function HistogramChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { thresholds, setThreshold, thresholdUnits } = useThresholds();
+  const { isFloorVisible } = useFloorVisibility();
   const [positionAxis, setPositionAxis] = useState<PositionAxis>("z");
   const [valueType, setValueType] = useState<ValueType>("displacement");
 
@@ -153,6 +154,10 @@ export function HistogramChart() {
     };
 
     for (let i = 0; i < nodeCount; i++) {
+      // Check if node belongs to a visible floor
+      const nodeStory = storyOrder.find((sid) => stories[sid]?.includes(i));
+      if (!nodeStory || !isFloorVisible(nodeStory)) continue;
+
       const pos = initialPositions.at(i);
       const positionValue = pos[positionAxis === "x" ? 0 : positionAxis === "y" ? 1 : 2];
       positionValues.push(positionValue);
@@ -191,7 +196,7 @@ export function HistogramChart() {
     });
 
     const exceedingCount = exceedingNodes.length;
-    const totalCount = nodeCount;
+    const totalCount = positionValues.length;
 
     return {
       binEdges,
@@ -201,7 +206,7 @@ export function HistogramChart() {
       totalCount,
       percentage: ((exceedingCount / totalCount) * 100).toFixed(1),
     };
-  }, [animationData, frameIndex, positionAxis, valueType, thresholds]);
+  }, [animationData, frameIndex, positionAxis, valueType, thresholds, isFloorVisible]);
 
   const option: EChartsOption = useMemo((): EChartsOption => {
     const { binEdges, totalCounts, exceedingCounts } = histogramData;

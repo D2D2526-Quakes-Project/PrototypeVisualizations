@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAnimationData } from "../hooks/nodeDataHook";
 import { usePlayback } from "./playback/PlaybackContext";
 
@@ -51,37 +51,45 @@ export function SmallTimeline() {
 
   const viewBoxHeight = aspectRatio * 100;
   const chartHeight = viewBoxHeight;
-  const [scrubbing, setScrubbing] = useState(false);
+  const scrubbingRef = useRef(false);
 
-  /**
-   * Mouse input
-   */
-
-  function handleMouseDown(e: MouseEvent<SVGSVGElement>) {
-    setScrubbing(true);
-    updateFrame(e);
-  }
-  function handleMouseUp() {
-    setScrubbing(false);
-  }
-
-  function handleMouseMove(e: MouseEvent<SVGSVGElement>) {
-    if (!scrubbing) return;
-    updateFrame(e);
-  }
-
-  function updateFrame(e: MouseEvent<SVGSVGElement>) {
+  useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
 
-    const rect = svg.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const relativeX = Math.max(0, Math.min(x, rect.width));
-    const framePos = relativeX / rect.width;
-    const newFrame = Math.round(framePos * (maxFrame + 1));
+    const updateFrame = (clientX: number) => {
+      const rect = svg.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const relativeX = Math.max(0, Math.min(x, rect.width));
+      const framePos = relativeX / rect.width;
+      const newFrame = Math.round(framePos * (maxFrame + 1));
+      setFrameIndex(Math.max(0, Math.min(newFrame, maxFrame)));
+    };
 
-    setFrameIndex(Math.max(0, Math.min(newFrame, maxFrame)));
-  }
+    const handleMouseDown = (e: MouseEvent) => {
+      scrubbingRef.current = true;
+      updateFrame(e.clientX);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!scrubbingRef.current) return;
+      updateFrame(e.clientX);
+    };
+
+    const handleMouseUp = () => {
+      scrubbingRef.current = false;
+    };
+
+    svg.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      svg.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [maxFrame, setFrameIndex]);
 
   /**
    * Graph data
@@ -108,10 +116,7 @@ export function SmallTimeline() {
         ref={svgRef}
         className="select-none cursor-crosshair"
         width="100%"
-        viewBox={`0 0 100 ${viewBoxHeight}`}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}>
+        viewBox={`0 0 100 ${viewBoxHeight}`}>
         <line
           transform={playheadTransform}
           x1={0}

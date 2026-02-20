@@ -424,5 +424,7 @@ Every number with a unit should be hoverable with conversions.
 - [x] Color mapping doesn't update when slider changes, only when coloring is toggled or the color metric changes. (Fixed: Now uses threshold-aware coloring for magnitude metrics by default)
 - [x] Story drift heatmap updates every frame and doesn't need to
 - [x] Each color by needs its own threshold color maps (Fixed: Now magnitude metrics use diverging blue-white-red scale)
+- [ ] Threshold sliders don't use the max value for the slider range.
+- [ ] Floor Displacement graph is not showing negative values.
 
 _Last Updated: February 2026_

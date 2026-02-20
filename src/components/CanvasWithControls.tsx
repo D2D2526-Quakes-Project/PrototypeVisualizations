@@ -220,6 +220,7 @@ export function CanvasWithControls({
   return (
     <div className="relative w-full h-full" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
       <Canvas>
+        <color attach="background" args={["#dcdcdc"]} />
         {children}
         <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan={enablePan} />
       </Canvas>

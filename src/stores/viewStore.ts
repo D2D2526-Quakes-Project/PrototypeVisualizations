@@ -2,6 +2,7 @@ import { createStore } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import type { ColorMetric } from "@/lib/colors";
 import type { ViewMode } from "@/contexts/visualization/ViewModeContext";
+import type { SerializedDockview } from "dockview";
 
 export type ThresholdType =
   | "displacement"
@@ -195,6 +196,10 @@ export interface ViewState {
   startBoxSelection: (start: { x: number; y: number }) => void;
   updateBoxSelection: (end: { x: number; y: number }) => void;
   endBoxSelection: () => void;
+
+  // Dockview Layout
+  dockviewLayout: SerializedDockview | null;
+  setDockviewLayout: (layout: SerializedDockview) => void;
 }
 
 export const createViewStore = () =>
@@ -295,6 +300,10 @@ export const createViewStore = () =>
           boxSelection: state.boxSelection ? { ...state.boxSelection, end } : null,
         })),
       endBoxSelection: () => set({ isBoxSelecting: false, boxSelection: null }),
+
+      // Dockview Layout
+      dockviewLayout: null,
+      setDockviewLayout: (dockviewLayout) => set({ dockviewLayout }),
     }))
   );
 

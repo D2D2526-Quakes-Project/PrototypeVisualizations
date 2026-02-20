@@ -1,29 +1,31 @@
 import DataSources from "@/data/index";
+import { useViewStore } from "@/stores";
 import { useAnimationData } from "../hooks/nodeDataHook";
 import { Link, useLocation } from "react-router";
 import React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Button } from "./ui/button";
 import { ChevronDown, type LucideIcon } from "lucide-react";
+import { ShareButton } from "./ShareButton";
 
 const VERSION = "0.1.0";
 
-export function NavigationBar({
-  routes,
-}: {
-  routes: { path: string; label: string; icon: LucideIcon }[];
-}) {
+export function NavigationBar({ routes }: { routes: { path: string; label: string; icon: LucideIcon }[] }) {
   const location = useLocation();
   const currentRoute = routes.find((r) => r.path === location.pathname);
   const currentLabel = currentRoute?.label ?? "Select Page";
   const CurrentIcon = currentRoute?.icon;
+  const dockviewLayout = useViewStore((state) => state.dockviewLayout);
 
   return (
     <div className="p-2 px-6 flex items-center justify-between border-b-2 border-neutral-300">
       <DataPicker />
-      <div className="text-2xl font-bold text-neutral-800">Quakes</div>
-      <div className="flex items-center gap-3">
+      <span className="flex items-baseline gap-2">
+        <span className="text-2xl font-bold text-neutral-800">Quakes</span>
         <span className="text-xs text-neutral-400">v{VERSION}</span>
+      </span>
+      <div className="flex items-center gap-3">
+        {location.pathname === "/" && dockviewLayout && <ShareButton layout={dockviewLayout} />}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">

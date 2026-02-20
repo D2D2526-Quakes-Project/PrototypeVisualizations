@@ -71,14 +71,14 @@ export function removeLayoutFromUrl(): void {
 }
 
 export function createShareableUrl(layout: SerializedDockview): string {
-  const baseUrl = window.location.origin + window.location.pathname;
+  const url = new URL(window.location.href);
   const encodedLayout = encodeLayoutForUrl(layout);
   
   if (encodedLayout) {
-    return `${baseUrl}?${LAYOUT_URL_PARAM}=${encodedLayout}`;
+    url.searchParams.set(LAYOUT_URL_PARAM, encodedLayout);
   }
   
-  return baseUrl;
+  return url.toString();
 }
 
 export function copyShareableUrlToClipboard(layout: SerializedDockview): Promise<boolean> {

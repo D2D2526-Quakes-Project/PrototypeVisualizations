@@ -8,6 +8,7 @@ import {
   performBoxSelection,
   useColor,
   useExplodedView,
+  useFloorVisibility,
   useNodeVisibility,
   useSliceSelection,
   useViewMode,
@@ -33,6 +34,7 @@ export function BuildingScene() {
   const { openSlicePanel, sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
   const { camera } = useThree();
   const { setEnablePan } = useCamera();
+  const { getVisibleStoryOrder } = useFloorVisibility();
   const {
     selectedNodeIds,
     boxSelection,
@@ -55,7 +57,7 @@ export function BuildingScene() {
   const nodeCount = animationData.metadata.nodeCount;
 
   // Get visible nodes based on view mode and slice
-  const visibleNodes = useMemo(() => {
+  const visibleNodesBasedOnMode = useMemo(() => {
     return getVisibleNodes(
       nodeCount,
       animationData.metadata,
@@ -75,6 +77,25 @@ export function BuildingScene() {
     yRange,
     zRange,
   ]);
+
+  // Filter by floor visibility
+  const visibleNodes = useMemo(() => {
+    const visibleStoryOrder = getVisibleStoryOrder();
+    const visibleStorySet = new Set(visibleStoryOrder);
+    
+    return visibleNodesBasedOnMode.filter((nodeId) => {
+      // Check which floor this node belongs to
+      for (const storyId of visibleStorySet) {
+        const storyNodes = animationData.metadata.stories[storyId];
+        if (storyNodes && storyNodes.includes(nodeId)) {
+          return true;
+        }
+      }
+      // If node doesn't belong to any visible floor, hide it
+      // But for nodes not in any story (like corner nodes), show them
+      return false;
+    });
+  }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories]);
 
   // Keyboard handler for ctrl/cmd to control pan and enable box select mode
   useEffect(() => {

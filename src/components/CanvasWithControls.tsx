@@ -1,5 +1,6 @@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCamera } from "@/contexts/CameraContext";
 import {
@@ -342,7 +343,7 @@ export function ViewControls({
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.95, x: 10 }}
               transition={{ duration: 0.15 }}
-              className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 pt-0 border border-neutral-200 min-w-48 origin-top-right overflow-y-auto max-h-full">
+              className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 pt-0 border border-neutral-200 min-w-40 origin-top-right overflow-y-auto max-h-full">
               <div className="flex justify-between items-center mb-2 pt-2 sticky top-0 bg-white">
                 <div className="text-xs font-semibold text-neutral-700">Views</div>
                 <button
@@ -439,50 +440,119 @@ export function ViewControls({
                     </option>
                   ))}
                 </select>
+                
+                {/* Color Scale Bar - always visible */}
+                <div className="mt-2">
+                  <div className="text-[10px] text-neutral-500 mb-1">Color Scale</div>
+                  {thresholdHighlighting ? (
+                    /* Threshold-aware diverging scale: blue -> white -> red */
+                    (() => {
+                      const maxDisp = animationData.precomputed.maxDisplacement * 1.2;
+                      const threshold = thresholds.displacementMag;
+                      const thresholdRatio = maxDisp > 0 ? threshold / maxDisp : 0;
+
+                      const stops: string[] = [];
+                      stops.push(`${blue900} 0%`);
+                      stops.push(`${blue600} ${(1 - thresholdRatio) * 50 - 0.1}%`);
+                      stops.push(`${blue400} ${(1 - thresholdRatio) * 50}%`);
+                      stops.push(`${white} 50%`);
+                      stops.push(`${red400} ${thresholdRatio * 50 + 50}%`);
+                      stops.push(`${red600} ${thresholdRatio * 50 + 50.1}%`);
+                      stops.push(`${red900} 100%`);
+
+                      return (
+                        <>
+                          <div
+                            className="relative h-3 rounded-sm"
+                            style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
+                          <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                            <span>0</span>
+                            <span>
+                              {threshold.toFixed(2)} {thresholdUnits.displacementMag}
+                            </span>
+                            <span>{maxDisp.toFixed(2)}</span>
+                          </div>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    /* Simple scale: for magnitude metrics show 0 to max, for directional show -max to max */
+                    (() => {
+                      const isMagnitude = ['displacement', 'velocity', 'acceleration', 'story-drift'].includes(currentMetric);
+                      
+                      let maxValue: number;
+                      let unit: string;
+                      
+                      if (currentMetric === 'displacement') {
+                        maxValue = animationData.precomputed.maxDisplacement;
+                        unit = 'in';
+                      } else if (currentMetric === 'velocity') {
+                        maxValue = animationData.precomputed.maxVelocity ?? 0;
+                        unit = 'in/s';
+                      } else if (currentMetric === 'acceleration') {
+                        maxValue = animationData.precomputed.maxAcceleration ?? 0;
+                        unit = 'in/s²';
+                      } else if (currentMetric === 'story-drift') {
+                        maxValue = animationData.precomputed.maxStoryDrift;
+                        unit = '%';
+                      } else {
+                        // For directional metrics, get the max absolute value
+                        const maxX = animationData.precomputed.maxDisplacementX;
+                        const maxY = animationData.precomputed.maxDisplacementY;
+                        const maxZ = animationData.precomputed.maxDisplacementZ;
+                        maxValue = Math.max(Math.abs(maxX), Math.abs(maxY), Math.abs(maxZ));
+                        unit = 'in';
+                      }
+                      
+                      if (isMagnitude) {
+                        // Magnitude: simple gradient from blue to red
+                        const stops = [
+                          `${blue900} 0%`,
+                          `${blue600} 25%`,
+                          `${white} 50%`,
+                          `${red400} 75%`,
+                          `${red900} 100%`
+                        ];
+                        return (
+                          <>
+                            <div
+                              className="relative h-3 rounded-sm"
+                              style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
+                            <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                              <span>0</span>
+                              <span>{maxValue.toFixed(2)} {unit}</span>
+                            </div>
+                          </>
+                        );
+                      } else {
+                        // Directional: diverging scale -max to 0 to max
+                        const stops = [
+                          `${blue900} 0%`,
+                          `${blue600} 24%`,
+                          `${white} 50%`,
+                          `${red400} 76%`,
+                          `${red900} 100%`
+                        ];
+                        return (
+                          <>
+                            <div
+                              className="relative h-3 rounded-sm"
+                              style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
+                            <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+                              <span>-{maxValue.toFixed(2)}</span>
+                              <span>0</span>
+                              <span>{maxValue.toFixed(2)} {unit}</span>
+                            </div>
+                          </>
+                        );
+                      }
+                    })()
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />
                   <span className="text-[10px] text-neutral-500">Highlight exceeding threshold</span>
                 </div>
-                {thresholdHighlighting &&
-                  (() => {
-                    const maxDisp = animationData.precomputed.maxDisplacement * 1.2;
-                    const threshold = thresholds.displacementMag;
-                    const thresholdRatio = maxDisp > 0 ? threshold / maxDisp : 0;
-
-                    // Build a white to red gradient that shows threshold-aware coloring
-                    const stops: string[] = [];
-                    // // Below threshold: white → light red
-                    // stops.push(`${white} 0%`);
-                    // stops.push(`${red400} ${thresholdRatio * 100}%`);
-                    // // Above threshold: red → dark red
-                    // stops.push(`${red600} ${thresholdRatio * 100 + 0.1}%`);
-                    // stops.push(`${red900} 100%`);
-
-                    // Build a Blue to white to Red gradient that shows threshold-aware coloring
-                    stops.push(`${blue900} 0%`);
-                    stops.push(`${blue600} ${(1 - thresholdRatio) * 50 - 0.1}%`);
-                    stops.push(`${blue400} ${(1 - thresholdRatio) * 50}%`);
-                    stops.push(`${white} 50%`);
-                    stops.push(`${red400} ${thresholdRatio * 50 + 50}%`);
-                    stops.push(`${red600} ${thresholdRatio * 50 + 50.1}%`);
-                    stops.push(`${red900} 100%`);
-
-                    return (
-                      <div className="mt-2">
-                        <div className="text-[10px] text-neutral-500 mb-1">Color Scale</div>
-                        <div
-                          className="relative h-3 rounded-sm"
-                          style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
-                        <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
-                          <span>0</span>
-                          <span>
-                            {threshold.toFixed(2)} {thresholdUnits.displacementMag}
-                          </span>
-                          <span>{maxDisp.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    );
-                  })()}
               </motion.div>
               <motion.div
                 className="pt-2 border-t border-neutral-200 mt-2"
@@ -490,10 +560,10 @@ export function ViewControls({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.225 }}>
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
+                  <Label className="flex items-center gap-1 text-xs font-medium text-neutral-700 cursor-pointer">
                     <LayoutGrid size={12} className="text-neutral-500" />
-                    <span className="text-xs font-medium text-neutral-700">Exploded View</span>
-                  </div>
+                    Exploded View
+                  </Label>
                   <Switch size="sm" checked={explodedState.explodedEnabled} onCheckedChange={toggleExploded} />
                 </div>
                 {explodedState.explodedEnabled && (
@@ -552,10 +622,10 @@ export function ViewControls({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.25 }}>
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
+                  <Label className="flex items-center gap-1 text-xs font-medium text-neutral-700 cursor-pointer">
                     <LayoutGrid size={12} className="text-neutral-500" />
-                    <span className="text-xs font-medium text-neutral-700">Displacement Scale</span>
-                  </div>
+                    Displacement Scale
+                  </Label>
                   <Switch size="sm" checked={explodedState.displacementEnabled} onCheckedChange={toggleDisplacement} />
                 </div>
                 {explodedState.displacementEnabled && (
@@ -599,10 +669,10 @@ export function ViewControls({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.275 }}>
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
+                  <Label className="flex items-center gap-1 text-xs font-medium text-neutral-700 cursor-pointer">
                     <ScanEye size={12} className="text-neutral-500" />
-                    <span className="text-xs font-medium text-neutral-700">Slice View</span>
-                  </div>
+                    Slice View
+                  </Label>
                   <Switch size="sm" checked={sliceEnabled} onCheckedChange={toggleSliceEnabled} />
                 </div>
                 {sliceEnabled && (

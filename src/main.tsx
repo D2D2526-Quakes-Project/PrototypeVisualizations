@@ -106,8 +106,8 @@ const router = createBrowserRouter([
       <>
         <AnimationDataProvider>
           <TooltipProvider>
-            <NavigationBar routes={routes} />
             <ViewProvider>
+              <NavigationBar routes={routes} />
               <PlaybackProvider>
                 <ThresholdProvider>
                   <ColorProvider>

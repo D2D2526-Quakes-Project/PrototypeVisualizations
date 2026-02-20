@@ -153,11 +153,12 @@ export function InterstoryDriftChart() {
 
   const chartData = useMemo(() => {
     const { storyDrift } = precomputed;
+    const storyOrder = animationData.metadata.storyOrder;
     const currentDrifts: Record<string, Record<string, number>> = {};
     let maxCurrentRatio = 0.0001;
 
-    storyOrderWithoutGround.forEach((storyId, idx) => {
-      const storyIndex = idx + 1;
+    storyOrderWithoutGround.forEach((storyId) => {
+      const storyIndex = storyOrder.indexOf(storyId);
       const cornerDrifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
       currentDrifts[storyId] = {
         NW: cornerDrifts[0],
@@ -168,9 +169,8 @@ export function InterstoryDriftChart() {
       maxCurrentRatio = Math.max(maxCurrentRatio, ...cornerDrifts);
     });
 
-    // setCurrentDrifts(currentDrifts);
     return { currentDrifts, maxCurrentRatio };
-  }, [precomputed, frameIndex, storyOrderWithoutGround]);
+  }, [precomputed, frameIndex, storyOrderWithoutGround, animationData.metadata.storyOrder]);
 
   const { currentDrifts, maxCurrentRatio } = chartData;
 

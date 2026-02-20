@@ -67,6 +67,32 @@ function getThresholdAwareColor(value: number, maxValue: number, threshold: numb
   return [rgbC.r, rgbC.g, rgbC.b];
 }
 
+/**
+ * Get color for magnitude values (always positive) using diverging scale.
+ * Maps: 0 -> blue, 0.5*max -> white, max -> red
+ * This is the standard way to visualize magnitude data.
+ */
+function getMagnitudeColor(value: number, maxValue: number): [number, number, number] {
+  if (maxValue <= 0) {
+    return [0.5, 0.5, 0.5]; // gray
+  }
+  // Use thresholdRatio of 0.5 to put white at the midpoint
+  return getThresholdAwareColor(value, maxValue, maxValue * 0.5);
+}
+
+/**
+ * Check if a metric is a magnitude (always positive) type vs directional (can be negative)
+ */
+function isMagnitudeMetric(metric: ColorMetric): boolean {
+  const magnitudeMetrics: ColorMetric[] = [
+    'displacement',
+    'velocity',
+    'acceleration',
+    'story-drift'
+  ];
+  return magnitudeMetrics.includes(metric);
+}
+
 const metricToThresholdKey: Partial<Record<ColorMetric, ThresholdType>> = {
   displacement: "displacementMag",
   "displacement-x": "displacementX",
@@ -263,6 +289,14 @@ export function ColorProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // For magnitude metrics (always positive), use diverging scale (blue->white->red)
+      // This ensures small values show as blue/white, not just blue
+      if (isMagnitudeMetric(currentMetric)) {
+        const rgb = getMagnitudeColor(value, maxValue);
+        return new THREE.Color(rgb[0], rgb[1], rgb[2]);
+      }
+
+      // For directional metrics (can be negative), use simple interpolation
       const normalizedValue = Math.min(value / maxValue, 1);
       const rgbColor = interpolateColor(interpolator, normalizedValue);
       return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);

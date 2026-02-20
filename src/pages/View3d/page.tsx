@@ -5,8 +5,14 @@ import { SlicePanel } from "@/components/SlicePanel";
 import { CameraProvider } from "@/contexts/CameraContext";
 import { NodeSelectionProvider, useNodeSelection } from "@/contexts/NodeSelectionContext";
 import { useSliceSelection, ThresholdProvider, FloorVisibilityProvider } from "@/contexts/visualization";
-import { DockviewApi, type DockviewReadyEvent } from "dockview";
-import { useState } from "react";
+import {
+  getLayoutFromCurrentUrl,
+  loadLayoutFromLocalStorage,
+  saveLayoutToLocalStorage,
+} from "@/lib/layoutPersistence";
+import { useViewStoreRaw } from "@/stores";
+import { type DockviewApi, type DockviewReadyEvent, type SerializedDockview } from "dockview";
+import { useCallback } from "react";
 
 const components = {
   nodePanel: NodePanel,
@@ -20,15 +26,13 @@ const tabComponents = {
 };
 
 export function View3d() {
-  const [, setDockApi] = useState<DockviewApi | null>(null);
-
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <ThresholdProvider>
         <FloorVisibilityProvider>
           <NodeSelectionProvider>
             <CameraProvider>
-              <DockviewContainer setDockApi={setDockApi} />
+              <DockviewContainer />
             </CameraProvider>
           </NodeSelectionProvider>
         </FloorVisibilityProvider>
@@ -37,20 +41,27 @@ export function View3d() {
   );
 }
 
-// Internal wrapper to access the NodeSelectionContext
-function DockviewContainer({ setDockApi }: { setDockApi: (api: DockviewApi) => void }) {
+function DockviewContainer() {
   const { setDockviewApi } = useNodeSelection();
   const { setDockviewApi: setSliceDockviewApi } = useSliceSelection();
+  const store = useViewStoreRaw();
+
+  const initialLayout = getLayoutFromCurrentUrl() ?? loadLayoutFromLocalStorage();
 
   const handleDockviewReady = (event: DockviewReadyEvent) => {
     setDockviewApi(event.api);
     setSliceDockviewApi(event.api);
-    setDockApi(event.api);
-    createDefaultLayout(event.api);
   };
 
-  const createDefaultLayout = (api: DockviewApi) => {
-    // Main 3D View
+  const handleLayoutChange = useCallback(
+    (layout: SerializedDockview) => {
+      store.getState().setDockviewLayout(layout);
+      saveLayoutToLocalStorage(layout);
+    },
+    [store]
+  );
+
+  const createDefaultLayout = useCallback((api: DockviewApi) => {
     api.addPanel({
       id: "main-canvas",
       component: "magicPanel",
@@ -59,7 +70,6 @@ function DockviewContainer({ setDockApi }: { setDockApi: (api: DockviewApi) => v
       params: { panelType: "Main Canvas" },
     });
 
-    // Damage Threshold panel to the right of the canvas
     api.addPanel({
       id: "damage-threshold",
       component: "magicPanel",
@@ -69,7 +79,6 @@ function DockviewContainer({ setDockApi }: { setDockApi: (api: DockviewApi) => v
       params: { panelType: "Damage Threshold" },
     });
 
-    // Timeline at the bottom
     const timelinePanel = api.addPanel({
       id: "timeline",
       component: "magicPanel",
@@ -79,7 +88,6 @@ function DockviewContainer({ setDockApi }: { setDockApi: (api: DockviewApi) => v
       params: { panelType: "Timeline" },
     });
 
-    // Chart to the right of the timeline
     api.addPanel({
       id: "chart",
       component: "magicPanel",
@@ -88,13 +96,16 @@ function DockviewContainer({ setDockApi }: { setDockApi: (api: DockviewApi) => v
       position: { referencePanel: timelinePanel, direction: "right" },
       params: { panelType: "Interstory Drift Chart" },
     });
-  };
+  }, []);
 
   return (
     <DockviewWrapper
       components={components}
       tabComponents={tabComponents}
       onReady={handleDockviewReady}
+      onLayoutChange={handleLayoutChange}
+      initialLayout={initialLayout ?? undefined}
+      createDefaultLayout={createDefaultLayout}
       className="flex-1"
       singleTabMode="fullwidth"
     />

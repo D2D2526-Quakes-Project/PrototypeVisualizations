@@ -15,8 +15,7 @@ export {
 } from './NodeVisibilityContext';
 export { 
   ThresholdProvider, 
-  useThresholds,
-  type ThresholdType
+  useThresholds
 } from './ThresholdContext';
 export { 
   FloorVisibilityProvider, 

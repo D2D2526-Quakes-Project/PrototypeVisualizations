@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useCallback, useMemo, useEffect } from "react";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { useViewStore } from "@/stores";
 
 interface FloorVisibilityContextType {
   visibleFloors: Set<string>;
@@ -15,48 +16,41 @@ const FloorVisibilityContext = createContext<FloorVisibilityContextType | undefi
 
 export function FloorVisibilityProvider({ children }: { children: React.ReactNode }) {
   const { animationData } = useAnimationData();
-  const [visibleFloors, setVisibleFloors] = useState<Set<string> | null>(null);
+  const visibleFloorsArray = useViewStore((s) => s.visibleFloors);
+  const toggleFloorStore = useViewStore((s) => s.toggleFloor);
+  const showAllFloorsStore = useViewStore((s) => s.showAllFloors);
+  const hideAllFloorsStore = useViewStore((s) => s.hideAllFloors);
+
+  // Initialize visible floors from animation data on mount
+  useEffect(() => {
+    if (animationData?.metadata?.storyOrder && visibleFloorsArray.length === 0) {
+      showAllFloorsStore(animationData.metadata.storyOrder);
+    }
+  }, [animationData?.metadata?.storyOrder, visibleFloorsArray.length, showAllFloorsStore]);
 
   const actualVisibleFloors = useMemo(() => {
-    if (visibleFloors === null) {
-      return new Set(animationData.metadata.storyOrder);
-    }
-    return visibleFloors;
-  }, [visibleFloors, animationData.metadata.storyOrder]);
+    return new Set(visibleFloorsArray.length > 0 ? visibleFloorsArray : animationData.metadata.storyOrder);
+  }, [visibleFloorsArray, animationData.metadata.storyOrder]);
 
   const toggleFloor = useCallback((storyId: string) => {
-    setVisibleFloors((prev) => {
-      const current = prev ?? new Set(animationData.metadata.storyOrder);
-      const next = new Set(current);
-      if (next.has(storyId)) {
-        next.delete(storyId);
-      } else {
-        next.add(storyId);
-      }
-      return next;
-    });
-  }, [animationData.metadata.storyOrder]);
+    toggleFloorStore(storyId);
+  }, [toggleFloorStore]);
 
   const setFloorVisible = useCallback((storyId: string, visible: boolean) => {
-    setVisibleFloors((prev) => {
-      const current = prev ?? new Set(animationData.metadata.storyOrder);
-      const next = new Set(current);
-      if (visible) {
-        next.add(storyId);
-      } else {
-        next.delete(storyId);
-      }
-      return next;
-    });
-  }, [animationData.metadata.storyOrder]);
+    // Use toggle if state differs from desired
+    const currentlyVisible = actualVisibleFloors.has(storyId);
+    if (currentlyVisible !== visible) {
+      toggleFloorStore(storyId);
+    }
+  }, [actualVisibleFloors, toggleFloorStore]);
 
   const showAllFloors = useCallback(() => {
-    setVisibleFloors(new Set(animationData.metadata.storyOrder));
-  }, [animationData.metadata.storyOrder]);
+    showAllFloorsStore(animationData.metadata.storyOrder);
+  }, [animationData.metadata.storyOrder, showAllFloorsStore]);
 
   const hideAllFloors = useCallback(() => {
-    setVisibleFloors(new Set());
-  }, []);
+    hideAllFloorsStore();
+  }, [hideAllFloorsStore]);
 
   const isFloorVisible = useCallback(
     (storyId: string) => {

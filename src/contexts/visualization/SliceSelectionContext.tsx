@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, useMemo, type ReactNode } from "react";
 import { DockviewApi } from "dockview";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { useViewStore } from "@/stores";
 
 type SliceType = "floor";
 
@@ -60,19 +61,38 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
 
   const [selectedSlice, setSelectedSlice] = useState<Slice | null>(null);
   const [hoveredSlice, setHoveredSlice] = useState<Slice | null>(null);
-  const [sliceEnabled, setSliceEnabled] = useState<boolean>(false);
-  const [xRange, setXRange] = useState<[number, number]>([
-    Math.floor(animationData.precomputed.boundingBox.min[0]),
-    Math.ceil(animationData.precomputed.boundingBox.max[0]),
-  ]);
-  const [yRange, setYRange] = useState<[number, number]>([
-    Math.floor(animationData.precomputed.boundingBox.min[1]),
-    Math.ceil(animationData.precomputed.boundingBox.max[1]),
-  ]);
-  const [zRange, setZRange] = useState<[number, number]>([
-    Math.floor(animationData.precomputed.boundingBox.min[2]),
-    Math.ceil(animationData.precomputed.boundingBox.max[2]),
-  ]);
+  
+  const sliceEnabled = useViewStore((s) => s.sliceEnabled);
+  const setSliceEnabled = useViewStore((s) => s.setSliceEnabled);
+  const xRange = useViewStore((s) => s.xRange);
+  const yRange = useViewStore((s) => s.yRange);
+  const zRange = useViewStore((s) => s.zRange);
+  const setXRange = useViewStore((s) => s.setXRange);
+  const setYRange = useViewStore((s) => s.setYRange);
+  const setZRange = useViewStore((s) => s.setZRange);
+
+  // Initialize ranges from animation data
+  const initRanges = useCallback(() => {
+    if (animationData?.precomputed?.boundingBox) {
+      setXRange([
+        Math.floor(animationData.precomputed.boundingBox.min[0]),
+        Math.ceil(animationData.precomputed.boundingBox.max[0]),
+      ]);
+      setYRange([
+        Math.floor(animationData.precomputed.boundingBox.min[1]),
+        Math.ceil(animationData.precomputed.boundingBox.max[1]),
+      ]);
+      setZRange([
+        Math.floor(animationData.precomputed.boundingBox.min[2]),
+        Math.ceil(animationData.precomputed.boundingBox.max[2]),
+      ]);
+    }
+  }, [animationData, setXRange, setYRange, setZRange]);
+
+  // Initialize once on mount
+  useRef(() => {
+    initRanges();
+  });
 
   const [api, setApi] = useState<DockviewApi | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -136,10 +156,10 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleSliceEnabled = useCallback(() => {
-    setSliceEnabled((prev) => !prev);
-  }, []);
+    setSliceEnabled(!sliceEnabled);
+  }, [sliceEnabled, setSliceEnabled]);
 
-  const value: SliceSelectionContextType = {
+  const value = useMemo((): SliceSelectionContextType => ({
     selectedSlice,
     hoveredSlice,
     sliceEnabled,
@@ -155,7 +175,7 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
     setZRange,
     setDockviewApi,
     openSlicePanel,
-  };
+  }), [selectedSlice, hoveredSlice, sliceEnabled, xRange, yRange, zRange, selectSlice, deselectSlice, setHovered, toggleSliceEnabled, setXRange, setYRange, setZRange, setDockviewApi, openSlicePanel]);
 
   return <SliceSelectionContext.Provider value={value}>{children}</SliceSelectionContext.Provider>;
 }

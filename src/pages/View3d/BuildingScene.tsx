@@ -139,7 +139,7 @@ export function BuildingScene() {
           if (shiftHeldRef.current) {
             addSelectedNodes(selected);
           } else {
-            setSelectedNodes(new Set(selected));
+            setSelectedNodes(selected);
           }
           endBoxSelection();
         }
@@ -164,7 +164,7 @@ export function BuildingScene() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setSelectedNodes(new Set());
+        setSelectedNodes([]);
       }
     };
     window.addEventListener("keydown", handleKeyDown);

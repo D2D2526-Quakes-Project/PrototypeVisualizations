@@ -1,7 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { COLOR_SCALES, type ColorMetric, createInterpolator, interpolateColor } from "@/lib/colors";
-import { useThresholds, type ThresholdType } from "./ThresholdContext";
+import { useThresholds } from "./ThresholdContext";
+import type { ThresholdType } from "@/stores/viewStore";
+import { useViewStore } from "@/stores";
 import { formatHex, interpolate, rgb } from "culori";
 import * as THREE from "three";
 
@@ -105,8 +107,10 @@ export function useColor() {
 export function ColorProvider({ children }: { children: ReactNode }) {
   const { animationData } = useAnimationData();
   const { thresholds } = useThresholds();
-  const [currentMetric, setCurrentMetric] = useState<ColorMetric>("displacement");
-  const [thresholdHighlighting, setThresholdHighlighting] = useState<boolean>(false);
+  const currentMetric = useViewStore((s) => s.currentMetric);
+  const setColorMetric = useViewStore((s) => s.setColorMetric);
+  const thresholdHighlighting = useViewStore((s) => s.thresholdHighlighting);
+  const setThresholdHighlighting = useViewStore((s) => s.setThresholdHighlighting);
 
   const interpolator = useMemo(() => {
     const scale = COLOR_SCALES[currentMetric];
@@ -263,7 +267,7 @@ export function ColorProvider({ children }: { children: ReactNode }) {
       const rgbColor = interpolateColor(interpolator, normalizedValue);
       return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);
     },
-    [animationData, currentMetric, getMaxValue, interpolator, thresholdHighlighting],
+    [animationData, currentMetric, getMaxValue, interpolator, thresholdHighlighting, thresholds],
   );
 
   const isMetricAvailable = useCallback(
@@ -305,7 +309,7 @@ export function ColorProvider({ children }: { children: ReactNode }) {
 
   const value: ColorContextType = {
     currentMetric,
-    setColorMetric: setCurrentMetric,
+    setColorMetric,
     getNodeColor,
     getColorScale,
     isMetricAvailable,

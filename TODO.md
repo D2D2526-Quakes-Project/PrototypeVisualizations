@@ -417,3 +417,6 @@ _Last Updated: February 2026_
 ### 18.1 Timeline Interaction
 
 - [ ] Intermittent failure when clicking or dragging the timeline scrubber; fixed by using ZRender events and refs to avoid race conditions during HMR (Hint: When the option checkbox changes, the mouse stuff starts working again)
+- [ ] Interstory Drift chart bars can excede their peak bars. This is a big red flag that something is wrong with the data reading / precomputation.
+- [ ] Floors in the Building Scene don't hide when floor is toggled off.
+- [ ] Color mapping doesn't update when slider changes, only when coloring is toggled or the color metric changes.

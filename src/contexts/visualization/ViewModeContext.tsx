@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { useViewStore } from "@/stores";
 import type { AnimationMetadata, IndexAccessor } from "@/lib/types";
 
 export type ViewMode = "all-nodes" | "floor-slabs" | "exterior-only" | "corners-only" | "vertical-connections" | "threshold";
@@ -28,16 +29,21 @@ export function useViewMode() {
 }
 
 export function ViewModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<ViewMode>("all-nodes");
+  const mode = useViewStore((s) => s.mode);
+  const setMode = useViewStore((s) => s.setMode);
+  const sliceEnabled = useViewStore((s) => s.sliceEnabled);
+  const xRange = useViewStore((s) => s.xRange);
+  const yRange = useViewStore((s) => s.yRange);
+  const zRange = useViewStore((s) => s.zRange);
 
   const getVisibleNodes = useCallback((
     nodeCount: number,
     metadata: AnimationMetadata,
     initialPositions?: IndexAccessor,
-    xRange?: [number, number],
-    yRange?: [number, number],
-    zRange?: [number, number],
-    sliceEnabled?: boolean,
+    _xRange?: [number, number],
+    _yRange?: [number, number],
+    _zRange?: [number, number],
+    _sliceEnabled?: boolean,
   ): number[] => {
     let nodes: number[];
 
@@ -61,31 +67,37 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
         nodes = Array.from({ length: nodeCount }, (_, i) => i);
     }
 
-    if (sliceEnabled && initialPositions) {
+    // Use store values for ranges if not provided
+    const useXRange = _xRange ?? xRange;
+    const useYRange = _yRange ?? yRange;
+    const useZRange = _zRange ?? zRange;
+    const useSliceEnabled = _sliceEnabled ?? sliceEnabled;
+
+    if (useSliceEnabled && initialPositions) {
       nodes = nodes.filter((nodeId) => {
         const pos = initialPositions.at(nodeId);
         if (!pos) return false;
         const [x, y, z] = pos;
 
         return (
-          x >= (xRange?.[0] ?? -1000) &&
-          x <= (xRange?.[1] ?? 1000) &&
-          y >= (yRange?.[0] ?? -1000) &&
-          y <= (yRange?.[1] ?? 1000) &&
-          z >= (zRange?.[0] ?? 0) &&
-          z <= (zRange?.[1] ?? 1000)
+          x >= (useXRange[0] ?? -1000) &&
+          x <= (useXRange[1] ?? 1000) &&
+          y >= (useYRange[0] ?? -1000) &&
+          y <= (useYRange[1] ?? 1000) &&
+          z >= (useZRange[0] ?? 0) &&
+          z <= (useZRange[1] ?? 1000)
         );
       });
     }
 
     return nodes;
-  }, [mode]);
+  }, [mode, sliceEnabled, xRange, yRange, zRange]);
 
-  const value: ViewModeContextType = {
+  const value = useMemo((): ViewModeContextType => ({
     mode,
     setMode,
     getVisibleNodes,
-  };
+  }), [mode, setMode, getVisibleNodes]);
 
   return <ViewModeContext.Provider value={value}>{children}</ViewModeContext.Provider>;
 }

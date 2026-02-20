@@ -1,16 +1,13 @@
-import { createContext, useContext, useState, useCallback, type ReactNode, type RefObject } from "react";
+import { createContext, useContext, useCallback, useMemo, type ReactNode, type RefObject } from "react";
+import { useViewStore } from "@/stores";
 import * as THREE from "three";
-
-interface BoxSelection {
-  start: { x: number; y: number };
-  end: { x: number; y: number };
-}
+import type { BoxSelection as StoreBoxSelection } from "@/stores/viewStore";
 
 interface NodeVisibilityContextType {
   selectedNodeIds: Set<number>;
-  boxSelection: BoxSelection | null;
+  boxSelection: StoreBoxSelection | null;
   isBoxSelecting: boolean;
-  setSelectedNodes: (nodes: Set<number>) => void;
+  setSelectedNodes: (nodes: number[]) => void;
   addSelectedNodes: (nodes: number[]) => void;
   clearSelection: () => void;
   startBoxSelection: (start: { x: number; y: number }) => void;
@@ -30,48 +27,48 @@ export function useNodeVisibility() {
 }
 
 export function NodeVisibilityProvider({ children }: { children: ReactNode }) {
-  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<number>>(new Set());
-  const [boxSelection, setBoxSelection] = useState<BoxSelection | null>(null);
-  const [isBoxSelecting, setIsBoxSelecting] = useState(false);
+  const selectedNodeIdsArray = useViewStore((s) => s.selectedNodeIds);
+  const boxSelection = useViewStore((s) => s.boxSelection);
+  const isBoxSelecting = useViewStore((s) => s.isBoxSelecting);
+  const setSelectedNodesStore = useViewStore((s) => s.setSelectedNodes);
+  const addSelectedNodesStore = useViewStore((s) => s.addSelectedNodes);
+  const clearSelectionStore = useViewStore((s) => s.clearSelection);
+  const startBoxSelectionStore = useViewStore((s) => s.startBoxSelection);
+  const updateBoxSelectionStore = useViewStore((s) => s.updateBoxSelection);
+  const endBoxSelectionStore = useViewStore((s) => s.endBoxSelection);
 
-  const setSelectedNodes = useCallback((nodes: Set<number>) => {
-    setSelectedNodeIds(nodes);
-  }, []);
+  const selectedNodeIds = useMemo(() => new Set(selectedNodeIdsArray), [selectedNodeIdsArray]);
+
+  const setSelectedNodes = useCallback((nodes: number[]) => {
+    setSelectedNodesStore(nodes);
+  }, [setSelectedNodesStore]);
 
   const addSelectedNodes = useCallback((nodes: number[]) => {
-    setSelectedNodeIds((prev) => {
-      const next = new Set(prev);
-      nodes.forEach((n) => next.add(n));
-      return next;
-    });
-  }, []);
+    addSelectedNodesStore(nodes);
+  }, [addSelectedNodesStore]);
 
   const clearSelection = useCallback(() => {
-    setSelectedNodeIds(new Set());
-    setBoxSelection(null);
-    setIsBoxSelecting(false);
-  }, []);
+    clearSelectionStore();
+  }, [clearSelectionStore]);
 
   const startBoxSelection = useCallback((start: { x: number; y: number }) => {
-    setBoxSelection({ start, end: start });
-    setIsBoxSelecting(true);
-  }, []);
+    startBoxSelectionStore(start);
+  }, [startBoxSelectionStore]);
 
   const updateBoxSelection = useCallback((end: { x: number; y: number }) => {
-    setBoxSelection((prev) => (prev ? { ...prev, end } : null));
-  }, []);
+    updateBoxSelectionStore(end);
+  }, [updateBoxSelectionStore]);
 
   const endBoxSelection = useCallback(() => {
-    setIsBoxSelecting(false);
-    setBoxSelection(null);
-  }, []);
+    endBoxSelectionStore();
+  }, [endBoxSelectionStore]);
 
   const cancelBoxSelection = useCallback(() => {
-    setBoxSelection(null);
-    setIsBoxSelecting(false);
-  }, []);
+    // Cancel is same as end for now
+    endBoxSelectionStore();
+  }, [endBoxSelectionStore]);
 
-  const value: NodeVisibilityContextType = {
+  const value = useMemo((): NodeVisibilityContextType => ({
     selectedNodeIds,
     boxSelection,
     isBoxSelecting,
@@ -82,7 +79,7 @@ export function NodeVisibilityProvider({ children }: { children: ReactNode }) {
     updateBoxSelection,
     endBoxSelection,
     cancelBoxSelection,
-  };
+  }), [selectedNodeIds, boxSelection, isBoxSelecting, setSelectedNodes, addSelectedNodes, clearSelection, startBoxSelection, updateBoxSelection, endBoxSelection, cancelBoxSelection]);
 
   return <NodeVisibilityContext.Provider value={value}>{children}</NodeVisibilityContext.Provider>;
 }
@@ -90,7 +87,7 @@ export function NodeVisibilityProvider({ children }: { children: ReactNode }) {
 export function performBoxSelection(
   camera: THREE.Camera,
   meshRef: RefObject<THREE.InstancedMesh | null>,
-  box: BoxSelection,
+  box: StoreBoxSelection,
   visibleNodes: number[],
 ): number[] {
   const minX = Math.min(box.start.x, box.end.x);

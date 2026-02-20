@@ -21,6 +21,7 @@ import { View3d } from "./pages/View3d/page";
 import { ViewVolumes } from "./pages/ViewVolumes/page";
 import { PlaybackProvider } from "./components/playback/PlaybackContext";
 import { ColorProvider, ViewModeProvider, ExplodedViewProvider, SliceSelectionProvider, NodeVisibilityProvider, ThresholdProvider } from "./contexts/visualization";
+import { ViewProvider } from "./stores";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { Box, Database, LayoutGrid, Layers, Grid3x3, Image, Waves, Gauge, Scissors, Rotate3D, Boxes, Timer } from "lucide-react";
 
@@ -106,21 +107,23 @@ const router = createBrowserRouter([
         <AnimationDataProvider>
           <TooltipProvider>
             <NavigationBar routes={routes} />
-            <PlaybackProvider>
-              <ThresholdProvider>
-                <ColorProvider>
-                  <ViewModeProvider>
-                    <ExplodedViewProvider>
-                      <SliceSelectionProvider>
-                        <NodeVisibilityProvider>
-                          <Outlet />
-                        </NodeVisibilityProvider>
-                      </SliceSelectionProvider>
-                    </ExplodedViewProvider>
-                  </ViewModeProvider>
-                </ColorProvider>
-              </ThresholdProvider>
-            </PlaybackProvider>
+            <ViewProvider>
+              <PlaybackProvider>
+                <ThresholdProvider>
+                  <ColorProvider>
+                    <ViewModeProvider>
+                      <ExplodedViewProvider>
+                        <SliceSelectionProvider>
+                          <NodeVisibilityProvider>
+                            <Outlet />
+                          </NodeVisibilityProvider>
+                        </SliceSelectionProvider>
+                      </ExplodedViewProvider>
+                    </ViewModeProvider>
+                  </ColorProvider>
+                </ThresholdProvider>
+              </PlaybackProvider>
+            </ViewProvider>
           </TooltipProvider>
         </AnimationDataProvider>
       </>

@@ -150,4 +150,223 @@ export function ViewSyncManager({ storeA, storeB, syncOptions }) {
 3. **Refactor Hooks:** Change calls like `const { frameIndex } = usePlayback()` to `const frameIndex = useViewStore(s => s.frameIndex)`.
 4. **Optimize 3D Code:** Remove `useFrame` dependencies on React state (like `frameIndexRef.current = frameIndex` in `BuildingScene.tsx`) and instead use `store.getState().frameIndex` directly inside the loop.
 
+---
+
+## Incremental Migration Plan
+
+### Prerequisites
+
+Install Zustand:
+```bash
+pnpm add zustand
+```
+
+The migration uses the `subscribeWithSelector` middleware which is the recommended approach for React apps.
+
+### Phase 1: Create Parallel Zustand Stores (No Breaking Changes)
+
+Create Zustand stores alongside existing Contexts. Components can gradually migrate one-by-one.
+
+```typescript
+// src/stores/viewStore.ts
+import { createStore } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
+
+export interface ViewState {
+  // Playback
+  frameIndex: number;
+  playing: boolean;
+  fps: number;
+  skippedPerFrame: number;
+  setFrameIndex: (frame: number) => void;
+  handlePlayPause: () => void;
+  skipToStart: () => void;
+  skipToEnd: () => void;
+
+  // Visualization
+  mode: ViewMode;
+  setMode: (mode: ViewMode) => void;
+  
+  // Thresholds
+  thresholds: ThresholdState;
+  setThreshold: (type: ThresholdType, value: number) => void;
+  
+  // Color
+  currentMetric: ColorMetric;
+  setColorMetric: (metric: ColorMetric) => void;
+  thresholdHighlighting: boolean;
+  setThresholdHighlighting: (enabled: boolean) => void;
+  
+  // Visibility
+  visibleFloors: Set<string>;
+  toggleFloor: (storyId: string) => void;
+  setFloorVisible: (storyId: string, visible: boolean) => void;
+  
+  // Exploded View
+  explodedScale: number;
+  setExplodedScale: (scale: number) => void;
+  
+  // Slice
+  sliceEnabled: boolean;
+  setSliceEnabled: (enabled: boolean) => void;
+  slicePlane: SlicePlane | null;
+  setSlicePlane: (plane: SlicePlane | null) => void;
+}
+
+export const createViewStore = () => createStore<ViewState>()(
+  subscribeWithSelector((set, get) => ({
+    // Initial state matching your current Context defaults
+    frameIndex: 0,
+    playing: false,
+    fps: 0,
+    skippedPerFrame: 0,
+    setFrameIndex: (frameIndex) => set({ frameIndex }),
+    handlePlayPause: () => set((state) => ({ playing: !state.playing })),
+    skipToStart: () => set({ frameIndex: 0 }),
+    skipToEnd: () => set((state) => ({ frameIndex: /* totalFrames - 1 */ })),
+    
+    mode: 'all-nodes',
+    setMode: (mode) => set({ mode }),
+    
+    thresholds: DEFAULT_THRESHOLDS,
+    setThreshold: (type, value) => set((state) => ({
+      thresholds: { ...state.thresholds, [type]: value }
+    })),
+    
+    currentMetric: 'displacement',
+    setColorMetric: (currentMetric) => set({ currentMetric }),
+    thresholdHighlighting: false,
+    setThresholdHighlighting: (thresholdHighlighting) => set({ thresholdHighlighting }),
+    
+    visibleFloors: new Set(),
+    toggleFloor: (storyId) => set((state) => {
+      const next = new Set(state.visibleFloors);
+      if (next.has(storyId)) next.delete(storyId);
+      else next.add(storyId);
+      return { visibleFloors: next };
+    }),
+    setFloorVisible: (storyId, visible) => set((state) => {
+      const next = new Set(state.visibleFloors);
+      visible ? next.add(storyId) : next.delete(storyId);
+      return { visibleFloors: next };
+    }),
+    
+    explodedScale: 1,
+    setExplodedScale: (explodedScale) => set({ explodedScale }),
+    
+    sliceEnabled: false,
+    setSliceEnabled: (sliceEnabled) => set({ sliceEnabled }),
+    slicePlane: null,
+    setSlicePlane: (slicePlane) => set({ slicePlane }),
+  }))
+);
+```
+
+### Phase 2: Create ViewProvider Wrapper
+
+```typescript
+// src/stores/ViewProvider.tsx
+import { createContext, useContext, useRef, useSyncExternalStore } from "react";
+import { createViewStore, type ViewState } from "./viewStore";
+
+const ViewStoreContext = createContext<ReturnType<typeof createViewStore> | null>(null);
+
+export function ViewProvider({ children }: { children: React.ReactNode }) {
+  const storeRef = useRef<ReturnType<typeof createViewStore> | null>(null);
+  if (!storeRef.current) {
+    storeRef.current = createViewStore();
+  }
+  return (
+    <ViewStoreContext.Provider value={storeRef.current}>
+      {children}
+    </ViewStoreContext.Provider>
+  );
+}
+
+export function useViewStore<T>(selector: (state: ViewState) => T): T {
+  const store = useContext(ViewStoreContext);
+  if (!store) throw new Error("useViewStore must be used within ViewProvider");
+  return useSyncExternalStore(store.subscribe, () => selector(store.getState()));
+}
+```
+
+### Phase 3: Migrate Components One-At-A-Time
+
+Pick components that have the most bugs first:
+
+1. **Playback (most critical for performance)**
+2. **Threshold (causes cascading re-renders)**
+3. **Color (depends on Threshold)**
+4. **View Mode, Floor Visibility, etc.**
+
+For each component:
+- Change `usePlayback()` → `useViewStore(s => s.frameIndex)`
+- Change `useThresholds()` → `useViewStore(s => s.thresholds)`
+- Keep old Context wrappers working during transition
+
+### Phase 4: Remove Old Contexts
+
+Once all components migrated:
+- Remove Context providers from `main.tsx`
+- Remove old hook files
+
+---
+
+## Critical: Transient Updates for useFrame
+
+For your 3D scene, you need transient updates to avoid React re-renders entirely:
+
+```typescript
+// In BuildingScene.tsx
+import { useViewStore } from "@/stores/ViewProvider";
+import { useFrame } from "@react-three/fiber";
+
+export function BuildingScene() {
+  const store = useContext(ViewStoreContext); // Get raw store
+  
+  useFrame(() => {
+    // Read directly - NO re-render!
+    const { frameIndex, mode, thresholds } = store.getState();
+    
+    // Update instanced meshes directly
+    // ...
+  });
+  
+  return <mesh />;
+}
+```
+
+This is the **real performance fix** - your 3D components should read from Zustand directly in `useFrame`, completely bypassing React's render cycle.
+
+---
+
+## Global vs Scoped Stores
+
+### Global Store (for truly shared state)
+```typescript
+// src/stores/globalStore.ts
+export const useGlobalStore = create<GlobalState>((set) => ({ ... }));
+```
+Use for: Animation data (already in AnimationDataProvider), URL state, user preferences.
+
+### Scoped Store (for view-specific state)
+```typescript
+// Created per-view in ViewProvider
+const storeRef = useRef(createViewStore());
+```
+Use for: All visualization state that needs to be independent in split view.
+
+---
+
+## Migration Order (By Bug Severity)
+
+| Priority | Context | Why First |
+|----------|---------|-----------|
+| 1 | PlaybackContext | Triggers re-renders 30x/sec, breaks timeline |
+| 2 | ThresholdContext | Cascades through ColorContext → breaks 3D view |
+| 3 | ColorContext | Depends on Threshold, causes 3D coloring bugs |
+| 4 | ViewModeContext | View mode switching breaks scene |
+| 5 | FloorVisibilityContext | Floor toggles don't sync |
+| 6 | Others | Lower impact |
+
 This architecture will dramatically improve performance, permanently eliminate cascading re-render bugs, and perfectly set you up for independent/synchronized split views.

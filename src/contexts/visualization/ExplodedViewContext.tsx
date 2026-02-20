@@ -1,18 +1,10 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { useViewStore } from "@/stores";
 import type { AnimationMetadata } from "@/lib/types";
-
-interface ExplodedViewState {
-  explodedEnabled: boolean;
-  displacementEnabled: boolean;
-  xExplosion: number;
-  yExplosion: number;
-  zExplosion: number;
-  xzDisplacementScale: number;
-  zDisplacementScale: number;
-}
+import type { ExplodedViewState as StoredExplodedViewState } from "@/stores/viewStore";
 
 interface ExplodedViewContextType {
-  state: ExplodedViewState;
+  state: StoredExplodedViewState;
   toggleExploded: () => void;
   toggleDisplacement: () => void;
   setExplosion: (axis: "x" | "y" | "z", factor: number) => void;
@@ -37,41 +29,13 @@ export function useExplodedView() {
   return context;
 }
 
-const DEFAULT_STATE: ExplodedViewState = {
-  explodedEnabled: false,
-  displacementEnabled: false,
-  xExplosion: 0,
-  yExplosion: 0,
-  zExplosion: 1,
-  xzDisplacementScale: 1,
-  zDisplacementScale: 1,
-};
-
 export function ExplodedViewProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ExplodedViewState>(DEFAULT_STATE);
-
-  const toggleExploded = useCallback(() => {
-    setState((prev) => ({ ...prev, explodedEnabled: !prev.explodedEnabled }));
-  }, []);
-
-  const toggleDisplacement = useCallback(() => {
-    setState((prev) => ({ ...prev, displacementEnabled: !prev.displacementEnabled }));
-  }, []);
-
-  const setExplosion = useCallback((axis: "x" | "y" | "z", factor: number) => {
-    setState((prev) => ({ ...prev, [`${axis}Explosion`]: factor }));
-  }, []);
-
-  const setDisplacementScale = useCallback((axis: "xz" | "z", factor: number) => {
-    setState((prev) => ({
-      ...prev,
-      [axis === "xz" ? "xzDisplacementScale" : "zDisplacementScale"]: factor,
-    }));
-  }, []);
-
-  const reset = useCallback(() => {
-    setState(DEFAULT_STATE);
-  }, []);
+  const explodedView = useViewStore((s) => s.explodedView);
+  const toggleExploded = useViewStore((s) => s.toggleExploded);
+  const toggleDisplacement = useViewStore((s) => s.toggleDisplacement);
+  const setExplosion = useViewStore((s) => s.setExplosion);
+  const setDisplacementScale = useViewStore((s) => s.setDisplacementScale);
+  const resetExplodedView = useViewStore((s) => s.resetExplodedView);
 
   const getExplodedPosition = useCallback(
     (
@@ -84,36 +48,36 @@ export function ExplodedViewProvider({ children }: { children: ReactNode }) {
       const [initX, initY, initZ] = initialPosition;
       const [dispX, dispY, dispZ] = displacement;
 
-      const scaledDispX = state.displacementEnabled ? dispX * state.xzDisplacementScale : dispX;
-      const scaledDispY = state.displacementEnabled ? dispY * state.xzDisplacementScale : dispY;
-      const scaledDispZ = state.displacementEnabled ? dispZ * state.zDisplacementScale : dispZ;
+      const scaledDispX = explodedView.displacementEnabled ? dispX * explodedView.xzDisplacementScale : dispX;
+      const scaledDispY = explodedView.displacementEnabled ? dispY * explodedView.xzDisplacementScale : dispY;
+      const scaledDispZ = explodedView.displacementEnabled ? dispZ * explodedView.zDisplacementScale : dispZ;
 
-      if (!state.explodedEnabled) {
+      if (!explodedView.explodedEnabled) {
         return [initX + scaledDispX, initY + scaledDispY, initZ + scaledDispZ] as [number, number, number];
       }
 
       const [offsetX, offsetY, offsetZ] = offset;
 
       const posAfterDisp = [
-        (initX + offsetX) * (1 + state.xExplosion) + scaledDispX - offsetX,
-        (initY + offsetY) * (1 + state.yExplosion) + scaledDispY - offsetY,
-        (initZ + offsetZ) * (1 + state.zExplosion) + scaledDispZ - offsetZ,
+        (initX + offsetX) * (1 + explodedView.xExplosion) + scaledDispX - offsetX,
+        (initY + offsetY) * (1 + explodedView.yExplosion) + scaledDispY - offsetY,
+        (initZ + offsetZ) * (1 + explodedView.zExplosion) + scaledDispZ - offsetZ,
       ] as [number, number, number];
 
       return posAfterDisp;
     },
-    [state],
+    [explodedView],
   );
 
-  const value: ExplodedViewContextType = {
-    state,
+  const value = useMemo((): ExplodedViewContextType => ({
+    state: explodedView,
     toggleExploded,
     toggleDisplacement,
     setExplosion,
     setDisplacementScale,
-    reset,
+    reset: resetExplodedView,
     getExplodedPosition,
-  };
+  }), [explodedView, toggleExploded, toggleDisplacement, setExplosion, setDisplacementScale, resetExplodedView, getExplodedPosition]);
 
   return <ExplodedViewContext.Provider value={value}>{children}</ExplodedViewContext.Provider>;
 }

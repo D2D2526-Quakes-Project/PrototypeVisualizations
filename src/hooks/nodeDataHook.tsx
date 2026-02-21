@@ -60,134 +60,137 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     window.history.pushState({}, "", url);
   };
 
-  const loadBinaryData = useCallback(async (building: BinaryBuilding, simulation: BinarySimulation) => {
-    setLoading(true);
-    setError(null);
-    setFileProgress({ building: 0, groundMotion: 0 });
-    setProgressMessage("");
-    setAnimationData(null);
+  const loadBinaryData = useCallback(
+    async (building: BinaryBuilding, simulation: BinarySimulation) => {
+      setLoading(true);
+      setError(null);
+      setFileProgress({ building: 0, groundMotion: 0 });
+      setProgressMessage("");
+      setAnimationData(null);
 
-    const abortController = new AbortController();
+      const abortController = new AbortController();
 
-    const progressRef = { current: { building: 0, displacementLin: 0, groundMotion: 0 } };
+      const progressRef = { current: { building: 0, displacementLin: 0, groundMotion: 0 } };
 
-    // Helper to resolve URL - supports both full URLs (http/https) and relative paths
-    const resolveUrl = (pathOrUrl: string, folder: string): string => {
-      if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
-        return pathOrUrl;
+      // Helper to resolve URL - supports both full URLs (http/https) and relative paths
+      const resolveUrl = (pathOrUrl: string, folder: string): string => {
+        if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+          return pathOrUrl;
+        }
+        return `/data/${folder}/${pathOrUrl}`;
+      };
+
+      try {
+        if (abortController.signal.aborted) return;
+        setProgressMessage("Initializing download...");
+
+        // Fetch required files (building, displacementLin, groundMotion)
+        // Optional files (displacementRot, velocityLin/Rot, accelerationLin/Rot) are commented out
+        const [
+          buildingBuffer,
+          dispLinBuffer,
+          /* dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer,*/ gmBuffer,
+        ] = await Promise.all([
+          fetchWithProgressAndCache(
+            resolveUrl(building.building_data, building.folder),
+            (p) => {
+              progressRef.current.building = p;
+              setFileProgress((prev) => ({ ...prev, building: p * 100 }));
+            },
+            abortController.signal,
+          ),
+          fetchWithProgressAndCache(
+            resolveUrl(simulation.displacementLin, `${building.folder}/${simulation.folder}`),
+            (p) => {
+              progressRef.current.displacementLin = p;
+              setFileProgress((prev) => ({ ...prev, displacementLin: p * 100 }));
+            },
+            abortController.signal,
+          ),
+          // Uncomment to load displacement rotation data:
+          // simulation.displacementRot ? fetchWithProgressAndCache(
+          //   resolveUrl(simulation.displacementRot, `${building.folder}/${simulation.folder}`),
+          //   (p) => { progressRef.current.displacementRot = p; updateOverallProgress(); },
+          // ) : Promise.resolve(undefined),
+          // Uncomment to load velocity data:
+          // simulation.velocityLin ? fetchWithProgressAndCache(
+          //   resolveUrl(simulation.velocityLin, `${building.folder}/${simulation.folder}`),
+          //   (p) => { progressRef.current.velocityLin = p; updateOverallProgress(); },
+          // ) : Promise.resolve(undefined),
+          // simulation.velocityRot ? fetchWithProgressAndCache(
+          //   resolveUrl(simulation.velocityRot, `${building.folder}/${simulation.folder}`),
+          //   (p) => { progressRef.current.velocityRot = p; updateOverallProgress(); },
+          // ) : Promise.resolve(undefined),
+          // Uncomment to load acceleration data:
+          // simulation.accelerationLin ? fetchWithProgressAndCache(
+          //   resolveUrl(simulation.accelerationLin, `${building.folder}/${simulation.folder}`),
+          //   (p) => { progressRef.current.accelerationLin = p; updateOverallProgress(); },
+          // ) : Promise.resolve(undefined),
+          // simulation.accelerationRot ? fetchWithProgressAndCache(
+          //   resolveUrl(simulation.accelerationRot, `${building.folder}/${simulation.folder}`),
+          //   (p) => { progressRef.current.accelerationRot = p; updateOverallProgress(); },
+          // ) : Promise.resolve(undefined),
+          fetchWithProgressAndCache(
+            resolveUrl(simulation.groundMotion, `${building.folder}/${simulation.folder}`),
+            (p) => {
+              progressRef.current.groundMotion = p;
+              setFileProgress((prev) => ({ ...prev, groundMotion: p * 100 }));
+            },
+            abortController.signal,
+          ),
+        ]);
+
+        if (abortController.signal.aborted) return;
+
+        setProgressMessage("Decompressing & Parsing...");
+
+        // Give the UI a moment to breathe before the heavy parsing starts
+        await new Promise((r) => setTimeout(r, 10));
+
+        if (abortController.signal.aborted) return;
+
+        if (buildingBuffer === undefined || gmBuffer === undefined || dispLinBuffer === undefined) return;
+
+        // Pass the ArrayBuffers to your parser
+        // Add optional buffers when uncommenting above: dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer
+        const built = await buildAnimationDataFromBinary({
+          rawBuilding: buildingBuffer,
+          rawGM: gmBuffer,
+          rawDispLin: dispLinBuffer,
+          rawDispRot: undefined, // dispRotBuffer
+          rawVelLin: undefined, // velLinBuffer
+          rawVelRot: undefined, // velRotBuffer
+          rawAccelLin: undefined, // accelLinBuffer
+          rawAccelRot: undefined, // accelRotBuffer
+          onProgress: async (_p: number, msg?: string) => {
+            if (abortController.signal.aborted) return;
+            if (msg) setProgressMessage(msg);
+            await new Promise((r) => setTimeout(r, 0));
+          },
+        });
+
+        if (abortController.signal.aborted) return;
+
+        setProgressMessage("Done!");
+        setAnimationData(built);
+        viewStore.getState().setThresholdsFromPrecomputed(built.precomputed);
+
+        // Short delay so user sees "Done!"
+        await new Promise((r) => setTimeout(r, 800));
+
+        if (abortController.signal.aborted) return;
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Binary Load Error:", err);
+        setError(err);
+        setLoading(false);
       }
-      return `/data/${folder}/${pathOrUrl}`;
-    };
 
-    try {
-      if (abortController.signal.aborted) return;
-      setProgressMessage("Initializing download...");
-
-      // Fetch required files (building, displacementLin, groundMotion)
-      // Optional files (displacementRot, velocityLin/Rot, accelerationLin/Rot) are commented out
-      const [
-        buildingBuffer,
-        dispLinBuffer,
-        /* dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer,*/ gmBuffer,
-      ] = await Promise.all([
-        fetchWithProgressAndCache(
-          resolveUrl(building.building_data, building.folder),
-          (p) => {
-            progressRef.current.building = p;
-            setFileProgress((prev) => ({ ...prev, building: p * 100 }));
-          },
-          abortController.signal,
-        ),
-        fetchWithProgressAndCache(
-          resolveUrl(simulation.displacementLin, `${building.folder}/${simulation.folder}`),
-          (p) => {
-            progressRef.current.displacementLin = p;
-            setFileProgress((prev) => ({ ...prev, displacementLin: p * 100 }));
-          },
-          abortController.signal,
-        ),
-        // Uncomment to load displacement rotation data:
-        // simulation.displacementRot ? fetchWithProgressAndCache(
-        //   resolveUrl(simulation.displacementRot, `${building.folder}/${simulation.folder}`),
-        //   (p) => { progressRef.current.displacementRot = p; updateOverallProgress(); },
-        // ) : Promise.resolve(undefined),
-        // Uncomment to load velocity data:
-        // simulation.velocityLin ? fetchWithProgressAndCache(
-        //   resolveUrl(simulation.velocityLin, `${building.folder}/${simulation.folder}`),
-        //   (p) => { progressRef.current.velocityLin = p; updateOverallProgress(); },
-        // ) : Promise.resolve(undefined),
-        // simulation.velocityRot ? fetchWithProgressAndCache(
-        //   resolveUrl(simulation.velocityRot, `${building.folder}/${simulation.folder}`),
-        //   (p) => { progressRef.current.velocityRot = p; updateOverallProgress(); },
-        // ) : Promise.resolve(undefined),
-        // Uncomment to load acceleration data:
-        // simulation.accelerationLin ? fetchWithProgressAndCache(
-        //   resolveUrl(simulation.accelerationLin, `${building.folder}/${simulation.folder}`),
-        //   (p) => { progressRef.current.accelerationLin = p; updateOverallProgress(); },
-        // ) : Promise.resolve(undefined),
-        // simulation.accelerationRot ? fetchWithProgressAndCache(
-        //   resolveUrl(simulation.accelerationRot, `${building.folder}/${simulation.folder}`),
-        //   (p) => { progressRef.current.accelerationRot = p; updateOverallProgress(); },
-        // ) : Promise.resolve(undefined),
-        fetchWithProgressAndCache(
-          resolveUrl(simulation.groundMotion, `${building.folder}/${simulation.folder}`),
-          (p) => {
-            progressRef.current.groundMotion = p;
-            setFileProgress((prev) => ({ ...prev, groundMotion: p * 100 }));
-          },
-          abortController.signal,
-        ),
-      ]);
-
-      if (abortController.signal.aborted) return;
-
-      setProgressMessage("Decompressing & Parsing...");
-
-      // Give the UI a moment to breathe before the heavy parsing starts
-      await new Promise((r) => setTimeout(r, 10));
-
-      if (abortController.signal.aborted) return;
-
-      if (buildingBuffer === undefined || gmBuffer === undefined || dispLinBuffer === undefined) return;
-
-      // Pass the ArrayBuffers to your parser
-      // Add optional buffers when uncommenting above: dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer
-      const built = await buildAnimationDataFromBinary({
-        rawBuilding: buildingBuffer,
-        rawGM: gmBuffer,
-        rawDispLin: dispLinBuffer,
-        rawDispRot: undefined, // dispRotBuffer
-        rawVelLin: undefined, // velLinBuffer
-        rawVelRot: undefined, // velRotBuffer
-        rawAccelLin: undefined, // accelLinBuffer
-        rawAccelRot: undefined, // accelRotBuffer
-        onProgress: async (_p: number, msg?: string) => {
-          if (abortController.signal.aborted) return;
-          if (msg) setProgressMessage(msg);
-          await new Promise((r) => setTimeout(r, 0));
-        },
-      });
-
-      if (abortController.signal.aborted) return;
-
-      setProgressMessage("Done!");
-      setAnimationData(built);
-      viewStore.getState().setThresholdsFromPrecomputed(built.precomputed);
-
-      // Short delay so user sees "Done!"
-      await new Promise((r) => setTimeout(r, 800));
-
-      if (abortController.signal.aborted) return;
-
-      setLoading(false);
-    } catch (err) {
-      console.error("Binary Load Error:", err);
-      setError(err);
-      setLoading(false);
-    }
-
-    return () => abortController.abort();
-  }, []);
+      return () => abortController.abort();
+    },
+    [viewStore],
+  );
 
   const loadSelection = useCallback(
     (building: BinaryBuilding, simulation: BinarySimulation) => {

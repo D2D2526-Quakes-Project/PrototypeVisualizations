@@ -1,10 +1,12 @@
 import { useAnimationData } from "@/hooks/nodeDataHook";
-import { createInterpolator, interpolateColor } from "@/lib/colors";
+import { interpolateColor } from "@/lib/colors";
 import { useViewStore } from "@/stores";
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { useThresholds } from "./ThresholdContext";
 import { getMetricConfig, METRIC_CONFIGS, type Metric } from "@/lib/metrics";
+import { interpolate } from "culori";
+import type { FindColorByMode } from "node_modules/@types/culori/src/common";
 
 const grayColor = new THREE.Color(0.5, 0.5, 0.5);
 
@@ -40,12 +42,20 @@ export function ColorProvider({ children }: { children: ReactNode }) {
   const { positiveInterpolator, positiveThresholdInterpolator, negativeInterpolator, negativeThresholdInterpolator } =
     useMemo(() => {
       return {
-        positiveInterpolator: createInterpolator(metricConfig.positiveColorStops),
-        positiveThresholdInterpolator: createInterpolator(metricConfig.positiveColorStops),
-        negativeInterpolator: metricConfig.positiveOnly ? null : createInterpolator(metricConfig.negativeColorStops),
+        positiveInterpolator: interpolate(
+          [metricConfig.positiveColorStops[0], metricConfig.positiveColorStops[1]],
+          "oklab",
+        ),
+        positiveThresholdInterpolator: interpolate(
+          [metricConfig.positiveColorStops[2], metricConfig.positiveColorStops[3]],
+          "oklab",
+        ),
+        negativeInterpolator: metricConfig.positiveOnly
+          ? interpolate(["magenta"], "oklab")
+          : interpolate([metricConfig.negativeColorStops[0], metricConfig.negativeColorStops[1]], "oklab"),
         negativeThresholdInterpolator: metricConfig.positiveOnly
-          ? null
-          : createInterpolator(metricConfig.negativeColorStops),
+          ? interpolate(["magenta"], "oklab")
+          : interpolate([metricConfig.negativeColorStops[2], metricConfig.negativeColorStops[3]], "oklab"),
       };
     }, [metricConfig]);
 
@@ -61,38 +71,48 @@ export function ColorProvider({ children }: { children: ReactNode }) {
     (nodeId: number, frameIndex: number): THREE.Color => {
       if (maxValue === 0) return grayColor;
 
-      let value = metricConfig.getValue(animationData, frameIndex, nodeId);
+      const value = metricConfig.getValue(animationData, frameIndex, nodeId);
       if (value === undefined) return grayColor;
 
-      const normalizedValue = value / maxValue;
-      const normalizedThreshold = thresholdValue / maxValue;
+      // -1 to 1 range
+      const negative = value < 0;
+      const normalizedValue = Math.min(1, Math.max(0, Math.abs(value / maxValue)));
+      const normalizedThreshold = Math.min(1, Math.max(0, thresholdValue / maxValue));
 
-      let rgbColor;
-      if (normalizedValue < 0 && negativeInterpolator && negativeThresholdInterpolator) {
-        rgbColor = interpolateColor(
-          negativeInterpolator,
-          negativeThresholdInterpolator,
-          normalizedValue,
-          normalizedThreshold,
-        );
-      } else {
-        rgbColor = interpolateColor(
-          positiveInterpolator,
-          positiveThresholdInterpolator,
-          normalizedValue,
-          normalizedThreshold,
-        );
+      let rgbColor: [number, number, number];
+
+      if (normalizedValue == 0) rgbColor = [1, 1, 1];
+      else {
+        let t: number = normalizedValue;
+        let interpolator: (t: number) => FindColorByMode<"oklab">;
+
+        if (negative) interpolator = negativeInterpolator;
+        else interpolator = positiveInterpolator;
+        if (thresholdHighlighting) {
+          if (normalizedValue < normalizedThreshold) {
+            t = normalizedValue / normalizedThreshold;
+          } else {
+            t = (normalizedValue - normalizedThreshold) / (1 - normalizedThreshold);
+            if (negative) interpolator = negativeThresholdInterpolator;
+            else interpolator = positiveThresholdInterpolator;
+          }
+        }
+
+        rgbColor = interpolateColor(interpolator, t);
       }
+
       return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);
     },
     [
       animationData,
-      currentMetric,
       maxValue,
       positiveInterpolator,
       negativeInterpolator,
-      thresholdHighlighting,
       thresholdValue,
+      metricConfig,
+      thresholdHighlighting,
+      negativeThresholdInterpolator,
+      positiveThresholdInterpolator,
     ],
   );
 

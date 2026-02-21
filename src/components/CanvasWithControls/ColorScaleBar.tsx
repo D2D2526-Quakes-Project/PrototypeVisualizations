@@ -42,10 +42,10 @@ export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds
       const negThresholdPos = (1 - thresholdRatio) * 50;
 
       stops = [
-        `${negativeStops[0]} 0%`,
-        `${negativeStops[1]} ${negThresholdPos}%`,
+        `${negativeStops[3]} 0%`,
         `${negativeStops[2]} ${negThresholdPos}%`,
-        `${negativeStops[3]} 50%`,
+        `${negativeStops[1]} ${negThresholdPos}%`,
+        `${negativeStops[0]} 50%`,
         `${positiveStops[0]} 50%`,
         `${positiveStops[1]} ${posThresholdPos}%`,
         `${positiveStops[2]} ${posThresholdPos}%`,
@@ -71,8 +71,8 @@ export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds
       const negativeStops = config.negativeColorStops;
 
       stops = [
-        `${negativeStops[2]} 0%`,
-        `${negativeStops[3]} 50%`,
+        `${negativeStops[1]} 0%`,
+        `${negativeStops[0]} 50%`,
         `${positiveStops[0]} 50%`,
         `${positiveStops[1]} 100%`,
       ];

@@ -11,14 +11,22 @@ interface ThresholdSliderProps {
   currentlyUsed?: boolean;
 }
 
-export function ThresholdSlider({ label, value, unit, onChange, max = 1, tooltip, currentlyUsed = false }: ThresholdSliderProps) {
+export function ThresholdSlider({
+  label,
+  value,
+  unit,
+  onChange,
+  max = 1,
+  tooltip,
+  currentlyUsed = false,
+}: ThresholdSliderProps) {
   return (
     <div className={`flex items-center gap-1 ${currentlyUsed ? "" : "opacity-50"}`}>
-      <Tooltip>
+      <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
           <span className="text-[10px] text-neutral-500 w-8 shrink-0">{label}</span>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
+        <TooltipContent side="left" className="max-w-xs">
           {tooltip}
         </TooltipContent>
       </Tooltip>

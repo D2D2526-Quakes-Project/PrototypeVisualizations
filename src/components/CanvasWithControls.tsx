@@ -109,7 +109,11 @@ function CameraManager({
         zoom={50}
         up={[0, 0, 1]}
       />
-      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={targetRef.current} />
+      <OrbitControls
+        ref={orbitControlsRef}
+        enableDamping={enableSmoothing}
+        target={new Vector3(0, 0, buildingVerticalCenter)}
+      />
     </>
   );
 }
@@ -357,7 +361,11 @@ export function ViewControls({
                 />
               </motion.div>
               <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <ThresholdPanel animationData={animationData} setThreshold={setThreshold} currentMetric={currentMetric} />
+                <ThresholdPanel
+                  animationData={animationData}
+                  setThreshold={setThreshold}
+                  currentMetric={currentMetric}
+                />
               </motion.div>
               <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
                 <SliceViewPanel

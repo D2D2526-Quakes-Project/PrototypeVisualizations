@@ -1,1 +1,1 @@
-export { createInterpolator, interpolateColor, rgbConverter } from "./colorUtils";
+export { interpolateColor, rgbConverter } from "./colorUtils";

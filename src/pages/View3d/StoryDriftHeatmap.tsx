@@ -99,7 +99,7 @@ export function StoryDriftHeatmap() {
     const cornerIndex: Record<Corner, number> = { NW: 0, NE: 1, SW: 2, SE: 3, Max: -1 };
 
     const data: Array<[number, number, number]> = [];
-    const yAxisLabels: string[] = [];
+    const yAxisLabels: [string, string][] = [];
 
     // if (selectedCorner === "All") {
 
@@ -116,7 +116,7 @@ export function StoryDriftHeatmap() {
           const drift = drifts[cornerIndex[corner]];
           data.push([Math.floor(frame / timeStep), yIdx, drift]);
         }
-        yAxisLabels.push(`${storyId} ${corner}`);
+        yAxisLabels.push([storyId, corner]);
         yIdx++;
       });
     });
@@ -145,10 +145,10 @@ export function StoryDriftHeatmap() {
       timeStep,
       frameCount: Math.ceil(animationData.metadata.frameCount / timeStep),
     };
-  }, [animationData, visibleStories, selectedCorners, resolution]);
+  }, [animationData, visibleStories, selectedCorners, resolution, isMaxSelected]);
 
   const baseOption: EChartsOption = useMemo((): EChartsOption => {
-    const { data, yAxisLabels: stories, maxValue, frameCount } = heatmapData;
+    const { data, yAxisLabels, maxValue, frameCount } = heatmapData;
 
     return {
       tooltip: {
@@ -160,13 +160,15 @@ export function StoryDriftHeatmap() {
         formatter: (params) => {
           if (!params || Array.isArray(params)) return "";
           const [timeIdx, storyIdx, value] = params.data as number[];
+          // console.log(timeIdx, storyIdx, value, params.dataIndex, params.componentIndex);
           const actualFrame = timeIdx * heatmapData.timeStep;
           const time = actualFrame * animationData.metadata.dt;
+          const [storyId, corner] = yAxisLabels[storyIdx];
           return `
-            <div style="font-weight: 600;">Story ${stories[storyIdx]}</div>
+            <div style="font-weight: 600;">Story ${storyId} ${corner}</div>
             <div>Frame: ${actualFrame + 1}</div>
             <div>Time: ${time.toFixed(3)}s</div>
-            <div>${isMaxSelected ? "Max" : selectedCorners} Drift: ${value.toFixed(4)}%</div>
+            ${isMaxSelected ? `<div>Max Drift: ${value.toFixed(4)}%</div>` : `<div>${corner} Drift: ${value.toFixed(4)}%</div>`}
           `;
         },
       },
@@ -193,7 +195,7 @@ export function StoryDriftHeatmap() {
       yAxis: {
         type: "category" as const,
         zlevel: 1,
-        data: stories,
+        data: yAxisLabels.map(([storyId, corner]) => `${storyId} ${corner}`),
         axisLabel: { color: "#374151", fontSize: 10 },
         splitArea: {
           show: !isMaxSelected,
@@ -243,7 +245,7 @@ export function StoryDriftHeatmap() {
       ],
       animation: false,
     };
-  }, [heatmapData, animationData.metadata.dt, selectedCorners]);
+  }, [heatmapData, animationData.metadata.dt, selectedCorners, isMaxSelected]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();

@@ -68,17 +68,27 @@ function parseBlob<T>(buffer: ArrayBuffer) {
 /**
  * Main Entry Point for the Hook
  */
-export async function buildAnimationDataFromBinary(
-  rawBuilding: ArrayBuffer,
-  rawGM: ArrayBuffer,
-  rawDispLin: ArrayBuffer,
-  rawDispRot?: ArrayBuffer,
-  rawVelLin?: ArrayBuffer,
-  rawVelRot?: ArrayBuffer,
-  rawAccelLin?: ArrayBuffer,
-  rawAccelRot?: ArrayBuffer,
-  onProgress?: (p: number, msg: string) => void,
-): Promise<BuildingAnimationData> {
+export async function buildAnimationDataFromBinary({
+  rawBuilding,
+  rawGM,
+  rawDispLin,
+  rawDispRot,
+  rawVelLin,
+  rawVelRot,
+  rawAccelLin,
+  rawAccelRot,
+  onProgress,
+}: {
+  rawBuilding: ArrayBuffer;
+  rawGM: ArrayBuffer;
+  rawDispLin: ArrayBuffer;
+  rawDispRot?: ArrayBuffer;
+  rawVelLin?: ArrayBuffer;
+  rawVelRot?: ArrayBuffer;
+  rawAccelLin?: ArrayBuffer;
+  rawAccelRot?: ArrayBuffer;
+  onProgress?: (p: number, msg: string) => void;
+}): Promise<BuildingAnimationData> {
   // 1. Decompress all buffers
   if (onProgress) onProgress(10, "Decompressing Building Data...");
   const buildingBuff = await ensureDecompressed(rawBuilding);
@@ -539,9 +549,15 @@ function calculateStats(
   // Accumulate sums per frame
   for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
     const frameOffset = frameIdx * nodeCount * 3;
-    let sumDispX = 0, sumDispY = 0, sumDispZ = 0;
-    let sumVelX = 0, sumVelY = 0, sumVelZ = 0;
-    let sumAccelX = 0, sumAccelY = 0, sumAccelZ = 0;
+    let sumDispX = 0,
+      sumDispY = 0,
+      sumDispZ = 0;
+    let sumVelX = 0,
+      sumVelY = 0,
+      sumVelZ = 0;
+    let sumAccelX = 0,
+      sumAccelY = 0,
+      sumAccelZ = 0;
 
     for (let nodeIdx = 0; nodeIdx < nodeCount; nodeIdx++) {
       const offset = frameOffset + nodeIdx * 3;
@@ -566,7 +582,7 @@ function calculateStats(
     avgDispPerFrameY[frameIdx] = sumDispY / nodeCount;
     avgDispPerFrameZ[frameIdx] = sumDispZ / nodeCount;
     avgDispPerFrameMag[frameIdx] = Math.sqrt(
-      avgDispPerFrameX[frameIdx] ** 2 + avgDispPerFrameY[frameIdx] ** 2 + avgDispPerFrameZ[frameIdx] ** 2
+      avgDispPerFrameX[frameIdx] ** 2 + avgDispPerFrameY[frameIdx] ** 2 + avgDispPerFrameZ[frameIdx] ** 2,
     );
 
     if (velLin && avgVelPerFrameX && avgVelPerFrameY && avgVelPerFrameZ && avgVelPerFrameMag) {
@@ -574,7 +590,7 @@ function calculateStats(
       avgVelPerFrameY[frameIdx] = sumVelY / nodeCount;
       avgVelPerFrameZ[frameIdx] = sumVelZ / nodeCount;
       avgVelPerFrameMag[frameIdx] = Math.sqrt(
-        avgVelPerFrameX[frameIdx] ** 2 + avgVelPerFrameY[frameIdx] ** 2 + avgVelPerFrameZ[frameIdx] ** 2
+        avgVelPerFrameX[frameIdx] ** 2 + avgVelPerFrameY[frameIdx] ** 2 + avgVelPerFrameZ[frameIdx] ** 2,
       );
     }
 
@@ -583,7 +599,7 @@ function calculateStats(
       avgAccelPerFrameY[frameIdx] = sumAccelY / nodeCount;
       avgAccelPerFrameZ[frameIdx] = sumAccelZ / nodeCount;
       avgAccelPerFrameMag[frameIdx] = Math.sqrt(
-        avgAccelPerFrameX[frameIdx] ** 2 + avgAccelPerFrameY[frameIdx] ** 2 + avgAccelPerFrameZ[frameIdx] ** 2
+        avgAccelPerFrameX[frameIdx] ** 2 + avgAccelPerFrameY[frameIdx] ** 2 + avgAccelPerFrameZ[frameIdx] ** 2,
       );
     }
   }
@@ -606,9 +622,15 @@ function calculateStats(
 
     for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
       const frameOffset = frameIdx * nodeCount * 3;
-      let sumDispX = 0, sumDispY = 0, sumDispZ = 0;
-      let sumVelX = 0, sumVelY = 0, sumVelZ = 0;
-      let sumAccelX = 0, sumAccelY = 0, sumAccelZ = 0;
+      let sumDispX = 0,
+        sumDispY = 0,
+        sumDispZ = 0;
+      let sumVelX = 0,
+        sumVelY = 0,
+        sumVelZ = 0;
+      let sumAccelX = 0,
+        sumAccelY = 0,
+        sumAccelZ = 0;
 
       for (const nodeIdx of nodes) {
         const offset = frameOffset + nodeIdx * 3;
@@ -631,19 +653,15 @@ function calculateStats(
 
       const idx = storyIdx * frameCount + frameIdx;
       const count = nodes.length;
-      avgDispPerStory[idx] = Math.sqrt(
-        (sumDispX / count) ** 2 + (sumDispY / count) ** 2 + (sumDispZ / count) ** 2
-      );
+      avgDispPerStory[idx] = Math.sqrt((sumDispX / count) ** 2 + (sumDispY / count) ** 2 + (sumDispZ / count) ** 2);
 
       if (velLin && avgVelPerStory) {
-        avgVelPerStory[idx] = Math.sqrt(
-          (sumVelX / count) ** 2 + (sumVelY / count) ** 2 + (sumVelZ / count) ** 2
-        );
+        avgVelPerStory[idx] = Math.sqrt((sumVelX / count) ** 2 + (sumVelY / count) ** 2 + (sumVelZ / count) ** 2);
       }
 
       if (accelLin && avgAccelPerStory) {
         avgAccelPerStory[idx] = Math.sqrt(
-          (sumAccelX / count) ** 2 + (sumAccelY / count) ** 2 + (sumAccelZ / count) ** 2
+          (sumAccelX / count) ** 2 + (sumAccelY / count) ** 2 + (sumAccelZ / count) ** 2,
         );
       }
     }
@@ -670,24 +688,34 @@ function calculateStats(
     maxDisplacementY: maxDispY,
     maxDisplacementZ: maxDispZ,
     minDisplacement,
+
+    // Velocity
     maxVelocity: velLin ? getMaxMag(velLin) : undefined,
     maxVelocityX: velLin ? maxVelX : undefined,
     maxVelocityY: velLin ? maxVelY : undefined,
     maxVelocityZ: velLin ? maxVelZ : undefined,
     minVelocity,
+
+    // Acceleration
     maxAcceleration: accelLin ? getMaxMag(accelLin) : undefined,
     maxAccelerationX: accelLin ? maxAccelX : undefined,
     maxAccelerationY: accelLin ? maxAccelY : undefined,
     maxAccelerationZ: accelLin ? maxAccelZ : undefined,
     minAcceleration,
+
+    // Rotation
     maxRotation: dispRot ? getMaxMag(dispRot) : undefined,
     maxRotationX: dispRot ? maxRotX : undefined,
     maxRotationY: dispRot ? maxRotY : undefined,
     maxRotationZ: dispRot ? maxRotZ : undefined,
+
+    // Rotation Velocity
     maxRotationVelocity: velRot ? getMaxMag(velRot) : undefined,
     maxRotationVelocityX: velRot ? maxRotVelX : undefined,
     maxRotationVelocityY: velRot ? maxRotVelY : undefined,
     maxRotationVelocityZ: velRot ? maxRotVelZ : undefined,
+
+    // Rotation Acceleration
     maxRotationAcceleration: accelRot ? getMaxMag(accelRot) : undefined,
     maxRotationAccelerationX: accelRot ? maxRotAccelX : undefined,
     maxRotationAccelerationY: accelRot ? maxRotAccelY : undefined,
@@ -723,21 +751,27 @@ function calculateStats(
       z: avgDispPerFrameZ,
       mag: avgDispPerFrameMag,
     },
-    avgVelocityPerFrame: velLin && avgVelPerFrameX && avgVelPerFrameY && avgVelPerFrameZ && avgVelPerFrameMag ? {
-      x: avgVelPerFrameX,
-      y: avgVelPerFrameY,
-      z: avgVelPerFrameZ,
-      mag: avgVelPerFrameMag,
-    } : undefined,
-    avgAccelerationPerFrame: accelLin && avgAccelPerFrameX && avgAccelPerFrameY && avgAccelPerFrameZ && avgAccelPerFrameMag ? {
-      x: avgAccelPerFrameX,
-      y: avgAccelPerFrameY,
-      z: avgAccelPerFrameZ,
-      mag: avgAccelPerFrameMag,
-    } : undefined,
+    avgVelocityPerFrame:
+      velLin && avgVelPerFrameX && avgVelPerFrameY && avgVelPerFrameZ && avgVelPerFrameMag
+        ? {
+            x: avgVelPerFrameX,
+            y: avgVelPerFrameY,
+            z: avgVelPerFrameZ,
+            mag: avgVelPerFrameMag,
+          }
+        : undefined,
+    avgAccelerationPerFrame:
+      accelLin && avgAccelPerFrameX && avgAccelPerFrameY && avgAccelPerFrameZ && avgAccelPerFrameMag
+        ? {
+            x: avgAccelPerFrameX,
+            y: avgAccelPerFrameY,
+            z: avgAccelPerFrameZ,
+            mag: avgAccelPerFrameMag,
+          }
+        : undefined,
     avgDisplacementPerStory: avgDispPerStory,
     avgVelocityPerStory: avgVelPerStory,
     avgAccelerationPerStory: avgAccelPerStory,
     velocityPercentile90,
-  };
+  } as ComputedStats;
 }

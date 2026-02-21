@@ -1,155 +1,18 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { useAnimationData } from "@/hooks/nodeDataHook";
-import { COLOR_SCALES, type ColorMetric, createInterpolator, interpolateColor } from "@/lib/colors";
-import { useThresholds } from "./ThresholdContext";
-import type { ThresholdType } from "@/stores/viewStore";
+import { createInterpolator, interpolateColor } from "@/lib/colors";
 import { useViewStore } from "@/stores";
-import { formatHex, interpolate, rgb } from "culori";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
+import { useThresholds } from "./ThresholdContext";
+import { getMetricConfig, METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 
-const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
-const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
-const blue400 = formatHex("oklch(70.7% 0.165 254.624)")!;
-const white = formatHex("#fff")!;
-const red400 = formatHex("oklch(70.4% 0.191 22.216)")!;
-const red600 = formatHex("oklch(57.7% 0.245 27.325)")!;
-const red900 = formatHex("oklch(39.6% 0.141 25.723)")!;
-
-const interpolateBlue900Blue600 = interpolate([blue900, blue600], "oklab");
-const interpolateBlue400White = interpolate([blue400, white], "oklab");
-const inerpolateWhiteRed400 = interpolate([white, red400], "oklab");
-const interpolateRed600Red900 = interpolate([red600, red900], "oklab");
-
-const colorMap = (t: number, thresholdRatio: number) => {
-  // console.log(t);
-  const x = Math.max(0, Math.min(1, t));
-  const th = Math.max(0, Math.min(1, thresholdRatio));
-
-  const mid = 0.5;
-
-  const blue400Pos = (1 - th) * 0.5;
-  const red400Pos = mid + th * 0.5;
-
-  // ---- Left extreme: deep blue → blue600 ----
-  if (x <= blue400Pos) {
-    const local = x / blue400Pos;
-    return interpolateBlue900Blue600(local);
-  }
-
-  // ---- blue400 → white (toward center) ----
-  if (x <= mid) {
-    const local = (x - blue400Pos) / (mid - blue400Pos);
-    return interpolateBlue400White(local);
-  }
-
-  // ---- white → red400 ----
-  if (x <= red400Pos) {
-    const local = (x - mid) / (red400Pos - mid);
-    // console.log(local);
-    return inerpolateWhiteRed400(local);
-  }
-
-  // ---- red600 → red900 ----
-  const local = (x - red400Pos) / (1 - red400Pos);
-  return interpolateRed600Red900(local);
-};
-
-function getThresholdAwareColor(value: number, maxValue: number, threshold: number): [number, number, number] {
-  if (maxValue <= 0 || threshold <= 0) {
-    return [0.5, 0.5, 0.5]; // gray
-  }
-
-  const thresholdRatio = threshold / maxValue;
-  const normalized = value / maxValue;
-
-  const oklab = colorMap(normalized, thresholdRatio);
-  const rgbC = rgb(oklab ?? "gray");
-  return [rgbC.r, rgbC.g, rgbC.b];
-}
-
-/**
- * Get color for magnitude values (always positive) using positive-only scale.
- * Maps: 0 -> white, max -> red
- * This is the standard way to visualize magnitude data (no negative values).
- */
-function getMagnitudeColor(value: number, maxValue: number): [number, number, number] {
-  if (maxValue <= 0) {
-    return [0.5, 0.5, 0.5]; // gray
-  }
-  const t = Math.min(value / maxValue, 1);
-  const oklab = inerpolateWhiteRed400(t);
-  const rgbC = rgb(oklab ?? "gray");
-  return [rgbC.r, rgbC.g, rgbC.b];
-}
-
-/**
- * Color map for magnitude values with threshold highlighting (no negative side)
- */
-function colorMapMagnitude(t: number, thresholdRatio: number) {
-  const x = Math.max(0, Math.min(1, t));
-  const th = Math.max(0, Math.min(1, thresholdRatio));
-
-  const mid = th; // threshold position in the scale
-
-  if (x <= mid) {
-    // Below threshold: white -> red400
-    const local = x / mid;
-    return inerpolateWhiteRed400(local);
-  } else {
-    // Above threshold: red400 -> red900
-    const local = (x - mid) / (1 - mid);
-    return interpolateRed600Red900(local);
-  }
-}
-
-/**
- * Get color for magnitude values with threshold highlighting.
- * Maps: 0 -> white, threshold -> light red, max -> dark red
- */
-function getMagnitudeThresholdColor(value: number, maxValue: number, threshold: number): [number, number, number] {
-  if (maxValue <= 0 || threshold <= 0) {
-    return [0.5, 0.5, 0.5]; // gray
-  }
-
-  const t = Math.min(value / maxValue, 1);
-  const thresholdRatio = threshold / maxValue;
-
-  const oklab = colorMapMagnitude(t, thresholdRatio);
-  const rgbC = rgb(oklab ?? { mode: "oklab", l: 0.5, a: 0, b: 0 });
-  return [rgbC.r, rgbC.g, rgbC.b];
-}
-
-/**
- * Check if a metric is a magnitude (always positive) type vs directional (can be negative)
- */
-function isMagnitudeMetric(metric: ColorMetric): boolean {
-  const magnitudeMetrics: ColorMetric[] = ["displacement", "velocity", "acceleration", "story-drift"];
-  return magnitudeMetrics.includes(metric);
-}
-
-const metricToThresholdKey: Partial<Record<ColorMetric, ThresholdType>> = {
-  displacement: "displacementMag",
-  "displacement-x": "displacementX",
-  "displacement-y": "displacementY",
-  "displacement-z": "displacementZ",
-  velocity: "velocityMag",
-  "velocity-x": "velocityX",
-  "velocity-y": "velocityY",
-  "velocity-z": "velocityZ",
-  acceleration: "accelerationMag",
-  "acceleration-x": "accelerationX",
-  "acceleration-y": "accelerationY",
-  "acceleration-z": "accelerationZ",
-  "story-drift": "interstoryDrift",
-};
+const grayColor = new THREE.Color(0.5, 0.5, 0.5);
 
 interface ColorContextType {
-  currentMetric: ColorMetric;
-  setColorMetric: (metric: ColorMetric) => void;
+  currentMetric: Metric;
+  setColorMetric: (metric: Metric) => void;
   getNodeColor: (nodeId: number, frameIndex: number) => THREE.Color;
-  getColorScale: () => (typeof COLOR_SCALES)[ColorMetric];
-  isMetricAvailable: (metric: ColorMetric) => boolean;
-  availableMetrics: ColorMetric[];
+  availableMetrics: Metric[];
   thresholdHighlighting: boolean;
   setThresholdHighlighting: (enabled: boolean) => void;
 }
@@ -172,232 +35,81 @@ export function ColorProvider({ children }: { children: ReactNode }) {
   const thresholdHighlighting = useViewStore((s) => s.thresholdHighlighting);
   const setThresholdHighlighting = useViewStore((s) => s.setThresholdHighlighting);
 
-  const interpolator = useMemo(() => {
-    const scale = COLOR_SCALES[currentMetric];
-    return createInterpolator(scale.colorStops);
-  }, [currentMetric]);
+  const metricConfig = useMemo(() => getMetricConfig(currentMetric), [currentMetric]);
 
-  const maxValues = useMemo(() => {
-    const result: Record<ColorMetric, number> = {
-      displacement: animationData.precomputed.maxDisplacement,
-      "displacement-x": animationData.precomputed.maxDisplacementX,
-      "displacement-y": animationData.precomputed.maxDisplacementY,
-      "displacement-z": animationData.precomputed.maxDisplacementZ,
-      velocity: animationData.precomputed.maxVelocity ?? 0,
-      "velocity-x": animationData.precomputed.maxVelocityX ?? 0,
-      "velocity-y": animationData.precomputed.maxVelocityY ?? 0,
-      "velocity-z": animationData.precomputed.maxVelocityZ ?? 0,
-      acceleration: animationData.precomputed.maxAcceleration ?? 0,
-      "acceleration-x": animationData.precomputed.maxAccelerationX ?? 0,
-      "acceleration-y": animationData.precomputed.maxAccelerationY ?? 0,
-      "acceleration-z": animationData.precomputed.maxAccelerationZ ?? 0,
-      "story-drift": animationData.precomputed.maxStoryDrift,
-    };
-    return result;
-  }, [animationData.precomputed]);
+  const { positiveInterpolator, positiveThresholdInterpolator, negativeInterpolator, negativeThresholdInterpolator } =
+    useMemo(() => {
+      return {
+        positiveInterpolator: createInterpolator(metricConfig.positiveColorStops),
+        positiveThresholdInterpolator: createInterpolator(metricConfig.positiveColorStops),
+        negativeInterpolator: metricConfig.positiveOnly ? null : createInterpolator(metricConfig.negativeColorStops),
+        negativeThresholdInterpolator: metricConfig.positiveOnly
+          ? null
+          : createInterpolator(metricConfig.negativeColorStops),
+      };
+    }, [metricConfig]);
 
-  const getMaxValue = useCallback(
-    (metric: ColorMetric): number => {
-      return maxValues[metric];
-    },
-    [maxValues],
-  );
+  const maxValue = useMemo(() => {
+    return metricConfig.getPrecomputedMax(animationData.precomputed);
+  }, [animationData.precomputed, metricConfig]);
+
+  const thresholdValue = useMemo(() => {
+    return thresholds[metricConfig.metric];
+  }, [thresholds, metricConfig]);
 
   const getNodeColor = useCallback(
     (nodeId: number, frameIndex: number): THREE.Color => {
-      const maxValue = getMaxValue(currentMetric);
-      if (maxValue === 0) return new THREE.Color(1, 0, 0);
+      if (maxValue === 0) return grayColor;
 
-      let value = 0;
+      let value = metricConfig.getValue(animationData, frameIndex, nodeId);
+      if (value === undefined) return grayColor;
 
-      switch (currentMetric) {
-        case "displacement": {
-          const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-          value = Math.hypot(disp[0], disp[1], disp[2]);
-          break;
-        }
-        case "displacement-x": {
-          const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(disp[0]);
-          break;
-        }
-        case "displacement-y": {
-          const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(disp[1]);
-          break;
-        }
-        case "displacement-z": {
-          const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(disp[2]);
-          break;
-        }
-        case "velocity": {
-          if (!animationData.velocityLin) return new THREE.Color(0.5, 0.5, 0.5);
-          const vel = animationData.velocityLin.atFrame(frameIndex).at(nodeId);
-          value = Math.hypot(vel[0], vel[1], vel[2]);
-          break;
-        }
-        case "velocity-x": {
-          if (!animationData.velocityLin) return new THREE.Color(0.5, 0.5, 0.5);
-          const vel = animationData.velocityLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(vel[0]);
-          break;
-        }
-        case "velocity-y": {
-          if (!animationData.velocityLin) return new THREE.Color(0.5, 0.5, 0.5);
-          const vel = animationData.velocityLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(vel[1]);
-          break;
-        }
-        case "velocity-z": {
-          if (!animationData.velocityLin) return new THREE.Color(0.5, 0.5, 0.5);
-          const vel = animationData.velocityLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(vel[2]);
-          break;
-        }
-        case "acceleration": {
-          if (!animationData.accelerationLin) return new THREE.Color(0.5, 0.5, 0.5);
-          const acc = animationData.accelerationLin.atFrame(frameIndex).at(nodeId);
-          value = Math.hypot(acc[0], acc[1], acc[2]);
-          break;
-        }
-        case "acceleration-x": {
-          if (!animationData.accelerationLin) return new THREE.Color(0.5, 0.5, 0.5);
-          const acc = animationData.accelerationLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(acc[0]);
-          break;
-        }
-        case "acceleration-y": {
-          if (!animationData.accelerationLin) return new THREE.Color(0.5, 0.5, 0.5);
-          const acc = animationData.accelerationLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(acc[1]);
-          break;
-        }
-        case "acceleration-z": {
-          if (!animationData.accelerationLin) return new THREE.Color(0.5, 0.5, 0.5);
-          const acc = animationData.accelerationLin.atFrame(frameIndex).at(nodeId);
-          value = Math.abs(acc[2]);
-          break;
-        }
-        case "story-drift": {
-          const storyOrder = animationData.metadata.storyOrder;
-          let foundStoryIndex = -1;
-          for (let i = 0; i < storyOrder.length; i++) {
-            const storyNodes = animationData.metadata.stories[storyOrder[i]];
-            if (storyNodes.includes(nodeId)) {
-              foundStoryIndex = i;
-              break;
-            }
-          }
-          if (foundStoryIndex <= 0) return new THREE.Color(0.5, 0.5, 0.5);
+      const normalizedValue = value / maxValue;
+      const normalizedThreshold = thresholdValue / maxValue;
 
-          const cornerInfo = getCornerForNode(nodeId, animationData);
-          if (!cornerInfo) return new THREE.Color(0.5, 0.5, 0.5);
-
-          const { storyIndex, cornerIndex } = cornerInfo;
-          const drifts = animationData.precomputed.storyDrift.getStoryDrift(storyIndex, frameIndex);
-          value = Math.abs(drifts[cornerIndex]);
-          break;
-        }
+      let rgbColor;
+      if (normalizedValue < 0 && negativeInterpolator && negativeThresholdInterpolator) {
+        rgbColor = interpolateColor(
+          negativeInterpolator,
+          negativeThresholdInterpolator,
+          normalizedValue,
+          normalizedThreshold,
+        );
+      } else {
+        rgbColor = interpolateColor(
+          positiveInterpolator,
+          positiveThresholdInterpolator,
+          normalizedValue,
+          normalizedThreshold,
+        );
       }
-
-      // Use threshold-aware coloring if enabled
-      if (thresholdHighlighting) {
-        const thresholdKey = metricToThresholdKey[currentMetric];
-        const thresholdValue = thresholdKey ? thresholds[thresholdKey] : undefined;
-
-        if (thresholdKey && thresholdValue !== undefined && thresholdValue > 0 && maxValue > 0) {
-          // For magnitude metrics, use magnitude-aware threshold coloring (no blue)
-          if (isMagnitudeMetric(currentMetric)) {
-            const rgb = getMagnitudeThresholdColor(value, maxValue, thresholdValue);
-            return new THREE.Color(rgb[0], rgb[1], rgb[2]);
-          }
-          // For directional metrics, use the diverging scale
-          const rgb = getThresholdAwareColor(value, maxValue, thresholdValue);
-          return new THREE.Color(rgb[0], rgb[1], rgb[2]);
-        }
-      }
-
-      // For magnitude metrics (always positive), use white -> red scale
-      if (isMagnitudeMetric(currentMetric)) {
-        const rgb = getMagnitudeColor(value, maxValue);
-        return new THREE.Color(rgb[0], rgb[1], rgb[2]);
-      }
-
-      // For directional metrics (can be negative), use simple interpolation
-      const normalizedValue = Math.min(value / maxValue, 1);
-      const rgbColor = interpolateColor(interpolator, normalizedValue);
       return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);
     },
-    [animationData, currentMetric, getMaxValue, interpolator, thresholdHighlighting, thresholds],
+    [
+      animationData,
+      currentMetric,
+      maxValue,
+      positiveInterpolator,
+      negativeInterpolator,
+      thresholdHighlighting,
+      thresholdValue,
+    ],
   );
 
-  const isMetricAvailable = useCallback(
-    (metric: ColorMetric): boolean => {
-      if (
-        metric === "displacement" ||
-        metric === "displacement-x" ||
-        metric === "displacement-y" ||
-        metric === "displacement-z"
-      ) {
-        return true;
-      }
-      if (metric === "velocity" || metric === "velocity-x" || metric === "velocity-y" || metric === "velocity-z") {
-        return !!animationData.velocityLin;
-      }
-      if (
-        metric === "acceleration" ||
-        metric === "acceleration-x" ||
-        metric === "acceleration-y" ||
-        metric === "acceleration-z"
-      ) {
-        return !!animationData.accelerationLin;
-      }
-      if (metric === "story-drift") {
-        return !!animationData.precomputed.storyDrift;
-      }
-      return false;
-    },
-    [animationData],
-  );
-
-  const availableMetrics = useMemo((): ColorMetric[] => {
-    return (Object.keys(COLOR_SCALES) as ColorMetric[]).filter(isMetricAvailable);
-  }, [isMetricAvailable]);
-
-  const getColorScale = useCallback(() => {
-    return COLOR_SCALES[currentMetric];
-  }, [currentMetric]);
+  const availableMetrics = useMemo((): Metric[] => {
+    return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) =>
+      METRIC_CONFIGS[metric].isAvailable(animationData),
+    );
+  }, [animationData]);
 
   const value: ColorContextType = {
     currentMetric,
     setColorMetric,
     getNodeColor,
-    getColorScale,
-    isMetricAvailable,
     availableMetrics,
     thresholdHighlighting,
     setThresholdHighlighting,
   };
 
   return <ColorContext.Provider value={value}>{children}</ColorContext.Provider>;
-}
-
-function getCornerForNode(nodeId: number, animationData: ReturnType<typeof useAnimationData>["animationData"]) {
-  const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
-  const storyOrder = animationData.metadata.storyOrder;
-
-  for (let storyIndex = 0; storyIndex < storyOrder.length; storyIndex++) {
-    const storyId = storyOrder[storyIndex];
-    const corners = animationData.precomputed.cornerNodes[storyId];
-    if (!corners) continue;
-
-    for (let cornerIndex = 0; cornerIndex < cornerOrder.length; cornerIndex++) {
-      const corner = cornerOrder[cornerIndex];
-      if (corners[corner] === nodeId) {
-        return { storyIndex, cornerIndex };
-      }
-    }
-  }
-  return null;
 }

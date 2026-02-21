@@ -1,112 +1,38 @@
+import type { ViewMode } from "@/contexts/visualization/ViewModeContext";
+import type { Metric } from "@/lib/metrics";
+import type { ComputedStats } from "@/lib/types";
+import type { SerializedDockview } from "dockview";
 import { createStore } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import type { ColorMetric } from "@/lib/colors";
-import type { ViewMode } from "@/contexts/visualization/ViewModeContext";
-import type { SerializedDockview } from "dockview";
-import type { ComputedStats } from "@/lib/types";
 
-export type ThresholdType =
-  | "displacement"
-  | "displacementX"
-  | "displacementY"
-  | "displacementZ"
-  | "displacementMag"
-  | "velocity"
-  | "velocityX"
-  | "velocityY"
-  | "velocityZ"
-  | "velocityMag"
-  | "acceleration"
-  | "accelerationX"
-  | "accelerationY"
-  | "accelerationZ"
-  | "accelerationMag"
-  | "rotation"
-  | "rotationX"
-  | "rotationY"
-  | "rotationZ"
-  | "rotationMag"
-  | "rotationVelocity"
-  | "rotationVelocityX"
-  | "rotationVelocityY"
-  | "rotationVelocityZ"
-  | "rotationVelocityMag"
-  | "rotationAcceleration"
-  | "rotationAccelerationX"
-  | "rotationAccelerationY"
-  | "rotationAccelerationZ"
-  | "rotationAccelerationMag"
-  | "interstoryDrift"
-  | "interstoryDriftAvg";
-
-export interface ThresholdState {
-  displacement: number;
-  displacementX: number;
-  displacementY: number;
-  displacementZ: number;
-  displacementMag: number;
-  velocity: number;
-  velocityX: number;
-  velocityY: number;
-  velocityZ: number;
-  velocityMag: number;
-  acceleration: number;
-  accelerationX: number;
-  accelerationY: number;
-  accelerationZ: number;
-  accelerationMag: number;
-  rotation: number;
-  rotationX: number;
-  rotationY: number;
-  rotationZ: number;
-  rotationMag: number;
-  rotationVelocity: number;
-  rotationVelocityX: number;
-  rotationVelocityY: number;
-  rotationVelocityZ: number;
-  rotationVelocityMag: number;
-  rotationAcceleration: number;
-  rotationAccelerationX: number;
-  rotationAccelerationY: number;
-  rotationAccelerationZ: number;
-  rotationAccelerationMag: number;
-  interstoryDrift: number;
-  interstoryDriftAvg: number;
-}
+export type ThresholdState = Record<Metric, number>;
 
 export const DEFAULT_THRESHOLDS: ThresholdState = {
-  displacement: 0.1,
   displacementX: 0.1,
   displacementY: 0.1,
   displacementZ: 0.1,
   displacementMag: 0.1,
-  velocity: 1,
   velocityX: 1,
   velocityY: 1,
   velocityZ: 1,
   velocityMag: 1,
-  acceleration: 2,
   accelerationX: 2,
   accelerationY: 2,
   accelerationZ: 2,
   accelerationMag: 2,
-  rotation: 0.005,
   rotationX: 0.005,
   rotationY: 0.01,
   rotationZ: 0.01,
   rotationMag: 0.01,
-  rotationVelocity: 0.1,
   rotationVelocityX: 0.1,
   rotationVelocityY: 0.1,
   rotationVelocityZ: 0.1,
   rotationVelocityMag: 0.1,
-  rotationAcceleration: 0.5,
   rotationAccelerationX: 0.5,
   rotationAccelerationY: 0.5,
   rotationAccelerationZ: 0.5,
   rotationAccelerationMag: 0.5,
   interstoryDrift: 0.5,
-  interstoryDriftAvg: 0.5,
 };
 
 export interface ExplodedViewState {
@@ -153,12 +79,12 @@ export interface ViewState {
 
   // Thresholds
   thresholds: ThresholdState;
-  setThreshold: (type: ThresholdType, value: number) => void;
+  setThreshold: (type: Metric, value: number) => void;
   setThresholdsFromPrecomputed: (precomputed: ComputedStats) => void;
 
   // Color
-  currentMetric: ColorMetric;
-  setColorMetric: (metric: ColorMetric) => void;
+  currentMetric: Metric;
+  setColorMetric: (metric: Metric) => void;
   thresholdHighlighting: boolean;
   setThresholdHighlighting: (enabled: boolean) => void;
 
@@ -269,7 +195,7 @@ export const createViewStore = () =>
         })),
 
       // Color
-      currentMetric: "displacement" as ColorMetric,
+      currentMetric: "displacement" as Metric,
       setColorMetric: (currentMetric) => set({ currentMetric }),
       thresholdHighlighting: false,
       setThresholdHighlighting: (thresholdHighlighting) => set({ thresholdHighlighting }),

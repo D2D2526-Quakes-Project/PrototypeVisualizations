@@ -1,50 +1,22 @@
 import { Switch } from "@/components/ui/switch";
 import { Palette } from "lucide-react";
 import { ColorScaleBar } from "../ColorScaleBar";
-import type { ColorMetric } from "@/lib/colors";
+
+import type { ComputedStats } from "@/lib/types";
 import type { ThresholdState } from "@/stores";
+import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 
 interface ColorPanelProps {
-  currentMetric: ColorMetric;
-  setColorMetric: (metric: ColorMetric) => void;
-  availableMetrics: ColorMetric[];
+  currentMetric: Metric;
+  setColorMetric: (metric: Metric) => void;
+  availableMetrics: Metric[];
   thresholdHighlighting: boolean;
   setThresholdHighlighting: (enabled: boolean) => void;
   thresholds: ThresholdState;
   animationData: {
-    precomputed: {
-      maxDisplacement: number;
-      maxDisplacementX: number;
-      maxDisplacementY: number;
-      maxDisplacementZ: number;
-      maxVelocity?: number | null;
-      maxVelocityX?: number | null;
-      maxVelocityY?: number | null;
-      maxVelocityZ?: number | null;
-      maxAcceleration?: number | null;
-      maxAccelerationX?: number | null;
-      maxAccelerationY?: number | null;
-      maxAccelerationZ?: number | null;
-      maxStoryDrift: number;
-    };
+    precomputed: ComputedStats;
   };
 }
-
-const metricLabels: Record<ColorMetric, string> = {
-  displacement: "Displacement (Mag)",
-  "displacement-x": "Displacement X",
-  "displacement-y": "Displacement Y",
-  "displacement-z": "Displacement Z",
-  velocity: "Velocity (Mag)",
-  "velocity-x": "Velocity X",
-  "velocity-y": "Velocity Y",
-  "velocity-z": "Velocity Z",
-  acceleration: "Acceleration (Mag)",
-  "acceleration-x": "Acceleration X",
-  "acceleration-y": "Acceleration Y",
-  "acceleration-z": "Acceleration Z",
-  "story-drift": "Story Drift",
-};
 
 export function ColorPanel({
   currentMetric,
@@ -63,11 +35,11 @@ export function ColorPanel({
       </div>
       <select
         value={currentMetric}
-        onChange={(e) => setColorMetric(e.target.value as ColorMetric)}
+        onChange={(e) => setColorMetric(e.target.value as Metric)}
         className="w-full text-xs px-2 py-1 bg-neutral-100 border border-neutral-300 rounded hover:bg-neutral-200 transition-colors cursor-pointer">
         {availableMetrics.map((metric) => (
           <option key={metric} value={metric}>
-            {metricLabels[metric]}
+            {METRIC_CONFIGS[metric].label}
           </option>
         ))}
       </select>

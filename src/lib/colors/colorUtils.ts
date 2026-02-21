@@ -1,22 +1,31 @@
-import { converter, interpolate, type Color } from 'culori';
+import { converter, interpolate } from "culori";
+import type { FindColorByMode, Mode } from "node_modules/@types/culori/src/common";
 
-export const rgbConverter = converter('rgb');
+type Interpolator<M extends Mode> = (t: number) => FindColorByMode<M>;
+
+export const rgbConverter = converter("rgb");
 
 export function createInterpolator(colorStops: string[]) {
-  return interpolate(colorStops, 'oklab');
+  return interpolate(colorStops, "oklab");
 }
 
 export function interpolateColor(
-  interpolator: (t: number) => Color | undefined,
-  t: number
+  interpolator: Interpolator<"oklab">,
+  thresholdInterpolator: Interpolator<"oklab">,
+  t: number,
+  thresholdT: number,
 ): [number, number, number] {
-  const clampedT = Math.max(0, Math.min(1, t));
-  const color = interpolator(clampedT);
-  if (!color) return [1, 1, 1];
-  
-  // Convert to RGB using the converter
+  let color;
+  if (t < thresholdT) {
+    const localT = t / thresholdT;
+    color = interpolator(localT);
+  } else {
+    const localT = Math.min(1, (t - thresholdT) / (1 - thresholdT));
+    color = thresholdInterpolator(localT);
+  }
+
+  if (!color) return [1, 0, 1];
+
   const rgb = rgbConverter(color);
-  if (!rgb || !('r' in rgb)) return [1, 1, 1];
-  
   return [rgb.r, rgb.g, rgb.b];
 }

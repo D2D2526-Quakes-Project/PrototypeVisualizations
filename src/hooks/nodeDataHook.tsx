@@ -152,21 +152,21 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
       // Pass the ArrayBuffers to your parser
       // Add optional buffers when uncommenting above: dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer
-      const built = await buildAnimationDataFromBinary(
-        buildingBuffer,
-        gmBuffer,
-        dispLinBuffer,
-        undefined, // dispRotBuffer
-        undefined, // velLinBuffer
-        undefined, // velRotBuffer
-        undefined, // accelLinBuffer
-        undefined, // accelRotBuffer
-        async (_p: number, msg?: string) => {
+      const built = await buildAnimationDataFromBinary({
+        rawBuilding: buildingBuffer,
+        rawGM: gmBuffer,
+        rawDispLin: dispLinBuffer,
+        rawDispRot: undefined, // dispRotBuffer
+        rawVelLin: undefined, // velLinBuffer
+        rawVelRot: undefined, // velRotBuffer
+        rawAccelLin: undefined, // accelLinBuffer
+        rawAccelRot: undefined, // accelRotBuffer
+        onProgress: async (_p: number, msg?: string) => {
           if (abortController.signal.aborted) return;
           if (msg) setProgressMessage(msg);
           await new Promise((r) => setTimeout(r, 0));
         },
-      );
+      });
 
       if (abortController.signal.aborted) return;
 
@@ -291,46 +291,90 @@ function LoadingOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 bg-neutral-300 flex flex-col items-center justify-center z-9999">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="text-6xl font-bold text-neutral-800 mb-6 cursor-pointer select-none"
+        onClick={() => {
+          const letters = document.querySelectorAll("[data-loader-letter]");
+          letters.forEach((el, i) => {
+            el.classList.remove("animate-wiggle");
+            void (el as HTMLElement).offsetWidth;
+            setTimeout(() => el.classList.add("animate-wiggle"), i * 50);
+          });
+        }}>
+        {"Quakes".split("").map((letter, i) => (
+          <span
+            key={i}
+            data-loader-letter
+            className="inline-block animate-wiggle"
+            style={{ animationDelay: `${i * 50}ms` }}>
+            {letter}
+          </span>
+        ))}
+      </motion.div>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="text-6xl font-bold text-neutral-800 mb-8">
-        Quakes
+        transition={{ delay: 0.15 }}
+        className="text-neutral-500 mb-4">
+        {progressMessage || "Loading..."}
       </motion.div>
-      <div className="text-neutral-500">Loading animation data...</div>
-      <div className="w-1/2 max-w-lg flex flex-col gap-2">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="w-1/2 max-w-lg flex flex-col gap-2">
         {Object.entries(fileProgress).map(([name, p]) => (
           <div key={name} className="flex flex-col">
             <div className="flex justify-between text-xs text-neutral-500 mb-1">
               <span className="capitalize">{name}</span>
               <span>{Math.round(p)}%</span>
             </div>
-            <div className="h-2 bg-neutral-400 rounded-lg shadow-md">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${p}%` }} className="bg-amber-400 h-full rounded" />
+            <div className="h-2 bg-neutral-400 rounded-lg shadow-md overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${p}%` }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="bg-amber-400 h-full rounded"
+              />
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
       {memory && (
-        <div className="w-1/2 max-w-lg flex flex-col gap-1 mt-2">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="w-1/2 max-w-lg flex flex-col gap-1 mt-3">
           <div className="flex justify-between text-xs text-neutral-500">
             <span>Memory</span>
             <span>
               {Math.round(memory.used / 1024 / 1024)} MB / {Math.round(memory.limit / 1024 / 1024)} MB
             </span>
           </div>
-          <div className="h-2 bg-neutral-300 rounded-lg inset-shadow-sm">
+          <div className="h-2 bg-neutral-400/50 inset-shadow-sm rounded-lg">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${(memory.used / memory.limit) * 100}%` }}
-              className="bg-indigo-200 h-full rounded inset-shadow-sm inset-shadow-indigo-300"
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="bg-indigo-300 h-full rounded"
             />
           </div>
-        </div>
+        </motion.div>
       )}
-      <div className="text-neutral-400 mt-2 text-sm">{progressMessage}</div>
-      {error ? <div style={{ padding: 20 }}>Failed to load animation data: {String(error)}</div> : null}
+      {error ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-red-500 mt-4 px-4 py-2 bg-red-100 rounded">
+          Failed to load animation data: {String(error)}
+        </motion.div>
+      ) : null}
     </motion.div>
   );
 }
@@ -348,13 +392,31 @@ function SimulationPickerOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 bg-neutral-300 flex flex-col items-center justify-center z-9999">
       <div className="flex flex-col items-center h-1/2">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-6xl font-bold text-neutral-800 mb-8">
-          Quakes
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="text-6xl font-bold text-neutral-800 mb-6 cursor-pointer select-none"
+          onClick={() => {
+            const letters = document.querySelectorAll("[data-picker-letter]");
+            letters.forEach((el, i) => {
+              el.classList.remove("animate-wiggle");
+              void (el as HTMLElement).offsetWidth;
+              setTimeout(() => el.classList.add("animate-wiggle"), i * 50);
+            });
+          }}>
+          {"Quakes".split("").map((letter, i) => (
+            <span
+              key={i}
+              data-picker-letter
+              className="inline-block animate-wiggle"
+              style={{ animationDelay: `${i * 50}ms` }}>
+              {letter}
+            </span>
+          ))}
         </motion.div>
         <div className="text-neutral-500 mb-4">Pick your building and simulation to view</div>
         <div className="w-full max-w-sm flex flex-col gap-4">

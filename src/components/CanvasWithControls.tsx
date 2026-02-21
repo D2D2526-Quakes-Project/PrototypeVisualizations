@@ -357,7 +357,7 @@ export function ViewControls({
                 />
               </motion.div>
               <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <ThresholdPanel animationData={animationData} setThreshold={setThreshold} />
+                <ThresholdPanel animationData={animationData} setThreshold={setThreshold} currentMetric={currentMetric} />
               </motion.div>
               <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
                 <SliceViewPanel

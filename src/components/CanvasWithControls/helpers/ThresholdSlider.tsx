@@ -8,11 +8,10 @@ interface ThresholdSliderProps {
   onChange: (value: number) => void;
   max?: number;
   tooltip?: string;
+  currentlyUsed?: boolean;
 }
 
-export function ThresholdSlider({ label, value, unit, onChange, max = 1, tooltip }: ThresholdSliderProps) {
-  const currentlyUsed = true;
-
+export function ThresholdSlider({ label, value, unit, onChange, max = 1, tooltip, currentlyUsed = false }: ThresholdSliderProps) {
   return (
     <div className={`flex items-center gap-1 ${currentlyUsed ? "" : "opacity-50"}`}>
       <Tooltip>

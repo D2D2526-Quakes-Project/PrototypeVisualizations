@@ -1,16 +1,21 @@
 import { useThresholds } from "@/contexts/visualization";
+import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
-import type { ThresholdType } from "@/stores";
-import { Sliders, Layers } from "lucide-react";
+import { Layers, Sliders } from "lucide-react";
 import { ThresholdSlider } from "../helpers/ThresholdSlider";
 
 interface ThresholdPanelProps {
   animationData: BuildingAnimationData;
-  setThreshold: (type: ThresholdType, value: number) => void;
+  setThreshold: (type: Metric, value: number) => void;
+  currentMetric: Metric;
 }
 
-export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelProps) {
-  const { thresholds, thresholdUnits } = useThresholds();
+function isThresholdUsed(thresholdKey: Metric, currentMetric: Metric): boolean {
+  return currentMetric === thresholdKey;
+}
+
+export function ThresholdPanel({ animationData, setThreshold, currentMetric }: ThresholdPanelProps) {
+  const { thresholds } = useThresholds();
 
   const maxDisp = animationData.precomputed.maxDisplacement * 1.2;
   const maxVel = (animationData.precomputed.maxVelocity ?? 10) * 1.2;
@@ -21,7 +26,6 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
   const maxRotAcc = (animationData.precomputed.maxRotationAcceleration ?? 2) * 1.2;
 
   const maxISD = (animationData.precomputed.maxStoryDrift ?? 5) * 1.2;
-  const maxISDAvg = (animationData.precomputed.avgStoryDrift ?? 5) * 1.2;
 
   return (
     <div className="space-y-1">
@@ -33,34 +37,38 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
       <ThresholdSlider
         label="Disp"
         value={thresholds.displacementMag}
-        unit={thresholdUnits.displacementMag}
+        unit={METRIC_CONFIGS.displacementMag.unit}
         onChange={(v) => setThreshold("displacementMag", v)}
         max={maxDisp}
         tooltip="Displacement magnitude threshold - nodes above this value will be highlighted"
+        currentlyUsed={isThresholdUsed("displacementMag", currentMetric)}
       />
       <ThresholdSlider
         label="Disp X"
         value={thresholds.displacementX}
-        unit={thresholdUnits.displacementX}
+        unit={METRIC_CONFIGS.displacementX.unit}
         onChange={(v) => setThreshold("displacementX", v)}
         max={maxDisp}
         tooltip="Displacement threshold in X direction (horizontal)"
+        currentlyUsed={isThresholdUsed("displacementX", currentMetric)}
       />
       <ThresholdSlider
         label="Disp Y"
         value={thresholds.displacementY}
-        unit={thresholdUnits.displacementY}
+        unit={METRIC_CONFIGS.displacementY.unit}
         onChange={(v) => setThreshold("displacementY", v)}
         max={maxDisp}
         tooltip="Displacement threshold in Y direction (horizontal)"
+        currentlyUsed={isThresholdUsed("displacementY", currentMetric)}
       />
       <ThresholdSlider
         label="Disp Z"
         value={thresholds.displacementZ}
-        unit={thresholdUnits.displacementZ}
+        unit={METRIC_CONFIGS.displacementZ.unit}
         onChange={(v) => setThreshold("displacementZ", v)}
         max={maxDisp}
         tooltip="Displacement threshold in Z direction (vertical)"
+        currentlyUsed={isThresholdUsed("displacementZ", currentMetric)}
       />
 
       {animationData.displacementRot && (
@@ -68,34 +76,38 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
           <ThresholdSlider
             label="Rot"
             value={thresholds.rotationMag}
-            unit={thresholdUnits.rotationMag}
+            unit={METRIC_CONFIGS.rotationMag.unit}
             onChange={(v) => setThreshold("rotationMag", v)}
             max={maxRot}
             tooltip="Combined rotation magnitude threshold (radians)"
+            currentlyUsed={isThresholdUsed("rotationMag", currentMetric)}
           />
           <ThresholdSlider
             label="Rot X"
             value={thresholds.rotationX}
-            unit={thresholdUnits.rotationX}
+            unit={METRIC_CONFIGS.rotationX.unit}
             onChange={(v) => setThreshold("rotationX", v)}
             max={maxRot}
             tooltip="Rotation threshold about X axis (radians)"
+            currentlyUsed={isThresholdUsed("rotationX", currentMetric)}
           />
           <ThresholdSlider
             label="Rot Y"
             value={thresholds.rotationY}
-            unit={thresholdUnits.rotationY}
+            unit={METRIC_CONFIGS.rotationY.unit}
             onChange={(v) => setThreshold("rotationY", v)}
             max={maxRot}
             tooltip="Rotation threshold about Y axis (radians)"
+            currentlyUsed={isThresholdUsed("rotationY", currentMetric)}
           />
           <ThresholdSlider
             label="Rot Z"
             value={thresholds.rotationZ}
-            unit={thresholdUnits.rotationZ}
+            unit={METRIC_CONFIGS.rotationZ.unit}
             onChange={(v) => setThreshold("rotationZ", v)}
             max={maxRot}
             tooltip="Rotation threshold about Z axis (radians)"
+            currentlyUsed={isThresholdUsed("rotationZ", currentMetric)}
           />
         </>
       )}
@@ -105,34 +117,38 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
           <ThresholdSlider
             label="Vel"
             value={thresholds.velocityMag}
-            unit={thresholdUnits.velocityMag}
+            unit={METRIC_CONFIGS.velocityMag.unit}
             onChange={(v) => setThreshold("velocityMag", v)}
             max={maxVel}
             tooltip="Velocity magnitude threshold (inches/second)"
+            currentlyUsed={isThresholdUsed("velocityMag", currentMetric)}
           />
           <ThresholdSlider
             label="Vel X"
             value={thresholds.velocityX}
-            unit={thresholdUnits.velocityX}
+            unit={METRIC_CONFIGS.velocityX.unit}
             onChange={(v) => setThreshold("velocityX", v)}
             max={maxVel}
             tooltip="Velocity threshold in X direction (inches/second)"
+            currentlyUsed={isThresholdUsed("velocityX", currentMetric)}
           />
           <ThresholdSlider
             label="Vel Y"
             value={thresholds.velocityY}
-            unit={thresholdUnits.velocityY}
+            unit={METRIC_CONFIGS.velocityY.unit}
             onChange={(v) => setThreshold("velocityY", v)}
             max={maxVel}
             tooltip="Velocity threshold in Y direction (inches/second)"
+            currentlyUsed={isThresholdUsed("velocityY", currentMetric)}
           />
           <ThresholdSlider
             label="Vel Z"
             value={thresholds.velocityZ}
-            unit={thresholdUnits.velocityZ}
+            unit={METRIC_CONFIGS.velocityZ.unit}
             onChange={(v) => setThreshold("velocityZ", v)}
             max={maxVel}
             tooltip="Velocity threshold in Z direction (inches/second)"
+            currentlyUsed={isThresholdUsed("velocityZ", currentMetric)}
           />
         </>
       )}
@@ -142,34 +158,38 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
           <ThresholdSlider
             label="RVel"
             value={thresholds.rotationVelocityMag}
-            unit={thresholdUnits.rotationVelocityMag}
+            unit={METRIC_CONFIGS.rotationVelocityMag.unit}
             onChange={(v) => setThreshold("rotationVelocityMag", v)}
             max={maxRotVel}
             tooltip="Angular velocity magnitude threshold (radians/second)"
+            currentlyUsed={isThresholdUsed("rotationVelocityMag", currentMetric)}
           />
           <ThresholdSlider
             label="RVel X"
             value={thresholds.rotationVelocityX}
-            unit={thresholdUnits.rotationVelocityX}
+            unit={METRIC_CONFIGS.rotationVelocityX.unit}
             onChange={(v) => setThreshold("rotationVelocityX", v)}
             max={maxRotVel}
             tooltip="Angular velocity threshold about X axis (radians/second)"
+            currentlyUsed={isThresholdUsed("rotationVelocityX", currentMetric)}
           />
           <ThresholdSlider
             label="RVel Y"
             value={thresholds.rotationVelocityY}
-            unit={thresholdUnits.rotationVelocityY}
+            unit={METRIC_CONFIGS.rotationVelocityY.unit}
             onChange={(v) => setThreshold("rotationVelocityY", v)}
             max={maxRotVel}
             tooltip="Angular velocity threshold about Y axis (radians/second)"
+            currentlyUsed={isThresholdUsed("rotationVelocityY", currentMetric)}
           />
           <ThresholdSlider
             label="RVel Z"
             value={thresholds.rotationVelocityZ}
-            unit={thresholdUnits.rotationVelocityZ}
+            unit={METRIC_CONFIGS.rotationVelocityZ.unit}
             onChange={(v) => setThreshold("rotationVelocityZ", v)}
             max={maxRotVel}
             tooltip="Angular velocity threshold about Z axis (radians/second)"
+            currentlyUsed={isThresholdUsed("rotationVelocityZ", currentMetric)}
           />
         </>
       )}
@@ -179,34 +199,38 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
           <ThresholdSlider
             label="Acc"
             value={thresholds.accelerationMag}
-            unit={thresholdUnits.accelerationMag}
+            unit={METRIC_CONFIGS.accelerationMag.unit}
             onChange={(v) => setThreshold("accelerationMag", v)}
             max={maxAcc}
             tooltip="Acceleration magnitude threshold (inches/second²)"
+            currentlyUsed={isThresholdUsed("accelerationMag", currentMetric)}
           />
           <ThresholdSlider
             label="Acc X"
             value={thresholds.accelerationX}
-            unit={thresholdUnits.accelerationX}
+            unit={METRIC_CONFIGS.accelerationX.unit}
             onChange={(v) => setThreshold("accelerationX", v)}
             max={maxAcc}
             tooltip="Acceleration threshold in X direction (inches/second²)"
+            currentlyUsed={isThresholdUsed("accelerationX", currentMetric)}
           />
           <ThresholdSlider
             label="Acc Y"
             value={thresholds.accelerationY}
-            unit={thresholdUnits.accelerationY}
+            unit={METRIC_CONFIGS.accelerationY.unit}
             onChange={(v) => setThreshold("accelerationY", v)}
             max={maxAcc}
             tooltip="Acceleration threshold in Y direction (inches/second²)"
+            currentlyUsed={isThresholdUsed("accelerationY", currentMetric)}
           />
           <ThresholdSlider
             label="Acc Z"
             value={thresholds.accelerationZ}
-            unit={thresholdUnits.accelerationZ}
+            unit={METRIC_CONFIGS.accelerationZ.unit}
             onChange={(v) => setThreshold("accelerationZ", v)}
             max={maxAcc}
             tooltip="Acceleration threshold in Z direction (inches/second²)"
+            currentlyUsed={isThresholdUsed("accelerationZ", currentMetric)}
           />
         </>
       )}
@@ -216,7 +240,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
           <ThresholdSlider
             label="RAcc"
             value={thresholds.rotationAccelerationMag}
-            unit={thresholdUnits.rotationAccelerationMag}
+            unit={METRIC_CONFIGS.rotationAccelerationMag.unit}
             onChange={(v) => setThreshold("rotationAccelerationMag", v)}
             max={maxRotAcc}
             tooltip="Angular acceleration magnitude threshold (radians/second²)"
@@ -224,7 +248,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
           <ThresholdSlider
             label="RAcc X"
             value={thresholds.rotationAccelerationX}
-            unit={thresholdUnits.rotationAccelerationX}
+            unit={METRIC_CONFIGS.rotationAccelerationX.unit}
             onChange={(v) => setThreshold("rotationAccelerationX", v)}
             max={maxRotAcc}
             tooltip="Angular acceleration threshold about X axis (radians/second²)"
@@ -232,7 +256,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
           <ThresholdSlider
             label="RAcc Y"
             value={thresholds.rotationAccelerationY}
-            unit={thresholdUnits.rotationAccelerationY}
+            unit={METRIC_CONFIGS.rotationAccelerationY.unit}
             onChange={(v) => setThreshold("rotationAccelerationY", v)}
             max={maxRotAcc}
             tooltip="Angular acceleration threshold about Y axis (radians/second²)"
@@ -240,7 +264,7 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
           <ThresholdSlider
             label="RAcc Z"
             value={thresholds.rotationAccelerationZ}
-            unit={thresholdUnits.rotationAccelerationZ}
+            unit={METRIC_CONFIGS.rotationAccelerationZ.unit}
             onChange={(v) => setThreshold("rotationAccelerationZ", v)}
             max={maxRotAcc}
             tooltip="Angular acceleration threshold about Z axis (radians/second²)"
@@ -251,18 +275,10 @@ export function ThresholdPanel({ animationData, setThreshold }: ThresholdPanelPr
       <ThresholdSlider
         label="ISD Peak"
         value={thresholds.interstoryDrift}
-        unit={thresholdUnits.interstoryDrift}
+        unit={METRIC_CONFIGS.interstoryDrift.unit}
         onChange={(v) => setThreshold("interstoryDrift", v)}
         max={maxISD}
         tooltip="Peak interstory drift ratio threshold - floors exceeding this % will be highlighted"
-      />
-      <ThresholdSlider
-        label="ISD Avg"
-        value={thresholds.interstoryDriftAvg}
-        unit={thresholdUnits.interstoryDriftAvg}
-        onChange={(v) => setThreshold("interstoryDriftAvg", v)}
-        max={maxISDAvg}
-        tooltip="Average interstory drift ratio threshold across all floors (%)"
       />
     </div>
   );

@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useFloorVisibility, useThresholds } from "@/contexts/visualization";
+import { METRIC_CONFIGS } from "@/lib/metrics";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -29,7 +30,7 @@ export function DamageThresholdPanel() {
   const { storyOrder } = animationData.metadata;
   const { frameIndex } = usePlayback();
   const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
-  const { thresholds, setThreshold, thresholdUnits } = useThresholds();
+  const { thresholds, setThreshold } = useThresholds();
 
   const { storyDrift, peakStoryDrift } = animationData.precomputed;
 
@@ -84,7 +85,9 @@ export function DamageThresholdPanel() {
 
       <div className="flex flex-col gap-2">
         <label className="flex flex-col">
-          <span className="font-semibold">Warning Threshold ({thresholds.interstoryDrift.toFixed(3)} {thresholdUnits.interstoryDrift})</span>
+          <span className="font-semibold">
+            Warning Threshold ({thresholds.interstoryDrift.toFixed(3)} {METRIC_CONFIGS.interstoryDrift.unit})
+          </span>
           <input
             type="range"
             min="0"
@@ -107,9 +110,7 @@ export function DamageThresholdPanel() {
         </div>
         <div className="grid grid-cols-4 gap-1">
           {storyOrder.toReversed().map((storyId) => (
-            <label
-              key={storyId}
-              className="flex items-center gap-2 cursor-pointer hover:bg-neutral-100 p-1 rounded">
+            <label key={storyId} className="flex items-center gap-2 cursor-pointer hover:bg-neutral-100 p-1 rounded">
               <input
                 type="checkbox"
                 checked={visibleFloors.has(storyId)}
@@ -128,9 +129,7 @@ export function DamageThresholdPanel() {
           <span className="whitespace-nowrap">Corner</span>
           <span className="whitespace-nowrap text-center">Current Drift</span>
           <span className="whitespace-nowrap text-center">Peak Drift</span>
-          <span
-            className="whitespace-nowrap text-center"
-            title="Time in seconds the corner crossed warning threshold">
+          <span className="whitespace-nowrap text-center" title="Time in seconds the corner crossed warning threshold">
             Warning (s)
           </span>
         </div>

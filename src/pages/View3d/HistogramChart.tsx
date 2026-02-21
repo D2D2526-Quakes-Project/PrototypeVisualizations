@@ -363,7 +363,7 @@ export function HistogramChart() {
         </div>
         <div className="flex items-center gap-2 mt-1 text-xs text-neutral-600">
           <span>
-            Threshold: {thresholds[valueType].toFixed(3)} {config.unit}
+            Threshold: {thresholds[valueType].toFixed(3)} {config.unit.abbr}
           </span>
           {/* TODO: Input for threshold */}
           <span className="ml-auto">

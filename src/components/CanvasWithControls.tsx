@@ -32,6 +32,7 @@ import {
 } from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { SmallPlaybackControls } from "./playback/PlaybackControls";
+import { ColorBarOverlay } from "./CanvasWithControls/ColorBarOverlay";
 
 function CameraManager({
   isOrthographic,
@@ -93,6 +94,7 @@ function CameraManager({
     }
   });
 
+  const target = targetRef.current;
   return (
     <>
       <PerspectiveCamera
@@ -109,11 +111,7 @@ function CameraManager({
         zoom={50}
         up={[0, 0, 1]}
       />
-      <OrbitControls
-        ref={orbitControlsRef}
-        enableDamping={enableSmoothing}
-        target={new Vector3(0, 0, buildingVerticalCenter)}
-      />
+      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={target} />
     </>
   );
 }
@@ -137,6 +135,9 @@ export function CanvasWithControls({
   const [enableSmoothing, setEnableSmoothing] = useState(false);
   const [enablePan, _setEnablePan] = useState(true);
   const { orbitControlsRef } = useCamera();
+  const { currentMetric, thresholdHighlighting } = useColor();
+  const { thresholds } = useThresholds();
+  const { animationData } = useAnimationData();
 
   // Expose setEnablePan to children via a ref or context if needed
   // For now, we use useEffect to update the camera when enablePan changes
@@ -174,6 +175,12 @@ export function CanvasWithControls({
       {boxStyle && (
         <div className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none" style={boxStyle} />
       )}
+      <ColorBarOverlay
+        currentMetric={currentMetric}
+        thresholdHighlighting={thresholdHighlighting}
+        thresholds={thresholds}
+        animationData={animationData}
+      />
       <ViewControls
         orbitControlsRef={orbitControlsRef}
         isOrthographic={isOrthographic}

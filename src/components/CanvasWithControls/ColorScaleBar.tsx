@@ -17,8 +17,6 @@ export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds
   const unit = config.unit;
   const positiveOnly = config.positiveOnly;
 
-  const displayMax = maxValue * 1.2;
-
   let stops: string[];
   let labels: React.ReactNode;
 
@@ -57,9 +55,9 @@ export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds
       <>
         <span>0</span>
         <span>
-          {thresholdValue.toFixed(2)} {unit}
+          {thresholdValue.toFixed(2)} {unit.abbr}
         </span>
-        <span>{displayMax.toFixed(2)}</span>
+        <span>{maxValue.toFixed(2)}</span>
       </>
     );
   } else {
@@ -80,9 +78,11 @@ export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds
 
     labels = (
       <>
-        <span>0</span>
         <span>
-          {maxValue.toFixed(2)} {unit}
+          {-maxValue.toFixed(2)} {unit.abbr}
+        </span>
+        <span>
+          {maxValue.toFixed(2)} {unit.abbr}
         </span>
       </>
     );

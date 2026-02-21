@@ -296,19 +296,6 @@ function calculateStats(
     return [maxX, maxY, maxZ];
   };
 
-  // Helper to find min value in a stride-3 buffer
-  const getMinMag = (buffer: Float32Array) => {
-    let minSq = Infinity;
-    for (let i = 0; i < buffer.length; i += 3) {
-      const x = buffer[i];
-      const y = buffer[i + 1];
-      const z = buffer[i + 2];
-      const magSq = x * x + y * y + z * z;
-      if (magSq < minSq) minSq = magSq;
-    }
-    return Math.sqrt(minSq);
-  };
-
   // --- 4. GROUND MOTION PEAKS ---
   // Stride is 3 (x,y,z)
   const gmMax: [number, number, number] = [-Infinity, -Infinity, -Infinity];
@@ -525,12 +512,7 @@ function calculateStats(
   const [maxRotVelX, maxRotVelY, maxRotVelZ] = velRot ? getMaxComp(velRot) : [0, 0, 0];
   const [maxRotAccelX, maxRotAccelY, maxRotAccelZ] = accelRot ? getMaxComp(accelRot) : [0, 0, 0];
 
-  // --- 9. MIN VALUES ---
-  const minDisplacement = getMinMag(dispLin);
-  const minVelocity = velLin ? getMinMag(velLin) : undefined;
-  const minAcceleration = accelLin ? getMinMag(accelLin) : undefined;
-
-  // --- 10. PER-FRAME AGGREGATES ---
+  // --- 9. PER-FRAME AGGREGATES ---
   const avgDispPerFrameX = new Float32Array(frameCount);
   const avgDispPerFrameY = new Float32Array(frameCount);
   const avgDispPerFrameZ = new Float32Array(frameCount);
@@ -604,7 +586,7 @@ function calculateStats(
     }
   }
 
-  // --- 11. PER-STORY AGGREGATES ---
+  // --- 10. PER-STORY AGGREGATES ---
   const avgDispPerStory = new Float32Array(storyCount * frameCount);
   const avgVelPerStory = velLin ? new Float32Array(storyCount * frameCount) : undefined;
   const avgAccelPerStory = accelLin ? new Float32Array(storyCount * frameCount) : undefined;
@@ -667,7 +649,7 @@ function calculateStats(
     }
   }
 
-  // --- 12. VELOCITY PERCENTILE 90 ---
+  // --- 11. VELOCITY PERCENTILE 90 ---
   let velocityPercentile90: number | undefined;
   if (velLin) {
     const velocities: number[] = [];
@@ -687,21 +669,18 @@ function calculateStats(
     maxDisplacementX: maxDispX,
     maxDisplacementY: maxDispY,
     maxDisplacementZ: maxDispZ,
-    minDisplacement,
 
     // Velocity
     maxVelocity: velLin ? getMaxMag(velLin) : undefined,
     maxVelocityX: velLin ? maxVelX : undefined,
     maxVelocityY: velLin ? maxVelY : undefined,
     maxVelocityZ: velLin ? maxVelZ : undefined,
-    minVelocity,
 
     // Acceleration
     maxAcceleration: accelLin ? getMaxMag(accelLin) : undefined,
     maxAccelerationX: accelLin ? maxAccelX : undefined,
     maxAccelerationY: accelLin ? maxAccelY : undefined,
     maxAccelerationZ: accelLin ? maxAccelZ : undefined,
-    minAcceleration,
 
     // Rotation
     maxRotation: dispRot ? getMaxMag(dispRot) : undefined,

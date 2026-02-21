@@ -219,17 +219,16 @@ export interface ComputedStats {
   maxDisplacementX: number; // Max X component
   maxDisplacementY: number; // Max Y component
   maxDisplacementZ: number; // Max Z component
-  minDisplacement: number; // Min displacement
+
   maxVelocity?: number; // Max velocity magnitude
   maxVelocityX?: number; // Max velocity X component
   maxVelocityY?: number; // Max velocity Y component
   maxVelocityZ?: number; // Max velocity Z component
-  minVelocity?: number; // Min velocity
+
   maxAcceleration?: number; // Max acceleration magnitude
   maxAccelerationX?: number; // Max acceleration X component
   maxAccelerationY?: number; // Max acceleration Y component
   maxAccelerationZ?: number; // Max acceleration Z component
-  minAcceleration?: number; // Min acceleration
 
   // ROTATION VALUES (if displacementRot data exists)
   maxRotation?: number; // Max rotation magnitude (radians)

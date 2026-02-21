@@ -68,10 +68,105 @@ export interface ColorScale {
   unit: string;
 }
 
+export type Unit =
+  | "inches"
+  | "feet"
+  | "meters"
+  | "seconds"
+  | "radians"
+  | "percent"
+  | "inches/second"
+  | "inches/second²"
+  | "feet/second"
+  | "feet/second²"
+  | "meters/second"
+  | "meters/second²"
+  | "radians/second"
+  | "radians/second²";
+
+export interface UnitConfig {
+  label: Unit;
+  singular: string;
+  abbr: string;
+}
+
+export const UNITS: Record<Unit, UnitConfig> = {
+  inches: {
+    label: "inches",
+    singular: "inch",
+    abbr: "in",
+  },
+  "inches/second": {
+    label: "inches/second",
+    singular: "inch/second",
+    abbr: "in/s",
+  },
+  "inches/second²": {
+    label: "inches/second²",
+    singular: "inch/second²",
+    abbr: "in/s²",
+  },
+  feet: {
+    label: "feet",
+    singular: "foot",
+    abbr: "ft",
+  },
+  "feet/second": {
+    label: "feet/second",
+    singular: "foot/second",
+    abbr: "ft/s",
+  },
+  "feet/second²": {
+    label: "feet/second²",
+    singular: "foot/second²",
+    abbr: "ft/s²",
+  },
+  meters: {
+    label: "meters",
+    singular: "meter",
+    abbr: "m",
+  },
+  "meters/second": {
+    label: "meters/second",
+    singular: "meter/second",
+    abbr: "m/s",
+  },
+  "meters/second²": {
+    label: "meters/second²",
+    singular: "meter/second²",
+    abbr: "m/s²",
+  },
+  seconds: {
+    label: "seconds",
+    singular: "second",
+    abbr: "s",
+  },
+  radians: {
+    label: "radians",
+    singular: "radian",
+    abbr: "rad",
+  },
+  "radians/second": {
+    label: "radians/second",
+    singular: "radian/second",
+    abbr: "rad/s",
+  },
+  "radians/second²": {
+    label: "radians/second²",
+    singular: "radian/second²",
+    abbr: "rad/s²",
+  },
+  percent: {
+    label: "percent",
+    singular: "percent",
+    abbr: "%",
+  },
+};
+
 export type MetricConfig = {
   metric: Metric;
   label: string;
-  unit: string;
+  unit: UnitConfig;
   getPrecomputedMax: (stats: ComputedStats) => number;
   getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => number | undefined;
   isAvailable: (animationData: BuildingAnimationData) => boolean;
@@ -98,7 +193,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   displacementMag: {
     metric: "displacementMag",
     label: "Displacement (Mag)",
-    unit: "in",
+    unit: UNITS["inches"],
     positiveOnly: true,
     getPrecomputedMax: get("maxDisplacement"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
@@ -111,7 +206,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   displacementX: {
     metric: "displacementX",
     label: "Displacement X",
-    unit: "in",
+    unit: UNITS["inches"],
     positiveOnly: false,
     getPrecomputedMax: get("maxDisplacementX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
@@ -124,7 +219,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   displacementY: {
     metric: "displacementY",
     label: "Displacement Y",
-    unit: "in",
+    unit: UNITS["inches"],
     positiveOnly: false,
     getPrecomputedMax: get("maxDisplacementY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
@@ -137,7 +232,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   displacementZ: {
     metric: "displacementZ",
     label: "Displacement Z",
-    unit: "in",
+    unit: UNITS["inches"],
     positiveOnly: false,
     getPrecomputedMax: get("maxDisplacementZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
@@ -150,7 +245,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   velocityMag: {
     metric: "velocityMag",
     label: "Velocity (Mag)",
-    unit: "in/s",
+    unit: UNITS["inches/second"],
     positiveOnly: true,
     getPrecomputedMax: get("maxVelocity"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
@@ -164,7 +259,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   velocityX: {
     metric: "velocityX",
     label: "Velocity X",
-    unit: "in/s",
+    unit: UNITS["inches/second"],
     positiveOnly: false,
     getPrecomputedMax: get("maxVelocityX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
@@ -178,7 +273,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   velocityY: {
     metric: "velocityY",
     label: "Velocity Y",
-    unit: "in/s",
+    unit: UNITS["inches/second"],
     positiveOnly: false,
     getPrecomputedMax: get("maxVelocityY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
@@ -192,7 +287,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   velocityZ: {
     metric: "velocityZ",
     label: "Velocity Z",
-    unit: "in/s",
+    unit: UNITS["inches/second"],
     positiveOnly: false,
     getPrecomputedMax: get("maxVelocityZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
@@ -206,7 +301,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   accelerationMag: {
     metric: "accelerationMag",
     label: "Acceleration (Mag)",
-    unit: "in/s²",
+    unit: UNITS["inches/second²"],
     positiveOnly: true,
     getPrecomputedMax: get("maxAcceleration"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
@@ -220,7 +315,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   accelerationX: {
     metric: "accelerationX",
     label: "Acceleration X",
-    unit: "in/s²",
+    unit: UNITS["inches/second²"],
     positiveOnly: false,
     getPrecomputedMax: get("maxAccelerationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
@@ -234,7 +329,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   accelerationY: {
     metric: "accelerationY",
     label: "Acceleration Y",
-    unit: "in/s²",
+    unit: UNITS["inches/second²"],
     positiveOnly: false,
     getPrecomputedMax: get("maxAccelerationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
@@ -248,7 +343,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   accelerationZ: {
     metric: "accelerationZ",
     label: "Acceleration Z",
-    unit: "in/s²",
+    unit: UNITS["inches/second²"],
     positiveOnly: false,
     getPrecomputedMax: get("maxAccelerationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
@@ -262,7 +357,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationMag: {
     metric: "rotationMag",
     label: "Rotation (Mag)",
-    unit: "rad",
+    unit: UNITS["radians"],
     positiveOnly: true,
     getPrecomputedMax: get("maxRotation"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
@@ -276,7 +371,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationX: {
     metric: "rotationX",
     label: "Rotation X",
-    unit: "rad",
+    unit: UNITS["radians"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
@@ -290,7 +385,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationY: {
     metric: "rotationY",
     label: "Rotation Y",
-    unit: "rad",
+    unit: UNITS["radians"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
@@ -304,7 +399,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationZ: {
     metric: "rotationZ",
     label: "Rotation Z",
-    unit: "rad",
+    unit: UNITS["radians"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
@@ -318,7 +413,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationVelocityMag: {
     metric: "rotationVelocityMag",
     label: "Rotation Velocity (Mag)",
-    unit: "rad/s",
+    unit: UNITS["radians/second"],
     positiveOnly: true,
     getPrecomputedMax: get("maxRotationVelocity"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
@@ -332,7 +427,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationVelocityX: {
     metric: "rotationVelocityX",
     label: "Rotation Velocity X",
-    unit: "rad/s",
+    unit: UNITS["radians/second"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationVelocityX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
@@ -346,7 +441,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationVelocityY: {
     metric: "rotationVelocityY",
     label: "Rotation Velocity Y",
-    unit: "rad/s",
+    unit: UNITS["radians/second"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationVelocityY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
@@ -360,7 +455,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationVelocityZ: {
     metric: "rotationVelocityZ",
     label: "Rotation Velocity Z",
-    unit: "rad/s",
+    unit: UNITS["radians/second"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationVelocityZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
@@ -374,7 +469,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationAccelerationMag: {
     metric: "rotationAccelerationMag",
     label: "Rotation Acceleration (Mag)",
-    unit: "rad/s²",
+    unit: UNITS["radians/second²"],
     positiveOnly: true,
     getPrecomputedMax: get("maxRotationAcceleration"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
@@ -388,7 +483,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationAccelerationX: {
     metric: "rotationAccelerationX",
     label: "Rotation Acceleration X",
-    unit: "rad/s²",
+    unit: UNITS["radians/second²"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationAccelerationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
@@ -402,7 +497,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationAccelerationY: {
     metric: "rotationAccelerationY",
     label: "Rotation Acceleration Y",
-    unit: "rad/s²",
+    unit: UNITS["radians/second²"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationAccelerationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
@@ -416,7 +511,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   rotationAccelerationZ: {
     metric: "rotationAccelerationZ",
     label: "Rotation Acceleration Z",
-    unit: "rad/s²",
+    unit: UNITS["radians/second²"],
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationAccelerationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
@@ -430,7 +525,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   interstoryDrift: {
     metric: "interstoryDrift",
     label: "Story Drift",
-    unit: "%",
+    unit: UNITS["percent"],
     positiveOnly: false,
     getPrecomputedMax: get("maxStoryDrift"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,

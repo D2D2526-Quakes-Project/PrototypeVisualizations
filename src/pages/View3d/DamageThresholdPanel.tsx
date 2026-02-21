@@ -86,7 +86,7 @@ export function DamageThresholdPanel() {
       <div className="flex flex-col gap-2">
         <label className="flex flex-col">
           <span className="font-semibold">
-            Warning Threshold ({thresholds.interstoryDrift.toFixed(3)} {METRIC_CONFIGS.interstoryDrift.unit})
+            Warning Threshold ({thresholds.interstoryDrift.toFixed(3)} {METRIC_CONFIGS.interstoryDrift.unit.abbr})
           </span>
           <input
             type="range"

@@ -1,0 +1,116 @@
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { getMetricConfig, type Metric } from "@/lib/metrics";
+import type { ComputedStats } from "@/lib/types";
+import type { ThresholdState } from "@/stores";
+
+interface ColorBarOverlayProps {
+  currentMetric: Metric;
+  thresholdHighlighting: boolean;
+  thresholds: ThresholdState;
+  animationData: {
+    precomputed: ComputedStats;
+  };
+}
+
+export function ColorBarOverlay({
+  currentMetric,
+  thresholdHighlighting,
+  thresholds,
+  animationData,
+}: ColorBarOverlayProps) {
+  const config = getMetricConfig(currentMetric);
+  const maxValue = config.getPrecomputedMax(animationData.precomputed);
+  const unit = config.unit;
+  const positiveOnly = config.positiveOnly;
+
+  const thresholdValue = thresholds[currentMetric] ?? 0;
+  const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
+
+  const positiveStops = config.positiveColorStops;
+  let gradientStops: string[];
+  let thresholdPosition: number | null = null;
+
+  if (thresholdHighlighting && thresholdValue > 0) {
+    thresholdPosition = (1 - thresholdRatio) * 100;
+
+    if (positiveOnly) {
+      gradientStops = [
+        `${positiveStops[0]} 0%`,
+        `${positiveStops[1]} ${thresholdPosition}%`,
+        `${positiveStops[2]} ${thresholdPosition}%`,
+        `${positiveStops[3]} 100%`,
+      ];
+    } else {
+      const negativeStops = config.negativeColorStops;
+      const posThresholdPos = (1 - thresholdRatio) * 50;
+      const negThresholdPos = thresholdRatio * 50;
+
+      gradientStops = [
+        `${negativeStops[3]} 0%`,
+        `${negativeStops[2]} ${negThresholdPos}%`,
+        `${negativeStops[1]} ${negThresholdPos}%`,
+        `${negativeStops[0]} 50%`,
+        `${positiveStops[0]} 50%`,
+        `${positiveStops[1]} ${posThresholdPos}%`,
+        `${positiveStops[2]} ${posThresholdPos}%`,
+        `${positiveStops[3]} 100%`,
+      ];
+    }
+  } else {
+    if (positiveOnly) {
+      gradientStops = [`${positiveStops[0]} 0%`, `${positiveStops[1]} 100%`];
+    } else {
+      const negativeStops = config.negativeColorStops;
+      gradientStops = [
+        `${negativeStops[1]} 0%`,
+        `${negativeStops[0]} 50%`,
+        `${positiveStops[0]} 50%`,
+        `${positiveStops[1]} 100%`,
+      ];
+    }
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="absolute left-3 flex flex-col gap-1.5 top-1/2 -translate-y-1/2 z-40 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-2">
+          <span className="text-[9px] text-neutral-500">
+            {positiveOnly ? maxValue.toFixed(2) : `+${maxValue.toFixed(2)}`} {unit.abbr}
+          </span>
+
+          <div
+            className="relative w-4 rounded-sm h-48"
+            style={{ background: `linear-gradient(to bottom, ${gradientStops.join(", ")})` }}>
+            {thresholdHighlighting && thresholdPosition !== null && (
+              <div className="absolute left-0 right-0 h-0.5 bg-black/60" style={{ top: `${thresholdPosition}%` }} />
+            )}
+          </div>
+          <span className="text-[9px] text-neutral-500">
+            {positiveOnly ? "0" : `-${maxValue.toFixed(2)}`} {unit.abbr}
+          </span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        <div className="font-semibold mb-1">{config.label}</div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+          <span className="text-neutral-400">Max:</span>
+          <span>
+            {positiveOnly ? maxValue.toFixed(2) : `+${maxValue.toFixed(2)}`} {unit.abbr}
+          </span>
+          <span className="text-neutral-400">Min:</span>
+          <span>
+            {positiveOnly ? "0" : `-${maxValue.toFixed(2)}`} {unit.abbr}
+          </span>
+          {thresholdHighlighting && thresholdValue > 0 && (
+            <>
+              <span className="text-neutral-400">Threshold:</span>
+              <span>
+                {thresholdValue.toFixed(2)} {unit.abbr}
+              </span>
+            </>
+          )}
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+}

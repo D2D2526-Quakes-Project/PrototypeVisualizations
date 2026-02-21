@@ -35,7 +35,7 @@ The threshold context currently only has displacement and interstory drift. It n
 - [x] Add threshold-based highlighting in charts
 - [x] Ensure threshold changes propagate to all views
 - [x] Default thresholds should be 1/4 of the max value
-- [ ] Provide the `currentlyUsed` variable to the `ThresholdSlider` component by the metric
+- [x] Provide the `currentlyUsed` variable to the `ThresholdSlider` component by the metric
 
 ---
 
@@ -47,21 +47,22 @@ The color metric system needs to support all key values for 3D visualization.
 
 For optional metrics, they should be conditionally shown based on if that data is available in the current simulation.
 
-- [ ] Add rotation metrics (RX, RY, RZ, Magnitude)
-- [ ] Add velocity metrics (X, Y, Z, Magnitude)
-- [ ] Add rotation velocity metrics (RX, RY, RZ, Magnitude)
-- [ ] Add acceleration metrics s(X, Y, Z, Magnitude)
-- [ ] Add rotation acceleration metrics (RX, RY, RZ, Magnitude)
-- [ ] Add interstory drift average metric
+- [x] Add rotation metrics (RX, RY, RZ, Magnitude)
+- [x] Add velocity metrics (X, Y, Z, Magnitude)
+- [x] Add rotation velocity metrics (RX, RY, RZ, Magnitude)
+- [x] Add acceleration metrics s(X, Y, Z, Magnitude)
+- [x] Add rotation acceleration metrics (RX, RY, RZ, Magnitude)
+- [x] Add interstory drift average metric
 - [ ] Add corner selector for Story Drift heat map to choose data from a specific corner (NW, NE, SE, SW) instead of only using the max across four
 
 ### 2.2 Update Color UI
 
-- [ ] Add metric selector dropdown options for new metrics
-- [ ] Add color bar legend to 3D view when metric is selected
-- [ ] Ensure color scale adapts to metric value ranges
-- [ ] ColorScaleBar doesn't show the max / min for that metric but the max / min of a general value. It should show the max / min of the metric value range
-- [ ] Colorize Interstory Drift chart to show distinct colors per data range instead of monotone styling
+- [x] Add metric selector dropdown options for new metrics
+- [x] Add color bar legend to 3D view when metric is selected
+- [x] Ensure color scale adapts to metric value ranges
+- [x] ColorScaleBar doesn't show the max / min for that metric but the max / min of a general value. It should show the max / min of the metric value range
+- [x] Colorize Interstory Drift chart to show distinct colors per data range instead of monotone styling
+- [ ] Allow the user to change the color for each metric
 
 ---
 
@@ -95,22 +96,23 @@ Apply consistent scientific visualization standards across all charts and plots.
 
 ### 4.1 Chart Requirements
 
-- [ ] Add titles to all charts
-- [ ] Add axis labels with units to all charts
-- [ ] Add color bar legends where applicable
-- [ ] Add grid lines where appropriate
-- [ ] Ensure consistent font sizes and styling
+- [x] Add titles to all charts
+- [x] Add axis labels with units to all charts
+- [ ] Add color scales to charts using the Metrics
+- [ ] Add color bar legends on any chart that has a color scale
+- [x] Add grid lines where appropriate
+- [x] Ensure consistent font sizes and styling
 
 ### 4.2 Accessibility
 
-- [ ] Review color palettes for colorblind accessibility
+- [x] Review color palettes for colorblind accessibility
 - [ ] Add patterns/textures for distinguishing data where needed
 
 ### 4.3 Consistency
 
-- [ ] Standardize units display across all views
-- [ ] Standardize color meanings across all visualizations
-- [ ] Add tooltips to all interactive elements
+- [x] Standardize units display across all views
+- [x] Standardize color meanings across all visualizations
+- [ ] Add informative tooltips to all interactive elements. Include all numbers and units.
 
 ---
 
@@ -213,6 +215,7 @@ Apply consistent scientific visualization standards across all charts and plots.
 - [ ] Add view option for changing background color
 - [ ] Change the views menu popover to be a sidebar that takes up space next to the canvas
 - [x] Reorder the Thresholds sliders to be above Exploded View toggle
+- [ ] Options for Cavsas background color
 
 ### 9.2 Help & Documentation
 
@@ -266,22 +269,23 @@ Implement color scales with sharp discontinuities at threshold values.
 
 ### 11.1 Create threshold-aware color scales
 
-- [ ] Create color scale that accepts threshold parameter
-- [ ] Implement diverging scale: negative (blue) -> white at zero -> positive (red)
-- [ ] Add sharp discontinuity at threshold point (50% of scale)
-- [ ] Scale from 0 to maxValue, where threshold maps to 50%
+- [x] Create color scale that accepts threshold parameter
+- [x] Implement diverging scale: negative (blue) -> white at zero -> positive (red)
+- [x] Add sharp discontinuity at threshold point (50% of scale)
+- [x] Scale from 0 to maxValue, where threshold maps to 50%
 
 ### 11.2 Update ColorContext to use thresholds
 
-- [ ] Import threshold values into ColorContext
-- [ ] Create threshold-aware interpolator function
-- [ ] Pass threshold value to color scale creation
+- [x] Import threshold values into ColorContext
+- [x] Create threshold-aware interpolator function
+- [x] Pass threshold value to color scale creation
 
 ### 11.3 Create reusable color scale component
 
-- [ ] Add ColorScaleLegend component with threshold marker
-- [ ] Show color bar with threshold indicator
-- [ ] Display units and value ranges
+- [x] Add ColorScaleLegend component with threshold marker
+- [x] Show color bar with threshold indicator
+- [x] Display units and value ranges
+- [x] Add color bar indicator in CanvasWithControls on the left side of the view
 
 ---
 
@@ -327,7 +331,7 @@ The view mode system has incompatibilities and incomplete features. Need to unif
 ### 13.1 Threshold Integration
 
 - [x] Implement threshold-based coloring in all charts
-- [ ] Add threshold lines to time series charts
+- [x] Add threshold lines to time series charts
 - [x] Make thresholds affect all visualizations consistently
 
 ### 13.2 Floor Visibility
@@ -335,7 +339,7 @@ The view mode system has incompatibilities and incomplete features. Need to unif
 - [x] Implement floor hide/show in ALL graphs across the app
 - [x] Sync floor visibility with 3D view
 - [x] Add floor toggle to all relevant panels
-- [ ] Ensure floor toggling hides floors in the Building Scene
+- [x] Ensure floor toggling hides floors in the Building Scene
 
 ### 13.3 Slice & Exploded View
 
@@ -415,7 +419,7 @@ Every number with a unit should be hoverable with conversions.
 - [x] The UI panel state should be saved and restored
 - [x] A share URL should be avilable that can be shared with others
 - [x] Load the panel configuration from the share URL
-- [ ] Camera position and orientation should be saved and restored
+- [x] Camera position and orientation should be saved and restored
 
 ---
 

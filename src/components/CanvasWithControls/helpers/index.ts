@@ -1,1 +1,0 @@
-export { ThresholdSlider } from "./ThresholdSlider";

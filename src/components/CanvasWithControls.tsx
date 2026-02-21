@@ -15,7 +15,7 @@ import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-thr
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { BoxSelect, ChevronDown, Grid3X3, ScanEye } from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 // Import new panel components directly
 import { ViewsPanel } from "./CanvasWithControls/control-panels/ViewsPanel";
@@ -26,6 +26,7 @@ import { SliceViewPanel } from "./CanvasWithControls/control-panels/SliceViewPan
 import { ThresholdPanel, FloorsPanel } from "./CanvasWithControls/control-panels/ThresholdPanel";
 
 import {
+  Group,
   OrthographicCamera as OrthographicCameraImpl,
   PerspectiveCamera as PerspectiveCameraImpl,
   Vector3,
@@ -43,7 +44,17 @@ function CameraManager({
   enableSmoothing: boolean;
   enablePan: boolean;
 }) {
+  const [oldType, setOldType] = useState("PerspectiveCamera");
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+
+  const gl = useThree((state) => state.gl);
+  const camera = useThree((state) => state.camera);
+
+  const proxyRef = useRef<Group>(null);
   const { orbitControlsRef } = useCamera();
+  const orthographicRef = useRef<OrthographicCameraImpl>(null);
+  const perspectiveRef = useRef<PerspectiveCameraImpl>(null);
+
   const perspectiveCamRef = useRef<PerspectiveCameraImpl>(null);
   const orthoCamRef = useRef<OrthographicCameraImpl>(null);
   const { animationData } = useAnimationData();
@@ -94,10 +105,14 @@ function CameraManager({
     }
   });
 
-  const target = targetRef.current;
+  // const target = useMemo(() => targetRef.current, [targetRef]);
   return (
     <>
-      <PerspectiveCamera
+      <group ref={proxyRef}></group>
+      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} domElement={gl.domElement} />
+      <PerspectiveCamera ref={perspectiveRef} position={[150, 1300, 1100]} fov={71} far={4000} />
+      <OrthographicCamera ref={orthographicRef} near={1} far={4000} />
+      {/* <PerspectiveCamera
         ref={perspectiveCamRef}
         makeDefault={!isOrthographic}
         position={[cameraDistance, cameraDistance, buildingVerticalCenter + cameraDistance]}
@@ -111,7 +126,7 @@ function CameraManager({
         zoom={50}
         up={[0, 0, 1]}
       />
-      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={target} />
+      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={target} /> */}
     </>
   );
 }

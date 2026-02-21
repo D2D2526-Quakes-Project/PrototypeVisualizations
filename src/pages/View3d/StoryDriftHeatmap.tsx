@@ -34,10 +34,30 @@
 
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useFloorVisibility } from "@/contexts/visualization";
 import type { EChartsOption } from "echarts";
+
+type Corner = "NW" | "NE" | "SW" | "SE" | "Max";
+
+const CORNER_OPTIONS: Corner[] = ["NW", "NE", "SW", "SE", "Max"];
+
+const cornerColors = {
+  NW: "#3b82f6",
+  NE: "#ef4444",
+  SW: "#10b981",
+  SE: "#f59e0b",
+  Max: "#22c55e",
+};
+
+const RESOLUTION_OPTIONS = [50, 100, 200, 400, 800, 1600] as const;
+type Resolution = (typeof RESOLUTION_OPTIONS)[number];
+
+function getCornerColorScale(corner: Corner): string[] {
+  const baseColor = cornerColors[corner];
+  return [baseColor + "10", baseColor + "80", baseColor, baseColor + "99", baseColor];
+}
 
 export function StoryDriftHeatmap() {
   const { animationData } = useAnimationData();
@@ -46,6 +66,8 @@ export function StoryDriftHeatmap() {
   const chartRef = useRef<ReactECharts>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
+  const [selectedCorner, setSelectedCorner] = useState<Corner>("Max");
+  const [resolution, setResolution] = useState<Resolution>(200);
 
   const visibleStories = useMemo(() => getVisibleStoryOrder().slice(1), [getVisibleStoryOrder]);
 
@@ -53,7 +75,9 @@ export function StoryDriftHeatmap() {
     const { storyDrift, peakStoryDrift } = animationData.precomputed;
     const storyOrder = animationData.metadata.storyOrder;
 
-    const timeStep = Math.max(1, Math.floor(animationData.metadata.frameCount / 200));
+    const timeStep = Math.max(1, Math.floor(animationData.metadata.frameCount / resolution));
+
+    const cornerIndex: Record<Corner, number> = { NW: 0, NE: 1, SW: 2, SE: 3, Max: -1 };
 
     const data: Array<[number, number, number]> = [];
 
@@ -61,17 +85,28 @@ export function StoryDriftHeatmap() {
       const storyIdx = storyOrder.indexOf(storyId);
       for (let frame = 0; frame < animationData.metadata.frameCount; frame += timeStep) {
         const drifts = storyDrift.getStoryDrift(storyIdx, frame);
-        const maxDrift = Math.max(...drifts);
-        data.push([Math.floor(frame / timeStep), visibleStories.indexOf(storyId), maxDrift]);
+        const drift = selectedCorner === "Max" ? Math.max(...drifts) : drifts[cornerIndex[selectedCorner]];
+        data.push([Math.floor(frame / timeStep), visibleStories.indexOf(storyId), drift]);
       }
     });
 
-    const maxValue = Math.max(
-      ...visibleStories.map((storyId) => {
-        const peaks = peakStoryDrift[storyId];
-        return peaks ? Math.max(peaks.NW, peaks.NE, peaks.SW, peaks.SE) : 0;
-      }),
-    );
+    let maxValue: number;
+    if (selectedCorner === "Max") {
+      maxValue = Math.max(
+        ...visibleStories.map((storyId) => {
+          const peaks = peakStoryDrift[storyId];
+          return peaks ? Math.max(peaks.NW, peaks.NE, peaks.SW, peaks.SE) : 0;
+        }),
+      );
+    } else {
+      const cornerPeakKey = selectedCorner as keyof (typeof peakStoryDrift)[string];
+      maxValue = Math.max(
+        ...visibleStories.map((storyId) => {
+          const peaks = peakStoryDrift[storyId];
+          return peaks ? peaks[cornerPeakKey] : 0;
+        }),
+      );
+    }
 
     return {
       data,
@@ -80,7 +115,7 @@ export function StoryDriftHeatmap() {
       timeStep,
       frameCount: Math.ceil(animationData.metadata.frameCount / timeStep),
     };
-  }, [animationData, visibleStories]);
+  }, [animationData, visibleStories, selectedCorner, resolution]);
 
   const baseOption: EChartsOption = useMemo((): EChartsOption => {
     const { data, stories, maxValue, frameCount } = heatmapData;
@@ -101,7 +136,7 @@ export function StoryDriftHeatmap() {
             <div style="font-weight: 600;">Story ${stories[storyIdx]}</div>
             <div>Frame: ${actualFrame + 1}</div>
             <div>Time: ${time.toFixed(3)}s</div>
-            <div>Max Drift: ${value.toFixed(4)}%</div>
+            <div>${selectedCorner === "Max" ? "Max" : selectedCorner} Drift: ${value.toFixed(4)}%</div>
           `;
         },
       },
@@ -140,7 +175,7 @@ export function StoryDriftHeatmap() {
         right: 5,
         top: "center",
         inRange: {
-          color: ["#f0fdf4", "#86efac", "#22c55e", "#15803d", "#166534"],
+          color: getCornerColorScale(selectedCorner),
         },
         textStyle: { fontSize: 10 },
         formatter: (v) => `${((v as number) * 100).toFixed(2)}%`,
@@ -160,7 +195,7 @@ export function StoryDriftHeatmap() {
       ],
       animation: false,
     };
-  }, [heatmapData, animationData.metadata.dt]);
+  }, [heatmapData, animationData.metadata.dt, selectedCorner]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
@@ -180,10 +215,36 @@ export function StoryDriftHeatmap() {
 
   return (
     <div className="h-full w-full flex flex-col bg-white">
-      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
+      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0 flex items-center justify-between">
         <div className="text-sm text-neutral-700">
           <span className="font-medium">Story Drift Heatmap</span>
-          <span className="text-neutral-400 ml-2">- Max corner drift over time</span>
+          <span className="text-neutral-400 ml-2">
+            - {selectedCorner === "Max" ? "Max corner" : selectedCorner + " corner"} drift over time
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-neutral-500">Corner:</span>
+          <select
+            value={selectedCorner}
+            onChange={(e) => setSelectedCorner(e.target.value as Corner)}
+            className="text-xs px-2 py-0.5 bg-neutral-100 border border-neutral-300 rounded hover:bg-neutral-200 cursor-pointer">
+            {CORNER_OPTIONS.map((corner) => (
+              <option key={corner} value={corner}>
+                {corner}
+              </option>
+            ))}
+          </select>
+          <span className="text-xs text-neutral-500 ml-2">Res:</span>
+          <select
+            value={resolution}
+            onChange={(e) => setResolution(Number(e.target.value) as Resolution)}
+            className="text-xs px-2 py-0.5 bg-neutral-100 border border-neutral-300 rounded hover:bg-neutral-200 cursor-pointer">
+            {RESOLUTION_OPTIONS.map((res) => (
+              <option key={res} value={res}>
+                {res}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       <div ref={containerRef} className="flex-1 min-h-0 w-full relative">

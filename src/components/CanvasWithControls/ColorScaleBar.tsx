@@ -11,31 +11,45 @@ interface ColorScaleBarProps {
   };
 }
 
-export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds, animationData }: ColorScaleBarProps) {
-  const config = getMetricConfig(currentMetric);
-  const maxValue = config.getPrecomputedMax(animationData.precomputed);
+function getScaleStopsAndLabels(
+  config: ReturnType<typeof getMetricConfig>,
+  maxValue: number,
+  positiveOnly: boolean,
+  thresholdHighlighting: boolean,
+  thresholdValue: number,
+) {
+  const positiveStops = config.positiveColorStops;
+  const negativeStops = (config as { negativeColorStops: [string, string, string, string] }).negativeColorStops;
+  const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
   const unit = config.unit;
-  const positiveOnly = config.positiveOnly;
 
   let stops: string[];
-  let labels: React.ReactNode;
+  let labels: {
+    min: number;
+    max: number;
+    threshold?: number;
+  } = {
+    min: 0,
+    max: 0,
+    threshold: undefined,
+  };
+
+  if (positiveOnly) labels.min = 0;
 
   if (thresholdHighlighting) {
-    const thresholdValue = thresholds[currentMetric] ?? 0;
-    const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
-
-    const positiveStops = config.positiveColorStops;
-
+    labels.threshold = thresholdValue;
     if (positiveOnly) {
       const thresholdPos = thresholdRatio * 100;
+
       stops = [
         `${positiveStops[0]} 0%`,
         `${positiveStops[1]} ${thresholdPos}%`,
         `${positiveStops[2]} ${thresholdPos}%`,
         `${positiveStops[3]} 100%`,
       ];
+
+      labels.max = maxValue;
     } else {
-      const negativeStops = config.negativeColorStops;
       const posThresholdPos = thresholdRatio * 50 + 50;
       const negThresholdPos = (1 - thresholdRatio) * 50;
 
@@ -49,25 +63,13 @@ export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds
         `${positiveStops[2]} ${posThresholdPos}%`,
         `${positiveStops[3]} 100%`,
       ];
+
+      labels.max = maxValue;
     }
-
-    labels = (
-      <>
-        <span>0</span>
-        <span>
-          {thresholdValue.toFixed(2)} {unit.abbr}
-        </span>
-        <span>{maxValue.toFixed(2)}</span>
-      </>
-    );
   } else {
-    const positiveStops = config.positiveColorStops;
-
     if (positiveOnly) {
       stops = [`${positiveStops[0]} 0%`, `${positiveStops[1]} 100%`];
     } else {
-      const negativeStops = config.negativeColorStops;
-
       stops = [
         `${negativeStops[1]} 0%`,
         `${negativeStops[0]} 50%`,
@@ -75,25 +77,86 @@ export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds
         `${positiveStops[1]} 100%`,
       ];
     }
-
-    labels = (
-      <>
-        <span>
-          {-maxValue.toFixed(2)} {unit.abbr}
-        </span>
-        <span>
-          {maxValue.toFixed(2)} {unit.abbr}
-        </span>
-      </>
-    );
+    labels.max = maxValue;
   }
+
+  return { stops, labels };
+}
+
+export function ColorScaleBar({ currentMetric, thresholdHighlighting, thresholds, animationData }: ColorScaleBarProps) {
+  const config = getMetricConfig(currentMetric);
+  const maxValue = config.getPrecomputedMax(animationData.precomputed);
+  const positiveOnly = config.positiveOnly;
+  const thresholdValue = thresholds[currentMetric] ?? 0;
+
+  const { stops, labels } = getScaleStopsAndLabels(
+    config,
+    maxValue,
+    positiveOnly,
+    thresholdHighlighting,
+    thresholdValue,
+  );
 
   return (
     <>
       <div
         className="relative h-3 rounded-sm"
         style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
-      <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">{labels}</div>
+      <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5">
+        <span>
+          {labels.min.toFixed(2)} {config.unit.abbr}
+        </span>
+        {labels.threshold && (
+          <span>
+            {labels.threshold.toFixed(2)} {config.unit.abbr}
+          </span>
+        )}
+        <span>
+          {labels.max.toFixed(2)} {config.unit.abbr}
+        </span>
+      </div>
     </>
+  );
+}
+
+export function ColorScaleBarVertical({
+  currentMetric,
+  thresholdHighlighting,
+  thresholds,
+  animationData,
+}: ColorScaleBarProps) {
+  const config = getMetricConfig(currentMetric);
+  const maxValue = config.getPrecomputedMax(animationData.precomputed);
+  const positiveOnly = config.positiveOnly;
+  const thresholdValue = thresholds[currentMetric] ?? 0;
+
+  const { stops, labels } = getScaleStopsAndLabels(
+    config,
+    maxValue,
+    positiveOnly,
+    thresholdHighlighting,
+    thresholdValue,
+  );
+
+  return (
+    <div className="flex flex-col flex-1 text-[9px] text-neutral-400">
+      <span>
+        {labels.min.toFixed(2)} {config.unit.abbr}
+      </span>
+      <div className="flex items-center flex-1 gap-1">
+        <div
+          className="relative h-full w-3 rounded-sm"
+          style={{ background: `linear-gradient(to top, ${stops.join(", ")})` }}
+        />
+        {labels.threshold && (
+          <span>
+            {labels.threshold.toFixed(2)} {config.unit.abbr}
+          </span>
+        )}
+      </div>
+      <span>
+        {labels.max.toFixed(2)} {config.unit.abbr}
+      </span>
+    </div>
   );
 }

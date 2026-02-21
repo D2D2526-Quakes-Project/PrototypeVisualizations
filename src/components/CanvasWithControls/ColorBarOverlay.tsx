@@ -2,6 +2,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { getMetricConfig, type Metric } from "@/lib/metrics";
 import type { ComputedStats } from "@/lib/types";
 import type { ThresholdState } from "@/stores";
+import { ColorScaleBarVertical } from "./ColorScaleBar";
 
 interface ColorBarOverlayProps {
   currentMetric: Metric;
@@ -73,21 +74,13 @@ export function ColorBarOverlay({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="absolute left-3 flex flex-col gap-1.5 top-1/2 -translate-y-1/2 z-40 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-2">
-          <span className="text-[9px] text-neutral-500">
-            {positiveOnly ? maxValue.toFixed(2) : `+${maxValue.toFixed(2)}`} {unit.abbr}
-          </span>
-
-          <div
-            className="relative w-4 rounded-sm h-48"
-            style={{ background: `linear-gradient(to bottom, ${gradientStops.join(", ")})` }}>
-            {thresholdHighlighting && thresholdPosition !== null && (
-              <div className="absolute left-0 right-0 h-0.5 bg-black/60" style={{ top: `${thresholdPosition}%` }} />
-            )}
-          </div>
-          <span className="text-[9px] text-neutral-500">
-            {positiveOnly ? "0" : `-${maxValue.toFixed(2)}`} {unit.abbr}
-          </span>
+        <div className="absolute left-3 flex flex-col gap-1.5 top-1/2 -translate-y-1/2 z-40 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-2 h-48">
+          <ColorScaleBarVertical
+            currentMetric={currentMetric}
+            thresholdHighlighting={thresholdHighlighting}
+            thresholds={thresholds}
+            animationData={animationData}
+          />
         </div>
       </TooltipTrigger>
       <TooltipContent side="right" sideOffset={8}>

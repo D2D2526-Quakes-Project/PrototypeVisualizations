@@ -29,12 +29,14 @@ export function ThresholdSlider({
         </TooltipTrigger>
         <TooltipContent side="left" className="max-w-xs">
           {tooltip}
+          <br />
+          Currently: {value.toFixed(2)} {unit.label}
         </TooltipContent>
       </Tooltip>
 
       <Slider value={[value]} onValueChange={(val) => onChange(val[0])} max={max} step={0.01} className="flex-1" />
       <span className="text-[10px] text-neutral-500 w-12 text-right shrink-0">
-        {value.toFixed(2)} {unit.label}
+        {value.toFixed(2)} {unit.abbr}
       </span>
     </div>
   );

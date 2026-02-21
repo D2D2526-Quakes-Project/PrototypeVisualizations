@@ -2,7 +2,7 @@ import { useThresholds } from "@/contexts/visualization";
 import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
 import { Layers, Sliders } from "lucide-react";
-import { ThresholdSlider } from "../helpers/ThresholdSlider";
+import { ThresholdSlider } from "../ThresholdSlider";
 
 interface ThresholdPanelProps {
   animationData: BuildingAnimationData;

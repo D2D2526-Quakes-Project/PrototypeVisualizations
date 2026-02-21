@@ -53,7 +53,7 @@ For optional metrics, they should be conditionally shown based on if that data i
 - [x] Add acceleration metrics s(X, Y, Z, Magnitude)
 - [x] Add rotation acceleration metrics (RX, RY, RZ, Magnitude)
 - [x] Add interstory drift average metric
-- [ ] Add corner selector for Story Drift heat map to choose data from a specific corner (NW, NE, SE, SW) instead of only using the max across four
+- [x] Add corner selector for Story Drift heat map to choose data from a specific corner (NW, NE, SE, SW) instead of only using the max across four
 
 ### 2.2 Update Color UI
 

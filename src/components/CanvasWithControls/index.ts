@@ -5,4 +5,4 @@ export { ColorPanel } from "./control-panels/ColorPanel";
 export { ExplodedViewPanel } from "./control-panels/ExplodedViewPanel";
 export { SliceViewPanel } from "./control-panels/SliceViewPanel";
 export { ThresholdPanel, FloorsPanel } from "./control-panels/ThresholdPanel";
-export { ThresholdSlider } from "./helpers/ThresholdSlider";
+export { ThresholdSlider } from "./ThresholdSlider";

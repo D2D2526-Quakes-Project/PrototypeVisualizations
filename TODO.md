@@ -72,15 +72,14 @@ Ensure all views and panels are properly synchronized through context.
 
 ### 3.1 Time Context Sync
 
-- [ ] Verify all charts sync to playback frame index
-- [ ] Verify all panels update on timeline scrub
+- [x] Verify all charts sync to playback frame index
+- [x] Verify all panels update on timeline scrub
 - [ ] Add time range selection (start/end frames) for analysis
 
 ### 3.2 Selection Context Sync
 
-- [ ] Verify floor selection syncs across 3D view and panels
-- [ ] Verify node selection syncs across all views
-- [ ] Add cross-section (slice) selection to all relevant views
+- [x] Verify floor selection syncs across 3D view and panels
+- [x] Verify node selection syncs across all views
 
 ### 3.3 Threshold Context Sync
 
@@ -106,7 +105,7 @@ Apply consistent scientific visualization standards across all charts and plots.
 ### 4.2 Accessibility
 
 - [x] Review color palettes for colorblind accessibility
-- [ ] Add patterns/textures for distinguishing data where needed
+- [x] Add patterns/textures for distinguishing data where needed
 
 ### 4.3 Consistency
 
@@ -120,6 +119,7 @@ Apply consistent scientific visualization standards across all charts and plots.
 
 ### 5.1 New Panels to Create
 
+- [ ] Add small graphs for all metrics in the Node Panel
 - [ ] Rotation Time Series Panel
 - [ ] Velocity Distribution Panel
 - [ ] Acceleration Distribution Panel
@@ -168,18 +168,17 @@ Apply consistent scientific visualization standards across all charts and plots.
 
 ### 7.1 New View Modes
 
+- [ ] Add a way to view the ground motion either in the scene or in a separate panel
 - [ ] Create "Velocity Vectors" view mode
 - [ ] Create "Acceleration Vectors" view mode
-- [ ] Create "Deformed Shape" view mode (animated)
-- [ ] Create "Floor Plan" orthographic view
-- [ ] Create "Elevation" orthographic view
 
 ### 7.2 Enhanced Rendering
 
-- [ ] Add displacement vector arrows to nodes
-- [ ] Add color bar overlay in 3D view
+- [ ] Add displacement vector arrows to nodes (view toggle)
+- [x] Add color bar overlay in 3D view
 - [ ] Add node labels (story/floor IDs)
 - [ ] Add measurement tools (distance between nodes)
+- [ ] Add marching cubes to create voxel grid volumes from nodes. Allow coloring and thresholding just like nodes, but toggle between hiding or showing values above the threshold
 
 ---
 
@@ -188,15 +187,7 @@ Apply consistent scientific visualization standards across all charts and plots.
 ### 8.1 Rendering Performance
 
 - [ ] Optimize large node count rendering
-- [ ] Add level-of-detail (LOD) for distant nodes
-- [ ] Implement virtualization for long lists
-- [ ] Add web worker for heavy computations
-
-### 8.2 Data Loading
-
-- [ ] Add progress indicator for data loading
-- [ ] Implement data caching
-- [ ] Add lazy loading for large datasets
+- [ ] Optimize rerenders
 
 ---
 
@@ -208,6 +199,8 @@ Apply consistent scientific visualization standards across all charts and plots.
 - [ ] Add undo/redo for selections
 - [ ] Add "reset to defaults" button
 - [ ] Improve panel drag/resize handles
+- [ ] When panels are tabbed, they should share the same tab bar buttons (e.g., close, maximize, etc.)
+- [ ] Make the Magic Panel dropdown, just text if the tab is not focused. If it is the only tab, it should remain a dropdown.
 - [x] Add color bar on the left side of the CanvasWithControls
 - [x] Add view option for changing background color
 - [ ] Change the views menu popover to be a sidebar that takes up space next to the canvas
@@ -217,9 +210,9 @@ Apply consistent scientific visualization standards across all charts and plots.
 
 - [ ] Add tooltips to all controls
 - [ ] Create in-app help overlay
-- [ ] Add tutorial/onboarding for new users
 - [ ] Show keyboard and mouse shortcuts in the bottom left of the 3JS window
-- [ ] Add timeline keyboard shortcuts. Shift+Arrows to move by +100 frames (1s), Ctrl+Arrows to move to the max, min, start, or end of the timeline
+- [ ] Add familiar file menu items (file, edit, view, help, etc.)
+- [x] Add timeline keyboard shortcuts. Shift+Arrows to move by +100 frames (1s), Ctrl+Arrows to move to the max, min, start, or end of the timeline
 
 ---
 

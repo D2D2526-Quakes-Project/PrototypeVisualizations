@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useSyncExternalStore, useMemo, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useSyncExternalStore,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 
 export type PlaybackControlParams = {
@@ -43,40 +51,40 @@ const createPlaybackStore = () => {
 
   const notify = () => subscribers.forEach((cb) => cb());
 
-    return {
-      getState: () => ({ frameIndex, playing, fps, skippedPerFrame, totalFrames, frameRate }),
-      setFrameIndex: (value: number) => {
-        frameIndex = value;
-        notify();
-      },
-      setPlaying: (value: boolean) => {
-        playing = value;
-        notify();
-      },
-      setFps: (value: number) => {
-        fps = value;
-        notify();
-      },
-      setSkippedPerFrame: (value: number) => {
-        skippedPerFrame = value;
-        notify();
-      },
-      setTotalFrames: (value: number) => {
-        totalFrames = value;
-        notify();
-      },
-      setFrameRate: (value: number) => {
-        frameRate = value;
-        notify();
-      },
-      subscribe: (callback: () => void) => {
-        subscribers.add(callback);
-        return () => subscribers.delete(callback);
-      },
-    };
+  return {
+    getState: () => ({ frameIndex, playing, fps, skippedPerFrame, totalFrames, frameRate }),
+    setFrameIndex: (value: number) => {
+      frameIndex = value;
+      notify();
+    },
+    setPlaying: (value: boolean) => {
+      playing = value;
+      notify();
+    },
+    setFps: (value: number) => {
+      fps = value;
+      notify();
+    },
+    setSkippedPerFrame: (value: number) => {
+      skippedPerFrame = value;
+      notify();
+    },
+    setTotalFrames: (value: number) => {
+      totalFrames = value;
+      notify();
+    },
+    setFrameRate: (value: number) => {
+      frameRate = value;
+      notify();
+    },
+    subscribe: (callback: () => void) => {
+      subscribers.add(callback);
+      return () => subscribers.delete(callback);
+    },
   };
+};
 
-  const PlaybackContext = createContext<PlaybackStore | null>(null);
+const PlaybackContext = createContext<PlaybackStore | null>(null);
 
 // Hook to use the store
 function usePlaybackStore<T>(selector: (state: ReturnType<PlaybackStore["getState"]>) => T): T {
@@ -274,12 +282,30 @@ export const PlaybackProvider = ({ children }: { children: ReactNode }) => {
     function windowKeydown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
+      const shiftKey = e.shiftKey;
+      const ctrlKey = e.ctrlKey || e.metaKey;
+
       if (e.key === " ") {
         e.preventDefault();
         handlePlayPause();
+      }
+      if (ctrlKey && e.key === "ArrowLeft") {
+        e.preventDefault();
+        store.setFrameIndex(0);
+      } else if (ctrlKey && e.key === "ArrowRight") {
+        e.preventDefault();
+        store.setFrameIndex(store.getState().totalFrames - 1);
+      } else if (shiftKey && e.key === "ArrowLeft") {
+        e.preventDefault();
+        changeFrame(-100);
+      } else if (shiftKey && e.key === "ArrowRight") {
+        e.preventDefault();
+        changeFrame(100);
       } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
         changeFrame(-1);
       } else if (e.key === "ArrowRight") {
+        e.preventDefault();
         changeFrame(1);
       }
     }

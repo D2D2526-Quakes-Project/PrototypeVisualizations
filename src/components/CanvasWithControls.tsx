@@ -14,7 +14,7 @@ import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/stores";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { BoxSelect, ChevronDown, Grid3X3, ScanEye } from "lucide-react";
+import { BoxSelect, ChevronDown, ChevronLeftIcon, Grid3X3, ScanEye } from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
@@ -307,7 +307,7 @@ export function ViewControls({
                 onClick={() => setIsExpanded(true)}
                 className="p-1 rounded transition-colors hover:bg-neutral-200 text-neutral-700"
                 title="More options">
-                <ChevronDown size={14} />
+                <ChevronLeftIcon size={14} />
               </button>
             </motion.div>
           ) : (
@@ -432,7 +432,9 @@ export function ViewControls({
                       key={color.value}
                       onClick={() => setBackgroundColor(color.value)}
                       className={`w-6 h-6 rounded border-2 transition-all ${
-                        backgroundColor === color.value ? "border-blue-500 scale-110" : "border-neutral-300 hover:border-neutral-400"
+                        backgroundColor === color.value
+                          ? "border-blue-500 scale-110"
+                          : "border-neutral-300 hover:border-neutral-400"
                       }`}
                       style={{ backgroundColor: color.value }}
                       title={color.label}

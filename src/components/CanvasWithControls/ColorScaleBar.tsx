@@ -21,10 +21,9 @@ function getScaleStopsAndLabels(
   const positiveStops = config.positiveColorStops;
   const negativeStops = (config as { negativeColorStops: [string, string, string, string] }).negativeColorStops;
   const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
-  const unit = config.unit;
 
   let stops: string[];
-  let labels: {
+  const labels: {
     min: number;
     max: number;
     threshold?: number;

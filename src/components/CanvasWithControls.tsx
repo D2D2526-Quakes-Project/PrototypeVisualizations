@@ -26,7 +26,6 @@ import { SliceViewPanel } from "./CanvasWithControls/control-panels/SliceViewPan
 import { ThresholdPanel, FloorsPanel } from "./CanvasWithControls/control-panels/ThresholdPanel";
 
 import {
-  Group,
   OrthographicCamera as OrthographicCameraImpl,
   PerspectiveCamera as PerspectiveCameraImpl,
   Vector3,
@@ -44,17 +43,7 @@ function CameraManager({
   enableSmoothing: boolean;
   enablePan: boolean;
 }) {
-  const [oldType, setOldType] = useState("PerspectiveCamera");
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
-
-  const gl = useThree((state) => state.gl);
-  const camera = useThree((state) => state.camera);
-
-  const proxyRef = useRef<Group>(null);
   const { orbitControlsRef } = useCamera();
-  const orthographicRef = useRef<OrthographicCameraImpl>(null);
-  const perspectiveRef = useRef<PerspectiveCameraImpl>(null);
-
   const perspectiveCamRef = useRef<PerspectiveCameraImpl>(null);
   const orthoCamRef = useRef<OrthographicCameraImpl>(null);
   const { animationData } = useAnimationData();
@@ -105,14 +94,10 @@ function CameraManager({
     }
   });
 
-  // const target = useMemo(() => targetRef.current, [targetRef]);
+  const target = useMemo(() => targetRef.current, [targetRef]);
   return (
     <>
-      <group ref={proxyRef}></group>
-      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} domElement={gl.domElement} />
-      <PerspectiveCamera ref={perspectiveRef} position={[150, 1300, 1100]} fov={71} far={4000} />
-      <OrthographicCamera ref={orthographicRef} near={1} far={4000} />
-      {/* <PerspectiveCamera
+      <PerspectiveCamera
         ref={perspectiveCamRef}
         makeDefault={!isOrthographic}
         position={[cameraDistance, cameraDistance, buildingVerticalCenter + cameraDistance]}
@@ -126,7 +111,7 @@ function CameraManager({
         zoom={50}
         up={[0, 0, 1]}
       />
-      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={target} /> */}
+      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={target} />
     </>
   );
 }

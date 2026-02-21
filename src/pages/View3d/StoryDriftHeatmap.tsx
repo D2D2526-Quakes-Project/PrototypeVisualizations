@@ -33,31 +33,49 @@
  */
 
 import { usePlayback } from "@/components/playback/PlaybackContext";
-import ReactECharts from "echarts-for-react";
-import { useMemo, useRef, useEffect, useState } from "react";
-import { useAnimationData } from "@/hooks/nodeDataHook";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFloorVisibility } from "@/contexts/visualization";
+import { useAnimationData } from "@/hooks/nodeDataHook";
+import {
+  amber50,
+  amber600,
+  blue50,
+  blue600,
+  green50,
+  green600,
+  purple50,
+  purple600,
+  red50,
+  red600,
+} from "@/lib/colors/tailwindColors";
+import { formatHex, interpolate } from "culori";
 import type { EChartsOption } from "echarts";
+import ReactECharts from "echarts-for-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type Corner = "NW" | "NE" | "SW" | "SE" | "Max";
+const CORNER_OPTIONS = ["NW", "NE", "SW", "SE", "Max"] as const;
+type Corner = (typeof CORNER_OPTIONS)[number];
 
-const CORNER_OPTIONS: Corner[] = ["NW", "NE", "SW", "SE", "Max"];
-
-const cornerColors = {
-  NW: "#3b82f6",
-  NE: "#ef4444",
-  SW: "#10b981",
-  SE: "#f59e0b",
-  Max: "#22c55e",
+const cornerColor: Record<Corner, [string, string]> = {
+  NW: [blue50, blue600],
+  NE: [red50, red600],
+  SW: [green50, green600],
+  SE: [amber50, amber600],
+  Max: [purple50, purple600],
 };
+
+const purpleInterpolator = interpolate([purple50, purple600], "oklab");
+const maxColorScale = [
+  formatHex(purpleInterpolator(0))!,
+  formatHex(purpleInterpolator(0.25))!,
+  formatHex(purpleInterpolator(0.5))!,
+  formatHex(purpleInterpolator(0.75))!,
+  formatHex(purpleInterpolator(1))!,
+];
 
 const RESOLUTION_OPTIONS = [50, 100, 200, 400, 800, 1600] as const;
 type Resolution = (typeof RESOLUTION_OPTIONS)[number];
-
-function getCornerColorScale(corner: Corner): string[] {
-  const baseColor = cornerColors[corner];
-  return [baseColor + "10", baseColor + "80", baseColor, baseColor + "99", baseColor];
-}
 
 export function StoryDriftHeatmap() {
   const { animationData } = useAnimationData();
@@ -66,9 +84,10 @@ export function StoryDriftHeatmap() {
   const chartRef = useRef<ReactECharts>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
-  const [selectedCorner, setSelectedCorner] = useState<Corner>("Max");
-  const [resolution, setResolution] = useState<Resolution>(200);
+  const [selectedCorners, setSelectedCorner] = useState<Corner[]>(["NE"]);
+  const [resolution, setResolution] = useState<Resolution>(50);
 
+  const isMaxSelected = selectedCorners.includes("Max");
   const visibleStories = useMemo(() => getVisibleStoryOrder().slice(1), [getVisibleStoryOrder]);
 
   const heatmapData = useMemo(() => {
@@ -80,18 +99,30 @@ export function StoryDriftHeatmap() {
     const cornerIndex: Record<Corner, number> = { NW: 0, NE: 1, SW: 2, SE: 3, Max: -1 };
 
     const data: Array<[number, number, number]> = [];
+    const yAxisLabels: string[] = [];
 
+    // if (selectedCorner === "All") {
+
+    let yIdx = 0;
     visibleStories.forEach((storyId) => {
       const storyIdx = storyOrder.indexOf(storyId);
-      for (let frame = 0; frame < animationData.metadata.frameCount; frame += timeStep) {
-        const drifts = storyDrift.getStoryDrift(storyIdx, frame);
-        const drift = selectedCorner === "Max" ? Math.max(...drifts) : drifts[cornerIndex[selectedCorner]];
-        data.push([Math.floor(frame / timeStep), visibleStories.indexOf(storyId), drift]);
+      let corners = selectedCorners;
+      if (isMaxSelected) {
+        corners = ["NW", "NE", "SW", "SE"];
       }
+      corners.forEach((corner) => {
+        for (let frame = 0; frame < animationData.metadata.frameCount; frame += timeStep) {
+          const drifts = storyDrift.getStoryDrift(storyIdx, frame);
+          const drift = drifts[cornerIndex[corner]];
+          data.push([Math.floor(frame / timeStep), yIdx, drift]);
+        }
+        yAxisLabels.push(`${storyId} ${corner}`);
+        yIdx++;
+      });
     });
 
     let maxValue: number;
-    if (selectedCorner === "Max") {
+    if (isMaxSelected) {
       maxValue = Math.max(
         ...visibleStories.map((storyId) => {
           const peaks = peakStoryDrift[storyId];
@@ -99,26 +130,25 @@ export function StoryDriftHeatmap() {
         }),
       );
     } else {
-      const cornerPeakKey = selectedCorner as keyof (typeof peakStoryDrift)[string];
       maxValue = Math.max(
-        ...visibleStories.map((storyId) => {
+        ...visibleStories.flatMap((storyId) => {
           const peaks = peakStoryDrift[storyId];
-          return peaks ? peaks[cornerPeakKey] : 0;
+          return peaks ? selectedCorners.map((corner) => (corner == "Max" ? 0 : peaks[corner])) : [];
         }),
       );
     }
 
     return {
       data,
-      stories: visibleStories,
+      yAxisLabels,
       maxValue,
       timeStep,
       frameCount: Math.ceil(animationData.metadata.frameCount / timeStep),
     };
-  }, [animationData, visibleStories, selectedCorner, resolution]);
+  }, [animationData, visibleStories, selectedCorners, resolution]);
 
   const baseOption: EChartsOption = useMemo((): EChartsOption => {
-    const { data, stories, maxValue, frameCount } = heatmapData;
+    const { data, yAxisLabels: stories, maxValue, frameCount } = heatmapData;
 
     return {
       tooltip: {
@@ -136,7 +166,7 @@ export function StoryDriftHeatmap() {
             <div style="font-weight: 600;">Story ${stories[storyIdx]}</div>
             <div>Frame: ${actualFrame + 1}</div>
             <div>Time: ${time.toFixed(3)}s</div>
-            <div>${selectedCorner === "Max" ? "Max" : selectedCorner} Drift: ${value.toFixed(4)}%</div>
+            <div>${isMaxSelected ? "Max" : selectedCorners} Drift: ${value.toFixed(4)}%</div>
           `;
         },
       },
@@ -162,40 +192,58 @@ export function StoryDriftHeatmap() {
       },
       yAxis: {
         type: "category" as const,
+        zlevel: 1,
         data: stories,
         axisLabel: { color: "#374151", fontSize: 10 },
-        splitArea: { show: false },
+        splitArea: {
+          show: !isMaxSelected,
+          interval: 0,
+          areaStyle: {
+            color: selectedCorners.map((c) => cornerColor[c][1]),
+            // color: ["#e0f700", "#ff00c4"],
+          },
+        },
         axisLine: { lineStyle: { color: "#d1d5db" } },
       },
       visualMap: {
+        type: "continuous",
         min: 0,
         max: maxValue,
         calculable: true,
-        orient: "vertical" as const,
+        orient: "vertical",
         right: 5,
         top: "center",
         inRange: {
-          color: getCornerColorScale(selectedCorner),
+          color: isMaxSelected ? maxColorScale : ["#fffffff0", "#FFFFFF00"],
+          opacity: 1,
+        },
+        controller: {
+          inRange: {
+            color: cornerColor[selectedCorners[0]],
+            opacity: 1,
+          },
         },
         textStyle: { fontSize: 10 },
         formatter: (v) => `${((v as number) * 100).toFixed(2)}%`,
       },
       series: [
         {
+          zlevel: 1,
+          name: "Story Drift",
           type: "heatmap",
           data: data,
           label: { show: false },
           emphasis: {
             itemStyle: {
-              shadowBlur: 10,
-              shadowColor: "rgba(0, 0, 0, 0.5)",
+              borderColor: "#333",
+              borderWidth: 1,
             },
           },
         },
       ],
       animation: false,
     };
-  }, [heatmapData, animationData.metadata.dt, selectedCorner]);
+  }, [heatmapData, animationData.metadata.dt, selectedCorners]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
@@ -218,33 +266,36 @@ export function StoryDriftHeatmap() {
       <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0 flex items-center justify-between">
         <div className="text-sm text-neutral-700">
           <span className="font-medium">Story Drift Heatmap</span>
-          <span className="text-neutral-400 ml-2">
-            - {selectedCorner === "Max" ? "Max corner" : selectedCorner + " corner"} drift over time
-          </span>
+          <span className="text-neutral-400 ml-2">- {selectedCorners.join(", ")} drift over time time</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-xs text-neutral-500">Corner:</span>
-          <select
-            value={selectedCorner}
-            onChange={(e) => setSelectedCorner(e.target.value as Corner)}
-            className="text-xs px-2 py-0.5 bg-neutral-100 border border-neutral-300 rounded hover:bg-neutral-200 cursor-pointer">
+          <ToggleGroup
+            type="multiple"
+            size="sm"
+            variant="outline"
+            value={selectedCorners}
+            onValueChange={(v) => {
+              if (v.length == 0) return;
+              if (v.includes("Max") && v[0] != "Max") setSelectedCorner(["Max"]);
+              else setSelectedCorner(v.filter((s) => s != "Max") as Corner[]);
+            }}>
             {CORNER_OPTIONS.map((corner) => (
-              <option key={corner} value={corner}>
+              <ToggleGroupItem key={corner} value={corner}>
                 {corner}
-              </option>
+              </ToggleGroupItem>
             ))}
-          </select>
-          <span className="text-xs text-neutral-500 ml-2">Res:</span>
-          <select
+          </ToggleGroup>
+          <span className="text-xs text-neutral-400 ml-2">Res:</span>
+          <NativeSelect
+            size="sm"
             value={resolution}
-            onChange={(e) => setResolution(Number(e.target.value) as Resolution)}
-            className="text-xs px-2 py-0.5 bg-neutral-100 border border-neutral-300 rounded hover:bg-neutral-200 cursor-pointer">
+            onChange={(e) => setResolution(Number(e.target.value) as Resolution)}>
             {RESOLUTION_OPTIONS.map((res) => (
-              <option key={res} value={res}>
+              <NativeSelectOption key={res} value={res}>
                 {res}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
         </div>
       </div>
       <div ref={containerRef} className="flex-1 min-h-0 w-full relative">

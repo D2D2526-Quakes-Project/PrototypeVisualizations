@@ -25,51 +25,6 @@ export function ColorBarOverlay({
   const positiveOnly = config.positiveOnly;
 
   const thresholdValue = thresholds[currentMetric] ?? 0;
-  const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
-
-  const positiveStops = config.positiveColorStops;
-  let gradientStops: string[];
-  let thresholdPosition: number | null = null;
-
-  if (thresholdHighlighting && thresholdValue > 0) {
-    thresholdPosition = (1 - thresholdRatio) * 100;
-
-    if (positiveOnly) {
-      gradientStops = [
-        `${positiveStops[0]} 0%`,
-        `${positiveStops[1]} ${thresholdPosition}%`,
-        `${positiveStops[2]} ${thresholdPosition}%`,
-        `${positiveStops[3]} 100%`,
-      ];
-    } else {
-      const negativeStops = config.negativeColorStops;
-      const posThresholdPos = (1 - thresholdRatio) * 50;
-      const negThresholdPos = thresholdRatio * 50;
-
-      gradientStops = [
-        `${negativeStops[3]} 0%`,
-        `${negativeStops[2]} ${negThresholdPos}%`,
-        `${negativeStops[1]} ${negThresholdPos}%`,
-        `${negativeStops[0]} 50%`,
-        `${positiveStops[0]} 50%`,
-        `${positiveStops[1]} ${posThresholdPos}%`,
-        `${positiveStops[2]} ${posThresholdPos}%`,
-        `${positiveStops[3]} 100%`,
-      ];
-    }
-  } else {
-    if (positiveOnly) {
-      gradientStops = [`${positiveStops[0]} 0%`, `${positiveStops[1]} 100%`];
-    } else {
-      const negativeStops = config.negativeColorStops;
-      gradientStops = [
-        `${negativeStops[1]} 0%`,
-        `${negativeStops[0]} 50%`,
-        `${positiveStops[0]} 50%`,
-        `${positiveStops[1]} 100%`,
-      ];
-    }
-  }
 
   return (
     <Tooltip>

@@ -26,14 +26,17 @@ import { FloorsPanel, ThresholdPanel } from "./CanvasWithControls/control-panels
 import { ViewModeSelect } from "./CanvasWithControls/control-panels/ViewModeSelect";
 import { ViewsPanel } from "./CanvasWithControls/control-panels/ViewsPanel";
 
+import { getMetricConfig } from "@/lib/metrics";
 import {
   OrthographicCamera as OrthographicCameraImpl,
   PerspectiveCamera as PerspectiveCameraImpl,
   Vector3,
 } from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { ColorBarOverlay } from "./CanvasWithControls/ColorBarOverlay";
+import { ColorScaleBar } from "./CanvasWithControls/ColorScaleBar";
 import { SmallPlaybackControls } from "./playback/PlaybackControls";
+import { ShortcutsBar } from "./ShortcutsBar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 function CameraManager({
   isOrthographic,
@@ -117,23 +120,19 @@ export function CanvasWithControls({
   onMouseDown,
   onMouseMove,
   onMouseUp,
-  boxSelection,
 }: {
   children: React.ReactNode;
   showPlaybackControls?: boolean;
   onMouseDown?: (e: React.MouseEvent) => void;
   onMouseMove?: (e: React.MouseEvent) => void;
   onMouseUp?: (e: React.MouseEvent) => void;
-  boxSelection?: { start: { x: number; y: number }; end: { x: number; y: number } } | null;
 }) {
   const [isOrthographic, setIsOrthographic] = useState(false);
   const [enableSmoothing, setEnableSmoothing] = useState(false);
   const [enablePan, _setEnablePan] = useState(true);
   const { orbitControlsRef } = useCamera();
-  const { currentMetric, thresholdHighlighting } = useColor();
-  const { thresholds } = useThresholds();
-  const { animationData } = useAnimationData();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
+  const { selectedNodeIds, isBoxSelecting, boxSelection } = useNodeVisibility();
 
   // Expose setEnablePan to children via a ref or context if needed
   // For now, we use useEffect to update the camera when enablePan changes
@@ -171,12 +170,6 @@ export function CanvasWithControls({
       {boxStyle && (
         <div className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none" style={boxStyle} />
       )}
-      <ColorBarOverlay
-        currentMetric={currentMetric}
-        thresholdHighlighting={thresholdHighlighting}
-        thresholds={thresholds}
-        animationData={animationData}
-      />
       <ViewControls
         orbitControlsRef={orbitControlsRef}
         isOrthographic={isOrthographic}
@@ -191,6 +184,11 @@ export function CanvasWithControls({
           </div>
         </div>
       )}
+      <ShortcutsBar
+        isBoxSelecting={isBoxSelecting}
+        hasSelection={selectedNodeIds.size > 0}
+        showPlayback={!!showPlaybackControls}
+      />
     </div>
   );
 }
@@ -228,6 +226,12 @@ export function ViewControls({
   const setBackgroundColor = useViewStore((s) => s.setBackgroundColor);
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const config = getMetricConfig(currentMetric);
+  const maxValue = config.getPrecomputedMax(animationData.precomputed);
+  const unit = config.unit;
+  const positiveOnly = config.positiveOnly;
+  const thresholdValue = thresholds[currentMetric] ?? 0;
 
   const resetView = (viewType: "top" | "bottom" | "left" | "right" | "front" | "back") => {
     if (orbitControlsRef?.current) {
@@ -273,43 +277,86 @@ export function ViewControls({
 
   return (
     <div className="absolute flex top-2 right-2 z-50 max-h-[calc(100%-1rem)]">
-      <div className="flex items-start gap-0.5 max-h-full overflow-hidden">
+      <div className="flex flex-col items-start gap-0.5 max-h-full overflow-hidden">
         <AnimatePresence mode="popLayout">
           {!isExpanded ? (
-            <motion.div
-              key="collapsed"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.15 }}
-              className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5 origin-right">
-              {viewButtons.map(({ view, label }) => (
+            <>
+              <motion.div
+                key="collapsed"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.15 }}
+                className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5 origin-right">
+                {viewButtons.map(({ view, label }) => (
+                  <button
+                    key={view}
+                    onClick={() => resetView(view)}
+                    className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 text-[10px] font-medium w-5 h-5 flex items-center justify-center"
+                    title={`${label} View`}>
+                    {label.charAt(0)}
+                  </button>
+                ))}
+                <div className="w-px h-4 bg-neutral-300 mx-0.5" />
                 <button
-                  key={view}
-                  onClick={() => resetView(view)}
-                  className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 text-[10px] font-medium w-5 h-5 flex items-center justify-center"
-                  title={`${label} View`}>
-                  {label.charAt(0)}
+                  onClick={toggleCameraType}
+                  className={`p-1 rounded transition-colors ${
+                    isOrthographic ? "bg-blue-100 text-blue-700" : "hover:bg-neutral-200 text-neutral-700"
+                  }`}
+                  title={isOrthographic ? "Orthographic" : "Perspective"}>
+                  {isOrthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
                 </button>
-              ))}
-              <div className="w-px h-4 bg-neutral-300 mx-0.5" />
-              <button
-                onClick={toggleCameraType}
-                className={`p-1 rounded transition-colors ${
-                  isOrthographic ? "bg-blue-100 text-blue-700" : "hover:bg-neutral-200 text-neutral-700"
-                }`}
-                title={isOrthographic ? "Orthographic" : "Perspective"}>
-                {isOrthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
-              </button>
-              <div className="w-px h-4 bg-neutral-300 mx-0.5" />
+                <div className="w-px h-4 bg-neutral-300 mx-0.5" />
 
-              <button
-                onClick={() => setIsExpanded(true)}
-                className="p-1 rounded transition-colors hover:bg-neutral-200 text-neutral-700"
-                title="More options">
-                <ChevronLeftIcon size={14} />
-              </button>
-            </motion.div>
+                <button
+                  onClick={() => setIsExpanded(true)}
+                  className="p-1 rounded transition-colors hover:bg-neutral-200 text-neutral-700"
+                  title="More options">
+                  <ChevronLeftIcon size={14} />
+                </button>
+              </motion.div>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    key="collapsed-colorbar"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.15 }}
+                    className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 gap-0.5 w-full">
+                    <ColorScaleBar
+                      currentMetric={currentMetric}
+                      thresholdHighlighting={thresholdHighlighting}
+                      thresholds={thresholds}
+                      animationData={animationData}
+                      noLabel
+                    />
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}>
+                  <div className="font-semibold mb-1">{config.label}</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                    <span className="text-neutral-400">Max:</span>
+                    <span>
+                      {positiveOnly ? maxValue.toFixed(2) : `+${maxValue.toFixed(2)}`} {unit.abbr}
+                    </span>
+                    <span className="text-neutral-400">Min:</span>
+                    <span>
+                      {positiveOnly ? "0" : `-${maxValue.toFixed(2)}`} {unit.abbr}
+                    </span>
+                    {thresholdHighlighting && thresholdValue > 0 && (
+                      <>
+                        <span className="text-neutral-400">Threshold:</span>
+                        <span>
+                          {thresholdValue.toFixed(2)} {unit.abbr}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </>
           ) : (
             <motion.div
               key="expanded"
@@ -323,7 +370,7 @@ export function ViewControls({
               exit="exit"
               transition={{ duration: 0.15, delayChildren: stagger(0.05) }}
               className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 pt-0 border border-neutral-200 min-w-40 origin-top-right overflow-y-auto max-h-full">
-              <div className="flex justify-between items-center mb-2 pt-2 sticky top-0 bg-white">
+              <div className="flex justify-between items-center mb-2 pt-2 sticky top-0">
                 <div className="text-xs font-semibold text-neutral-700">Views</div>
                 <button
                   onClick={() => setIsExpanded(false)}

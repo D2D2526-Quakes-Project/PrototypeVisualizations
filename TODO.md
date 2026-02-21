@@ -210,7 +210,8 @@ Apply consistent scientific visualization standards across all charts and plots.
 
 - [ ] Add tooltips to all controls
 - [ ] Create in-app help overlay
-- [ ] Show keyboard and mouse shortcuts in the bottom left of the 3JS window
+- [x] Show keyboard and mouse shortcuts in the bottom left of the 3JS window
+- [ ] Make the shown shortcuts not look like trash. Clean text and icons. Should be contextual to the view. (Like showing "esc to clear selection" while a selection is active)
 - [ ] Add familiar file menu items (file, edit, view, help, etc.)
 - [x] Add timeline keyboard shortcuts. Shift+Arrows to move by +100 frames (1s), Ctrl+Arrows to move to the max, min, start, or end of the timeline
 
@@ -400,6 +401,7 @@ Every number with a unit should be hoverable with conversions.
 - [ ] Make box selection (Ctrl+drag) more discoverable
 - [ ] Add visual feedback during box selection
 - [ ] Ensure selected nodes sync across all views
+- [ ] When there is a selection, these options should be available in both the View Menu and the Collapsed View Menu: Clear Selection, Side Selected Nodes, Show All Nodes
 
 ---
 
@@ -422,8 +424,7 @@ Every number with a unit should be hoverable with conversions.
 - [x] Each color by needs its own threshold color maps (Fixed: Now magnitude metrics use diverging blue-white-red scale)
 - [x] Threshold sliders don't use the max value for the slider range.
 - [x] Floor Displacement graph is not showing negative values.
-- [ ] Floor slab renderer doesn't use the 'no lighting' 'no tone mapping' options
-- [ ] Camera position gets reset when switching between ortho and perspective
-- [ ] Using `memo(targetRef.current)` is bad practice apparently, but I don't know another way to do this, because it works like this
+- [x] Floor slab renderer doesn't use the 'no lighting' 'no tone mapping' options
+- [x] Camera position gets reset when switching between ortho and perspective
 
 _Last Updated: February 2026_

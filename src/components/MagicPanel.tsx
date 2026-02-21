@@ -5,7 +5,6 @@ import { PeakValuesPanel } from "@/pages/View3d/PeakValuesPanel";
 import { DataTablePanel } from "@/pages/View3d/DataTablePanel";
 import { FloorDisplacementChart } from "@/pages/View3d/FloorDisplacementChart";
 import { StatisticsPanel } from "@/pages/View3d/StatisticsPanel";
-import { CorrelationMatrix } from "@/pages/View3d/CorrelationMatrix";
 import { VelocityTimeChart } from "@/pages/View3d/VelocityTimeChart";
 import { StoryDriftHeatmap } from "@/pages/View3d/StoryDriftHeatmap";
 import { PeakResponseTimePanel } from "@/pages/View3d/PeakResponseTimePanel";
@@ -26,7 +25,6 @@ const PanelCatalog = {
   "Data Table": DataTablePanel,
   "Floor Displacement": FloorDisplacementChart,
   Statistics: StatisticsPanel,
-  "Correlation Matrix": CorrelationMatrix,
   "Velocity Time": VelocityTimeChart,
   "Story Drift Heatmap": StoryDriftHeatmap,
   "Peak Response Time": PeakResponseTimePanel,

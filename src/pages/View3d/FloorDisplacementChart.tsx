@@ -136,7 +136,7 @@ export function FloorDisplacementChart() {
         nameLocation: "middle",
         nameGap: 25,
         nameTextStyle: { fontSize: 11, color: "#4b5563" },
-        min: 0,
+        min: -xAxisMax,
         max: xAxisMax,
         axisLine: { lineStyle: { color: "#d1d5db" } },
         axisLabel: { color: "#6b7280", fontSize: 10, formatter: (v: number) => v.toFixed(2) },

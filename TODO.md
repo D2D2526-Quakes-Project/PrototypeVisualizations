@@ -98,7 +98,7 @@ Apply consistent scientific visualization standards across all charts and plots.
 
 - [x] Add titles to all charts
 - [x] Add axis labels with units to all charts
-- [ ] Add color scales to charts using the Metrics
+- [x] Add color scales to charts using the Metrics
 - [ ] Add color bar legends on any chart that has a color scale
 - [x] Add grid lines where appropriate
 - [x] Ensure consistent font sizes and styling
@@ -128,13 +128,10 @@ Apply consistent scientific visualization standards across all charts and plots.
 
 ### 5.2 Existing Panel Improvements
 
-- [ ] Add color bar legends to heatmaps
-- [ ] Add threshold lines to time series charts
-- [ ] Add peak value annotations
-- [ ] Add average value lines
-- [ ] Improve axis labeling consistency
-- [ ] Scrap the correlation matrix
-- [ ] Statistics panel should clamp frame index to [0, lastFrame], defaulting to 0 when out of range
+- [ ] Add color bar legends to charts
+- [x] Add threshold lines to time series charts
+- [x] Scrap the correlation matrix
+- [x] Statistics panel should clamp frame index to [0, lastFrame], defaulting to 0 when out of range
 
 ---
 
@@ -211,11 +208,10 @@ Apply consistent scientific visualization standards across all charts and plots.
 - [ ] Add undo/redo for selections
 - [ ] Add "reset to defaults" button
 - [ ] Improve panel drag/resize handles
-- [ ] Add color bar on the left side of the CanvasWithControls
-- [ ] Add view option for changing background color
+- [x] Add color bar on the left side of the CanvasWithControls
+- [x] Add view option for changing background color
 - [ ] Change the views menu popover to be a sidebar that takes up space next to the canvas
 - [x] Reorder the Thresholds sliders to be above Exploded View toggle
-- [ ] Options for Cavsas background color
 
 ### 9.2 Help & Documentation
 
@@ -354,8 +350,8 @@ The view mode system has incompatibilities and incomplete features. Need to unif
 
 ### 14.1 Remove Deprecated Views
 
-- [ ] Remove hamburger view (/hamburger route)
-- [ ] Remove texture view (/texture route)
+- [x] Remove hamburger view (/hamburger route)
+- [x] Remove texture view (/texture route)
 
 ### 14.2 Replace with Main View Modes
 
@@ -432,9 +428,9 @@ Every number with a unit should be hoverable with conversions.
 - [x] Story drift heatmap updates every frame and doesn't need to
 - [x] Each color by needs its own threshold color maps (Fixed: Now magnitude metrics use diverging blue-white-red scale)
 - [x] Threshold sliders don't use the max value for the slider range.
-- [ ] Floor Displacement graph is not showing negative values.
+- [x] Floor Displacement graph is not showing negative values.
 - [ ] Floor slab renderer doesn't use the 'no lighting' 'no tone mapping' options
 - [ ] Camera position gets reset when switching between ortho and perspective
-- [ ] Using `target={targetRef.current}` is bad practice apparently, but I don't know another way to do this, because it works like this
+- [ ] Using `memo(targetRef.current)` is bad practice apparently, but I don't know another way to do this, because it works like this
 
 _Last Updated: February 2026_

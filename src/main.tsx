@@ -11,9 +11,7 @@ import { ViewDataExplorer } from "./pages/DataExplorer/page";
 import { ElevationSlice } from "./pages/ElevationSlice/page";
 import { FloorPlanTorsion } from "./pages/FloorPlanTorsion/page";
 import FloorTimeVolumePage from "./pages/FloorTimeVolume/page";
-import { ViewHamburger } from "./pages/Hamburger/page";
 import { ViewNodeGrid } from "./pages/NodeGrid/page";
-import { ViewTexture } from "./pages/ViewTexture/page";
 import { ViewSurface } from "./pages/Surface/page";
 import { ViewTemporalRibbons } from "./pages/TemporalRibbons/page";
 import { View3d } from "./pages/View3d/page";
@@ -33,10 +31,8 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import {
   Box,
   Database,
-  LayoutGrid,
   Layers,
   Grid3x3,
-  Image,
   Waves,
   Gauge,
   Scissors,
@@ -59,12 +55,6 @@ const routes = [
     element: <ViewDataExplorer />,
   },
   {
-    path: "/hamburger",
-    label: "Hamburger",
-    icon: LayoutGrid,
-    element: <ViewHamburger />,
-  },
-  {
     path: "/surface",
     label: "Surface",
     icon: Layers,
@@ -75,12 +65,6 @@ const routes = [
     label: "Node Grid",
     icon: Grid3x3,
     element: <ViewNodeGrid />,
-  },
-  {
-    path: "/texture",
-    label: "Texture",
-    icon: Image,
-    element: <ViewTexture />,
   },
   {
     path: "/ribbons",

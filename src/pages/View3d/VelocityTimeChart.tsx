@@ -32,6 +32,7 @@ import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { useThresholds } from "@/contexts/visualization";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -150,6 +151,7 @@ function CheckSelect({
 export function VelocityTimeChart() {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
+  const { thresholds } = useThresholds();
   const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(["magnitude"]);
   const chartRef = useRef<ReactECharts>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -271,6 +273,25 @@ export function VelocityTimeChart() {
         splitLine: { lineStyle: { color: "#f3f4f6" } },
       });
 
+      const thresholdValue =
+        key === "magnitude"
+          ? thresholds.velocityMag
+          : key === "x"
+            ? thresholds.velocityX
+            : key === "y"
+              ? thresholds.velocityY
+              : key === "z"
+                ? thresholds.velocityZ
+                : 0;
+
+      const markLineData: Array<{ xAxis?: number; yAxis?: number; name?: string }> = [
+        { xAxis: frameIndex * animationData.metadata.dt },
+      ];
+
+      if (thresholdValue > 0) {
+        markLineData.push({ yAxis: thresholdValue, name: "Threshold" });
+      }
+
       series.push({
         name: config.label,
         type: "line",
@@ -294,8 +315,8 @@ export function VelocityTimeChart() {
         },
         markLine: {
           symbol: "none",
-          data: [{ xAxis: frameIndex * animationData.metadata.dt }],
-          lineStyle: { color: "#9ca3af", width: 1 },
+          data: markLineData,
+          lineStyle: { color: "#ef4444", width: 1, type: "dashed" },
           label: { show: false },
           silent: true,
         },
@@ -329,7 +350,7 @@ export function VelocityTimeChart() {
       },
       animation: false,
     };
-  }, [selectedKeys, frameIndex, animationData.metadata.dt, maxFrame, times, getChannelData]);
+  }, [selectedKeys, frameIndex, thresholds, animationData.metadata.dt, maxFrame, times, getChannelData]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();

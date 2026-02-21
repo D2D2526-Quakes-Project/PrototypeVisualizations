@@ -114,6 +114,10 @@ export interface ViewState {
   setZRange: (range: [number, number]) => void;
   setSliceRanges: (x: [number, number], y: [number, number], z: [number, number]) => void;
 
+  // Background Color
+  backgroundColor: string;
+  setBackgroundColor: (color: string) => void;
+
   // Node Visibility / Selection
   selectedNodeIds: number[];
   boxSelection: BoxSelection | null;
@@ -249,6 +253,10 @@ export const createViewStore = () =>
       setYRange: (yRange) => set({ yRange }),
       setZRange: (zRange) => set({ zRange }),
       setSliceRanges: (x, y, z) => set({ xRange: x, yRange: y, zRange: z }),
+
+      // Background Color
+      backgroundColor: "#dcdcdc",
+      setBackgroundColor: (backgroundColor) => set({ backgroundColor }),
 
       // Node Visibility / Selection
       selectedNodeIds: [],

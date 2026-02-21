@@ -1,30 +1,30 @@
 /**
  * StatisticsPanel Component
  * =============================================================================
- * 
+ *
  * PURPOSE:
  * Displays comprehensive statistics about the simulation and current frame
  * state. Aggregates both precomputed and real-time calculated values.
- * 
+ *
  * WHAT IT SHOWS:
  * - Simulation metadata: node count, frame count, duration, time step
  * - Current frame info: frame number, time
  * - Current displacement statistics: range, min, max, average per axis
  * - Ground motion values for current frame
  * - Peak values (all-time): max displacement, velocity, acceleration
- * 
+ *
  * DATA SOURCES:
  * - Metadata: animationData.metadata
  * - Displacement: animationData.displacementLin
  * - Ground motion: animationData.groundMotion
  * - Precomputed stats: animationData.precomputed
- * 
+ *
  * UNITS:
  * - Displacement: inches
  * - Velocity: inches/second
  * - Acceleration: inches/second²
  * - Time: seconds
- * 
+ *
  * IMPORTANCE:
  * Provides a quick overview of simulation state and key metrics.
  * Engineers use this to verify simulation parameters and track
@@ -93,7 +93,7 @@ export function StatisticsPanel() {
     const avgY = sumY / nodeCount;
     const avgZ = sumZ / nodeCount;
 
-    const gm = groundMotion.at(frameIndex);
+    const gm = groundMotion.at(frameIndex) ?? 0;
     const gmMag = Math.sqrt(gm[0] ** 2 + gm[1] ** 2 + gm[2] ** 2);
 
     return {
@@ -176,7 +176,9 @@ export function StatisticsPanel() {
         <StatGroup title="Peak Values (All Time)">
           <StatRow label="Max Displacement" value={stats.precomputed.maxDisplacement.toFixed(4)} unit="in" />
           <StatRow label="Max GM Magnitude" value={stats.precomputed.groundMotion.maxMagnitude.toFixed(4)} unit="in" />
-          {stats.precomputed.maxVelocity && <StatRow label="Max Velocity" value={stats.precomputed.maxVelocity.toFixed(4)} unit="in/s" />}
+          {stats.precomputed.maxVelocity && (
+            <StatRow label="Max Velocity" value={stats.precomputed.maxVelocity.toFixed(4)} unit="in/s" />
+          )}
           {stats.precomputed.maxAcceleration && (
             <StatRow label="Max Acceleration" value={stats.precomputed.maxAcceleration.toFixed(4)} unit="in/s²" />
           )}

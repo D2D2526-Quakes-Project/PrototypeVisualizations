@@ -11,6 +11,7 @@ import {
 } from "@/contexts/visualization";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { UNIT_SCALE } from "@/lib/utils";
+import { useViewStore } from "@/stores";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { BoxSelect, ChevronDown, Grid3X3, ScanEye } from "lucide-react";
@@ -18,12 +19,12 @@ import { AnimatePresence, motion, stagger } from "motion/react";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 // Import new panel components directly
-import { ViewsPanel } from "./CanvasWithControls/control-panels/ViewsPanel";
-import { ViewModeSelect } from "./CanvasWithControls/control-panels/ViewModeSelect";
 import { ColorPanel } from "./CanvasWithControls/control-panels/ColorPanel";
 import { ExplodedViewPanel } from "./CanvasWithControls/control-panels/ExplodedViewPanel";
 import { SliceViewPanel } from "./CanvasWithControls/control-panels/SliceViewPanel";
-import { ThresholdPanel, FloorsPanel } from "./CanvasWithControls/control-panels/ThresholdPanel";
+import { FloorsPanel, ThresholdPanel } from "./CanvasWithControls/control-panels/ThresholdPanel";
+import { ViewModeSelect } from "./CanvasWithControls/control-panels/ViewModeSelect";
+import { ViewsPanel } from "./CanvasWithControls/control-panels/ViewsPanel";
 
 import {
   OrthographicCamera as OrthographicCameraImpl,
@@ -31,8 +32,8 @@ import {
   Vector3,
 } from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { SmallPlaybackControls } from "./playback/PlaybackControls";
 import { ColorBarOverlay } from "./CanvasWithControls/ColorBarOverlay";
+import { SmallPlaybackControls } from "./playback/PlaybackControls";
 
 function CameraManager({
   isOrthographic,
@@ -52,11 +53,7 @@ function CameraManager({
     (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
   const cameraDistance = animationData.precomputed.boundingBox.radius * UNIT_SCALE;
 
-  const targetRef = useRef(new Vector3(0, 0, buildingVerticalCenter));
-
-  useEffect(() => {
-    targetRef.current.set(0, 0, buildingVerticalCenter);
-  }, [buildingVerticalCenter]);
+  const stableTarget = useMemo(() => new Vector3(0, 0, buildingVerticalCenter), [buildingVerticalCenter]);
 
   useEffect(() => {
     const controls = orbitControlsRef.current;
@@ -73,7 +70,6 @@ function CameraManager({
     if (!perspective || !ortho || !controls) return;
 
     const savedTarget = controls.target.clone();
-    targetRef.current.copy(savedTarget);
 
     if (isOrthographic) {
       ortho.position.copy(perspective.position);
@@ -83,18 +79,17 @@ function CameraManager({
       perspective.position.copy(ortho.position);
     }
 
-    controls.target.copy(targetRef.current);
+    controls.target.copy(savedTarget);
     controls.update();
   }, [isOrthographic, cameraDistance, orbitControlsRef]);
 
   useFrame(() => {
     const controls = orbitControlsRef.current;
     if (controls) {
-      targetRef.current.copy(controls.target);
+      stableTarget.copy(controls.target);
     }
   });
 
-  const target = useMemo(() => targetRef.current, [targetRef]);
   return (
     <>
       <PerspectiveCamera
@@ -111,7 +106,7 @@ function CameraManager({
         zoom={50}
         up={[0, 0, 1]}
       />
-      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={target} />
+      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={stableTarget} />
     </>
   );
 }
@@ -138,6 +133,7 @@ export function CanvasWithControls({
   const { currentMetric, thresholdHighlighting } = useColor();
   const { thresholds } = useThresholds();
   const { animationData } = useAnimationData();
+  const backgroundColor = useViewStore((s) => s.backgroundColor);
 
   // Expose setEnablePan to children via a ref or context if needed
   // For now, we use useEffect to update the camera when enablePan changes
@@ -168,7 +164,7 @@ export function CanvasWithControls({
     <div className="relative w-full h-full" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
       <Canvas linear flat>
         <NoFog />
-        <color attach="background" args={["#dcdcdc"]} />
+        <color attach="background" args={[backgroundColor]} />
         {children}
         <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan={enablePan} />
       </Canvas>
@@ -228,6 +224,8 @@ export function ViewControls({
   const { selectedNodeIds, clearSelection } = useNodeVisibility();
   const { thresholds, setThreshold } = useThresholds();
   const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
+  const backgroundColor = useViewStore((s) => s.backgroundColor);
+  const setBackgroundColor = useViewStore((s) => s.setBackgroundColor);
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -419,6 +417,29 @@ export function ViewControls({
                   </button>
                 </motion.div>
               )}
+              <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-xs font-medium text-neutral-700">Background</span>
+                </div>
+                <div className="flex gap-1">
+                  {[
+                    { label: "Gray", value: "#dcdcdc" },
+                    { label: "White", value: "#ffffff" },
+                    { label: "Black", value: "#1a1a1a" },
+                    { label: "Dark Blue", value: "#1e3a5f" },
+                  ].map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => setBackgroundColor(color.value)}
+                      className={`w-6 h-6 rounded border-2 transition-all ${
+                        backgroundColor === color.value ? "border-blue-500 scale-110" : "border-neutral-300 hover:border-neutral-400"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      title={color.label}
+                    />
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

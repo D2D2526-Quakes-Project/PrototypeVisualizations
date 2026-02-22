@@ -28,7 +28,7 @@ const tempColor = new THREE.Color();
 export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string }) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { selectedNodes, selectNode } = useNodeSelection();
+  const { selectNode } = useNodeSelection();
   const { getNodeColor } = useColor();
   const { mode, getVisibleNodes } = useViewMode();
   const { getExplodedPosition } = useExplodedView();
@@ -392,7 +392,9 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
   // Get positions and colors for all selected nodes
   const selectedNodesData = useMemo(() => {
-    return selectedNodes.map((nodeId) => {
+    const validSelectedNodeIds = Array.from(selectedNodeIds).filter((nodeId) => nodeId >= 0 && nodeId < nodeCount);
+
+    return validSelectedNodeIds.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
       const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       const exploded = getExplodedPosition(
@@ -408,7 +410,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         color: getNodePanelColor(nodeId), // Use unique color for selection
       };
     });
-  }, [selectedNodes, frameIndex, animationData, getExplodedPosition, offsets]);
+  }, [selectedNodeIds, nodeCount, frameIndex, animationData, getExplodedPosition, offsets]);
 
   return (
     <>

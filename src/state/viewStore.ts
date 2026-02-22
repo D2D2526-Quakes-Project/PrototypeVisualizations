@@ -158,7 +158,9 @@ export interface ViewState {
   setBackgroundColor: (color: string) => void;
 
   // Node Visibility / Selection
+  // Global selection state shared across scene and panels.
   selectedNodeIds: number[];
+  // Node IDs that currently have an open node details panel.
   openedNodePanelIds: number[];
   hiddenNodeIds: number[];
   boxSelection: BoxSelection | null;

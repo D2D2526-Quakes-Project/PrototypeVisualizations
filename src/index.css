@@ -269,3 +269,29 @@ body {
 .dv-floating-group .tabs-container {
   display: none !important;
 }
+
+/* Make panel resize handles easier to grab and more visible on hover/drag. */
+.dockview-theme-light .dv-sash {
+  background-color: transparent;
+  transition: background-color 120ms ease;
+}
+
+.dockview-theme-light .dv-sash.dv-sash-vertical {
+  width: 8px;
+  margin-left: -4px;
+  margin-right: -4px;
+  cursor: col-resize;
+}
+
+.dockview-theme-light .dv-sash.dv-sash-horizontal {
+  height: 8px;
+  margin-top: -4px;
+  margin-bottom: -4px;
+  cursor: row-resize;
+}
+
+.dockview-theme-light .dv-sash:hover,
+.dockview-theme-light .dv-sash.dv-sash-hover,
+.dockview-theme-light .dv-sash.dv-sash-active {
+  background-color: rgba(59, 130, 246, 0.35);
+}

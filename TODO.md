@@ -92,10 +92,10 @@
 
 ### 9.1 UI Improvements
 
-- [ ] Add keyboard shortcuts for common actions
+- [x] Add keyboard shortcuts for common actions
 - [ ] Add undo/redo for selections
 - [x] Add "reset to defaults" button
-- [ ] Improve panel drag/resize handles
+- [x] Improve panel drag/resize handles
 
 - [x] Change the views menu popover to be a sidebar that takes up space next to the canvas
 
@@ -128,7 +128,7 @@ The view mode system has incompatibilities and incomplete features. Need to unif
 
 ### 12.2 Node Selection & Highlighting
 
-- [ ] Fix node highlighting not working in all view modes
+- [x] Fix node highlighting not working in all view modes
 
 ### 12.3 Floor Selection & Panel
 
@@ -186,8 +186,8 @@ Every number with a unit should be hoverable with conversions.
 
 ### 16.2 Selection System
 
-- [ ] Add visual feedback during box selection
-- [ ] Ensure selected nodes sync across all views
+- [x] Add visual feedback during box selection
+- [x] Ensure selected nodes sync across all views
 - [x] When there is a selection, these options should be available in both the View Menu and the Collapsed View Menu: Clear Selection, Hide Selected Nodes, Show All Nodes
 
 ---

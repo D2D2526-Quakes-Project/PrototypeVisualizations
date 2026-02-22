@@ -16,6 +16,7 @@ import {
   ArrowLeftRight,
   ArrowUpDown,
   BoxSelect,
+  CameraIcon,
   ChevronFirst,
   Keyboard,
   MousePointer2,
@@ -57,7 +58,7 @@ const MODES: Mode[] = [
     shortcuts: [
       { icon: <BoxSelect size={11} />, label: "Replace selection", key: "Ctrl+drag" },
       { icon: <BoxSelect size={11} />, label: "Add to selection", key: "Shift+Ctrl+drag" },
-      { icon: <X size={11} />, label: "Clear", key: "Esc" },
+      { icon: <X size={11} />, label: "Clear", key: "X" },
     ],
   },
   {
@@ -77,6 +78,8 @@ const MODES: Mode[] = [
       { icon: <MousePointer2 size={11} />, label: "Orbit", key: "drag" },
       { icon: <ArrowUpDown size={11} />, label: "Zoom", key: "scroll" },
       { icon: <BoxSelect size={11} />, label: "Box select", key: "Ctrl+drag" },
+      { icon: <Keyboard size={11} />, label: "Menu", key: "M" },
+      { icon: <CameraIcon size={11} />, label: "Camera", key: "O" },
     ],
   },
 ];

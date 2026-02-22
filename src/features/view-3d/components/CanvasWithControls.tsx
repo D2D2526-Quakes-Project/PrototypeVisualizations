@@ -317,6 +317,14 @@ export function CanvasWithControls({
         height: `${Math.abs(boxSelection.end.y - boxSelection.start.y) * 100}%`,
       }
     : null;
+  const boxWidthPct = boxSelection ? Math.abs(boxSelection.end.x - boxSelection.start.x) * 100 : 0;
+  const boxHeightPct = boxSelection ? Math.abs(boxSelection.end.y - boxSelection.start.y) * 100 : 0;
+  const boxLabelStyle = boxSelection
+    ? {
+        left: `${Math.min(boxSelection.start.x, boxSelection.end.x) * 100}%`,
+        top: `${Math.max(Math.min(boxSelection.start.y, boxSelection.end.y) * 100 - 4, 0)}%`,
+      }
+    : null;
 
   function NoFog() {
     const { scene } = useThree();
@@ -376,7 +384,19 @@ export function CanvasWithControls({
           <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan={enablePan} />
         </Canvas>
         {showBoxSelectionOverlay && boxStyle && (
-          <div className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none" style={boxStyle} />
+          <>
+            <div
+              className="absolute border-2 border-blue-500 border-dashed bg-blue-500/20 pointer-events-none"
+              style={boxStyle}
+            />
+            {boxLabelStyle && (
+              <div
+                className="absolute pointer-events-none rounded border border-blue-300 bg-blue-50/95 px-1.5 py-0.5 text-[10px] font-medium text-blue-700"
+                style={boxLabelStyle}>
+                Selecting... {boxWidthPct.toFixed(1)}% x {boxHeightPct.toFixed(1)}%
+              </div>
+            )}
+          </>
         )}
       </div>
       <ViewControls
@@ -478,9 +498,9 @@ export function ViewControls({
     }
   };
 
-  const toggleCameraType = () => {
+  const toggleCameraType = useCallback(() => {
     setIsOrthographic(!isOrthographic);
-  };
+  }, [isOrthographic, setIsOrthographic]);
 
   const viewButtons = [
     { view: "front" as const, label: "North" },
@@ -503,6 +523,65 @@ export function ViewControls({
   const hiddenSelectedCount = selectedIds.filter((nodeId) => hiddenNodeIds.has(nodeId)).length;
   const visibleSelectedCount = selectedCount - hiddenSelectedCount;
   const showNodeVisibilityMenu = selectedCount > 0 || hiddenCount > 0;
+
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tagName = target.tagName;
+      return (
+        target.isContentEditable ||
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        tagName === "SELECT" ||
+        target.getAttribute("role") === "textbox"
+      );
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+      if (key === "m") {
+        e.preventDefault();
+        setIsExpanded(!isExpanded);
+        return;
+      }
+      if (key === "o") {
+        e.preventDefault();
+        toggleCameraType();
+        return;
+      }
+      if (key === "h" && visibleSelectedCount > 0) {
+        e.preventDefault();
+        hideNodes(selectedIds);
+        return;
+      }
+      if (key === "u" && hiddenCount > 0) {
+        e.preventDefault();
+        showAllNodes();
+        return;
+      }
+      if (key === "x" && selectedCount > 0) {
+        e.preventDefault();
+        clearSelection();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    clearSelection,
+    hiddenCount,
+    hideNodes,
+    isExpanded,
+    selectedCount,
+    selectedIds,
+    setIsExpanded,
+    showAllNodes,
+    toggleCameraType,
+    visibleSelectedCount,
+  ]);
 
   useEffect(() => {
     if (!isExpanded) {

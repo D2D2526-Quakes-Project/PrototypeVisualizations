@@ -153,7 +153,7 @@ export function CanvasWithControls({
   const hasHydratedPanelRef = useRef(false);
   const { orbitControlsRef, getCameraState } = useCamera();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
-  const { selectedNodeIds, isBoxSelecting, boxSelection } = useNodeVisibility();
+  const { selectedNodeIds, isBoxSelecting, boxSelection, boxSelectionPanelId } = useNodeVisibility();
 
   const getCurrentPanelState = useCallback(() => {
     const panelState = store.getState().panelStates[panelId];
@@ -293,6 +293,7 @@ export function CanvasWithControls({
   }, [orbitControlsRef, getCameraState, panelId, setPanelState, store, getCurrentPanelState]);
 
   // Calculate box overlay styles
+  const showBoxSelectionOverlay = isBoxSelecting && boxSelectionPanelId === panelId;
   const boxStyle = boxSelection
     ? {
         left: `${Math.min(boxSelection.start.x, boxSelection.end.x) * 100}%`,
@@ -316,7 +317,7 @@ export function CanvasWithControls({
         {children}
         <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan={enablePan} />
       </Canvas>
-      {boxStyle && (
+      {showBoxSelectionOverlay && boxStyle && (
         <div className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none" style={boxStyle} />
       )}
       <ViewControls

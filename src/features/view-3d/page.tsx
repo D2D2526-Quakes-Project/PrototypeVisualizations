@@ -1,5 +1,5 @@
 import { DockviewWrapper } from "@/features/view-3d/components/dockviewWrapper";
-import { MagicPanel, MagicPanelTab } from "@/features/view-3d/components/MagicPanel";
+import { MagicPanel, MagicPanelHeaderActions, MagicPanelTab } from "@/features/view-3d/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/features/view-3d/components/NodePanel";
 import { SlicePanel } from "@/features/view-3d/components/SlicePanel";
 import { NodeSelectionProvider, useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
@@ -201,6 +201,7 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
     <DockviewWrapper
       components={components}
       tabComponents={tabComponents}
+      rightHeaderActionsComponent={MagicPanelHeaderActions}
       onReady={handleDockviewReady}
       onLayoutChange={handleLayoutChange}
       initialLayout={initialLayout ?? undefined}

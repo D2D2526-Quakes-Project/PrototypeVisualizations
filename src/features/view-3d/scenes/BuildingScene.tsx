@@ -25,7 +25,7 @@ import * as THREE from "three";
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
 
-export function BuildingScene() {
+export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string }) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { selectedNodes, selectNode } = useNodeSelection();
@@ -61,9 +61,9 @@ export function BuildingScene() {
   useEffect(() => {
     if (!nodeInteractionEnabled) {
       setHoveredNodeId(null);
-      endBoxSelection();
+      endBoxSelection(panelId);
     }
-  }, [nodeInteractionEnabled, setHoveredNodeId, endBoxSelection]);
+  }, [nodeInteractionEnabled, setHoveredNodeId, endBoxSelection, panelId]);
 
   useEffect(() => {
     if (!slabInteractionEnabled) {
@@ -178,7 +178,7 @@ export function BuildingScene() {
           const x = (e.clientX - rect.left) / rect.width;
           const y = (e.clientY - rect.top) / rect.height;
           isMouseDownRef.current = true;
-          startBoxSelection({ x, y });
+          startBoxSelection({ x, y }, panelId);
         }
       };
 
@@ -188,7 +188,7 @@ export function BuildingScene() {
           const rect = domElement.getBoundingClientRect();
           const x = (e.clientX - rect.left) / rect.width;
           const y = (e.clientY - rect.top) / rect.height;
-          updateBoxSelection({ x, y });
+          updateBoxSelection({ x, y }, panelId);
         }
       };
 
@@ -201,7 +201,7 @@ export function BuildingScene() {
           } else {
             setSelectedNodes(selected);
           }
-          endBoxSelection();
+          endBoxSelection(panelId);
         }
         isMouseDownRef.current = false;
       };
@@ -209,7 +209,7 @@ export function BuildingScene() {
       const handleKeyUp = (e: KeyboardEvent) => {
         if (!nodeInteractionEnabled) return;
         if ((e.key === "Control" || e.key === "Meta" || e.key === "Ctrl") && isMouseDownRef.current) {
-          endBoxSelection();
+          endBoxSelection(panelId);
           isMouseDownRef.current = false;
         }
       };

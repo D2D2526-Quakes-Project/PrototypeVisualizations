@@ -159,6 +159,7 @@ export interface ViewState {
   selectedNodeIds: number[];
   openedNodePanelIds: number[];
   boxSelection: BoxSelection | null;
+  boxSelectionPanelId: string | null;
   isBoxSelecting: boolean;
   hideSelectedNodes: boolean;
   setSelectedNodes: (nodes: number[]) => void;
@@ -169,9 +170,9 @@ export interface ViewState {
   addOpenedNodePanel: (nodeId: number) => void;
   removeOpenedNodePanel: (nodeId: number) => void;
   clearSelection: () => void;
-  startBoxSelection: (start: { x: number; y: number }) => void;
-  updateBoxSelection: (end: { x: number; y: number }) => void;
-  endBoxSelection: () => void;
+  startBoxSelection: (start: { x: number; y: number }, panelId?: string) => void;
+  updateBoxSelection: (end: { x: number; y: number }, panelId?: string) => void;
+  endBoxSelection: (panelId?: string) => void;
   hoveredNodeId: number | null;
   setHoveredNodeId: (nodeId: number | null) => void;
 
@@ -345,6 +346,7 @@ export const createViewStore = () =>
       selectedNodeIds: [],
       openedNodePanelIds: [],
       boxSelection: null,
+      boxSelectionPanelId: null,
       isBoxSelecting: false,
       hideSelectedNodes: false,
       setSelectedNodes: (selectedNodeIds) => set({ selectedNodeIds }),
@@ -366,13 +368,27 @@ export const createViewStore = () =>
         set((state) => ({
           openedNodePanelIds: state.openedNodePanelIds.filter((id) => id !== nodeId),
         })),
-      clearSelection: () => set({ selectedNodeIds: [], boxSelection: null, isBoxSelecting: false }),
-      startBoxSelection: (start) => set({ boxSelection: { start, end: start }, isBoxSelecting: true }),
-      updateBoxSelection: (end) =>
+      clearSelection: () => set({ selectedNodeIds: [], boxSelection: null, boxSelectionPanelId: null, isBoxSelecting: false }),
+      startBoxSelection: (start, panelId) =>
+        set({
+          boxSelection: { start, end: start },
+          boxSelectionPanelId: panelId ?? null,
+          isBoxSelecting: true,
+        }),
+      updateBoxSelection: (end, panelId) =>
         set((state) => ({
-          boxSelection: state.boxSelection ? { ...state.boxSelection, end } : null,
+          boxSelection:
+            state.boxSelection && (!panelId || state.boxSelectionPanelId === panelId)
+              ? { ...state.boxSelection, end }
+              : state.boxSelection,
         })),
-      endBoxSelection: () => set({ isBoxSelecting: false, boxSelection: null }),
+      endBoxSelection: (panelId) =>
+        set((state) => {
+          if (panelId && state.boxSelectionPanelId && state.boxSelectionPanelId !== panelId) {
+            return {};
+          }
+          return { isBoxSelecting: false, boxSelection: null, boxSelectionPanelId: null };
+        }),
       hoveredNodeId: null,
       setHoveredNodeId: (hoveredNodeId) => set({ hoveredNodeId }),
 

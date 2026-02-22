@@ -6,6 +6,7 @@ import { useCallback, useMemo, type RefObject } from "react";
 interface NodeVisibilityContextType {
   selectedNodeIds: Set<number>;
   boxSelection: StoreBoxSelection | null;
+  boxSelectionPanelId: string | null;
   isBoxSelecting: boolean;
   hoveredNodeId: number | null;
   hideSelectedNodes: boolean;
@@ -15,9 +16,9 @@ interface NodeVisibilityContextType {
   setHideSelectedNodes: (hide: boolean) => void;
   toggleHideSelectedNodes: () => void;
   clearSelection: () => void;
-  startBoxSelection: (start: { x: number; y: number }) => void;
-  updateBoxSelection: (end: { x: number; y: number }) => void;
-  endBoxSelection: () => void;
+  startBoxSelection: (start: { x: number; y: number }, panelId?: string) => void;
+  updateBoxSelection: (end: { x: number; y: number }, panelId?: string) => void;
+  endBoxSelection: (panelId?: string) => void;
   cancelBoxSelection: () => void;
   setHoveredNodeId: (nodeId: number | null) => void;
 }
@@ -29,6 +30,7 @@ export function NodeVisibilityProvider({ children }: { children: React.ReactNode
 export function useNodeVisibility(): NodeVisibilityContextType {
   const selectedNodeIdsArray = useViewStore((s) => s.selectedNodeIds);
   const boxSelection = useViewStore((s) => s.boxSelection);
+  const boxSelectionPanelId = useViewStore((s) => s.boxSelectionPanelId);
   const isBoxSelecting = useViewStore((s) => s.isBoxSelecting);
   const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
   const hideSelectedNodes = useViewStore((s) => s.hideSelectedNodes);
@@ -82,21 +84,21 @@ export function useNodeVisibility(): NodeVisibilityContextType {
   }, [clearSelectionStore]);
 
   const startBoxSelection = useCallback(
-    (start: { x: number; y: number }) => {
-      startBoxSelectionStore(start);
+    (start: { x: number; y: number }, panelId?: string) => {
+      startBoxSelectionStore(start, panelId);
     },
     [startBoxSelectionStore],
   );
 
   const updateBoxSelection = useCallback(
-    (end: { x: number; y: number }) => {
-      updateBoxSelectionStore(end);
+    (end: { x: number; y: number }, panelId?: string) => {
+      updateBoxSelectionStore(end, panelId);
     },
     [updateBoxSelectionStore],
   );
 
-  const endBoxSelection = useCallback(() => {
-    endBoxSelectionStore();
+  const endBoxSelection = useCallback((panelId?: string) => {
+    endBoxSelectionStore(panelId);
   }, [endBoxSelectionStore]);
 
   const cancelBoxSelection = useCallback(() => {
@@ -113,6 +115,7 @@ export function useNodeVisibility(): NodeVisibilityContextType {
   return {
     selectedNodeIds,
     boxSelection,
+    boxSelectionPanelId,
     isBoxSelecting,
     hoveredNodeId,
     hideSelectedNodes,

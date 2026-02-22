@@ -11,10 +11,10 @@ import { PeakResponseTimePanel } from "@/features/view-3d/panels/PeakResponseTim
 import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
+import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { Timeline } from "./Timeline";
-import { Columns, Maximize2, Minimize2, MoreHorizontal, X } from "lucide-react";
-import { useState } from "react";
+import { Columns, Maximize2, Minimize2, MoreHorizontal, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const PanelCatalog = {
   Timeline: Timeline,
@@ -33,6 +33,10 @@ const PanelCatalog = {
 
 type PanelType = keyof typeof PanelCatalog;
 
+function isPanelType(value: unknown): value is PanelType {
+  return typeof value === "string" && value in PanelCatalog;
+}
+
 export const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>) => {
   const currentPanelType = props.params.panelType;
   const CurrentComponent = PanelCatalog[currentPanelType];
@@ -49,133 +53,195 @@ export const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>)
 
 export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: PanelType }>) => {
   const currentPanelType = props.params.panelType;
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const [isMaximized, setIsMaximized] = useState(() => props.api.isMaximized());
+  const [, setRenderTick] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setRenderTick((value) => value + 1);
+
+    const subscriptions = [
+      props.api.onDidActiveChange(bump),
+      props.api.onDidGroupChange(bump),
+      props.api.onDidParametersChange(bump),
+      props.containerApi.onDidLayoutChange(bump),
+    ];
+
+    return () => {
+      subscriptions.forEach((subscription) => subscription.dispose());
+    };
+  }, [props.api, props.containerApi]);
+
+  const showPanelPicker = props.tabLocation === "header" && (props.api.isActive || props.api.group.panels.length === 1);
 
   const handlePanelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newPanelType = event.target.value as PanelType;
     props.api.updateParameters({ panelType: newPanelType });
   };
 
+  return (
+    <div className="flex z-10 h-full w-full items-center bg-neutral-200/80">
+      {showPanelPicker ? (
+        <select
+          value={currentPanelType}
+          onChange={handlePanelChange}
+          className="mx-2 h-6 bg-transparent border-b border-neutral-400 px-2 py-0 text-sm font-medium text-neutral-700 cursor-pointer hover:border-neutral-500 transition-colors outline-none focus:ring-1 focus:ring-neutral-400">
+          {Object.keys(PanelCatalog).map((panelType) => (
+            <option key={panelType} value={panelType}>
+              {panelType}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <span className="px-4 py-0 text-sm font-medium text-neutral-700">{currentPanelType}</span>
+      )}
+    </div>
+  );
+};
+
+export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const activePanel = props.activePanel;
+  const activePanelType = isPanelType(activePanel?.params?.panelType) ? activePanel.params.panelType : null;
+  const isTabGroup = props.panels.length > 1;
+
+  if (!activePanel || !activePanelType || activePanel.api.tabComponent !== "magicPanelTab") {
+    return null;
+  }
+
+  const handleDuplicateAsTab = () => {
+    props.containerApi.addPanel({
+      id: `panel-${Date.now()}`,
+      component: activePanel.api.component,
+      tabComponent: activePanel.api.tabComponent,
+      title: activePanel.title ?? "Panel",
+      position: { referencePanel: activePanel.id },
+      params: activePanel.params,
+    });
+  };
+
   const handleSplitHorizontal = () => {
-    // Split the panel to the right (side by side - creates horizontal layout)
     props.containerApi.addPanel({
       id: `panel-${Date.now()}`,
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Panel",
-      position: { referencePanel: props.api.id, direction: "right" },
-      params: { panelType: currentPanelType },
+      position: { referencePanel: activePanel.id, direction: "right" },
+      params: { panelType: activePanelType },
     });
   };
 
   const handleSplitVertical = () => {
-    // Split the panel below (stacked - creates vertical layout)
     props.containerApi.addPanel({
       id: `panel-${Date.now()}`,
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Panel",
-      position: { referencePanel: props.api.id, direction: "below" },
-      params: { panelType: currentPanelType },
+      position: { referencePanel: activePanel.id, direction: "below" },
+      params: { panelType: activePanelType },
     });
   };
 
   const handleClose = () => {
-    props.api.close();
+    activePanel.api.close();
   };
 
+  const isMaximized = activePanel.api.isMaximized();
+
   const handleMaximize = () => {
-    props.api.maximize();
-    setIsMaximized(true);
+    activePanel.api.maximize();
   };
 
   const handleMinimize = () => {
-    props.api.exitMaximized();
-    setIsMaximized(false);
+    activePanel.api.exitMaximized();
   };
 
   return (
-    <div className="flex z-10 justify-between w-full border-b-2 border-neutral-300 bg-neutral-200/80 backdrop-blur-sm px-2 py-1.5 items-center">
-      <select
-        value={currentPanelType}
-        onChange={handlePanelChange}
-        className="bg-transparent border-b border-neutral-400 px-2 py-0.5 text-sm font-medium text-neutral-700 cursor-pointer hover:border-neutral-500 transition-colors outline-none focus:ring-1 focus:ring-neutral-400">
-        {Object.keys(PanelCatalog).map((panelType) => (
-          <option key={panelType} value={panelType}>
-            {panelType}
-          </option>
-        ))}
-      </select>
-
-      <div className="flex items-center gap-0.5">
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={handleSplitHorizontal}
-          title="Split horizontally (side by side)">
-          <Columns />
+    <div className="flex h-full items-center gap-0.5">
+      {isTabGroup && (
+        <Button variant="ghost" size="icon-xs" className="ml-1" onClick={handleDuplicateAsTab} title="Duplicate as tab">
+          <Plus />
         </Button>
+      )}
 
-        <Button variant="ghost" size="icon-xs" onClick={handleSplitVertical} title="Split vertically (stacked)">
-          <Columns className="rotate-90" />
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        className={isTabGroup ? "" : "ml-1"}
+        onClick={handleSplitHorizontal}
+        title="Split horizontally (side by side)">
+        <Columns />
+      </Button>
+
+      <Button variant="ghost" size="icon-xs" onClick={handleSplitVertical} title="Split vertically (stacked)">
+        <Columns className="rotate-90" />
+      </Button>
+
+      <Button variant="ghost" size="icon-xs" onClick={handleClose} title="Close panel">
+        <X />
+      </Button>
+
+      {isMaximized ? (
+        <Button variant="ghost" size="icon-xs" className="mr-1" onClick={handleMinimize} title="Restore">
+          <Minimize2 />
         </Button>
-
-        <Button variant="ghost" size="icon-xs" onClick={handleClose} title="Close panel">
-          <X />
-        </Button>
-
-        {isMaximized ? (
-          <Button variant="ghost" size="icon-xs" onClick={handleMinimize} title="Restore">
-            <Minimize2 />
-          </Button>
-        ) : (
-          <Popover open={isMoreOpen} onOpenChange={setIsMoreOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon-xs" title="More options">
-                <MoreHorizontal />
+      ) : (
+        <Popover open={isMoreOpen} onOpenChange={setIsMoreOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon-xs" className="mr-1" title="More options">
+              <MoreHorizontal />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-1" align="end">
+            <div className="flex flex-col gap-0.5">
+              {!isTabGroup && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  onClick={() => {
+                    handleDuplicateAsTab();
+                    setIsMoreOpen(false);
+                  }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Tab
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="justify-start"
+                onClick={() => {
+                  handleMaximize();
+                  setIsMoreOpen(false);
+                }}>
+                <Maximize2 className="mr-2 h-4 w-4" />
+                Maximize
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-1" align="end">
-              <div className="flex flex-col gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="justify-start"
-                  onClick={() => {
-                    handleMaximize();
-                    setIsMoreOpen(false);
-                  }}>
-                  <Maximize2 className="mr-2 h-4 w-4" />
-                  Maximize
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="justify-start"
-                  onClick={() => {
-                    handleSplitHorizontal();
-                    setIsMoreOpen(false);
-                  }}>
-                  <Columns className="mr-2 h-4 w-4" />
-                  Split Right
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="justify-start"
-                  onClick={() => {
-                    handleSplitVertical();
-                    setIsMoreOpen(false);
-                  }}>
-                  <Columns className="mr-2 h-4 w-4 rotate-90" />
-                  Split Down
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
-      </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="justify-start"
+                onClick={() => {
+                  handleSplitHorizontal();
+                  setIsMoreOpen(false);
+                }}>
+                <Columns className="mr-2 h-4 w-4" />
+                Split Right
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="justify-start"
+                onClick={() => {
+                  handleSplitVertical();
+                  setIsMoreOpen(false);
+                }}>
+                <Columns className="mr-2 h-4 w-4 rotate-90" />
+                Split Down
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 };

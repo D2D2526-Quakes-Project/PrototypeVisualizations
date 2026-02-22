@@ -10,7 +10,7 @@ export const MainCanvasPanel = (props: IDockviewPanelProps) => {
     <CameraProvider>
       <div className="relative w-full h-full">
         <CanvasWithControls showPlaybackControls panelId={panelId}>
-          <BuildingScene />
+          <BuildingScene panelId={panelId} />
         </CanvasWithControls>
       </div>
     </CameraProvider>

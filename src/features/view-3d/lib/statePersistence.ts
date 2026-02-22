@@ -18,9 +18,11 @@ const PRESETS_KEY = "visuals_presets";
 const LAST_URL_STATE_KEY = "visuals_last_url_state";
 const SAVE_PROFILES_KEY = "visuals_save_profiles_v2";
 const ACTIVE_PROFILE_KEY = "visuals_active_profile_v2";
+export const PROFILES_UPDATED_EVENT = "visuals:profiles-updated";
 
 export const SYSTEM_PROFILE_DEFAULT_ID = "system-default";
 export const SYSTEM_PROFILE_FLOOR_TORSION_ID = "system-floor-torsion";
+export const EPHEMERAL_SHARE_PROFILE_ID = "ephemeral-share-session";
 
 export interface CameraState {
   isOrthographic: boolean;
@@ -95,7 +97,7 @@ export interface DataSelection {
   simulation: string;
 }
 
-export type SaveProfileKind = "system" | "user";
+export type SaveProfileKind = "system" | "user" | "ephemeral";
 
 export interface SaveProfile {
   id: string;
@@ -333,7 +335,7 @@ function parseProfiles(raw: string | null): SaveProfile[] {
       if (
         typeof id !== "string" ||
         typeof name !== "string" ||
-        (kind !== "system" && kind !== "user") ||
+        (kind !== "system" && kind !== "user" && kind !== "ephemeral") ||
         typeof createdAt !== "number" ||
         typeof updatedAt !== "number" ||
         !isAppStateLike(defaultState) ||
@@ -536,6 +538,39 @@ export function saveStateToActiveProfile(state: AppState): void {
 export function loadActiveProfileState(layout?: SerializedDockview | null): AppState | null {
   const profile = getActiveProfile(layout);
   return profile ? cloneAppState(profile.currentState) : null;
+}
+
+function getEphemeralShareProfileName(selection?: DataSelection): string {
+  if (!selection) {
+    return "Shared Session";
+  }
+  return `Shared Session (${selection.building}/${selection.simulation})`;
+}
+
+export function activateEphemeralShareProfile(state: AppState): void {
+  try {
+    const profiles = loadSaveProfiles(state.layout ?? undefined).filter(
+      (profile) => profile.id !== EPHEMERAL_SHARE_PROFILE_ID,
+    );
+
+    const sessionProfile = createProfile({
+      id: EPHEMERAL_SHARE_PROFILE_ID,
+      name: getEphemeralShareProfileName(state.dataSelection),
+      kind: "ephemeral",
+      defaultState: state,
+      currentState: state,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    saveProfiles([...profiles, sessionProfile]);
+    setActiveProfileId(EPHEMERAL_SHARE_PROFILE_ID);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(PROFILES_UPDATED_EVENT));
+    }
+  } catch (e) {
+    console.error("Failed to activate ephemeral share profile:", e);
+  }
 }
 
 export function createUserProfile(name: string, fromState?: AppState): SaveProfile | null {
@@ -772,6 +807,7 @@ async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution>
   const explicitSelection = getDataSelectionFromUrlSearch(currentUrl.search);
   const encodedState = currentUrl.searchParams.get("state");
   const shareId = extractShareIdFromCurrentUrl(currentUrl);
+  const isShortShareRoute = SHORT_LINK_PATH_REGEX.test(currentUrl.pathname);
   let state: AppState | null = null;
 
   if (encodedState) {
@@ -780,8 +816,33 @@ async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution>
     state = await fetchStateFromShareId(shareId);
   }
 
-  if (state && explicitSelection) {
-    state.dataSelection = explicitSelection;
+  if (state) {
+    const selection = explicitSelection ?? state.dataSelection;
+    if (selection) {
+      state.dataSelection = selection;
+    }
+
+    activateEphemeralShareProfile(state);
+  }
+
+  if (state && isShortShareRoute) {
+    const selection = state.dataSelection;
+    const nextUrl = new URL(currentUrl.toString());
+    nextUrl.pathname = "/";
+    nextUrl.searchParams.delete(SHARE_URL_PARAM);
+    nextUrl.searchParams.delete("state");
+    if (selection) {
+      nextUrl.searchParams.set("building", selection.building);
+      nextUrl.searchParams.set("simulation", selection.simulation);
+    } else {
+      nextUrl.searchParams.delete("building");
+      nextUrl.searchParams.delete("simulation");
+    }
+
+    const nextHref = nextUrl.toString();
+    if (nextHref !== currentUrl.toString()) {
+      window.history.replaceState({}, "", nextHref);
+    }
   }
 
   return { state };

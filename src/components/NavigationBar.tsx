@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Check, LogOutIcon, Plus, RotateCcw, Share2, Trash2, type LucideIcon } from "lucide-react";
 
@@ -10,6 +10,7 @@ import {
   deleteUserProfile,
   getActiveProfileId,
   loadSaveProfiles,
+  PROFILES_UPDATED_EVENT,
   resetProfileToDefault,
   saveToLocalStorage,
   setActiveProfile,
@@ -151,6 +152,20 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
     navigate({ pathname: route.path, search: window.location.search });
   };
 
+  useEffect(() => {
+    const handleProfilesUpdated = () => {
+      refreshProfiles();
+    };
+
+    window.addEventListener(PROFILES_UPDATED_EVENT, handleProfilesUpdated);
+    return () => {
+      window.removeEventListener(PROFILES_UPDATED_EVENT, handleProfilesUpdated);
+    };
+  }, []);
+
+  const profileKindLabel =
+    activeProfile?.kind === "system" ? "default" : activeProfile?.kind === "ephemeral" ? "session" : "user";
+
   return (
     <div className="px-2 py-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
       <div className="flex items-center gap-3 justify-start min-w-0">
@@ -185,7 +200,11 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
                       {profile.id === activeProfileId ? <Check /> : <span className="w-4" />}
                       <span>{profile.name}</span>
                       <span className="ml-auto text-xs text-neutral-500">
-                        {profile.kind === "system" ? "Default" : "User"}
+                        {profile.kind === "system"
+                          ? "Default"
+                          : profile.kind === "ephemeral"
+                            ? "Session"
+                            : "User"}
                       </span>
                     </MenubarItem>
                   ))}
@@ -257,7 +276,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
           Profile: {activeProfile ? activeProfile.name : "Default View"}
           {activeProfile ? (
             <span className="ml-2 text-xs text-neutral-500">
-              ({activeProfile.kind === "system" ? "default" : "user"})
+              ({profileKindLabel})
             </span>
           ) : null}
         </div>

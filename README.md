@@ -7,6 +7,7 @@ This is a comprehensive earthquake simulation visualization tool designed to ext
 ## Core Philosophy
 
 The goal of this project is **maximum insight extraction** from simulation data. This means:
+
 - Calculating distributions of all values
 - Inspecting individual values in detail
 - Viewing time series data
@@ -46,7 +47,6 @@ src/
 ├── components/
 │   ├── ui/                        # Reusable UI primitives (shadcn)
 │   ├── NavigationBar.tsx
-│   ├── ShareButton.tsx
 │   ├── ErrorPage.tsx
 │   └── resizable.tsx
 └── lib/                           # Cross-feature utilities/types (metrics, parser, colors, utils)
@@ -64,54 +64,59 @@ src/
 The project tracks and visualizes numerous key values, each with threshold controls for targeted analysis:
 
 ### Displacement Values
-| Value | Description | Unit |
-|-------|-------------|------|
-| Displacement X | Horizontal displacement in X direction | in |
-| Displacement Y | Horizontal displacement in Y direction | in |
-| Displacement Z | Vertical displacement (elevation) | in |
-| Displacement Magnitude | Combined displacement magnitude | in |
-| Rotation RX | Rotation about X axis | rad |
-| Rotation RY | Rotation about Y axis | rad |
-| Rotation RZ | Rotation about Z axis | rad |
-| Rotation Magnitude | Combined rotation magnitude | rad |
-| Displacement Peaks | Maximum displacement values | in |
-| Displacement Average | Mean displacement across selection | in |
+
+| Value                  | Description                            | Unit |
+| ---------------------- | -------------------------------------- | ---- |
+| Displacement X         | Horizontal displacement in X direction | in   |
+| Displacement Y         | Horizontal displacement in Y direction | in   |
+| Displacement Z         | Vertical displacement (elevation)      | in   |
+| Displacement Magnitude | Combined displacement magnitude        | in   |
+| Rotation RX            | Rotation about X axis                  | rad  |
+| Rotation RY            | Rotation about Y axis                  | rad  |
+| Rotation RZ            | Rotation about Z axis                  | rad  |
+| Rotation Magnitude     | Combined rotation magnitude            | rad  |
+| Displacement Peaks     | Maximum displacement values            | in   |
+| Displacement Average   | Mean displacement across selection     | in   |
 
 ### Velocity Values
-| Value | Description | Unit |
-|-------|-------------|------|
-| Velocity X | Velocity in X direction | in/s |
-| Velocity Y | Velocity in Y direction | in/s |
-| Velocity Z | Velocity in Z direction | in/s |
-| Velocity Magnitude | Combined velocity magnitude | in/s |
-| Velocity RX | Angular velocity about X axis | rad/s |
-| Velocity RY | Angular velocity about Y axis | rad/s |
-| Velocity RZ | Angular velocity about Z axis | rad/s |
+
+| Value              | Description                         | Unit  |
+| ------------------ | ----------------------------------- | ----- |
+| Velocity X         | Velocity in X direction             | in/s  |
+| Velocity Y         | Velocity in Y direction             | in/s  |
+| Velocity Z         | Velocity in Z direction             | in/s  |
+| Velocity Magnitude | Combined velocity magnitude         | in/s  |
+| Velocity RX        | Angular velocity about X axis       | rad/s |
+| Velocity RY        | Angular velocity about Y axis       | rad/s |
+| Velocity RZ        | Angular velocity about Z axis       | rad/s |
 | Velocity Magnitude | Combined angular velocity magnitude | rad/s |
-| Velocity Peaks | Maximum velocity values | in/s |
-| Velocity Average | Mean velocity across selection | in/s |
+| Velocity Peaks     | Maximum velocity values             | in/s  |
+| Velocity Average   | Mean velocity across selection      | in/s  |
 
 ### Acceleration Values
-| Value | Description | Unit |
-|-------|-------------|------|
-| Acceleration X | Acceleration in X direction | in/s² |
-| Acceleration Y | Acceleration in Y direction | in/s² |
-| Acceleration Z | Acceleration in Z direction | in/s² |
-| Acceleration Magnitude | Combined acceleration magnitude | in/s² |
-| Acceleration RX | Angular acceleration about X axis | rad/s² |
-| Acceleration RY | Angular acceleration about Y axis | rad/s² |
-| Acceleration RZ | Angular acceleration about Z axis | rad/s² |
+
+| Value                  | Description                             | Unit   |
+| ---------------------- | --------------------------------------- | ------ |
+| Acceleration X         | Acceleration in X direction             | in/s²  |
+| Acceleration Y         | Acceleration in Y direction             | in/s²  |
+| Acceleration Z         | Acceleration in Z direction             | in/s²  |
+| Acceleration Magnitude | Combined acceleration magnitude         | in/s²  |
+| Acceleration RX        | Angular acceleration about X axis       | rad/s² |
+| Acceleration RY        | Angular acceleration about Y axis       | rad/s² |
+| Acceleration RZ        | Angular acceleration about Z axis       | rad/s² |
 | Acceleration Magnitude | Combined angular acceleration magnitude | rad/s² |
-| Acceleration Peaks | Maximum acceleration values | in/s² |
-| Acceleration Average | Mean acceleration across selection | in/s² |
+| Acceleration Peaks     | Maximum acceleration values             | in/s²  |
+| Acceleration Average   | Mean acceleration across selection      | in/s²  |
 
 ### Interstory Drift Values
-| Value | Description | Unit |
-|-------|-------------|------|
-| Interstory Drift Peaks | Maximum interstory drift ratios | % |
-| Interstory Drift Average | Mean interstory drift across floors | % |
+
+| Value                    | Description                         | Unit |
+| ------------------------ | ----------------------------------- | ---- |
+| Interstory Drift Peaks   | Maximum interstory drift ratios     | %    |
+| Interstory Drift Average | Mean interstory drift across floors | %    |
 
 ### Story Drift (Damage Threshold)
+
 - Warning threshold for story drift ratio
 - Per-corner tracking (NW, NE, SW, SE)
 - Time to warning (when each corner crosses threshold)
@@ -121,26 +126,31 @@ The project tracks and visualizes numerous key values, each with threshold contr
 All values across the project must be synchronized through React context:
 
 ### Time Context
+
 - Current frame index
 - Playback state (playing, paused, speed)
 - Time range selection for analysis
 - Total simulation time
 
 ### Selection Context
+
 - Floor/Story selection (visible floors)
 - Node selection (individual nodes or groups)
 - Cross-section selection (slice planes)
 
 ### View Context
+
 - View mode (All Nodes, Floor Slabs, Corners Only, Vertical Connections, Damage Threshold)
 - Color metric (what values to visualize on the 3D model)
 - Camera position and orientation
 
 ### Threshold Context
+
 - All threshold values for each key metric
 - Color mappings for threshold visualization
 
 ### Data Context
+
 - Animation data (positions, velocities, accelerations)
 - Precomputed statistics (peaks, averages, distributions)
 - Node metadata (stories, corners, connections)
@@ -148,6 +158,7 @@ All values across the project must be synchronized through React context:
 ## Current Features
 
 ### 3D Visualization
+
 - Interactive 3D building model with orbit controls
 - Multiple view modes:
   - All Nodes
@@ -161,6 +172,7 @@ All values across the project must be synchronized through React context:
 - Slice/clip planes for cross-section analysis
 
 ### Timeline & Playback
+
 - Frame-by-frame navigation
 - Play/pause controls
 - Playback speed adjustment
@@ -168,6 +180,7 @@ All values across the project must be synchronized through React context:
 - Small timeline for quick navigation
 
 ### Data Panels
+
 - Interstory Drift Chart
 - Floor Displacement Chart
 - Velocity Time Series
@@ -180,6 +193,7 @@ All values across the project must be synchronized through React context:
 - Damage Threshold Panel (floors, corners, warning times)
 
 ### Controls
+
 - View preset buttons (North, East, South, West, Top, Bottom)
 - Camera type toggle (Perspective/Orthographic)
 - Smoothing toggle
@@ -189,9 +203,11 @@ All values across the project must be synchronized through React context:
 ## Future Endeavors
 
 ### 1. Hinge/Beam Element Data
+
 **Priority: High**
 
 Parse and handle hinge and beam element data from the data folder. This requires:
+
 - Python parsing scripts for binary format
 - JavaScript parsing for web consumption
 - Binary data construction for efficient storage
@@ -199,9 +215,11 @@ Parse and handle hinge and beam element data from the data folder. This requires
 - Connection behavior visualization
 
 ### 2. Multi-Simulation Comparison
+
 **Priority: High**
 
 Side-by-side comparison views enabling:
+
 - Opening two simulation datasets simultaneously
 - Synchronized timeline playback
 - Difference visualization between simulations
@@ -209,9 +227,11 @@ Side-by-side comparison views enabling:
 - Split-screen or overlay modes
 
 ### 3. Export Functionality
+
 **Priority: Medium**
 
 Export capabilities for sharing and publication:
+
 - High-resolution image exports of all canvases
 - Animated GIF exports of playback sequences
 - Video recording (MP4/WebM) of animations
@@ -223,6 +243,7 @@ Export capabilities for sharing and publication:
 All visualizations must be designed for scientific accuracy and publication quality:
 
 ### Requirements
+
 - **Detailed Keys**: All color maps must have legends with units
 - **Axis Labels**: All charts must have labeled axes with units
 - **Descriptions**: Each visualization should have a title and description
@@ -231,12 +252,14 @@ All visualizations must be designed for scientific accuracy and publication qual
 - **Descriptions**: Tooltips and labels explaining what values represent
 
 ### Color Mapping Standards
+
 - Use perceptually uniform color scales where possible
 - Provide color bar legends for all continuous mappings
 - Ensure accessibility (colorblind-friendly palettes)
 - Maintain consistent color meanings across all views
 
 ### Plot Standards
+
 - Proper axis scaling and ticks
 - Grid lines where appropriate
 - Clear legends for multi-series plots
@@ -246,11 +269,13 @@ All visualizations must be designed for scientific accuracy and publication qual
 ## Architecture Notes
 
 ### State and Providers
+
 - Global state is managed in `src/state` via Zustand.
 - View-specific provider/context logic lives under `src/features/view-3d/contexts`.
 - Playback behavior and controls live under `src/features/playback`.
 
 ### Data Flow
+
 1. Animation data loaded from parsed simulation files
 2. Precomputed statistics calculated during load
 3. Context providers distribute data to all components
@@ -258,7 +283,9 @@ All visualizations must be designed for scientific accuracy and publication qual
 5. User interactions update context, triggering re-renders
 
 ### Panel System
+
 The project uses a dockview-based panel system allowing:
+
 - Flexible panel layouts
 - Drag and drop positioning
 - Multiple panels of the same type
@@ -266,16 +293,17 @@ The project uses a dockview-based panel system allowing:
 
 ## Routes
 
-| Route | Description |
-|-------|-------------|
-| `/` | Main 3D View (View3d) |
-| `/hamburger` | Hamburger view |
-| `/texture` | Texture view |
+| Route               | Description                    |
+| ------------------- | ------------------------------ |
+| `/`                 | Main 3D View (View3d)          |
+| `/hamburger`        | Hamburger view                 |
+| `/texture`          | Texture view                   |
 | `/damage-threshold` | Damage threshold analysis view |
 
 ## Data Sources
 
 Simulation data is expected in the data folder with:
+
 - Node positions and connectivity
 - Time series of displacements, velocities, accelerations
 - Story and corner metadata
@@ -292,4 +320,4 @@ Simulation data is expected in the data folder with:
 
 ---
 
-*Last Updated: February 2026*
+_Last Updated: February 2026_

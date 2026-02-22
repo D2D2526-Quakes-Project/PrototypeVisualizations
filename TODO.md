@@ -369,20 +369,6 @@ Every number with a unit should be hoverable with conversions.
   - [x] Show toast: "State loaded from URL"
   - [x] Allow user to "Save as Preset" from URL state
 
-### 17.10 Enhanced ShareButton UI
-
-- [x] Update `src/components/ShareButton.tsx`:
-  - [x] Change to dropdown menu
-  - [x] "Copy Short Link" - state without panel configs
-  - [x] "Copy Full Link" - complete state
-  - [x] "Save to Browser" - save current state
-  - [x] "Load Saved" - submenu with saved presets list
-
-- [x] Add ShareMenu component:
-  - [x] Show list of named presets
-  - [x] Allow delete presets
-  - [x] "Reset to Defaults" option
-
 ### 17.11 State Restoration Flow
 
 - [x] Implement state restore logic:

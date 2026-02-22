@@ -106,7 +106,13 @@ const router = createBrowserRouter([
       </>
     ),
     errorElement: <ErrorPage />,
-    children: routes,
+    children: [
+      ...routes,
+      {
+        path: "/s/:shareId",
+        element: <View3d />,
+      },
+    ],
   },
 ]);
 

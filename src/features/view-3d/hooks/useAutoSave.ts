@@ -1,6 +1,10 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useViewStoreRaw } from "@/state";
-import { saveToLocalStorage, type AppState } from "@/features/view-3d/lib/statePersistence";
+import {
+  getDataSelectionFromCurrentUrl,
+  saveToLocalStorage,
+  type AppState,
+} from "@/features/view-3d/lib/statePersistence";
 
 const AUTO_SAVE_DEBOUNCE_MS = 2000;
 const PLAYBACK_SAVE_DEBOUNCE_MS = 5000;
@@ -33,6 +37,7 @@ export function useAutoSave() {
       backgroundColor: state.backgroundColor,
       layout: state.dockviewLayout,
       panelStates: state.panelStates,
+      dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,
     };
   }, [store]);
 

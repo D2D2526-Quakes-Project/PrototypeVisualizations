@@ -38,35 +38,36 @@ export function View3d() {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
 
-    const urlState = getStateFromCurrentUrl();
-    const savedState = loadFromLocalStorage();
+    void (async () => {
+      const urlState = await getStateFromCurrentUrl();
+      const savedState = loadFromLocalStorage();
+      const stateToRestore = urlState ?? savedState;
 
-    const stateToRestore = urlState ?? savedState;
+      if (stateToRestore) {
+        requestAnimationFrame(() => {
+          if (new URLSearchParams(window.location.search).get("debugState") === "1") {
+            console.debug("[restore] loaded initial state", {
+              source: urlState ? "url" : "localStorage",
+              frameIndex: stateToRestore.frameIndex,
+              panelStateKeys: Object.keys(stateToRestore.panelStates ?? {}),
+            });
+          }
+          setInitialState(stateToRestore);
 
-    if (stateToRestore) {
+          if (urlState) {
+            saveUrlState(stateToRestore);
+          }
+        });
+      } else {
+        requestAnimationFrame(() => {
+          setInitialState(getDefaultAppState());
+        });
+      }
+
       requestAnimationFrame(() => {
-        if (new URLSearchParams(window.location.search).get("debugState") === "1") {
-          console.debug("[restore] loaded initial state", {
-            source: urlState ? "url" : "localStorage",
-            frameIndex: stateToRestore.frameIndex,
-            panelStateKeys: Object.keys(stateToRestore.panelStates ?? {}),
-          });
-        }
-        setInitialState(stateToRestore);
-
-        if (urlState) {
-          saveUrlState(stateToRestore);
-        }
+        setIsReady(true);
       });
-    } else {
-      requestAnimationFrame(() => {
-        setInitialState(getDefaultAppState());
-      });
-    }
-
-    requestAnimationFrame(() => {
-      setIsReady(true);
-    });
+    })();
   }, []);
 
   return (

@@ -87,6 +87,12 @@ export interface AppState {
   backgroundColor: string;
   layout: SerializedDockview | null;
   panelStates: Record<string, PanelState>;
+  dataSelection?: DataSelection;
+}
+
+export interface DataSelection {
+  building: string;
+  simulation: string;
 }
 
 export type SaveProfileKind = "system" | "user";
@@ -113,6 +119,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isAppStateLike(value: unknown): value is AppState {
   if (!isRecord(value)) return false;
+  const dataSelection = value.dataSelection;
+  if (dataSelection !== undefined) {
+    if (
+      !isRecord(dataSelection) ||
+      typeof dataSelection.building !== "string" ||
+      typeof dataSelection.simulation !== "string"
+    ) {
+      return false;
+    }
+  }
   return (
     typeof value.version === "number" &&
     typeof value.timestamp === "number" &&
@@ -240,7 +256,21 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     backgroundColor: DEFAULT_BACKGROUND_COLOR,
     layout: layout ?? null,
     panelStates: {},
+    dataSelection: undefined,
   };
+}
+
+export function getDataSelectionFromUrlSearch(search: string): DataSelection | null {
+  const params = new URLSearchParams(search);
+  const building = params.get("building");
+  const simulation = params.get("simulation");
+  if (!building || !simulation) return null;
+  return { building, simulation };
+}
+
+export function getDataSelectionFromCurrentUrl(): DataSelection | null {
+  if (typeof window === "undefined") return null;
+  return getDataSelectionFromUrlSearch(window.location.search);
 }
 
 function getSystemDefaultProfiles(layout?: SerializedDockview | null): SaveProfile[] {
@@ -603,8 +633,8 @@ export function resetProfileToDefault(profileId: string): boolean {
   return true;
 }
 
-export function encodeStateForUrl(state: AppState, includePanelStates: boolean = false): string {
-  const stateToEncode = includePanelStates ? state : { ...state, panelStates: {}, layout: state.layout };
+export function encodeStateForUrl(state: AppState): string {
+  const stateToEncode = state;
 
   const json = serializeState(stateToEncode);
   return LZString.compressToEncodedURIComponent(json);
@@ -696,22 +726,100 @@ export function clearUrlState(): void {
   localStorage.removeItem(LAST_URL_STATE_KEY);
 }
 
-export function getStateFromCurrentUrl(): AppState | null {
-  if (typeof window === "undefined") return null;
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const encodedState = urlParams.get("state");
-
-  if (encodedState) {
-    return decodeStateFromUrl(encodedState);
-  }
-
-  return null;
+interface UrlStateResolution {
+  state: AppState | null;
 }
 
-export function createShareableUrl(state: AppState, includePanelStates: boolean = false): string {
+const SHORT_LINK_PATH_REGEX = /^\/s\/([^/]+)$/;
+const SHARE_URL_PARAM = "share";
+const SHARE_API_BASE = import.meta.env.VITE_SHARE_API_BASE as string | undefined;
+let resolvedUrlStatePromise: Promise<UrlStateResolution> | null = null;
+
+function getShareApiBase(): string {
+  if (typeof window === "undefined") return "";
+  return SHARE_API_BASE?.trim() || window.location.origin;
+}
+
+function extractShareIdFromCurrentUrl(url: URL): string | null {
+  const queryShareId = url.searchParams.get(SHARE_URL_PARAM);
+  if (queryShareId) return queryShareId;
+  const pathMatch = url.pathname.match(SHORT_LINK_PATH_REGEX);
+  return pathMatch?.[1] ?? null;
+}
+
+async function fetchStateFromShareId(shareId: string): Promise<AppState | null> {
+  try {
+    const shareApiUrl = new URL(`/api/share/${encodeURIComponent(shareId)}`, getShareApiBase());
+    const response = await fetch(shareApiUrl.toString());
+    if (!response.ok) {
+      return null;
+    }
+    const payload = (await response.json()) as { state?: unknown };
+    if (!isRecord(payload) || typeof payload.state !== "string") {
+      return null;
+    }
+    return decodeStateFromUrl(payload.state);
+  } catch (e) {
+    console.error("Failed to load share state:", e);
+    return null;
+  }
+}
+
+async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution> {
+  if (typeof window === "undefined") return { state: null };
+
+  const currentUrl = new URL(window.location.href);
+  const explicitSelection = getDataSelectionFromUrlSearch(currentUrl.search);
+  const encodedState = currentUrl.searchParams.get("state");
+  const shareId = extractShareIdFromCurrentUrl(currentUrl);
+  let state: AppState | null = null;
+
+  if (encodedState) {
+    state = decodeStateFromUrl(encodedState);
+  } else if (shareId) {
+    state = await fetchStateFromShareId(shareId);
+  }
+
+  if (state && explicitSelection) {
+    state.dataSelection = explicitSelection;
+  }
+
+  return { state };
+}
+
+async function resolveStateFromCurrentUrl(): Promise<UrlStateResolution> {
+  if (resolvedUrlStatePromise === null) {
+    resolvedUrlStatePromise = resolveStateFromCurrentUrlInternal();
+  }
+  return resolvedUrlStatePromise;
+}
+
+export async function getStateFromCurrentUrl(): Promise<AppState | null> {
+  const resolved = await resolveStateFromCurrentUrl();
+  return resolved.state;
+}
+
+export async function getSelectionFromCurrentUrlStateOrParams(): Promise<DataSelection | null> {
+  const explicitSelection = getDataSelectionFromCurrentUrl();
+  if (explicitSelection) return explicitSelection;
+
+  const state = await getStateFromCurrentUrl();
+  return state?.dataSelection ?? null;
+}
+
+export function createShareableUrl(state: AppState): string {
   const url = new URL(window.location.href);
-  const encodedState = encodeStateForUrl(state, includePanelStates);
+  const encodedState = encodeStateForUrl(state);
+
+  if (state.dataSelection) {
+    url.searchParams.set("building", state.dataSelection.building);
+    url.searchParams.set("simulation", state.dataSelection.simulation);
+  } else {
+    url.searchParams.delete("building");
+    url.searchParams.delete("simulation");
+  }
+
+  url.searchParams.delete(SHARE_URL_PARAM);
 
   if (encodedState) {
     url.searchParams.set("state", encodedState);
@@ -720,19 +828,52 @@ export function createShareableUrl(state: AppState, includePanelStates: boolean 
   return url.toString();
 }
 
-export function copyShareableUrlToClipboard(
-  state: AppState,
-  includePanelStates: boolean = false,
-): Promise<boolean> {
-  const shareableUrl = createShareableUrl(state, includePanelStates);
-
-  return navigator.clipboard
-    .writeText(shareableUrl)
-    .then(() => true)
-    .catch((e) => {
-      console.error("Failed to copy URL to clipboard:", e);
-      return false;
+async function createShareableShortUrl(state: AppState): Promise<string | null> {
+  try {
+    const apiUrl = new URL("/api/share", getShareApiBase());
+    const encodedState = encodeStateForUrl(state);
+    const response = await fetch(apiUrl.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        v: state.version,
+        state: encodedState,
+      }),
     });
+    if (!response.ok) return null;
+
+    const payload = (await response.json()) as { id?: unknown; url?: unknown };
+    if (!isRecord(payload)) {
+      return null;
+    }
+
+    if (typeof payload.id === "string" && payload.id.length > 0) {
+      return `${window.location.origin}/s/${payload.id}`;
+    }
+
+    if (typeof payload.url === "string") {
+      return payload.url;
+    }
+
+    return null;
+  } catch (e) {
+    console.error("Failed to create short share URL:", e);
+    return null;
+  }
+}
+
+export async function copyShareableUrlToClipboard(state: AppState): Promise<boolean> {
+  const shareableUrl = (await createShareableShortUrl(state)) ?? createShareableUrl(state);
+
+  try {
+    await navigator.clipboard.writeText(shareableUrl);
+    return true;
+  } catch (e) {
+    console.error("Failed to copy URL to clipboard:", e);
+    return false;
+  }
 }
 
 export function getStateForUrlWithDefaults(

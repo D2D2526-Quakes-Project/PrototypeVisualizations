@@ -16,6 +16,7 @@ import {
   type AppState,
   type SaveProfile,
   getDefaultAppState,
+  getDataSelectionFromCurrentUrl,
 } from "@/features/view-3d/lib/statePersistence";
 import { useViewStoreRaw } from "@/state";
 import {
@@ -63,6 +64,7 @@ function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState
     backgroundColor: state.backgroundColor,
     layout: state.dockviewLayout ?? getDefaultAppState().layout,
     panelStates: state.panelStates,
+    dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,
   };
 }
 
@@ -74,6 +76,8 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
 
   const [profiles, setProfiles] = useState<SaveProfile[]>(() => loadSaveProfiles());
   const [activeProfileId, setActiveProfileId] = useState<string>(() => getActiveProfileId());
+  const [activeMenu, setActiveMenu] = useState("");
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
 
   const activeProfile = useMemo(
     () => profiles.find((profile) => profile.id === activeProfileId) ?? null,
@@ -130,9 +134,13 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
     window.location.reload();
   };
 
-  const copyLink = async (includePanelStates: boolean) => {
-    const success = await copyShareableUrlToClipboard(getCurrentAppState(store), includePanelStates);
-    if (!success) return;
+  const copyLink = async () => {
+    if (isCopyingLink) return;
+    setIsCopyingLink(true);
+    setActiveMenu("share");
+    await copyShareableUrlToClipboard(getCurrentAppState(store));
+    setIsCopyingLink(false);
+    setActiveMenu("");
   };
 
   const clearCurrentSelection = () => {
@@ -146,7 +154,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
   return (
     <div className="px-2 py-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
       <div className="flex items-center gap-3 justify-start min-w-0">
-        <Menubar className="h-8 bg-neutral-50/80">
+        <Menubar className="h-8 bg-neutral-50/80" value={activeMenu} onValueChange={setActiveMenu}>
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
@@ -229,16 +237,17 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
             </MenubarContent>
           </MenubarMenu>
 
-          <MenubarMenu>
+          <MenubarMenu value="share">
             <MenubarTrigger>Share</MenubarTrigger>
             <MenubarContent>
-              <MenubarItem onClick={() => copyLink(false)}>
+              <MenubarItem
+                disabled={isCopyingLink}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  void copyLink();
+                }}>
                 <Share2 />
-                Copy Short Link
-              </MenubarItem>
-              <MenubarItem onClick={() => copyLink(true)}>
-                <Share2 />
-                Copy Full Link
+                {isCopyingLink ? "Copying..." : "Copy Shareable Link"}
               </MenubarItem>
             </MenubarContent>
           </MenubarMenu>

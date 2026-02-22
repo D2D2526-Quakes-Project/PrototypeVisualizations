@@ -163,7 +163,7 @@ When adding persisted fields:
 3. Add to `AppState`
 4. Add to autosave snapshot (`useAutoSave`)
 5. Add to restore logic (`src/pages/View3d/page.tsx`)
-6. Add to share/preset snapshot (`src/components/ShareButton.tsx`)
+6. Add to share/preset snapshot
 7. Add backward-compatible fallback in restore/default merge
 
 ## 8. Debugging State Restores

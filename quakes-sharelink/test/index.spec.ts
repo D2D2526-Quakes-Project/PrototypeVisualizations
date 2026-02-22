@@ -1,24 +1,54 @@
-import { env, createExecutionContext, waitOnExecutionContext, SELF } from 'cloudflare:test';
+import { SELF } from 'cloudflare:test';
 import { describe, it, expect } from 'vitest';
-import worker from '../src/index';
 
-// For now, you'll need to do something like this to get a correctly-typed
-// `Request` to pass to `worker.fetch()`.
-const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
+describe('share link worker', () => {
+	it('creates and retrieves a share payload', async () => {
+		const createResponse = await SELF.fetch('https://example.com/api/share', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+			},
+			body: JSON.stringify({
+				v: 1,
+				state: 'encoded-state',
+			}),
+		});
+		expect(createResponse.status).toBe(201);
+		const created = (await createResponse.json()) as {
+			id: string;
+			url: string;
+			expiresAt: string;
+			ttlSeconds: number;
+		};
+		expect(typeof created.id).toBe('string');
+		expect(created.id.length).toBeGreaterThan(0);
+		expect(created.ttlSeconds).toBeGreaterThan(0);
 
-describe('Hello World worker', () => {
-	it('responds with Hello World! (unit style)', async () => {
-		const request = new IncomingRequest('http://example.com');
-		// Create an empty context to pass to `worker.fetch()`.
-		const ctx = createExecutionContext();
-		const response = await worker.fetch(request, env, ctx);
-		// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-		await waitOnExecutionContext(ctx);
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+		const readResponse = await SELF.fetch(`https://example.com/api/share/${created.id}`);
+		expect(readResponse.status).toBe(200);
+		const readJson = (await readResponse.json()) as { v: number; state: string };
+		expect(readJson).toMatchObject({
+			v: 1,
+			state: 'encoded-state',
+		});
 	});
 
-	it('responds with Hello World! (integration style)', async () => {
-		const response = await SELF.fetch('https://example.com');
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+	it('rejects invalid create payloads', async () => {
+		const response = await SELF.fetch('https://example.com/api/share', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+			},
+			body: JSON.stringify({
+				v: 0,
+				state: '',
+			}),
+		});
+		expect(response.status).toBe(400);
+	});
+
+	it('returns not found for missing share id', async () => {
+		const response = await SELF.fetch('https://example.com/api/share/does-not-exist');
+		expect(response.status).toBe(404);
 	});
 });

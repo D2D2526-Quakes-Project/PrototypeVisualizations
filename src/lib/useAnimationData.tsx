@@ -7,6 +7,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { fetchWithProgressAndCache } from "@/lib/dataLoader";
 import { buildAnimationDataFromBinary } from "@/lib/parser";
 import { useViewStoreRaw } from "@/state";
+import { getSelectionFromCurrentUrlStateOrParams } from "@/features/view-3d/lib/statePersistence";
 
 export type AnimationDataContextType = {
   animationData: BuildingAnimationData;
@@ -216,28 +217,28 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    const params = new URLSearchParams(location.search);
-    const building = params.get("building");
-    const simulation = params.get("simulation");
+    void (async () => {
+      const selection = await getSelectionFromCurrentUrlStateOrParams();
 
-    if (building && simulation) {
-      const b = DataSources.buildings.find((b) => b.folder === building);
-      if (b) {
-        const s = b.simulations.find((s: Simulation) => s.folder === simulation);
-        if (s) {
-          queueMicrotask(() => {
-            setCurrentBuilding(b);
-            setCurrentSimulation(s);
-            loadBinaryData(b, s);
-          });
-          return;
+      if (selection) {
+        const b = DataSources.buildings.find((item) => item.folder === selection.building);
+        if (b) {
+          const s = b.simulations.find((item: Simulation) => item.folder === selection.simulation);
+          if (s) {
+            queueMicrotask(() => {
+              setCurrentBuilding(b);
+              setCurrentSimulation(s);
+              loadBinaryData(b, s);
+            });
+            return;
+          }
         }
       }
-    }
 
-    queueMicrotask(() => {
-      setNeedsSelection(true);
-    });
+      queueMicrotask(() => {
+        setNeedsSelection(true);
+      });
+    })();
   }, [loadBinaryData]);
 
   const providerValue = {

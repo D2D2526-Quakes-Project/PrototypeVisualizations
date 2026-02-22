@@ -18,14 +18,7 @@ import { View3d } from "./pages/View3d/page";
 
 import { ViewVolumes } from "./pages/ViewVolumes/page";
 import { PlaybackProvider } from "./components/playback/PlaybackContext";
-import {
-  ColorProvider,
-  ViewModeProvider,
-  ExplodedViewProvider,
-  SliceSelectionProvider,
-  NodeVisibilityProvider,
-  ThresholdProvider,
-} from "./contexts/visualization";
+import { SliceSelectionProvider } from "./contexts/visualization";
 import { ViewProvider } from "./stores";
 import { TooltipProvider } from "./components/ui/tooltip";
 import {
@@ -113,19 +106,9 @@ const router = createBrowserRouter([
             <TooltipProvider>
               <NavigationBar routes={routes} />
               <PlaybackProvider>
-                <ThresholdProvider>
-                  <ColorProvider>
-                    <ViewModeProvider>
-                      <ExplodedViewProvider>
-                        <SliceSelectionProvider>
-                          <NodeVisibilityProvider>
-                            <Outlet />
-                          </NodeVisibilityProvider>
-                        </SliceSelectionProvider>
-                      </ExplodedViewProvider>
-                    </ViewModeProvider>
-                  </ColorProvider>
-                </ThresholdProvider>
+                <SliceSelectionProvider>
+                  <Outlet />
+                </SliceSelectionProvider>
               </PlaybackProvider>
             </TooltipProvider>
           </AnimationDataProvider>

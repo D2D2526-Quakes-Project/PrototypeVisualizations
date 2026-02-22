@@ -11,6 +11,8 @@ import { usePlayback } from "./playback/PlaybackContext";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { formatFixed3 } from "@/lib/utils";
+import { getDefaultTimelinePanelState } from "@/lib/statePersistence";
+import { useViewStore } from "@/stores";
 
 // Configuration for available data channels
 const CHANNEL_CONFIG = {
@@ -144,15 +146,21 @@ function CheckSelect({
   );
 }
 
-export function Timeline({ api: _api }: IDockviewPanelProps) {
+export function Timeline({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const chartRef = useRef<ReactECharts>(null);
+  const [chartReadyVersion, setChartReadyVersion] = useState(0);
   const isDraggingRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
+  const setPanelState = useViewStore((s) => s.setPanelState);
 
-  // Default to Magnitude
-  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(["x", "y"]);
+  const panelId = api?.id ?? "timeline";
+  const defaultState = getDefaultTimelinePanelState();
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const savedState = savedPanelState?.type === "timeline" ? savedPanelState.state : defaultState;
+
+  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(savedState.selectedKeys);
 
   const maxFrame = animationData.metadata.frameCount - 1;
   const dt = animationData.metadata.dt;
@@ -160,12 +168,17 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
   const dtRef = useRef(dt);
   const maxFrameRef = useRef(maxFrame);
   const selectedKeysRef = useRef(selectedKeys);
+  const panelIdRef = useRef(panelId);
 
   useEffect(() => {
     dtRef.current = dt;
     maxFrameRef.current = maxFrame;
     selectedKeysRef.current = selectedKeys;
   }, [dt, maxFrame, selectedKeys]);
+
+  useEffect(() => {
+    setPanelState(panelIdRef.current, "timeline", { selectedKeys });
+  }, [selectedKeys, setPanelState]);
 
   const times = useMemo(() => {
     const times: number[] = [];
@@ -485,35 +498,41 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
 
   // Update for MarkLine and MarkPoint
   useEffect(() => {
-    const chart = chartRef.current?.getEchartsInstance();
-    if (!chart || !chart.getOption()) return;
+    const applyFrameToChart = () => {
+      const chart = chartRef.current?.getEchartsInstance();
+      if (!chart || !chart.getOption()) return false;
 
-    const currentTime = frameIndex * animationData.metadata.dt;
+      const currentTime = frameIndex * animationData.metadata.dt;
 
-    // We map over the active series to update markers for each one
-    const updatedSeries = chartData.seriesData.map((item) => {
-      const currentValue = item.accessor(frameIndex);
+      const updatedSeries = chartData.seriesData.map((item) => {
+        const currentValue = item.accessor(frameIndex);
 
-      return {
-        // markLine (Vertical playhead)
-        markLine: {
-          data: [{ xAxis: currentTime }],
-        },
-        // markPoint (The moving dot on the line)
-        markPoint: {
-          data: [
-            {
-              coord: [currentTime, currentValue],
-            },
-          ],
-        },
-      };
+        return {
+          markLine: {
+            data: [{ xAxis: currentTime }],
+          },
+          markPoint: {
+            data: [
+              {
+                coord: [currentTime, currentValue],
+              },
+            ],
+          },
+        };
+      });
+
+      chart.setOption({
+        series: updatedSeries,
+      });
+      return true;
+    };
+
+    if (applyFrameToChart()) return;
+    const rafId = requestAnimationFrame(() => {
+      applyFrameToChart();
     });
-
-    chart.setOption({
-      series: updatedSeries,
-    });
-  }, [frameIndex, chartData, animationData.metadata.dt]);
+    return () => cancelAnimationFrame(rafId);
+  }, [frameIndex, chartData, animationData.metadata.dt, chartReadyVersion]);
 
   return (
     <div className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full bg-white">
@@ -549,6 +568,7 @@ export function Timeline({ api: _api }: IDockviewPanelProps) {
             style={{ height: "100%", width: "100%" }}
             opts={{ renderer: "canvas" }}
             notMerge={true}
+            onChartReady={() => setChartReadyVersion((v) => v + 1)}
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-neutral-400 text-sm">

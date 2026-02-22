@@ -1,87 +1,133 @@
-import { createContext, useContext, useCallback, useMemo, type ReactNode, type RefObject } from "react";
 import { useViewStore } from "@/stores";
 import * as THREE from "three";
 import type { BoxSelection as StoreBoxSelection } from "@/stores/viewStore";
+import { useCallback, useMemo, type RefObject } from "react";
 
 interface NodeVisibilityContextType {
   selectedNodeIds: Set<number>;
   boxSelection: StoreBoxSelection | null;
   isBoxSelecting: boolean;
+  hoveredNodeId: number | null;
+  hideSelectedNodes: boolean;
   setSelectedNodes: (nodes: number[]) => void;
   addSelectedNodes: (nodes: number[]) => void;
+  removeSelectedNode: (nodeId: number) => void;
+  setHideSelectedNodes: (hide: boolean) => void;
+  toggleHideSelectedNodes: () => void;
   clearSelection: () => void;
   startBoxSelection: (start: { x: number; y: number }) => void;
   updateBoxSelection: (end: { x: number; y: number }) => void;
   endBoxSelection: () => void;
   cancelBoxSelection: () => void;
+  setHoveredNodeId: (nodeId: number | null) => void;
 }
 
-const NodeVisibilityContext = createContext<NodeVisibilityContextType | undefined>(undefined);
-
-export function useNodeVisibility() {
-  const context = useContext(NodeVisibilityContext);
-  if (!context) {
-    throw new Error("useNodeVisibility must be used within NodeVisibilityProvider");
-  }
-  return context;
+export function NodeVisibilityProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
 
-export function NodeVisibilityProvider({ children }: { children: ReactNode }) {
+export function useNodeVisibility(): NodeVisibilityContextType {
   const selectedNodeIdsArray = useViewStore((s) => s.selectedNodeIds);
   const boxSelection = useViewStore((s) => s.boxSelection);
   const isBoxSelecting = useViewStore((s) => s.isBoxSelecting);
+  const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
+  const hideSelectedNodes = useViewStore((s) => s.hideSelectedNodes);
   const setSelectedNodesStore = useViewStore((s) => s.setSelectedNodes);
+  const removeSelectedNodeStore = useViewStore((s) => s.removeSelectedNode);
   const addSelectedNodesStore = useViewStore((s) => s.addSelectedNodes);
+  const setHideSelectedNodesStore = useViewStore((s) => s.setHideSelectedNodes);
+  const toggleHideSelectedNodesStore = useViewStore((s) => s.toggleHideSelectedNodes);
   const clearSelectionStore = useViewStore((s) => s.clearSelection);
   const startBoxSelectionStore = useViewStore((s) => s.startBoxSelection);
   const updateBoxSelectionStore = useViewStore((s) => s.updateBoxSelection);
   const endBoxSelectionStore = useViewStore((s) => s.endBoxSelection);
+  const setHoveredNodeIdStore = useViewStore((s) => s.setHoveredNodeId);
 
   const selectedNodeIds = useMemo(() => new Set(selectedNodeIdsArray), [selectedNodeIdsArray]);
 
-  const setSelectedNodes = useCallback((nodes: number[]) => {
-    setSelectedNodesStore(nodes);
-  }, [setSelectedNodesStore]);
+  const setSelectedNodes = useCallback(
+    (nodes: number[]) => {
+      setSelectedNodesStore(nodes);
+    },
+    [setSelectedNodesStore],
+  );
 
-  const addSelectedNodes = useCallback((nodes: number[]) => {
-    addSelectedNodesStore(nodes);
-  }, [addSelectedNodesStore]);
+  const addSelectedNodes = useCallback(
+    (nodes: number[]) => {
+      addSelectedNodesStore(nodes);
+    },
+    [addSelectedNodesStore],
+  );
+
+  const removeSelectedNode = useCallback(
+    (nodeId: number) => {
+      removeSelectedNodeStore(nodeId);
+    },
+    [removeSelectedNodeStore],
+  );
+
+  const setHideSelectedNodes = useCallback(
+    (hide: boolean) => {
+      setHideSelectedNodesStore(hide);
+    },
+    [setHideSelectedNodesStore],
+  );
+
+  const toggleHideSelectedNodes = useCallback(() => {
+    toggleHideSelectedNodesStore();
+  }, [toggleHideSelectedNodesStore]);
 
   const clearSelection = useCallback(() => {
     clearSelectionStore();
   }, [clearSelectionStore]);
 
-  const startBoxSelection = useCallback((start: { x: number; y: number }) => {
-    startBoxSelectionStore(start);
-  }, [startBoxSelectionStore]);
+  const startBoxSelection = useCallback(
+    (start: { x: number; y: number }) => {
+      startBoxSelectionStore(start);
+    },
+    [startBoxSelectionStore],
+  );
 
-  const updateBoxSelection = useCallback((end: { x: number; y: number }) => {
-    updateBoxSelectionStore(end);
-  }, [updateBoxSelectionStore]);
+  const updateBoxSelection = useCallback(
+    (end: { x: number; y: number }) => {
+      updateBoxSelectionStore(end);
+    },
+    [updateBoxSelectionStore],
+  );
 
   const endBoxSelection = useCallback(() => {
     endBoxSelectionStore();
   }, [endBoxSelectionStore]);
 
   const cancelBoxSelection = useCallback(() => {
-    // Cancel is same as end for now
     endBoxSelectionStore();
   }, [endBoxSelectionStore]);
 
-  const value = useMemo((): NodeVisibilityContextType => ({
+  const setHoveredNodeId = useCallback(
+    (nodeId: number | null) => {
+      setHoveredNodeIdStore(nodeId);
+    },
+    [setHoveredNodeIdStore],
+  );
+
+  return {
     selectedNodeIds,
     boxSelection,
     isBoxSelecting,
+    hoveredNodeId,
+    hideSelectedNodes,
     setSelectedNodes,
     addSelectedNodes,
+    removeSelectedNode,
+    setHideSelectedNodes,
+    toggleHideSelectedNodes,
     clearSelection,
     startBoxSelection,
     updateBoxSelection,
     endBoxSelection,
     cancelBoxSelection,
-  }), [selectedNodeIds, boxSelection, isBoxSelecting, setSelectedNodes, addSelectedNodes, clearSelection, startBoxSelection, updateBoxSelection, endBoxSelection, cancelBoxSelection]);
-
-  return <NodeVisibilityContext.Provider value={value}>{children}</NodeVisibilityContext.Provider>;
+    setHoveredNodeId,
+  };
 }
 
 export function performBoxSelection(
@@ -110,7 +156,6 @@ export function performBoxSelection(
     worldPos.applyMatrix4(mesh.matrixWorld);
     worldPos.project(camera);
 
-    // Convert from NDC to screen space (0-1)
     const screenX = (worldPos.x + 1) / 2;
     const screenY = 1 - (worldPos.y + 1) / 2;
 

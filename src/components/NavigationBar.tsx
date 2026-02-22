@@ -1,5 +1,4 @@
 import DataSources from "@/data/index";
-import { useViewStore } from "@/stores";
 import { useAnimationData } from "../hooks/nodeDataHook";
 import { Link, useLocation } from "react-router";
 import React from "react";
@@ -15,7 +14,6 @@ export function NavigationBar({ routes }: { routes: { path: string; label: strin
   const currentRoute = routes.find((r) => r.path === location.pathname);
   const currentLabel = currentRoute?.label ?? "Select Page";
   const CurrentIcon = currentRoute?.icon;
-  const dockviewLayout = useViewStore((state) => state.dockviewLayout);
   const { clearSelection } = useAnimationData();
 
   const backToHome = () => {
@@ -55,7 +53,7 @@ export function NavigationBar({ routes }: { routes: { path: string; label: strin
         <span className="text-xs text-neutral-400">v{VERSION}</span>
       </span>
       <div className="flex items-center gap-3 justify-end">
-        {location.pathname === "/" && dockviewLayout && <ShareButton layout={dockviewLayout} />}
+        {location.pathname === "/" && <ShareButton />}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">

@@ -35,12 +35,18 @@
 
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import ReactECharts from "echarts-for-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 import { useFloorVisibility } from "@/contexts/visualization";
 import type { EChartsOption } from "echarts";
-import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import type { DockviewPanelApi } from "dockview";
+import { getDefaultInterstoryDriftChartPanelState } from "@/lib/statePersistence";
+import { useViewStore } from "@/stores";
+
+interface InterstoryDriftChartProps {
+  api?: DockviewPanelApi;
+}
 
 const cornerColors = {
   NW: "#3b82f6",
@@ -95,12 +101,8 @@ function TooltipContent({
               <span style={{ color: "#6b7280", fontSize: "11px" }}>{corner}</span>
             </div>
             <div style={{ textAlign: "right" }}>
-              <span style={{ fontWeight: 500 }}>
-                <UnitTooltip value={current} unit="%" decimals={4} />
-              </span>
-              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>
-                / <UnitTooltip value={peak} unit="%" decimals={4} />
-              </span>
+              <span style={{ fontWeight: 500 }}>{current.toFixed(4)}%</span>
+              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>/ {peak.toFixed(4)}%</span>
             </div>
           </div>
         );
@@ -111,11 +113,42 @@ function TooltipContent({
 
 const corners: Array<keyof typeof cornerColors> = ["NW", "NE", "SW", "SE"];
 
-export function InterstoryDriftChart() {
+export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { precomputed } = animationData;
   const { getVisibleStoryOrder } = useFloorVisibility();
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const chartRef = useRef<ReactECharts>(null);
+  const [chartReadyVersion, setChartReadyVersion] = useState(0);
+
+  const panelId = api?.id ?? "interstory-drift-chart";
+  const defaultState = getDefaultInterstoryDriftChartPanelState();
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const panelState =
+    savedPanelState?.type === "interstoryDriftChart" ? savedPanelState.state : defaultState;
+  const visibleCorners = panelState.visibleCorners;
+
+  // Listen to legend changes from ECharts
+  useEffect(() => {
+    const chart = chartRef.current?.getEchartsInstance();
+    if (!chart) return;
+
+    const handleLegendChange = () => {
+      const option = chart.getOption() as { legend?: Array<{ selected?: Record<string, boolean> }> };
+      if (option && option.legend && option.legend[0] && option.legend[0].selected) {
+        const selected = Object.entries(option.legend[0].selected)
+          .filter(([_, isVisible]) => isVisible)
+          .map(([name]) => name);
+        setPanelState(panelId, "interstoryDriftChart", { visibleCorners: selected });
+      }
+    };
+
+    chart.on("legendselectchanged", handleLegendChange);
+    return () => {
+      chart.off("legendselectchanged", handleLegendChange);
+    };
+  }, [chartReadyVersion, panelId, setPanelState]);
 
   // Static configuration that doesn't change with frameIndex
   const staticConfig = useMemo(() => {
@@ -307,8 +340,17 @@ export function InterstoryDriftChart() {
   const xAxisMax = Math.max(Math.max(maxCurrentRatio, maxPeakRatio) * 1.15, MIN_X_AXIS_MAX);
 
   const option = useMemo(() => {
+    const selected: Record<string, boolean> = {};
+    corners.forEach((corner) => {
+      selected[corner] = visibleCorners.includes(corner);
+    });
+
     return {
       ...baseOption,
+      legend: {
+        ...baseOption.legend,
+        selected,
+      },
       xAxis: {
         type: "value" as const,
         name: "Drift (%)",
@@ -339,11 +381,17 @@ export function InterstoryDriftChart() {
       },
       series: seriesData,
     };
-  }, [baseOption, seriesData, xAxisMax]);
+  }, [baseOption, seriesData, xAxisMax, visibleCorners]);
 
   return (
     <div className="h-full w-full">
-      <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+      <ReactECharts
+        ref={chartRef}
+        option={option}
+        style={{ height: "100%", width: "100%" }}
+        opts={{ renderer: "svg" }}
+        onChartReady={() => setChartReadyVersion((v) => v + 1)}
+      />
     </div>
   );
 }

@@ -32,11 +32,13 @@
  * =============================================================================
  */
 
+import type { IDockviewPanelProps } from "dockview";
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFloorVisibility } from "@/contexts/visualization";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { getDefaultStoryDriftHeatmapPanelState } from "@/lib/statePersistence";
 import {
   amber50,
   amber600,
@@ -53,6 +55,7 @@ import { formatHex, interpolate } from "culori";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useViewStore } from "@/stores";
 
 const CORNER_OPTIONS = ["NW", "NE", "SW", "SE", "Max"] as const;
 type Corner = (typeof CORNER_OPTIONS)[number];
@@ -77,15 +80,31 @@ const maxColorScale = [
 const RESOLUTION_OPTIONS = [50, 100, 200, 400, 800, 1600] as const;
 type Resolution = (typeof RESOLUTION_OPTIONS)[number];
 
-export function StoryDriftHeatmap() {
+export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getVisibleStoryOrder } = useFloorVisibility();
+  const setPanelState = useViewStore((s) => s.setPanelState);
   const chartRef = useRef<ReactECharts>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
-  const [selectedCorners, setSelectedCorner] = useState<Corner[]>(["NE"]);
-  const [resolution, setResolution] = useState<Resolution>(50);
+
+  const panelId = api?.id ?? "story-drift-heatmap";
+  const defaultState = getDefaultStoryDriftHeatmapPanelState();
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const savedState =
+    savedPanelState?.type === "storyDriftHeatmap" ? savedPanelState.state : defaultState;
+
+  const [selectedCorners, setSelectedCorner] = useState<Corner[]>(savedState.selectedCorners as Corner[]);
+  const [resolution, setResolution] = useState<Resolution>(savedState.resolution as Resolution);
+  const panelIdRef = useRef(panelId);
+
+  useEffect(() => {
+    setPanelState(panelIdRef.current, "storyDriftHeatmap", { 
+      selectedCorners, 
+      resolution 
+    });
+  }, [selectedCorners, resolution, setPanelState]);
 
   const isMaxSelected = selectedCorners.includes("Max");
   const visibleStories = useMemo(() => getVisibleStoryOrder().slice(1), [getVisibleStoryOrder]);

@@ -10,13 +10,15 @@ import {
   useViewMode,
 } from "@/contexts/visualization";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { getDefaultCanvasPanelState } from "@/lib/statePersistence";
 import { UNIT_SCALE } from "@/lib/utils";
-import { useViewStore } from "@/stores";
+import { useViewStore, useViewStoreRaw } from "@/stores";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { BoxSelect, ChevronDown, ChevronLeftIcon, Grid3X3, ScanEye } from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import * as THREE from "three";
 
 // Import new panel components directly
 import { ColorPanel } from "./CanvasWithControls/control-panels/ColorPanel";
@@ -55,6 +57,7 @@ function CameraManager({
   const buildingVerticalCenter =
     (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
   const cameraDistance = animationData.precomputed.boundingBox.radius * UNIT_SCALE;
+  const previousIsOrthographicRef = useRef(isOrthographic);
 
   const stableTarget = useMemo(() => new Vector3(0, 0, buildingVerticalCenter), [buildingVerticalCenter]);
 
@@ -71,12 +74,16 @@ function CameraManager({
     const controls = orbitControlsRef.current;
 
     if (!perspective || !ortho || !controls) return;
+    const wasOrthographic = previousIsOrthographicRef.current;
+    previousIsOrthographicRef.current = isOrthographic;
+    if (wasOrthographic === isOrthographic) return;
 
     const savedTarget = controls.target.clone();
 
     if (isOrthographic) {
+      const distanceToTarget = Math.max(controls.object.position.distanceTo(savedTarget), 1e-6);
       ortho.position.copy(perspective.position);
-      ortho.zoom = (cameraDistance / perspective.position.length()) * 8;
+      ortho.zoom = (cameraDistance / distanceToTarget) * 8;
       ortho.updateProjectionMatrix();
     } else {
       perspective.position.copy(ortho.position);
@@ -120,19 +127,57 @@ export function CanvasWithControls({
   onMouseDown,
   onMouseMove,
   onMouseUp,
+  panelId: initialPanelId,
 }: {
   children: React.ReactNode;
   showPlaybackControls?: boolean;
   onMouseDown?: (e: React.MouseEvent) => void;
   onMouseMove?: (e: React.MouseEvent) => void;
   onMouseUp?: (e: React.MouseEvent) => void;
+  panelId?: string;
 }) {
-  const [isOrthographic, setIsOrthographic] = useState(false);
+  const panelId = initialPanelId ?? "main-canvas";
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const store = useViewStoreRaw();
+
+  // Initialize isOrthographic from saved state
+  const [isOrthographic, setIsOrthographic] = useState(() => {
+    if (savedPanelState?.type !== "canvas") {
+      return false;
+    }
+    return savedPanelState.state.camera.isOrthographic;
+  });
   const [enableSmoothing, setEnableSmoothing] = useState(false);
   const [enablePan, _setEnablePan] = useState(true);
-  const { orbitControlsRef } = useCamera();
+  const hasHydratedPanelRef = useRef(false);
+  const { orbitControlsRef, getCameraState } = useCamera();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
   const { selectedNodeIds, isBoxSelecting, boxSelection } = useNodeVisibility();
+
+  const getCurrentPanelState = useCallback(() => {
+    const panelState = store.getState().panelStates[panelId];
+    if (panelState?.type === "canvas") {
+      return panelState.state;
+    }
+    return getDefaultCanvasPanelState();
+  }, [panelId, store]);
+
+  // Save isOrthographic when it changes
+  useEffect(() => {
+    if (!hasHydratedPanelRef.current) {
+      hasHydratedPanelRef.current = true;
+      return;
+    }
+    const panelState = getCurrentPanelState();
+    setPanelState(panelId, "canvas", {
+      ...panelState,
+      camera: {
+        ...panelState.camera,
+        isOrthographic,
+      },
+    });
+  }, [isOrthographic, panelId, setPanelState, getCurrentPanelState]);
 
   // Expose setEnablePan to children via a ref or context if needed
   // For now, we use useEffect to update the camera when enablePan changes
@@ -142,6 +187,110 @@ export function CanvasWithControls({
       controls.enablePan = enablePan;
     }
   }, [enablePan, orbitControlsRef]);
+
+  // Restore camera position from saved panel state on mount
+  useEffect(() => {
+    if (savedPanelState?.type !== "canvas") return;
+
+    let rafId: number | null = null;
+    let cancelled = false;
+
+    const restore = () => {
+      if (cancelled) return;
+      const controls = orbitControlsRef.current;
+      if (!controls) {
+        rafId = requestAnimationFrame(restore);
+        return;
+      }
+
+      const camera = controls.object as THREE.Camera;
+      camera.position.set(
+        savedPanelState.state.camera.position[0],
+        savedPanelState.state.camera.position[1],
+        savedPanelState.state.camera.position[2],
+      );
+      if (
+        "isOrthographicCamera" in camera &&
+        camera.isOrthographicCamera === true &&
+        typeof savedPanelState.state.camera.zoom === "number"
+      ) {
+        (camera as THREE.OrthographicCamera).zoom = savedPanelState.state.camera.zoom;
+        (camera as THREE.OrthographicCamera).updateProjectionMatrix();
+      }
+      controls.target.set(
+        savedPanelState.state.camera.target[0],
+        savedPanelState.state.camera.target[1],
+        savedPanelState.state.camera.target[2],
+      );
+      controls.update();
+    };
+
+    restore();
+
+    return () => {
+      cancelled = true;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, [orbitControlsRef, savedPanelState]);
+
+  // Save camera state periodically and on unmount
+  useEffect(() => {
+    let saveTimeout: number | null = null;
+    let rafId: number | null = null;
+    let controls: OrbitControlsImpl | null = null;
+    let cancelled = false;
+
+    const saveCameraState = () => {
+      const cameraState = getCameraState();
+      const panelState = getCurrentPanelState();
+      setPanelState(panelId, "canvas", {
+        ...panelState,
+        camera: cameraState,
+      });
+      store.getState().setCameraState(cameraState);
+    };
+
+    const handleChange = () => {
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = window.setTimeout(saveCameraState, 200);
+    };
+
+    const handleInteractionEnd = () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+      }
+      saveCameraState();
+    };
+
+    const attach = () => {
+      if (cancelled) return;
+      controls = orbitControlsRef.current;
+      if (!controls) {
+        rafId = requestAnimationFrame(attach);
+        return;
+      }
+      controls.addEventListener("change", handleChange);
+      controls.addEventListener("end", handleInteractionEnd);
+    };
+
+    attach();
+
+    return () => {
+      cancelled = true;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      if (controls) {
+        controls.removeEventListener("change", handleChange);
+        controls.removeEventListener("end", handleInteractionEnd);
+      }
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveCameraState();
+    };
+  }, [orbitControlsRef, getCameraState, panelId, setPanelState, store, getCurrentPanelState]);
 
   // Calculate box overlay styles
   const boxStyle = boxSelection
@@ -219,7 +368,7 @@ export function ViewControls({
   } = useExplodedView();
   const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
     useSliceSelection();
-  const { selectedNodeIds, clearSelection } = useNodeVisibility();
+  const { selectedNodeIds, clearSelection, hideSelectedNodes, toggleHideSelectedNodes } = useNodeVisibility();
   const { thresholds, setThreshold } = useThresholds();
   const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
@@ -457,6 +606,15 @@ export function ViewControls({
               </motion.div>
               {selectedNodeIds.size > 0 && (
                 <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                  <button
+                    onClick={toggleHideSelectedNodes}
+                    className={`w-full text-xs px-2 py-1 rounded border transition-colors mb-1 ${
+                      hideSelectedNodes
+                        ? "bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
+                        : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-300"
+                    }`}>
+                    {hideSelectedNodes ? "Show Selected Nodes" : "Hide Selected Nodes"}
+                  </button>
                   <button
                     onClick={clearSelection}
                     className="w-full text-xs px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 rounded transition-colors">

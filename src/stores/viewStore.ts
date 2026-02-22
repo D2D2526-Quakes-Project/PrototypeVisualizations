@@ -1,9 +1,16 @@
 import type { ViewMode } from "@/contexts/visualization/ViewModeContext";
 import type { Metric } from "@/lib/metrics";
 import type { ComputedStats } from "@/lib/types";
+import type { PanelState } from "@/lib/statePersistence";
 import type { SerializedDockview } from "dockview";
+import type { CameraState } from "@/lib/statePersistence";
 import { createStore } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
+
+function isStateDebugEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("debugState") === "1";
+}
 
 export type ThresholdState = Record<Metric, number>;
 
@@ -55,9 +62,35 @@ export const DEFAULT_EXPLODED_STATE: ExplodedViewState = {
   zDisplacementScale: 1,
 };
 
+export const DEFAULT_SLICE_RANGES = {
+  x: [-100, 100] as [number, number],
+  y: [-100, 100] as [number, number],
+  z: [0, 100] as [number, number],
+};
+
+export const DEFAULT_BACKGROUND_COLOR = "#dcdcdc";
+
+export const DEFAULT_CAMERA_STATE: CameraState = {
+  isOrthographic: false,
+  position: [0, 0, 0],
+  target: [0, 0, 0],
+  zoom: 50,
+};
+
 export interface BoxSelection {
   start: { x: number; y: number };
   end: { x: number; y: number };
+}
+
+export type SliceType = "floor";
+
+export interface SliceSelectionState {
+  id: string;
+  type: SliceType;
+  value: string | number;
+  nodeIds: number[];
+  label: string;
+  storyId?: string;
 }
 
 export interface ViewState {
@@ -68,6 +101,9 @@ export interface ViewState {
   skippedPerFrame: number;
   totalFrames: number;
   setFrameIndex: (frame: number) => void;
+  setPlaying: (playing: boolean) => void;
+  setFps: (fps: number) => void;
+  setSkippedPerFrame: (frames: number) => void;
   handlePlayPause: () => void;
   skipToStart: () => void;
   skipToEnd: () => void;
@@ -97,6 +133,7 @@ export interface ViewState {
 
   // Exploded View
   explodedView: ExplodedViewState;
+  setExplodedView: (view: ExplodedViewState) => void;
   toggleExploded: () => void;
   toggleDisplacement: () => void;
   setExplosion: (axis: "x" | "y" | "z", factor: number) => void;
@@ -120,18 +157,48 @@ export interface ViewState {
 
   // Node Visibility / Selection
   selectedNodeIds: number[];
+  openedNodePanelIds: number[];
   boxSelection: BoxSelection | null;
   isBoxSelecting: boolean;
+  hideSelectedNodes: boolean;
   setSelectedNodes: (nodes: number[]) => void;
+  removeSelectedNode: (nodeId: number) => void;
   addSelectedNodes: (nodes: number[]) => void;
+  setHideSelectedNodes: (hide: boolean) => void;
+  toggleHideSelectedNodes: () => void;
+  addOpenedNodePanel: (nodeId: number) => void;
+  removeOpenedNodePanel: (nodeId: number) => void;
   clearSelection: () => void;
   startBoxSelection: (start: { x: number; y: number }) => void;
   updateBoxSelection: (end: { x: number; y: number }) => void;
   endBoxSelection: () => void;
+  hoveredNodeId: number | null;
+  setHoveredNodeId: (nodeId: number | null) => void;
 
   // Dockview Layout
   dockviewLayout: SerializedDockview | null;
   setDockviewLayout: (layout: SerializedDockview) => void;
+
+  // Camera State
+  cameraState: CameraState;
+  setCameraState: (state: CameraState) => void;
+
+  // Per-panel state
+  panelStates: Record<string, PanelState>;
+  setPanelState: <T extends PanelState["type"]>(
+    panelId: string,
+    panelType: T,
+    panelState: Extract<PanelState, { type: T }>["state"],
+  ) => void;
+  removePanelState: (panelId: string) => void;
+  setPanelStates: (panelStates: Record<string, PanelState>) => void;
+
+  // Slice interaction
+  selectedSlice: SliceSelectionState | null;
+  hoveredSlice: SliceSelectionState | null;
+  selectSlice: (slice: SliceSelectionState) => void;
+  deselectSlice: () => void;
+  setHoveredSlice: (slice: SliceSelectionState | null) => void;
 }
 
 export const createViewStore = () =>
@@ -143,7 +210,22 @@ export const createViewStore = () =>
       fps: 0,
       skippedPerFrame: 0,
       totalFrames: 100,
-      setFrameIndex: (frameIndex) => set({ frameIndex }),
+      setFrameIndex: (frameIndex) =>
+        set((state) => {
+          if (isStateDebugEnabled() && state.frameIndex !== frameIndex) {
+            console.debug("[state] frameIndex update", {
+              from: state.frameIndex,
+              to: frameIndex,
+              totalFrames: state.totalFrames,
+              playing: state.playing,
+              stack: new Error().stack,
+            });
+          }
+          return { frameIndex };
+        }),
+      setPlaying: (playing) => set({ playing }),
+      setFps: (fps) => set({ fps }),
+      setSkippedPerFrame: (skippedPerFrame) => set({ skippedPerFrame }),
       handlePlayPause: () => set((state) => ({ playing: !state.playing })),
       skipToStart: () => set({ frameIndex: 0 }),
       skipToEnd: () => set((state) => ({ frameIndex: state.totalFrames - 1 })),
@@ -222,6 +304,7 @@ export const createViewStore = () =>
 
       // Exploded View
       explodedView: { ...DEFAULT_EXPLODED_STATE },
+      setExplodedView: (explodedView) => set({ explodedView }),
       toggleExploded: () =>
         set((state) => ({
           explodedView: { ...state.explodedView, explodedEnabled: !state.explodedView.explodedEnabled },
@@ -246,26 +329,42 @@ export const createViewStore = () =>
       // Slice
       sliceEnabled: false,
       setSliceEnabled: (sliceEnabled) => set({ sliceEnabled }),
-      xRange: [-100, 100] as [number, number],
-      yRange: [-100, 100] as [number, number],
-      zRange: [0, 100] as [number, number],
+      xRange: [...DEFAULT_SLICE_RANGES.x] as [number, number],
+      yRange: [...DEFAULT_SLICE_RANGES.y] as [number, number],
+      zRange: [...DEFAULT_SLICE_RANGES.z] as [number, number],
       setXRange: (xRange) => set({ xRange }),
       setYRange: (yRange) => set({ yRange }),
       setZRange: (zRange) => set({ zRange }),
       setSliceRanges: (x, y, z) => set({ xRange: x, yRange: y, zRange: z }),
 
       // Background Color
-      backgroundColor: "#dcdcdc",
+      backgroundColor: DEFAULT_BACKGROUND_COLOR,
       setBackgroundColor: (backgroundColor) => set({ backgroundColor }),
 
       // Node Visibility / Selection
       selectedNodeIds: [],
+      openedNodePanelIds: [],
       boxSelection: null,
       isBoxSelecting: false,
+      hideSelectedNodes: false,
       setSelectedNodes: (selectedNodeIds) => set({ selectedNodeIds }),
+      removeSelectedNode: (nodeId) =>
+        set((state) => ({
+          selectedNodeIds: state.selectedNodeIds.filter((id) => id !== nodeId),
+        })),
       addSelectedNodes: (nodes) =>
         set((state) => ({
           selectedNodeIds: [...new Set([...state.selectedNodeIds, ...nodes])],
+        })),
+      setHideSelectedNodes: (hideSelectedNodes) => set({ hideSelectedNodes }),
+      toggleHideSelectedNodes: () => set((state) => ({ hideSelectedNodes: !state.hideSelectedNodes })),
+      addOpenedNodePanel: (nodeId) =>
+        set((state) => ({
+          openedNodePanelIds: [...new Set([...state.openedNodePanelIds, nodeId])],
+        })),
+      removeOpenedNodePanel: (nodeId) =>
+        set((state) => ({
+          openedNodePanelIds: state.openedNodePanelIds.filter((id) => id !== nodeId),
         })),
       clearSelection: () => set({ selectedNodeIds: [], boxSelection: null, isBoxSelecting: false }),
       startBoxSelection: (start) => set({ boxSelection: { start, end: start }, isBoxSelecting: true }),
@@ -274,10 +373,41 @@ export const createViewStore = () =>
           boxSelection: state.boxSelection ? { ...state.boxSelection, end } : null,
         })),
       endBoxSelection: () => set({ isBoxSelecting: false, boxSelection: null }),
+      hoveredNodeId: null,
+      setHoveredNodeId: (hoveredNodeId) => set({ hoveredNodeId }),
 
       // Dockview Layout
       dockviewLayout: null,
       setDockviewLayout: (dockviewLayout) => set({ dockviewLayout }),
+
+      // Camera State
+      cameraState: { ...DEFAULT_CAMERA_STATE },
+      setCameraState: (cameraState) => set({ cameraState }),
+
+      panelStates: {},
+      setPanelState: (panelId, panelType, panelState) =>
+        set((state) => ({
+          panelStates: {
+            ...state.panelStates,
+            [panelId]: {
+              panelId,
+              type: panelType,
+              state: panelState,
+            } as PanelState,
+          },
+        })),
+      removePanelState: (panelId) =>
+        set((state) => {
+          const { [panelId]: _removed, ...rest } = state.panelStates;
+          return { panelStates: rest };
+        }),
+      setPanelStates: (panelStates) => set({ panelStates }),
+
+      selectedSlice: null,
+      hoveredSlice: null,
+      selectSlice: (selectedSlice) => set({ selectedSlice }),
+      deselectSlice: () => set({ selectedSlice: null }),
+      setHoveredSlice: (hoveredSlice) => set({ hoveredSlice }),
     })),
   );
 

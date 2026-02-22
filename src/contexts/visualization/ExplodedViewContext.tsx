@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { useViewStore } from "@/stores";
 import type { AnimationMetadata } from "@/lib/types";
 import type { ExplodedViewState as StoredExplodedViewState } from "@/stores/viewStore";
+import { useCallback } from "react";
 
 interface ExplodedViewContextType {
   state: StoredExplodedViewState;
@@ -19,17 +19,11 @@ interface ExplodedViewContextType {
   ) => [number, number, number];
 }
 
-const ExplodedViewContext = createContext<ExplodedViewContextType | undefined>(undefined);
-
-export function useExplodedView() {
-  const context = useContext(ExplodedViewContext);
-  if (!context) {
-    throw new Error("useExplodedView must be used within ExplodedViewProvider");
-  }
-  return context;
+export function ExplodedViewProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
 
-export function ExplodedViewProvider({ children }: { children: ReactNode }) {
+export function useExplodedView(): ExplodedViewContextType {
   const explodedView = useViewStore((s) => s.explodedView);
   const toggleExploded = useViewStore((s) => s.toggleExploded);
   const toggleDisplacement = useViewStore((s) => s.toggleDisplacement);
@@ -58,18 +52,16 @@ export function ExplodedViewProvider({ children }: { children: ReactNode }) {
 
       const [offsetX, offsetY, offsetZ] = offset;
 
-      const posAfterDisp = [
+      return [
         (initX + offsetX) * (1 + explodedView.xExplosion) + scaledDispX - offsetX,
         (initY + offsetY) * (1 + explodedView.yExplosion) + scaledDispY - offsetY,
         (initZ + offsetZ) * (1 + explodedView.zExplosion) + scaledDispZ - offsetZ,
       ] as [number, number, number];
-
-      return posAfterDisp;
     },
     [explodedView],
   );
 
-  const value = useMemo((): ExplodedViewContextType => ({
+  return {
     state: explodedView,
     toggleExploded,
     toggleDisplacement,
@@ -77,7 +69,5 @@ export function ExplodedViewProvider({ children }: { children: ReactNode }) {
     setDisplacementScale,
     reset: resetExplodedView,
     getExplodedPosition,
-  }), [explodedView, toggleExploded, toggleDisplacement, setExplosion, setDisplacementScale, resetExplodedView, getExplodedPosition]);
-
-  return <ExplodedViewContext.Provider value={value}>{children}</ExplodedViewContext.Provider>;
+  };
 }

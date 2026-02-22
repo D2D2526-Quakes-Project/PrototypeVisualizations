@@ -1,7 +1,7 @@
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { interpolateColor } from "@/lib/colors";
 import { useViewStore } from "@/stores";
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { useCallback, useMemo } from "react";
 import * as THREE from "three";
 import { useThresholds } from "./ThresholdContext";
 import { getMetricConfig, METRIC_CONFIGS, type Metric } from "@/lib/metrics";
@@ -19,17 +19,11 @@ interface ColorContextType {
   setThresholdHighlighting: (enabled: boolean) => void;
 }
 
-const ColorContext = createContext<ColorContextType | undefined>(undefined);
-
-export function useColor() {
-  const context = useContext(ColorContext);
-  if (!context) {
-    throw new Error("useColor must be used within ColorProvider");
-  }
-  return context;
+export function ColorProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
 
-export function ColorProvider({ children }: { children: ReactNode }) {
+export function useColor(): ColorContextType {
   const { animationData } = useAnimationData();
   const { thresholds } = useThresholds();
   const currentMetric = useViewStore((s) => s.currentMetric);
@@ -74,20 +68,21 @@ export function ColorProvider({ children }: { children: ReactNode }) {
       const value = metricConfig.getValue(animationData, frameIndex, nodeId);
       if (value === undefined) return grayColor;
 
-      // -1 to 1 range
       const negative = value < 0;
       const normalizedValue = Math.min(1, Math.max(0, Math.abs(value / maxValue)));
       const normalizedThreshold = Math.min(1, Math.max(0, thresholdValue / maxValue));
 
       let rgbColor: [number, number, number];
 
-      if (normalizedValue == 0) rgbColor = [1, 1, 1];
-      else {
+      if (normalizedValue === 0) {
+        rgbColor = [1, 1, 1];
+      } else {
         let t: number = normalizedValue;
         let interpolator: (t: number) => FindColorByMode<"oklab">;
 
         if (negative) interpolator = negativeInterpolator;
         else interpolator = positiveInterpolator;
+
         if (thresholdHighlighting) {
           if (normalizedValue < normalizedThreshold) {
             t = normalizedValue / normalizedThreshold;
@@ -117,12 +112,10 @@ export function ColorProvider({ children }: { children: ReactNode }) {
   );
 
   const availableMetrics = useMemo((): Metric[] => {
-    return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) =>
-      METRIC_CONFIGS[metric].isAvailable(animationData),
-    );
+    return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) => METRIC_CONFIGS[metric].isAvailable(animationData));
   }, [animationData]);
 
-  const value: ColorContextType = {
+  return {
     currentMetric,
     setColorMetric,
     getNodeColor,
@@ -130,6 +123,4 @@ export function ColorProvider({ children }: { children: ReactNode }) {
     thresholdHighlighting,
     setThresholdHighlighting,
   };
-
-  return <ColorContext.Provider value={value}>{children}</ColorContext.Provider>;
 }

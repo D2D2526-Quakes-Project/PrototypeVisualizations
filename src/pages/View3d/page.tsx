@@ -2,17 +2,20 @@ import { DockviewWrapper } from "@/components/dockviewWrapper";
 import { MagicPanel, MagicPanelTab } from "@/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/components/NodePanel";
 import { SlicePanel } from "@/components/SlicePanel";
-import { CameraProvider } from "@/contexts/CameraContext";
 import { NodeSelectionProvider, useNodeSelection } from "@/contexts/NodeSelectionContext";
-import { useSliceSelection, ThresholdProvider, FloorVisibilityProvider } from "@/contexts/visualization";
+import { useSliceSelection } from "@/contexts/visualization";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import {
-  getLayoutFromCurrentUrl,
-  loadLayoutFromLocalStorage,
-  saveLayoutToLocalStorage,
-} from "@/lib/layoutPersistence";
+  loadFromLocalStorage,
+  getStateFromCurrentUrl,
+  saveUrlState,
+  getDefaultAppState,
+  type AppState,
+} from "@/lib/statePersistence";
+import type { Metric } from "@/lib/metrics";
 import { useViewStoreRaw } from "@/stores";
 import { type DockviewApi, type DockviewReadyEvent, type SerializedDockview } from "dockview";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 
 const components = {
   nodePanel: NodePanel,
@@ -26,39 +29,134 @@ const tabComponents = {
 };
 
 export function View3d() {
+  const [isReady, setIsReady] = useState(false);
+  const [initialState, setInitialState] = useState<AppState | null>(null);
+
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
+    const urlState = getStateFromCurrentUrl();
+    const savedState = loadFromLocalStorage();
+
+    const stateToRestore = urlState ?? savedState;
+
+    if (stateToRestore) {
+      requestAnimationFrame(() => {
+        if (new URLSearchParams(window.location.search).get("debugState") === "1") {
+          console.debug("[restore] loaded initial state", {
+            source: urlState ? "url" : "localStorage",
+            frameIndex: stateToRestore.frameIndex,
+            panelStateKeys: Object.keys(stateToRestore.panelStates ?? {}),
+          });
+        }
+        setInitialState(stateToRestore);
+
+        if (urlState) {
+          saveUrlState(stateToRestore);
+        }
+      });
+    } else {
+      requestAnimationFrame(() => {
+        setInitialState(getDefaultAppState());
+      });
+    }
+
+    requestAnimationFrame(() => {
+      setIsReady(true);
+    });
+  }, []);
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <ThresholdProvider>
-        <FloorVisibilityProvider>
-          <NodeSelectionProvider>
-            <CameraProvider>
-              <DockviewContainer />
-            </CameraProvider>
-          </NodeSelectionProvider>
-        </FloorVisibilityProvider>
-      </ThresholdProvider>
+      <NodeSelectionProvider>
+        {isReady && initialState && <DockviewContainer initialState={initialState} />}
+      </NodeSelectionProvider>
     </div>
   );
 }
 
-function DockviewContainer() {
+function DockviewContainer({ initialState }: { initialState: AppState }) {
   const { setDockviewApi } = useNodeSelection();
   const { setDockviewApi: setSliceDockviewApi } = useSliceSelection();
   const store = useViewStoreRaw();
+  const hasAppliedInitialStateRef = useRef(false);
+  const hasReassertedCriticalStateRef = useRef(false);
 
-  const initialLayout = getLayoutFromCurrentUrl() ?? loadLayoutFromLocalStorage();
+  useAutoSave();
 
-  const handleDockviewReady = (event: DockviewReadyEvent) => {
-    setDockviewApi(event.api);
-    setSliceDockviewApi(event.api);
-  };
+  useEffect(() => {
+    if (hasAppliedInitialStateRef.current) return;
+    hasAppliedInitialStateRef.current = true;
+
+    const s = store.getState();
+    s.setFrameIndex(initialState.frameIndex);
+    s.setColorMetric(initialState.currentMetric);
+    s.setThresholdHighlighting(initialState.thresholdHighlighting);
+
+    (Object.entries(initialState.thresholds) as Array<[Metric, number]>).forEach(([key, value]) => {
+      s.setThreshold(key, value);
+    });
+
+    s.setVisibleFloors(initialState.visibleFloors);
+    s.setSelectedNodes(initialState.selectedNodeIds);
+    s.setHideSelectedNodes(initialState.hideSelectedNodes ?? false);
+
+    s.setExplodedView(initialState.explodedView);
+
+    s.setSliceEnabled(initialState.sliceEnabled);
+    s.setSliceRanges(initialState.xRange, initialState.yRange, initialState.zRange);
+
+    if (initialState.camera) {
+      s.setCameraState(initialState.camera);
+    }
+
+    s.setBackgroundColor(initialState.backgroundColor);
+
+    if (initialState.layout) {
+      s.setDockviewLayout(initialState.layout);
+    }
+
+    s.setPanelStates(initialState.panelStates ?? {});
+  }, [store, initialState]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (hasReassertedCriticalStateRef.current) return;
+      hasReassertedCriticalStateRef.current = true;
+
+      const s = store.getState();
+      s.setFrameIndex(initialState.frameIndex);
+      s.setPanelStates({ ...(initialState.panelStates ?? {}) });
+
+      if (new URLSearchParams(window.location.search).get("debugState") === "1") {
+        console.debug("[restore] reasserted critical state", {
+          frameIndex: initialState.frameIndex,
+          panelStateKeys: Object.keys(initialState.panelStates ?? {}),
+        });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [store, initialState]);
+
+  const initialLayout = initialState.layout ?? getDefaultAppState().layout;
+
+  const handleDockviewReady = useCallback(
+    (event: DockviewReadyEvent) => {
+      setDockviewApi(event.api);
+      setSliceDockviewApi(event.api);
+    },
+    [setDockviewApi, setSliceDockviewApi],
+  );
 
   const handleLayoutChange = useCallback(
     (layout: SerializedDockview) => {
       store.getState().setDockviewLayout(layout);
-      saveLayoutToLocalStorage(layout);
     },
-    [store]
+    [store],
   );
 
   const createDefaultLayout = useCallback((api: DockviewApi) => {

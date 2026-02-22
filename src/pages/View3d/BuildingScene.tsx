@@ -14,9 +14,10 @@ import {
   useViewMode,
 } from "@/contexts/visualization";
 import { UNIT_SCALE } from "@/lib/utils";
+import { isNodeInteractionMode, isSlabInteractionMode } from "@/lib/interactionPolicy";
 import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 import { ThresholdBuildingScene } from "./ThresholdBuildingScene";
@@ -31,19 +32,37 @@ export function BuildingScene() {
   const { getNodeColor } = useColor();
   const { mode, getVisibleNodes } = useViewMode();
   const { getExplodedPosition } = useExplodedView();
-  const { openSlicePanel, sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
+  const { openSlicePanel, sliceEnabled, xRange, yRange, zRange, setHovered: setHoveredSlice, deselectSlice } = useSliceSelection();
   const { camera } = useThree();
   const { setEnablePan } = useCamera();
   const { getVisibleStoryOrder } = useFloorVisibility();
   const {
     selectedNodeIds,
-    boxSelection,
     startBoxSelection,
     updateBoxSelection,
     endBoxSelection,
     setSelectedNodes,
     addSelectedNodes,
+    hoveredNodeId,
+    setHoveredNodeId,
+    hideSelectedNodes,
   } = useNodeVisibility();
+  const nodeInteractionEnabled = isNodeInteractionMode(mode);
+  const slabInteractionEnabled = isSlabInteractionMode(mode);
+
+  useEffect(() => {
+    if (!nodeInteractionEnabled) {
+      setHoveredNodeId(null);
+      endBoxSelection();
+    }
+  }, [nodeInteractionEnabled, setHoveredNodeId, endBoxSelection]);
+
+  useEffect(() => {
+    if (!slabInteractionEnabled) {
+      setHoveredSlice(null);
+      deselectSlice();
+    }
+  }, [slabInteractionEnabled, setHoveredSlice, deselectSlice]);
 
   const offsets = useMemo(
     () => ({
@@ -84,6 +103,9 @@ export function BuildingScene() {
     const visibleStorySet = new Set(visibleStoryOrder);
 
     return visibleNodesBasedOnMode.filter((nodeId) => {
+      if (hideSelectedNodes && selectedNodeIds.has(nodeId)) {
+        return false;
+      }
       // Check which floor this node belongs to
       for (const storyId of visibleStorySet) {
         const storyNodes = animationData.metadata.stories[storyId];
@@ -95,12 +117,12 @@ export function BuildingScene() {
       // But for nodes not in any story (like corner nodes), show them
       return false;
     });
-  }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories]);
+  }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories, hideSelectedNodes, selectedNodeIds]);
 
   // Keyboard handler for ctrl/cmd to control pan and enable box select mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
+      if ((e.ctrlKey || e.metaKey) && nodeInteractionEnabled) {
         setEnablePan(false);
       }
     };
@@ -115,7 +137,7 @@ export function BuildingScene() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [setEnablePan]);
+  }, [setEnablePan, nodeInteractionEnabled]);
   // Ref to track mouse state for box selection
   const isMouseDownRef = useRef(false);
   const shiftHeldRef = useRef(false);
@@ -123,17 +145,19 @@ export function BuildingScene() {
   // Component to attach mouse handlers to the canvas element
   function BoxSelectionHandler() {
     const { gl } = useThree();
-    const boxSelectionRef = useRef(boxSelection);
+    const { boxSelection: currentBoxSelection } = useNodeVisibility();
+    const boxSelectionRef = useRef(currentBoxSelection);
 
     // Update ref when boxSelection changes
     useEffect(() => {
-      boxSelectionRef.current = boxSelection;
-    }, []);
+      boxSelectionRef.current = currentBoxSelection;
+    }, [currentBoxSelection]);
 
     useEffect(() => {
       const domElement = gl.domElement;
 
       const handleMouseDown = (e: MouseEvent) => {
+        if (!nodeInteractionEnabled) return;
         if (e.ctrlKey || e.metaKey) {
           shiftHeldRef.current = e.shiftKey;
           const rect = domElement.getBoundingClientRect();
@@ -145,6 +169,7 @@ export function BuildingScene() {
       };
 
       const handleMouseMove = (e: MouseEvent) => {
+        if (!nodeInteractionEnabled) return;
         if (isMouseDownRef.current && (e.ctrlKey || e.metaKey)) {
           const rect = domElement.getBoundingClientRect();
           const x = (e.clientX - rect.left) / rect.width;
@@ -154,7 +179,7 @@ export function BuildingScene() {
       };
 
       const handleMouseUp = () => {
-        // Process selection if we were dragging (regardless of whether Ctrl is still held)
+        if (!nodeInteractionEnabled) return;
         if (isMouseDownRef.current && boxSelectionRef.current) {
           const selected = performBoxSelection(camera, meshRef, boxSelectionRef.current, visibleNodes);
           if (shiftHeldRef.current) {
@@ -167,14 +192,24 @@ export function BuildingScene() {
         isMouseDownRef.current = false;
       };
 
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (!nodeInteractionEnabled) return;
+        if ((e.key === "Control" || e.key === "Meta" || e.key === "Ctrl") && isMouseDownRef.current) {
+          endBoxSelection();
+          isMouseDownRef.current = false;
+        }
+      };
+
       domElement.addEventListener("mousedown", handleMouseDown);
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("keyup", handleKeyUp);
 
       return () => {
         domElement.removeEventListener("mousedown", handleMouseDown);
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
+        window.removeEventListener("keyup", handleKeyUp);
       };
     }, [gl]);
 
@@ -192,7 +227,6 @@ export function BuildingScene() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [setSelectedNodes]);
 
-  const [hovered, setHovered] = useState<number | undefined>(undefined);
   const pointerDownNodeId = useRef<number | undefined>(undefined);
 
   const basePositions = useMemo(() => {
@@ -212,6 +246,7 @@ export function BuildingScene() {
 
   const handleNodeClick = useCallback(
     (event: { instanceId?: number; stopPropagation: () => void }) => {
+      if (!nodeInteractionEnabled) return;
       if (event.instanceId === undefined) return;
 
       // Only trigger click if we're releasing over the same node that was clicked down on
@@ -221,28 +256,14 @@ export function BuildingScene() {
       const nodeId = visibleNodes[event.instanceId];
       if (nodeId === undefined) return;
 
-      // Compute displaced position on-demand
-      const initialPos = animationData.initialPositions.at(nodeId);
-      const displacement = animationData.displacementLin.atFrame(frameIndexRef.current).at(nodeId);
-      const exploded = getExplodedPosition(
-        nodeId,
-        [initialPos[0], initialPos[1], initialPos[2]],
-        [displacement[0], displacement[1], displacement[2]],
-        [offsets.x, offsets.y, offsets.z],
-        animationData.metadata,
-      );
-      const worldPos = new THREE.Vector3(exploded[0], exploded[1], exploded[2]);
-
-      // Convert world coordinates to screen coordinates
-      const vector = worldPos.clone();
-      vector.project(camera);
       selectNode(nodeId);
     },
-    [camera, selectNode, visibleNodes, animationData, getExplodedPosition, offsets],
+    [selectNode, visibleNodes, nodeInteractionEnabled],
   );
 
   const handleNodeContextMenu = useCallback(
     (event: { instanceId?: number; stopPropagation: () => void; nativeEvent: { button: number } }) => {
+      if (!nodeInteractionEnabled) return;
       event.stopPropagation();
 
       if (event.instanceId === undefined) return;
@@ -260,13 +281,36 @@ export function BuildingScene() {
         }
       }
     },
-    [visibleNodes, animationData, openSlicePanel],
+    [visibleNodes, animationData, openSlicePanel, nodeInteractionEnabled],
   );
 
   const handlePointerDown = useCallback((event: { instanceId?: number; stopPropagation: () => void }) => {
+    if (!nodeInteractionEnabled) return;
     event.stopPropagation();
     pointerDownNodeId.current = event.instanceId;
-  }, []);
+  }, [nodeInteractionEnabled]);
+
+  const handlePointerMove = useCallback(
+    (event: { instanceId?: number; stopPropagation: () => void }) => {
+      if (!nodeInteractionEnabled) return;
+      event.stopPropagation();
+      if (event.instanceId === undefined) {
+        setHoveredNodeId(null);
+        return;
+      }
+      const nodeId = visibleNodes[event.instanceId];
+      setHoveredNodeId(nodeId ?? null);
+    },
+    [nodeInteractionEnabled, setHoveredNodeId, visibleNodes],
+  );
+
+  const handlePointerOut = useCallback(
+    (event: { stopPropagation: () => void }) => {
+      event.stopPropagation();
+      setHoveredNodeId(null);
+    },
+    [setHoveredNodeId],
+  );
 
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
@@ -307,14 +351,14 @@ export function BuildingScene() {
 
       tempObject.position.set(exploded[0], exploded[1], exploded[2]);
 
-      const scale = hovered === i ? 50 : 1 / UNIT_SCALE;
+      const scale = hoveredNodeId === nodeId ? 50 : 1 / UNIT_SCALE;
       tempObject.scale.set(scale, scale, scale);
 
       tempObject.updateMatrix();
       meshRef.current.setMatrixAt(i, tempObject.matrix);
 
       // Compute color directly in the loop
-      if (i === hovered || boxSelectedIndices.has(i)) {
+      if (hoveredNodeId === nodeId || boxSelectedIndices.has(i)) {
         tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
       } else {
         const color = getNodeColor(nodeId, currentFrame);
@@ -333,13 +377,20 @@ export function BuildingScene() {
     return selectedNodes.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
       const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
+      const exploded = getExplodedPosition(
+        nodeId,
+        [pos[0], pos[1], pos[2]],
+        [displacement[0], displacement[1], displacement[2]],
+        [offsets.x, offsets.y, offsets.z],
+        animationData.metadata,
+      );
       return {
         nodeId,
-        position: [pos[0] + displacement[0], pos[1] + displacement[1], pos[2] + displacement[2]] as const,
+        position: exploded,
         color: getNodePanelColor(nodeId), // Use unique color for selection
       };
     });
-  }, [selectedNodes, frameIndex, animationData]);
+  }, [selectedNodes, frameIndex, animationData, getExplodedPosition, offsets]);
 
   return (
     <>
@@ -357,8 +408,8 @@ export function BuildingScene() {
               <instancedMesh
                 ref={meshRef}
                 onPointerDown={handlePointerDown}
-                onPointerMove={(e) => (e.stopPropagation(), setHovered(e.instanceId))}
-                onPointerOut={(e) => (e.stopPropagation(), setHovered(undefined))}
+                onPointerMove={(e) => handlePointerMove(e)}
+                onPointerOut={(e) => handlePointerOut(e)}
                 onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
                 onContextMenu={(e) => handleNodeContextMenu(e)}
                 args={[undefined, undefined, visibleNodes.length]}
@@ -380,8 +431,8 @@ export function BuildingScene() {
             <instancedMesh
               ref={meshRef}
               onPointerDown={handlePointerDown}
-              onPointerMove={(e) => (e.stopPropagation(), setHovered(e.instanceId))}
-              onPointerOut={(e) => (e.stopPropagation(), setHovered(undefined))}
+              onPointerMove={(e) => handlePointerMove(e)}
+              onPointerOut={(e) => handlePointerOut(e)}
               onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
               onContextMenu={(e) => handleNodeContextMenu(e)}
               args={[undefined, undefined, visibleNodes.length]}

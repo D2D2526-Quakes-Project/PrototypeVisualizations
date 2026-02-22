@@ -18,7 +18,7 @@
 
 ### 4.3 Consistency
 
-- [ ] Add informative tooltips to all interactive elements. Include all numbers and units.
+- [x] Add informative tooltips to all interactive elements. Include all numbers and units.
 
 ---
 
@@ -81,7 +81,6 @@
 - [ ] Add displacement vector arrows to nodes (view toggle)
 
 - [ ] Add node labels (story/floor IDs)
-- [ ] Add measurement tools (distance between nodes)
 - [ ] Add marching cubes to create voxel grid volumes from nodes. Allow coloring and thresholding just like nodes, but toggle between hiding or showing values above the threshold
 
 ---
@@ -107,6 +106,8 @@
 - [ ] Make the Magic Panel dropdown, just text if the tab is not focused. If it is the only tab, it should remain a dropdown.
 
 - [ ] Change the views menu popover to be a sidebar that takes up space next to the canvas
+
+- [ ] Update teh Damage Threshold panel to have a better layout and information. Remove the checkboxes and add a slider to set the threshold.
 
 ### 9.2 Help & Documentation
 
@@ -136,13 +137,13 @@ The view mode system has incompatibilities and incomplete features. Need to unif
 ### 12.2 Node Selection & Highlighting
 
 - [ ] Fix node highlighting not working in all view modes
-- [ ] Make node hover work correctly for each view mode
-- [ ] Fix node panel colors not matching actual node positions
-- [ ] Fix node panel points not moving correctly with animation
+- [x] Make node hover work correctly for each view mode
+- [x] Fix node panel colors not matching actual node positions
+- [x] Fix node panel points not moving correctly with animation
 
 ### 12.3 Floor Selection & Panel
 
-- [ ] In floor slab view, disable node selection (floors are selectable, not nodes)
+- [x] In floor slab view, disable node selection (floors are selectable, not nodes)
 - [ ] Expand floor sidebar to show corners and drift values
 - [ ] Click on corners to open specific node details/reference graph
 
@@ -223,19 +224,208 @@ Every number with a unit should be hoverable with conversions.
 - [ ] Make box selection (Ctrl+drag) more discoverable
 - [ ] Add visual feedback during box selection
 - [ ] Ensure selected nodes sync across all views
-- [ ] When there is a selection, these options should be available in both the View Menu and the Collapsed View Menu: Clear Selection, Side Selected Nodes, Show All Nodes
+- [ ] When there is a selection, these options should be available in both the View Menu and the Collapsed View Menu: Clear Selection, Hide Selected Nodes, Show All Nodes
+- [x] Add `Hide Selected Nodes` toggle in the expanded view controls
 
 ---
 
 ## 17. Saveable and Sharable UI & URLs
 
-- [ ] Per panel configuration saved and in the share URL
-- [ ] Camera position and orientation should be saved and restored
+### 17.1 Create State Persistence Infrastructure
+
+- [x] Create `src/lib/statePersistence.ts` with:
+  - [x] `AppState` interface defining all savable state
+  - [x] `saveToLocalStorage(state: AppState): void` - saves full state with timestamp
+  - [x] `loadFromLocalStorage(): AppState | null`
+  - [x] `getStateForUrl(includePanels: boolean): string` - compressed state for URL
+  - [x] `restoreFromUrl(encoded: string): AppState | null`
+
+- [x] Add lz-string compression library for URL encoding
+  - [x] `pnpm add lz-string`
+  - [x] Use compression in `getStateForUrl` to handle large state
+
+### 17.2 Define Full AppState Interface
+
+- [x] Define `AppState` in `src/lib/statePersistence.ts`:
+  ```typescript
+  interface AppState {
+    version: number;
+    timestamp: number;
+    // Playback
+    frameIndex: number;
+    // View Settings
+    currentMetric: Metric;
+    thresholdHighlighting: boolean;
+    // Thresholds
+    thresholds: ThresholdState;
+    // Floor Visibility
+    visibleFloors: string[];
+    // Node Selection
+    selectedNodeIds: number[];
+    // Exploded View
+    explodedView: ExplodedViewState;
+    // Slice
+    sliceEnabled: boolean;
+    xRange: [number, number];
+    yRange: [number, number];
+    zRange: [number, number];
+    // Camera
+    camera: {
+      isOrthographic: boolean;
+      position: [number, number, number];
+      target: [number, number, number];
+    };
+    // Background
+    backgroundColor: string;
+    // Panel Layout
+    layout: SerializedDockview;
+    // Panel States (per-panel config)
+    panelStates: Record<string, PanelState>;
+  }
+  ```
+
+### 17.3 Merge Playback into Zustand
+
+- [ ] Update `src/stores/viewStore.ts`:
+  - [ ] Add `playing: boolean` to ViewState
+  - [ ] Add `fps: number` to ViewState
+  - [ ] Add `skippedPerFrame: number` to ViewState
+  - [ ] Update methods to use Zustand instead of PlaybackContext
+
+- [ ] Update `src/components/playback/PlaybackContext.tsx`:
+  - [ ] Remove duplicate state management
+  - [ ] Read from Zustand store instead
+  - [ ] Keep animation loop logic but sync with Zustand
+
+### 17.4 Add Camera State to Zustand
+
+- [x] Update `src/stores/viewStore.ts`:
+  - [x] Add `cameraState` to ViewState interface
+  - [x] Add `setCameraState` action
+
+- [x] Update `src/contexts/CameraContext.tsx`:
+  - [x] Add `getCameraState()` method to capture position/target
+  - [x] Add `setCameraState(state)` method to restore
+  - [ ] Subscribe to Zustand changes
+  - [ ] Update OrbitControls from Zustand on change
+
+### 17.5 Create Panel State Registry
+
+- [x] Define `PanelState` types for each panel:
+  - [x] Timeline: `{ selectedKeys: ChannelKey[] }`
+  - [x] StoryDriftHeatmap: `{ selectedCorners: Corner[], resolution: number }`
+  - [x] InterstoryDriftChart: `{ visibleCorners: string[] }` (from eCharts legend)
+  - [x] Main Canvas: Already captured in main view settings (now per-panel with CanvasPanelState)
+
+- [x] Create `src/contexts/PanelStateContext.tsx`:
+  - [x] Create context for panel state management
+  - [x] Provide `getPanelState(panelId): PanelState`
+  - [x] Provide `setPanelState(panelId, state): void`
+
+- [ ] Update panels to use PanelStateContext:
+  - [ ] Timeline.tsx - sync selectedKeys
+  - [ ] StoryDriftHeatmap.tsx - sync selectedCorners, resolution
+
+### 17.6 Handle eCharts Legend State
+
+- [ ] Research ECharts legend API for series visibility
+- [ ] Add legend state capture to InterstoryDriftChart:
+  - [ ] Get reference to ECharts instance
+  - [ ] Read `chartInstance.getOption().legend[0].selected`
+  - [ ] Store visible series names
+
+### 17.7 Auto-Save to LocalStorage
+
+- [x] Create auto-save subscription in View3d page:
+  - [x] Subscribe to Zustand store changes
+  - [x] Debounce saves (2-3 seconds after last change)
+  - [x] Skip saving during active playback (when `playing === true`)
+  - [x] Save complete AppState on change
+
+### 17.8 Named Presets System
+
+- [x] Extend `src/lib/statePersistence.ts`:
+  - [x] Add `saveNamedPreset(name: string, state: AppState): void`
+  - [x] `loadNamedPreset(name: string): AppState | null`
+  - [x] `deleteNamedPreset(name: string): void`
+  - [x] `listNamedPresets(): string[]`
+
+- [x] Add localStorage keys:
+  - [x] `visuals_auto_save` - current working state
+  - [x] `visuals_presets` - array of named presets
+  - [x] `visuals_last_url_state` - temporary URL-loaded state
+
+### 17.9 URL State Management
+
+- [x] Update URL handling in app:
+  - [x] Add `?state=` parameter support
+  - [x] Keep backward compatibility with `?layout=` (only restore layout)
+  - [x] Create separate function for "short URL" (excludes panel states)
+
+- [x] On app mount:
+  - [x] Check for `?state=` param first
+  - [x] If found, load to "temporary/guest" state buffer
+  - [x] Show toast: "State loaded from URL"
+  - [x] Allow user to "Save as Preset" from URL state
+
+### 17.10 Enhanced ShareButton UI
+
+- [x] Update `src/components/ShareButton.tsx`:
+  - [x] Change to dropdown menu
+  - [x] "Copy Short Link" - state without panel configs
+  - [x] "Copy Full Link" - complete state
+  - [x] "Save to Browser" - save current state
+  - [x] "Load Saved" - submenu with saved presets list
+
+- [x] Add ShareMenu component:
+  - [x] Show list of named presets
+  - [x] Allow delete presets
+  - [x] "Reset to Defaults" option
+
+### 17.11 State Restoration Flow
+
+- [x] Implement state restore logic:
+  - [x] `restoreState(state: AppState): void` - applies all state
+  - [x] Restore playback (frameIndex)
+  - [x] Restore thresholds, colors, floor visibility
+  - [x] Restore node selection
+  - [x] Restore exploded view, slice settings
+  - [x] Restore camera position
+  - [x] Restore background color
+  - [x] Restore dockview layout
+  - [x] Restore panel states
+
+- [x] Handle URL state as "guest" state:
+  - [x] Store URL state separately
+  - [x] Apply as "temporary" until user saves or navigates away
+
+### 17.12 Consolidate Panel State into Zustand
+
+- [x] Remove `PanelStateContext` provider and store panel state in `viewStore`
+- [x] Update `Timeline.tsx` to sync selected keys via Zustand panel state
+- [x] Update `StoryDriftHeatmap.tsx` to sync selected corners and resolution via Zustand panel state
+- [x] Update `CanvasWithControls.tsx` to save camera state via Zustand panel state
+- [ ] Add migration for legacy saves that only contain context-backed panel state
+
+### 17.13 Update Panels to Sync with eCharts Legend
+
+- [x] Add legend state capture to InterstoryDriftChart:
+  - [x] Get reference to ECharts instance
+  - [x] Read `chartInstance.getOption().legend[0].selected`
+  - [x] Store visible series names
+
+### 17.14 Zustand Architecture Follow-ups
+
+- [ ] Introduce workspace-scoped state shape (`workspaces[workspaceId]`) for split-view support
+- [ ] Separate persisted state from transient runtime state (`fps`, drag state, hover state)
+- [x] Remove provider-only visualization wrappers (`floor`, `threshold`, `color`, `view mode`, `exploded`, `node visibility`) and use Zustand-backed hooks directly
+- [x] Move node hover/selection and slice hover/selection into Zustand-backed interaction state
+- [x] Add explicit interaction-mode policy for node vs slab pointer behavior
 
 ---
 
 ## 18. Known Bugs
 
-- [ ] When letting go of ctrl before releasing the mouse button, the box selection is not cleared
+- [x] When letting go of ctrl before releasing the mouse button, the box selection is not cleared
 
 _Last Updated: February 2026_

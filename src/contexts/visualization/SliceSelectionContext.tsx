@@ -1,17 +1,12 @@
-import { createContext, useContext, useState, useCallback, useRef, useMemo, type ReactNode } from "react";
-import { DockviewApi } from "dockview";
 import { useAnimationData } from "@/hooks/nodeDataHook";
-import { useViewStore } from "@/stores";
+import { useViewStore, useViewStoreRaw, type SliceSelectionState } from "@/stores";
+import type { DockviewApi } from "dockview";
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 
-type SliceType = "floor";
+export type SliceType = "floor";
 
-export interface Slice {
-  id: string;
+export interface Slice extends SliceSelectionState {
   type: SliceType;
-  value: string | number;
-  nodeIds: number[];
-  label: string;
-  storyId?: string;
 }
 
 interface SliceDockContextType {
@@ -48,6 +43,9 @@ interface SliceSelectionContextType {
 
 const SliceSelectionContext = createContext<SliceSelectionContextType | undefined>(undefined);
 
+let dockviewApiRef: DockviewApi | null = null;
+let disposePanelSubscription: (() => void) | null = null;
+
 export function useSliceSelection() {
   const context = useContext(SliceSelectionContext);
   if (!context) {
@@ -58,10 +56,10 @@ export function useSliceSelection() {
 
 export function SliceSelectionProvider({ children }: { children: ReactNode }) {
   const { animationData } = useAnimationData();
+  const store = useViewStoreRaw();
 
-  const [selectedSlice, setSelectedSlice] = useState<Slice | null>(null);
-  const [hoveredSlice, setHoveredSlice] = useState<Slice | null>(null);
-  
+  const selectedSlice = useViewStore((s) => s.selectedSlice);
+  const hoveredSlice = useViewStore((s) => s.hoveredSlice);
   const sliceEnabled = useViewStore((s) => s.sliceEnabled);
   const setSliceEnabled = useViewStore((s) => s.setSliceEnabled);
   const xRange = useViewStore((s) => s.xRange);
@@ -70,112 +68,138 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
   const setXRange = useViewStore((s) => s.setXRange);
   const setYRange = useViewStore((s) => s.setYRange);
   const setZRange = useViewStore((s) => s.setZRange);
+  const selectSliceStore = useViewStore((s) => s.selectSlice);
+  const deselectSliceStore = useViewStore((s) => s.deselectSlice);
+  const setHoveredSliceStore = useViewStore((s) => s.setHoveredSlice);
 
-  // Initialize ranges from animation data
-  const initRanges = useCallback(() => {
-    if (animationData?.precomputed?.boundingBox) {
-      setXRange([
-        Math.floor(animationData.precomputed.boundingBox.min[0]),
-        Math.ceil(animationData.precomputed.boundingBox.max[0]),
-      ]);
-      setYRange([
-        Math.floor(animationData.precomputed.boundingBox.min[1]),
-        Math.ceil(animationData.precomputed.boundingBox.max[1]),
-      ]);
-      setZRange([
-        Math.floor(animationData.precomputed.boundingBox.min[2]),
-        Math.ceil(animationData.precomputed.boundingBox.max[2]),
-      ]);
-    }
+  useEffect(() => {
+    if (!animationData?.precomputed?.boundingBox) return;
+
+    setXRange([
+      Math.floor(animationData.precomputed.boundingBox.min[0]),
+      Math.ceil(animationData.precomputed.boundingBox.max[0]),
+    ]);
+    setYRange([
+      Math.floor(animationData.precomputed.boundingBox.min[1]),
+      Math.ceil(animationData.precomputed.boundingBox.max[1]),
+    ]);
+    setZRange([
+      Math.floor(animationData.precomputed.boundingBox.min[2]),
+      Math.ceil(animationData.precomputed.boundingBox.max[2]),
+    ]);
   }, [animationData, setXRange, setYRange, setZRange]);
 
-  // Initialize once on mount
-  useRef(() => {
-    initRanges();
-  });
+  const setDockviewApi = useCallback(
+    (api: DockviewApi) => {
+      dockviewApiRef = api;
 
-  const [api, setApi] = useState<DockviewApi | null>(null);
-  const unsubscribeRef = useRef<(() => void) | null>(null);
+      if (disposePanelSubscription) {
+        disposePanelSubscription();
+      }
 
-  const setDockviewApi = useCallback((dockviewApi: DockviewApi) => {
-    setApi(dockviewApi);
+      const disposable = api.onDidRemovePanel((panel) => {
+        if (panel.id.startsWith("slice-panel-")) {
+          store.getState().deselectSlice();
+        }
+      });
 
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
+      disposePanelSubscription = () => disposable.dispose();
+    },
+    [store],
+  );
+
+  const openSlicePanel = useCallback((sliceId: string, storyId: string) => {
+    if (!dockviewApiRef) return;
+
+    const panelId = `slice-panel-${sliceId}`;
+    const existingPanel = dockviewApiRef.getPanel(panelId);
+
+    if (existingPanel) {
+      existingPanel.focus();
+      return;
     }
 
-    const disposable = dockviewApi.onDidRemovePanel((panel) => {
-      if (panel.id.startsWith("slice-panel-")) {
-        setSelectedSlice(null);
-      }
+    dockviewApiRef.addPanel({
+      id: panelId,
+      component: "slicePanel",
+      title: `Floor ${storyId}`,
+      params: { sliceId },
+      maximumWidth: 300,
+      position: { direction: "right" },
     });
-
-    unsubscribeRef.current = () => disposable.dispose();
   }, []);
-
-  const openSlicePanel = useCallback(
-    (sliceId: string, storyId: string) => {
-      if (!api) return;
-
-      const panelId = `slice-panel-${sliceId}`;
-      const existingPanel = api.getPanel(panelId);
-
-      if (existingPanel) {
-        existingPanel.focus();
-        return;
-      }
-
-      api.addPanel({
-        id: panelId,
-        component: "slicePanel",
-        title: `Floor ${storyId}`,
-        params: { sliceId },
-        maximumWidth: 300,
-        position: { direction: "right" },
-      });
-    },
-    [api],
-  );
 
   const selectSlice = useCallback(
     (slice: Slice) => {
-      setSelectedSlice(slice);
+      selectSliceStore(slice);
       if (slice.type === "floor" && slice.storyId) {
         openSlicePanel(slice.id, slice.storyId);
       }
     },
-    [openSlicePanel],
+    [openSlicePanel, selectSliceStore],
   );
 
   const deselectSlice = useCallback(() => {
-    setSelectedSlice(null);
-  }, []);
+    deselectSliceStore();
+  }, [deselectSliceStore]);
 
-  const setHovered = useCallback((slice: Slice | null) => {
-    setHoveredSlice(slice);
-  }, []);
+  const setHovered = useCallback(
+    (slice: Slice | null) => {
+      setHoveredSliceStore(slice);
+    },
+    [setHoveredSliceStore],
+  );
 
   const toggleSliceEnabled = useCallback(() => {
     setSliceEnabled(!sliceEnabled);
   }, [sliceEnabled, setSliceEnabled]);
 
-  const value = useMemo((): SliceSelectionContextType => ({
-    selectedSlice,
-    hoveredSlice,
-    sliceEnabled,
-    xRange,
-    yRange,
-    zRange,
-    selectSlice,
-    deselectSlice,
-    setHovered,
-    toggleSliceEnabled,
-    setXRange,
-    setYRange,
-    setZRange,
-    setDockviewApi,
-    openSlicePanel,
-  }), [selectedSlice, hoveredSlice, sliceEnabled, xRange, yRange, zRange, selectSlice, deselectSlice, setHovered, toggleSliceEnabled, setXRange, setYRange, setZRange, setDockviewApi, openSlicePanel]);
+  const value = useMemo<SliceSelectionContextType>(
+    () => ({
+      selectedSlice: selectedSlice as Slice | null,
+      hoveredSlice: hoveredSlice as Slice | null,
+      sliceEnabled,
+      xRange,
+      yRange,
+      zRange,
+      selectSlice,
+      deselectSlice,
+      setHovered,
+      toggleSliceEnabled,
+      setXRange,
+      setYRange,
+      setZRange,
+      setDockviewApi,
+      openSlicePanel,
+    }),
+    [
+      selectedSlice,
+      hoveredSlice,
+      sliceEnabled,
+      xRange,
+      yRange,
+      zRange,
+      selectSlice,
+      deselectSlice,
+      setHovered,
+      toggleSliceEnabled,
+      setXRange,
+      setYRange,
+      setZRange,
+      setDockviewApi,
+      openSlicePanel,
+    ],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (disposePanelSubscription) {
+        disposePanelSubscription();
+        disposePanelSubscription = null;
+      }
+      dockviewApiRef = null;
+    };
+  }, []);
 
   return <SliceSelectionContext.Provider value={value}>{children}</SliceSelectionContext.Provider>;
 }

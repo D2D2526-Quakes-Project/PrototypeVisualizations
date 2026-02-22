@@ -1,10 +1,12 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
+import { useViewStoreRaw } from "@/stores";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
 import { InfoIcon, XIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Vector3 } from "three";
 import { MiniRibbon } from "./MiniRibbon";
+import { MiniTimeSeries } from "./MiniTimeSeries";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 // Generate a unique vibrant color based on node ID
@@ -23,6 +25,14 @@ export function getNodeColorLight(nodeId: number): string {
 export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: number }>) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
+  const store = useViewStoreRaw();
+
+  useEffect(() => {
+    store.getState().addOpenedNodePanel(nodeId);
+    return () => {
+      store.getState().removeOpenedNodePanel(nodeId);
+    };
+  }, [nodeId, store]);
 
   const initialPosRaw = animationData.initialPositions.at(nodeId);
   const currentDispRaw = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
@@ -240,6 +250,49 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       time: maxFrame * animationData.metadata.dt,
     };
   }, [animationData.accelerationLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
+
+  // TIME SERIES DATA FOR MINI CHARTS
+  const velocityTimeSeries = useMemo(() => {
+    if (!animationData.velocityLin) return null;
+    const times: number[] = [];
+    const magnitudes: number[] = [];
+    for (let i = 0; i < animationData.metadata.frameCount; i++) {
+      times.push(i * animationData.metadata.dt);
+      const vel = animationData.velocityLin.atFrame(i).at(nodeId);
+      magnitudes.push(Math.hypot(vel[0], vel[1], vel[2]));
+    }
+    return { times, magnitudes };
+  }, [animationData.velocityLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
+
+  const accelerationTimeSeries = useMemo(() => {
+    if (!animationData.accelerationLin) return null;
+    const times: number[] = [];
+    const magnitudes: number[] = [];
+    for (let i = 0; i < animationData.metadata.frameCount; i++) {
+      times.push(i * animationData.metadata.dt);
+      const acc = animationData.accelerationLin.atFrame(i).at(nodeId);
+      magnitudes.push(Math.hypot(acc[0], acc[1], acc[2]));
+    }
+    return { times, magnitudes };
+  }, [animationData.accelerationLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
+
+  // DISPLACEMENT TIME SERIES (for mini chart)
+  const displacementTimeSeries = useMemo(() => {
+    const times: number[] = [];
+    const magnitudes: number[] = [];
+    const xValues: number[] = [];
+    const yValues: number[] = [];
+    const zValues: number[] = [];
+    for (let i = 0; i < animationData.metadata.frameCount; i++) {
+      times.push(i * animationData.metadata.dt);
+      const disp = animationData.displacementLin.atFrame(i).at(nodeId);
+      magnitudes.push(Math.hypot(disp[0], disp[1], disp[2]));
+      xValues.push(disp[0]);
+      yValues.push(disp[1]);
+      zValues.push(disp[2]);
+    }
+    return { times, magnitudes, xValues, yValues, zValues };
+  }, [animationData.displacementLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   // STRUCTURAL INFO
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
@@ -484,6 +537,40 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.zTime.toFixed(2)}s</span>
               </span>
             </div>
+            <div className="mt-3 space-y-2">
+              <MiniTimeSeries
+                data={displacementTimeSeries.magnitudes}
+                times={displacementTimeSeries.times}
+                color="#f59e0b"
+                currentValue={displacementMag}
+                unit="in"
+                label="Displacement Magnitude"
+              />
+              <MiniTimeSeries
+                data={displacementTimeSeries.xValues}
+                times={displacementTimeSeries.times}
+                color="#ef4444"
+                currentValue={currentDispRaw[0]}
+                unit="in"
+                label="Displacement X"
+              />
+              <MiniTimeSeries
+                data={displacementTimeSeries.yValues}
+                times={displacementTimeSeries.times}
+                color="#22c55e"
+                currentValue={currentDispRaw[1]}
+                unit="in"
+                label="Displacement Y"
+              />
+              <MiniTimeSeries
+                data={displacementTimeSeries.zValues}
+                times={displacementTimeSeries.times}
+                color="#3b82f6"
+                currentValue={currentDispRaw[2]}
+                unit="in"
+                label="Displacement Z"
+              />
+            </div>
           </div>
         </div>
 
@@ -595,6 +682,18 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 {peakVelocity.zTime.toFixed(2)}s
               </div>
             )}
+            {velocityTimeSeries && (
+              <div className="mt-3 space-y-2">
+                <MiniTimeSeries
+                  data={velocityTimeSeries.magnitudes}
+                  times={velocityTimeSeries.times}
+                  color="#f59e0b"
+                  currentValue={currentVelocity?.magnitude ?? 0}
+                  unit="in/s"
+                  label="Velocity Magnitude"
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -648,6 +747,18 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.yTime.toFixed(2)}s, Z: </span>
                 <UnitTooltip value={peakAcceleration.z} unit="in/s²" showConversions={false} />
                 <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.zTime.toFixed(2)}s</span>
+              </div>
+            )}
+            {accelerationTimeSeries && (
+              <div className="mt-3 space-y-2">
+                <MiniTimeSeries
+                  data={accelerationTimeSeries.magnitudes}
+                  times={accelerationTimeSeries.times}
+                  color="#f59e0b"
+                  currentValue={currentAcceleration?.magnitude ?? 0}
+                  unit="in/s²"
+                  label="Acceleration Magnitude"
+                />
               </div>
             )}
           </div>

@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatValue, getConversions, CONVERSION_UNITS as UNITS } from "@/lib/metrics";
 
@@ -6,23 +7,24 @@ interface UnitTooltipProps {
   unit: string;
   decimals?: number;
   showConversions?: boolean;
+  interactive?: boolean;
   side?: "top" | "right" | "bottom" | "left";
   children?: React.ReactNode;
 }
 
-export function UnitTooltip({
-  value,
-  unit,
-  decimals = 3,
-  showConversions = true,
-  side = "top",
-  children,
-}: UnitTooltipProps) {
+interface TooltipBodyProps {
+  value: number;
+  unit: string;
+  decimals: number;
+  showConversions: boolean;
+}
+
+const TooltipBody = memo(function TooltipBody({ value, unit, decimals, showConversions }: TooltipBodyProps) {
   const unitInfo = UNITS[unit];
   const fullName = unitInfo?.fullName || unit;
-  const conversions = showConversions ? getConversions(value, unit) : [];
+  const conversions = useMemo(() => (showConversions ? getConversions(value, unit) : []), [showConversions, value, unit]);
 
-  const content = (
+  return (
     <div className="flex flex-col gap-1 min-w-25">
       <div
         className={`flex items-center justify-between gap-4 border-white/20 pb-1 ${conversions.length > 0 ? "border-b" : ""}`}>
@@ -44,24 +46,54 @@ export function UnitTooltip({
       )}
     </div>
   );
+});
+
+function UnitTooltipComponent({
+  value,
+  unit,
+  decimals = 3,
+  showConversions = true,
+  interactive = true,
+  side = "top",
+  children,
+}: UnitTooltipProps) {
+  const formattedValue = useMemo(() => formatValue(value, decimals), [value, decimals]);
 
   const displayValue = (
-    <span className="cursor-help">
+    <span className={interactive ? "cursor-help" : undefined}>
       {children || (
         <span>
-          {formatValue(value, decimals)}
+          {formattedValue}
           {unit}
         </span>
       )}
     </span>
   );
 
+  if (!interactive) {
+    return displayValue;
+  }
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>{displayValue}</TooltipTrigger>
       <TooltipContent side={side} className="max-w-xs">
-        {content}
+        <TooltipBody value={value} unit={unit} decimals={decimals} showConversions={showConversions} />
       </TooltipContent>
     </Tooltip>
   );
 }
+
+function areUnitTooltipPropsEqual(prev: UnitTooltipProps, next: UnitTooltipProps): boolean {
+  return (
+    Object.is(prev.value, next.value) &&
+    prev.unit === next.unit &&
+    prev.decimals === next.decimals &&
+    prev.showConversions === next.showConversions &&
+    prev.interactive === next.interactive &&
+    prev.side === next.side &&
+    prev.children === next.children
+  );
+}
+
+export const UnitTooltip = memo(UnitTooltipComponent, areUnitTooltipPropsEqual);

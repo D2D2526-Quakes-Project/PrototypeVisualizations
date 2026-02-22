@@ -15,7 +15,17 @@ import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore, useViewStoreRaw } from "@/state";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { BoxSelect, ChevronDown, ChevronLeftIcon, Grid3X3, ScanEye } from "lucide-react";
+import {
+  BoxSelect,
+  ChevronDown,
+  ChevronLeftIcon,
+  Grid3X3,
+  ScanEye,
+  EyeOff,
+  Eye,
+  XCircle,
+  RotateCcw,
+} from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
@@ -369,16 +379,7 @@ export function ViewControls({
   } = useExplodedView();
   const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
     useSliceSelection();
-  const {
-    selectedNodeIds,
-    hiddenNodeIds,
-    clearSelection,
-    hideNodes,
-    showNodes,
-    showAllNodes,
-    hideSelectedNodes,
-    setHideSelectedNodes,
-  } = useNodeVisibility();
+  const { selectedNodeIds, hiddenNodeIds, clearSelection, hideNodes, showNodes, showAllNodes } = useNodeVisibility();
   const { thresholds, setThreshold } = useThresholds();
   const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
@@ -444,7 +445,7 @@ export function ViewControls({
 
   return (
     <div className="absolute flex top-2 right-2 z-50 max-h-[calc(100%-1rem)]">
-      <div className="flex flex-col items-start gap-0.5 max-h-full overflow-hidden">
+      <div className="flex flex-col items-end gap-0.5 max-h-full overflow-hidden">
         <AnimatePresence mode="popLayout">
           {!isExpanded ? (
             <>
@@ -456,31 +457,48 @@ export function ViewControls({
                 transition={{ duration: 0.15 }}
                 className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5 origin-right">
                 {viewButtons.map(({ view, label }) => (
-                  <button
-                    key={view}
-                    onClick={() => resetView(view)}
-                    className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 text-[10px] font-medium w-5 h-5 flex items-center justify-center"
-                    title={`${label} View`}>
-                    {label.charAt(0)}
-                  </button>
+                  <Tooltip key={view} disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => resetView(view)}
+                        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 text-[10px] font-medium w-5 h-5 flex items-center justify-center">
+                        {label.charAt(0)}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8}>
+                      {label} View
+                    </TooltipContent>
+                  </Tooltip>
                 ))}
                 <div className="w-px h-4 bg-neutral-300 mx-0.5" />
-                <button
-                  onClick={toggleCameraType}
-                  className={`p-1 rounded transition-colors ${
-                    isOrthographic ? "bg-blue-100 text-blue-700" : "hover:bg-neutral-200 text-neutral-700"
-                  }`}
-                  title={isOrthographic ? "Orthographic" : "Perspective"}>
-                  {isOrthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
-                </button>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={toggleCameraType}
+                      className={`p-1 rounded transition-colors ${
+                        isOrthographic ? "bg-blue-100 text-blue-700" : "hover:bg-neutral-200 text-neutral-700"
+                      }`}>
+                      {isOrthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    {isOrthographic ? "Orthographic" : "Perspective"}
+                  </TooltipContent>
+                </Tooltip>
                 <div className="w-px h-4 bg-neutral-300 mx-0.5" />
 
-                <button
-                  onClick={() => setIsExpanded(true)}
-                  className="p-1 rounded transition-colors hover:bg-neutral-200 text-neutral-700"
-                  title="More options">
-                  <ChevronLeftIcon size={14} />
-                </button>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setIsExpanded(true)}
+                      className="p-1 rounded transition-colors hover:bg-neutral-200 text-neutral-700">
+                      <ChevronLeftIcon size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    More options
+                  </TooltipContent>
+                </Tooltip>
               </motion.div>
 
               <Tooltip>
@@ -501,7 +519,7 @@ export function ViewControls({
                     />
                   </motion.div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}>
+                <TooltipContent side="left" sideOffset={8}>
                   <div className="font-semibold mb-1">{config.label}</div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                     <span className="text-neutral-400">Max:</span>
@@ -523,6 +541,69 @@ export function ViewControls({
                   </div>
                 </TooltipContent>
               </Tooltip>
+              {showNodeVisibilityMenu && (
+                <motion.div
+                  key="node-visibility-menu"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.15 }}
+                  className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5">
+                  <Tooltip disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => hideNodes(selectedIds)}
+                        disabled={visibleSelectedCount === 0}
+                        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <EyeOff size={14} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8}>
+                      Hide Selected ({visibleSelectedCount})
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => showNodes(selectedIds)}
+                        disabled={hiddenSelectedCount === 0}
+                        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <Eye size={14} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8}>
+                      Show Selected ({hiddenSelectedCount})
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={showAllNodes}
+                        disabled={hiddenCount === 0}
+                        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <RotateCcw size={14} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8}>
+                      Show All Nodes ({hiddenCount})
+                    </TooltipContent>
+                  </Tooltip>
+                  <div className="w-px h-4 bg-neutral-300 mx-0.5" />
+                  <Tooltip disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={clearSelection}
+                        disabled={selectedCount === 0}
+                        className="p-1 rounded hover:bg-red-100 transition-colors text-red-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <XCircle size={14} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8}>
+                      Clear Selection ({selectedCount})
+                    </TooltipContent>
+                  </Tooltip>
+                </motion.div>
+              )}
             </>
           ) : (
             <motion.div
@@ -650,59 +731,6 @@ export function ViewControls({
             </motion.div>
           )}
         </AnimatePresence>
-        {showNodeVisibilityMenu && (
-          <motion.div
-            key="node-visibility-menu"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
-            className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-2 gap-1 w-full">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-neutral-700">Node Visibility</span>
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] text-neutral-500">Active</span>
-                <Switch size="sm" checked={hideSelectedNodes} onCheckedChange={setHideSelectedNodes} />
-              </div>
-            </div>
-
-            <div className="text-[10px] text-neutral-500 mb-1">
-              Hidden: {hiddenCount} {selectedCount > 0 ? `| Selected: ${selectedCount}` : ""}
-            </div>
-
-            {visibleSelectedCount > 0 && (
-              <button
-                onClick={() => hideNodes(selectedIds)}
-                className="w-full text-xs px-2 py-1 rounded border transition-colors mb-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-300">
-                Hide Selected ({visibleSelectedCount})
-              </button>
-            )}
-
-            {hiddenSelectedCount > 0 && (
-              <button
-                onClick={() => showNodes(selectedIds)}
-                className="w-full text-xs px-2 py-1 rounded border transition-colors mb-1 bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300">
-                Show Selected ({hiddenSelectedCount})
-              </button>
-            )}
-
-            {selectedCount > 0 && (
-              <button
-                onClick={clearSelection}
-                className="w-full text-xs px-2 py-1 rounded border transition-colors mb-1 bg-red-100 hover:bg-red-200 text-red-700 border-red-300">
-                Clear Selection ({selectedCount})
-              </button>
-            )}
-
-            {hiddenCount > 0 && (
-              <button
-                onClick={showAllNodes}
-                className="w-full text-xs px-2 py-1 rounded border transition-colors bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300">
-                Show All Nodes ({hiddenCount})
-              </button>
-            )}
-          </motion.div>
-        )}
       </div>
     </div>
   );

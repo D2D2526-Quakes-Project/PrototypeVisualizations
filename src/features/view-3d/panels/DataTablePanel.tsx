@@ -38,7 +38,7 @@ const PAGE_SIZE = 50;
 
 export function DataTablePanel() {
   const { animationData } = useAnimationData();
-  const { frameIndex } = usePlayback();
+  const { frameIndex, playing } = usePlayback();
   const [page, setPage] = useState(0);
 
   const { nodeCount, stories } = animationData.metadata;
@@ -124,16 +124,16 @@ export function DataTablePanel() {
                 <td className="px-2 py-1 font-mono text-neutral-500">{row.node}</td>
                 <td className="px-2 py-1">{row.story}</td>
                 <td className="px-2 py-1 font-mono text-right" style={{ color: "#ef4444" }}>
-                  <UnitTooltip value={row.x} unit="in" decimals={4} />
+                  <UnitTooltip value={row.x} unit="in" decimals={4} interactive={!playing} />
                 </td>
                 <td className="px-2 py-1 font-mono text-right" style={{ color: "#22c55e" }}>
-                  <UnitTooltip value={row.y} unit="in" decimals={4} />
+                  <UnitTooltip value={row.y} unit="in" decimals={4} interactive={!playing} />
                 </td>
                 <td className="px-2 py-1 font-mono text-right" style={{ color: "#3b82f6" }}>
-                  <UnitTooltip value={row.z} unit="in" decimals={4} />
+                  <UnitTooltip value={row.z} unit="in" decimals={4} interactive={!playing} />
                 </td>
                 <td className="px-2 py-1 font-mono text-right font-medium">
-                  <UnitTooltip value={row.magnitude} unit="in" decimals={4} />
+                  <UnitTooltip value={row.magnitude} unit="in" decimals={4} interactive={!playing} />
                 </td>
               </tr>
             ))}

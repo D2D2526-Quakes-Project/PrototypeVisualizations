@@ -48,6 +48,7 @@ function StatRow({
   unit?: string;
   decimals?: number;
 }) {
+  const { playing } = usePlayback();
   const numericValue = typeof value === "number" ? value : parseFloat(value as string);
   const isNumeric = typeof value === "number" || !isNaN(numericValue);
 
@@ -57,7 +58,13 @@ function StatRow({
       <div className="flex justify-between py-1 border-b border-neutral-100">
         <span className="text-neutral-500 text-xs">{label}</span>
         <span className="font-mono text-xs">
-          <UnitTooltip value={numVal} unit={unit} decimals={decimals} showConversions={unit !== "s"} />
+          <UnitTooltip
+            value={numVal}
+            unit={unit}
+            decimals={decimals}
+            showConversions={unit !== "s"}
+            interactive={!playing}
+          />
         </span>
       </div>
     );

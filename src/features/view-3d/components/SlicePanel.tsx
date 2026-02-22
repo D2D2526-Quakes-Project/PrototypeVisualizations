@@ -8,7 +8,7 @@ import { UnitTooltip } from "@/components/ui/unit-tooltip";
 export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
   const { sliceId } = props.params;
   const { animationData } = useAnimationData();
-  const { frameIndex } = usePlayback();
+  const { frameIndex, playing } = usePlayback();
 
   const storyId = useMemo(() => {
     const parts = sliceId.split("-");
@@ -287,13 +287,13 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
             <div>
               <span className="font-medium text-neutral-700">Elevation:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.elevation} unit="in" decimals={1} />
+                <UnitTooltip interactive={!playing} value={storyInfo.elevation} unit="in" decimals={1} />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Story Height:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.height} unit="in" decimals={1} />
+                <UnitTooltip interactive={!playing} value={storyInfo.height} unit="in" decimals={1} />
               </div>
             </div>
           </div>
@@ -307,13 +307,13 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <div>
                 <span className="font-medium text-neutral-700">Current Avg:</span>
                 <div className="text-neutral-600 font-mono">
-                  <UnitTooltip value={displacementData.current.magnitude} unit="in" />
+                  <UnitTooltip interactive={!playing} value={displacementData.current.magnitude} unit="in" />
                 </div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Peak Avg:</span>
                 <div className="text-neutral-600 font-mono">
-                  <UnitTooltip value={displacementData.peak.magnitude} unit="in" />
+                  <UnitTooltip interactive={!playing} value={displacementData.peak.magnitude} unit="in" />
                 </div>
                 <span className="text-neutral-500 text-[9px]">
                   {" "}
@@ -325,39 +325,39 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.current.x} unit="in" />
+                  <UnitTooltip interactive={!playing} value={displacementData.current.x} unit="in" />
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.peak.x} unit="in" />
+                  <UnitTooltip interactive={!playing} value={displacementData.peak.x} unit="in" />
                   <span className="text-neutral-500 text-[9px]"> @ {displacementData.peak.xTime.toFixed(2)}s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.current.y} unit="in" />
+                  <UnitTooltip interactive={!playing} value={displacementData.current.y} unit="in" />
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.peak.y} unit="in" />
+                  <UnitTooltip interactive={!playing} value={displacementData.peak.y} unit="in" />
                   <span className="text-neutral-500 text-[9px]"> @ {displacementData.peak.yTime.toFixed(2)}s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.current.z} unit="in" />
+                  <UnitTooltip interactive={!playing} value={displacementData.current.z} unit="in" />
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.peak.z} unit="in" />
+                  <UnitTooltip interactive={!playing} value={displacementData.peak.z} unit="in" />
                   <span className="text-neutral-500 text-[9px]"> @ {displacementData.peak.zTime.toFixed(2)}s</span>
                 </span>
               </div>
@@ -407,7 +407,7 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <div>
                 <span className="font-medium text-neutral-700">Current Avg:</span>
                 <div className="text-neutral-600 font-mono">
-                  <UnitTooltip value={velocityData.current.magnitude} unit="in/s" />
+                  <UnitTooltip interactive={!playing} value={velocityData.current.magnitude} unit="in/s" />
                 </div>
               </div>
             </div>
@@ -415,19 +415,19 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <div>
                 X:{" "}
                 <span className="font-mono">
-                  <UnitTooltip value={velocityData.current.x} unit="in/s" />
+                  <UnitTooltip interactive={!playing} value={velocityData.current.x} unit="in/s" />
                 </span>
               </div>
               <div>
                 Y:{" "}
                 <span className="font-mono">
-                  <UnitTooltip value={velocityData.current.y} unit="in/s" />
+                  <UnitTooltip interactive={!playing} value={velocityData.current.y} unit="in/s" />
                 </span>
               </div>
               <div>
                 Z:{" "}
                 <span className="font-mono">
-                  <UnitTooltip value={velocityData.current.z} unit="in/s" />
+                  <UnitTooltip interactive={!playing} value={velocityData.current.z} unit="in/s" />
                 </span>
               </div>
             </div>
@@ -478,7 +478,7 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <div>
                 <span className="font-medium text-neutral-700">Current Avg:</span>
                 <div className="text-neutral-600 font-mono">
-                  <UnitTooltip value={accelerationData.current.magnitude} unit="in/s²" />
+                  <UnitTooltip interactive={!playing} value={accelerationData.current.magnitude} unit="in/s²" />
                 </div>
               </div>
             </div>
@@ -486,19 +486,19 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <div>
                 X:{" "}
                 <span className="font-mono">
-                  <UnitTooltip value={accelerationData.current.x} unit="in/s²" />
+                  <UnitTooltip interactive={!playing} value={accelerationData.current.x} unit="in/s²" />
                 </span>
               </div>
               <div>
                 Y:{" "}
                 <span className="font-mono">
-                  <UnitTooltip value={accelerationData.current.y} unit="in/s²" />
+                  <UnitTooltip interactive={!playing} value={accelerationData.current.y} unit="in/s²" />
                 </span>
               </div>
               <div>
                 Z:{" "}
                 <span className="font-mono">
-                  <UnitTooltip value={accelerationData.current.z} unit="in/s²" />
+                  <UnitTooltip interactive={!playing} value={accelerationData.current.z} unit="in/s²" />
                 </span>
               </div>
             </div>
@@ -516,10 +516,10 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                   {data ? (
                     <div className="text-neutral-600 font-mono text-[10px]">
                       <span className="mr-1">Current:</span>
-                      <UnitTooltip value={data.current} unit="%" decimals={4} />
+                      <UnitTooltip interactive={!playing} value={data.current} unit="%" decimals={4} />
                       <span className="mx-2 text-neutral-300">|</span>
                       <span className="mr-1">Peak:</span>
-                      <UnitTooltip value={data.peak} unit="%" decimals={4} />
+                      <UnitTooltip interactive={!playing} value={data.peak} unit="%" decimals={4} />
                     </div>
                   ) : (
                     <div className="text-neutral-400 text-[10px]">N/A</div>

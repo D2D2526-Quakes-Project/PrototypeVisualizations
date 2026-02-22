@@ -66,7 +66,7 @@ function SortHeader({
 
 export function PeakValuesPanel() {
   const { animationData } = useAnimationData();
-  const { frameIndex } = usePlayback();
+  const { frameIndex, playing } = usePlayback();
   const [sortKey, setSortKey] = useState<SortKey>("magnitude");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -165,21 +165,21 @@ export function PeakValuesPanel() {
               <tr key={row.node} className="border-b border-neutral-100 hover:bg-neutral-50">
                 <td className="px-2 py-1 font-mono text-neutral-500">{idx + 1}</td>
                 <td className="px-2 py-1 font-mono" style={{ color: "#ef4444" }}>
-                  <UnitTooltip value={row.x} unit="in" decimals={4} />
+                  <UnitTooltip value={row.x} unit="in" decimals={4} interactive={!playing} />
                 </td>
                 <td className="px-2 py-1 font-mono" style={{ color: "#22c55e" }}>
-                  <UnitTooltip value={row.y} unit="in" decimals={4} />
+                  <UnitTooltip value={row.y} unit="in" decimals={4} interactive={!playing} />
                 </td>
                 <td className="px-2 py-1 font-mono" style={{ color: "#3b82f6" }}>
-                  <UnitTooltip value={row.z} unit="in" decimals={4} />
+                  <UnitTooltip value={row.z} unit="in" decimals={4} interactive={!playing} />
                 </td>
                 <td className="px-2 py-1 font-mono font-medium">
-                  <UnitTooltip value={row.magnitude} unit="in" decimals={4} />
+                  <UnitTooltip value={row.magnitude} unit="in" decimals={4} interactive={!playing} />
                 </td>
                 <td className="px-2 py-1 font-mono text-neutral-500">{row.peakFrame + 1}</td>
                 <td className="px-2 py-1 font-mono text-neutral-400">
                   {currentValues[row.node] !== undefined ? (
-                    <UnitTooltip value={currentValues[row.node]!} unit="in" decimals={4} />
+                    <UnitTooltip value={currentValues[row.node]!} unit="in" decimals={4} interactive={!playing} />
                   ) : (
                     "-"
                   )}

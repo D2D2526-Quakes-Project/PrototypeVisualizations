@@ -1,7 +1,6 @@
 import { motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { Vector3 } from "three";
-import { usePlayback } from "@/features/playback/PlaybackContext";
 
 // Target maximum number of points to render for performance
 const MAX_POINTS = 400;
@@ -30,8 +29,55 @@ function velocityToColor(velocity: number, maxVelocity: number): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }) {
-  const { frameIndex } = usePlayback();
+interface MiniRibbonProps {
+  path: Vector3[];
+  dt?: number;
+  frameIndex: number;
+}
+
+interface RibbonSegment {
+  x1: number;
+  z1: number;
+  x2: number;
+  z2: number;
+  color: string;
+}
+
+interface RibbonPoint {
+  x: number;
+  z: number;
+}
+
+const StaticRibbonSegments = memo(function StaticRibbonSegments({ segments }: { segments: RibbonSegment[] }) {
+  return (
+    <g>
+      {segments.map((seg, idx) => (
+        <motion.line
+          key={idx}
+          x1={seg.x1}
+          y1={seg.z1}
+          x2={seg.x2}
+          y2={seg.z2}
+          stroke={seg.color}
+          strokeWidth="0.8"
+          strokeLinecap="round"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            opacity: { duration: 0.3, delay: 0.2 + idx * 0.003 },
+          }}
+        />
+      ))}
+    </g>
+  );
+});
+
+function CurrentPositionMarker({ point }: { point: RibbonPoint | null }) {
+  if (!point) return null;
+  return <circle cx={point.x} cy={point.z} r="2" className="fill-amber-500 stroke-white" strokeWidth="0.5" />;
+}
+
+export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [aspectRatio, setAspectRatio] = useState(0.6);
 
@@ -68,6 +114,8 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
     }
     return result;
   }, [path]);
+
+  const downsampleStep = useMemo(() => (path.length <= MAX_POINTS ? 1 : Math.ceil(path.length / MAX_POINTS)), [path.length]);
 
   // Step 2: Calculate bounds - only when downsampledPath changes
   const bounds = useMemo(() => {
@@ -106,7 +154,7 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
   const segments = useMemo(() => {
     if (normalizedPoints.length < 2) return [];
 
-    const segmentData = [];
+    const segmentData: Array<{ x1: number; z1: number; x2: number; z2: number; velocity: number }> = [];
     let maxVelocity = 0;
 
     // First pass: calculate all velocities
@@ -117,8 +165,7 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
       const dy = curr.y - prev.y;
       const dz = curr.z - prev.z;
       // Account for downsampling in velocity calculation
-      const step = Math.ceil(path.length / MAX_POINTS);
-      const actualDt = dt * step;
+      const actualDt = dt * downsampleStep;
       const velocity = Math.sqrt(dx * dx + dy * dy + dz * dz) / actualDt;
 
       segmentData.push({
@@ -141,7 +188,7 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
       ...seg,
       color: velocityToColor(seg.velocity, colorScaleMax),
     }));
-  }, [downsampledPath, normalizedPoints, dt, path.length]);
+  }, [downsampledPath, normalizedPoints, dt, downsampleStep]);
 
   // Step 5: Calculate current position based on actual frame index
   const currentPos = useMemo(() => {
@@ -161,44 +208,8 @@ export function MiniRibbon({ path, dt = 0.01 }: { path: Vector3[]; dt?: number }
   return (
     <div ref={containerRef} className="w-full h-20">
       <svg className="w-full h-full border border-neutral-200 rounded" viewBox={`0 0 100 ${viewBoxHeight}`}>
-        {/* Draw colored line segments as static elements */}
-        <g>
-          {segments.map((seg, idx) => (
-            <motion.line
-              key={idx}
-              x1={seg.x1}
-              y1={seg.z1}
-              x2={seg.x2}
-              y2={seg.z2}
-              stroke={seg.color}
-              strokeWidth="0.8"
-              strokeLinecap="round"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{
-                opacity: { duration: 0.3, delay: 0.2 + idx * 0.003 },
-              }}
-            />
-          ))}
-        </g>
-
-        {/* Current position circle - only this re-renders with motion */}
-        {currentPos && (
-          <motion.circle
-            cx={currentPos.x}
-            cy={currentPos.z}
-            r="2"
-            className="fill-amber-500 stroke-white"
-            strokeWidth="0.5"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{
-              delay: 1.2,
-              duration: 0.3,
-              ease: [0.34, 1.56, 0.64, 1],
-            }}
-          />
-        )}
+        <StaticRibbonSegments segments={segments} />
+        <CurrentPositionMarker point={currentPos} />
       </svg>
     </div>
   );

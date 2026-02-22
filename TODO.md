@@ -114,7 +114,8 @@
 - [ ] Add tooltips to all controls
 - [ ] Create in-app help overlay
 
-- [ ] Add familiar file menu items (file, edit, view, help, etc.)
+- [x] Add familiar file menu items (file, edit, view, help, etc.)
+- [ ] Switch save-profile changes without requiring full page reload
 
 ---
 

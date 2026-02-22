@@ -2,7 +2,7 @@ import type { IDockviewPanelProps } from "dockview";
 import ReactECharts from "echarts-for-react";
 import { type EChartsOption } from "echarts";
 import { ChevronDown } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,37 +14,184 @@ import { formatFixed3 } from "@/lib/utils";
 import { getDefaultTimelinePanelState } from "@/features/view-3d/lib/statePersistence";
 import { useViewStore } from "@/state";
 
-// Configuration for available data channels
-const CHANNEL_CONFIG = {
+const GROUND_CHANNEL_CONFIG = {
   x: {
     id: "x",
     label: "X Ground Motion",
     shortName: "X",
-    color: "#f87171", // red-400
+    color: "#f87171",
+    group: "Ground Motion",
   },
   y: {
     id: "y",
     label: "Y Ground Motion",
     shortName: "Y",
-    color: "#4ade80", // green-400
+    color: "#4ade80",
+    group: "Ground Motion",
   },
   z: {
     id: "z",
     label: "Z Ground Motion",
     shortName: "Z",
-    color: "#60a5fa", // blue-400
+    color: "#60a5fa",
+    group: "Ground Motion",
   },
   magnitude: {
     id: "magnitude",
     label: "Ground Motion",
     shortName: "Mag",
-    color: "#fbbf24", // amber-400
+    color: "#fbbf24",
+    group: "Ground Motion",
   },
 } as const;
 
-type ChannelKey = keyof typeof CHANNEL_CONFIG;
+const NODE_AVERAGE_CHANNEL_CONFIG = {
+  avgDisplacementX: {
+    id: "avgDisplacementX",
+    label: "Avg Displacement X",
+    shortName: "Disp X",
+    color: "#16a34a",
+    group: "Node Averages",
+  },
+  avgDisplacementY: {
+    id: "avgDisplacementY",
+    label: "Avg Displacement Y",
+    shortName: "Disp Y",
+    color: "#65a30d",
+    group: "Node Averages",
+  },
+  avgDisplacementZ: {
+    id: "avgDisplacementZ",
+    label: "Avg Displacement Z",
+    shortName: "Disp Z",
+    color: "#84cc16",
+    group: "Node Averages",
+  },
+  avgDisplacementMag: {
+    id: "avgDisplacementMag",
+    label: "Avg Displacement",
+    shortName: "Disp Mag",
+    color: "#22c55e",
+    group: "Node Averages",
+  },
+  avgVelocityX: {
+    id: "avgVelocityX",
+    label: "Avg Velocity X",
+    shortName: "Vel X",
+    color: "#0891b2",
+    group: "Node Averages",
+  },
+  avgVelocityY: {
+    id: "avgVelocityY",
+    label: "Avg Velocity Y",
+    shortName: "Vel Y",
+    color: "#0284c7",
+    group: "Node Averages",
+  },
+  avgVelocityZ: {
+    id: "avgVelocityZ",
+    label: "Avg Velocity Z",
+    shortName: "Vel Z",
+    color: "#0369a1",
+    group: "Node Averages",
+  },
+  avgVelocityMag: {
+    id: "avgVelocityMag",
+    label: "Avg Velocity",
+    shortName: "Vel Mag",
+    color: "#06b6d4",
+    group: "Node Averages",
+  },
+  avgAccelerationX: {
+    id: "avgAccelerationX",
+    label: "Avg Acceleration X",
+    shortName: "Acc X",
+    color: "#7c3aed",
+    group: "Node Averages",
+  },
+  avgAccelerationY: {
+    id: "avgAccelerationY",
+    label: "Avg Acceleration Y",
+    shortName: "Acc Y",
+    color: "#6d28d9",
+    group: "Node Averages",
+  },
+  avgAccelerationZ: {
+    id: "avgAccelerationZ",
+    label: "Avg Acceleration Z",
+    shortName: "Acc Z",
+    color: "#5b21b6",
+    group: "Node Averages",
+  },
+  avgAccelerationMag: {
+    id: "avgAccelerationMag",
+    label: "Avg Acceleration",
+    shortName: "Acc Mag",
+    color: "#8b5cf6",
+    group: "Node Averages",
+  },
+  avgRotationX: {
+    id: "avgRotationX",
+    label: "Avg Rotation X",
+    shortName: "Rot X",
+    color: "#ea580c",
+    group: "Node Averages",
+  },
+  avgRotationY: {
+    id: "avgRotationY",
+    label: "Avg Rotation Y",
+    shortName: "Rot Y",
+    color: "#fb923c",
+    group: "Node Averages",
+  },
+  avgRotationZ: {
+    id: "avgRotationZ",
+    label: "Avg Rotation Z",
+    shortName: "Rot Z",
+    color: "#c2410c",
+    group: "Node Averages",
+  },
+  avgRotationMag: {
+    id: "avgRotationMag",
+    label: "Avg Rotation",
+    shortName: "Rot Mag",
+    color: "#f97316",
+    group: "Node Averages",
+  },
+} as const;
 
-const CHANNEL_ORDER: ChannelKey[] = ["x", "y", "z", "magnitude"];
+type ChannelKey = keyof typeof GROUND_CHANNEL_CONFIG | keyof typeof NODE_AVERAGE_CHANNEL_CONFIG;
+
+type ChannelOption = {
+  id: ChannelKey;
+  label: string;
+  shortName: string;
+  color: string;
+  group: "Ground Motion" | "Node Averages";
+};
+
+const CHANNEL_ORDER: ChannelKey[] = [
+  "x",
+  "y",
+  "z",
+  "magnitude",
+  "avgDisplacementX",
+  "avgDisplacementY",
+  "avgDisplacementZ",
+  "avgDisplacementMag",
+  "avgVelocityX",
+  "avgVelocityY",
+  "avgVelocityZ",
+  "avgVelocityMag",
+  "avgAccelerationX",
+  "avgAccelerationY",
+  "avgAccelerationZ",
+  "avgAccelerationMag",
+  "avgRotationX",
+  "avgRotationY",
+  "avgRotationZ",
+  "avgRotationMag",
+];
 
 function TooltipContent({
   frame,
@@ -85,7 +232,7 @@ function CheckSelect({
   selected,
   onChange,
 }: {
-  options: typeof CHANNEL_CONFIG;
+  options: ChannelOption[];
   selected: ChannelKey[];
   onChange: (keys: ChannelKey[]) => void;
 }) {
@@ -106,8 +253,25 @@ function CheckSelect({
     // Sort selected keys by fixed order for the label
     const sortedActive = CHANNEL_ORDER.filter((k) => selected.includes(k));
     if (sortedActive.length === 0) return "Select Channels";
-    return sortedActive.map((k) => options[k].shortName).join(", ");
+    const shortNameById = new Map(options.map((option) => [option.id, option.shortName]));
+    return sortedActive.map((key) => shortNameById.get(key) ?? key).join(", ");
   }, [selected, options]);
+
+  const groupedOptions = useMemo(() => {
+    const groups: Array<{ title: "Ground Motion" | "Node Averages"; options: ChannelOption[] }> = [
+      { title: "Ground Motion", options: [] },
+      { title: "Node Averages", options: [] },
+    ];
+
+    options.forEach((option) => {
+      const group = groups.find((g) => g.title === option.group);
+      if (group) {
+        group.options.push(option);
+      }
+    });
+
+    return groups.filter((group) => group.options.length > 0);
+  }, [options]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -119,27 +283,36 @@ function CheckSelect({
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-48 p-1">
+      <PopoverContent align="end" className="w-56 p-1">
         <div className="flex flex-col gap-0.5">
-          {CHANNEL_ORDER.map((key) => {
-            const opt = options[key];
-            const isChecked = selected.includes(opt.id as ChannelKey);
-            return (
-              <Label
-                key={opt.id}
-                htmlFor={`channel-${opt.id}`}
-                className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
-                <Checkbox
-                  id={`channel-${opt.id}`}
-                  checked={isChecked}
-                  onCheckedChange={() => toggleOption(opt.id as ChannelKey)}
-                  className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-                />
-                <span className="flex-1">{opt.label}</span>
-                <span className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: opt.color }} />
-              </Label>
-            );
-          })}
+          {groupedOptions.map((group) => (
+            <div key={group.title} className="flex flex-col gap-0.5">
+              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                {group.title}
+              </div>
+              {group.options.map((option) => {
+                const isChecked = selected.includes(option.id);
+                return (
+                  <Label
+                    key={option.id}
+                    htmlFor={`channel-${option.id}`}
+                    className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+                    <Checkbox
+                      id={`channel-${option.id}`}
+                      checked={isChecked}
+                      onCheckedChange={() => toggleOption(option.id)}
+                      className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                    />
+                    <span className="flex-1">{option.label}</span>
+                    <span
+                      className="w-3 h-3 rounded-full border border-black/10"
+                      style={{ backgroundColor: option.color }}
+                    />
+                  </Label>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </PopoverContent>
     </Popover>
@@ -170,15 +343,178 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const selectedKeysRef = useRef(selectedKeys);
   const panelIdRef = useRef(panelId);
 
+  const averageRotationByFrame = useMemo(() => {
+    const result = {
+      x: new Array<number>(animationData.metadata.frameCount).fill(0),
+      y: new Array<number>(animationData.metadata.frameCount).fill(0),
+      z: new Array<number>(animationData.metadata.frameCount).fill(0),
+      mag: new Array<number>(animationData.metadata.frameCount).fill(0),
+    };
+    if (!animationData.displacementRot) {
+      return result;
+    }
+
+    const nodeCount = animationData.metadata.nodeCount;
+    for (let frame = 0; frame < animationData.metadata.frameCount; frame++) {
+      const frameData = animationData.displacementRot.atFrame(frame);
+      let sumX = 0;
+      let sumY = 0;
+      let sumZ = 0;
+      for (let nodeId = 0; nodeId < nodeCount; nodeId++) {
+        const rotation = frameData.at(nodeId);
+        sumX += rotation[0];
+        sumY += rotation[1];
+        sumZ += rotation[2];
+      }
+
+      result.x[frame] = sumX / nodeCount;
+      result.y[frame] = sumY / nodeCount;
+      result.z[frame] = sumZ / nodeCount;
+      result.mag[frame] = Math.hypot(result.x[frame], result.y[frame], result.z[frame]);
+    }
+
+    return result;
+  }, [animationData]);
+
+  const channelAccessors = useMemo(() => {
+    return {
+      x: {
+        accessor: animationData.groundMotion.xAt,
+        config: GROUND_CHANNEL_CONFIG.x,
+      },
+      y: {
+        accessor: animationData.groundMotion.yAt,
+        config: GROUND_CHANNEL_CONFIG.y,
+      },
+      z: {
+        accessor: animationData.groundMotion.zAt,
+        config: GROUND_CHANNEL_CONFIG.z,
+      },
+      magnitude: {
+        accessor: (idx: number) => animationData.precomputed.groundMotion.magnitude.at(idx) ?? 0,
+        config: GROUND_CHANNEL_CONFIG.magnitude,
+      },
+      avgDisplacementMag: {
+        accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.mag[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgDisplacementMag,
+      },
+      avgDisplacementX: {
+        accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.x[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgDisplacementX,
+      },
+      avgDisplacementY: {
+        accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.y[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgDisplacementY,
+      },
+      avgDisplacementZ: {
+        accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.z[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgDisplacementZ,
+      },
+      avgVelocityMag: {
+        accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.mag[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgVelocityMag,
+      },
+      avgVelocityX: {
+        accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.x[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgVelocityX,
+      },
+      avgVelocityY: {
+        accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.y[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgVelocityY,
+      },
+      avgVelocityZ: {
+        accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.z[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgVelocityZ,
+      },
+      avgAccelerationMag: {
+        accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.mag[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgAccelerationMag,
+      },
+      avgAccelerationX: {
+        accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.x[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgAccelerationX,
+      },
+      avgAccelerationY: {
+        accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.y[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgAccelerationY,
+      },
+      avgAccelerationZ: {
+        accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.z[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgAccelerationZ,
+      },
+      avgRotationMag: {
+        accessor: (idx: number) => averageRotationByFrame.mag[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgRotationMag,
+      },
+      avgRotationX: {
+        accessor: (idx: number) => averageRotationByFrame.x[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgRotationX,
+      },
+      avgRotationY: {
+        accessor: (idx: number) => averageRotationByFrame.y[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgRotationY,
+      },
+      avgRotationZ: {
+        accessor: (idx: number) => averageRotationByFrame.z[idx] ?? 0,
+        config: NODE_AVERAGE_CHANNEL_CONFIG.avgRotationZ,
+      },
+    } as const;
+  }, [animationData, averageRotationByFrame]);
+
+  const availableChannelOptions = useMemo(() => {
+    const options: ChannelOption[] = [
+      channelAccessors.x.config,
+      channelAccessors.y.config,
+      channelAccessors.z.config,
+      channelAccessors.magnitude.config,
+      channelAccessors.avgDisplacementX.config,
+      channelAccessors.avgDisplacementY.config,
+      channelAccessors.avgDisplacementZ.config,
+      channelAccessors.avgDisplacementMag.config,
+    ];
+
+    if (animationData.precomputed.avgVelocityPerFrame) {
+      options.push(channelAccessors.avgVelocityX.config);
+      options.push(channelAccessors.avgVelocityY.config);
+      options.push(channelAccessors.avgVelocityZ.config);
+      options.push(channelAccessors.avgVelocityMag.config);
+    }
+
+    if (animationData.precomputed.avgAccelerationPerFrame) {
+      options.push(channelAccessors.avgAccelerationX.config);
+      options.push(channelAccessors.avgAccelerationY.config);
+      options.push(channelAccessors.avgAccelerationZ.config);
+      options.push(channelAccessors.avgAccelerationMag.config);
+    }
+
+    if (animationData.displacementRot) {
+      options.push(channelAccessors.avgRotationX.config);
+      options.push(channelAccessors.avgRotationY.config);
+      options.push(channelAccessors.avgRotationZ.config);
+      options.push(channelAccessors.avgRotationMag.config);
+    }
+
+    return options;
+  }, [animationData, channelAccessors]);
+
+  const effectiveSelectedKeys = useMemo(() => {
+    const availableIds = new Set(availableChannelOptions.map((option) => option.id));
+    const filtered = selectedKeys.filter((key) => availableIds.has(key));
+    if (filtered.length > 0) {
+      return filtered;
+    }
+    return [availableChannelOptions[0]?.id ?? "x"];
+  }, [availableChannelOptions, selectedKeys]);
+
   useEffect(() => {
     dtRef.current = dt;
     maxFrameRef.current = maxFrame;
-    selectedKeysRef.current = selectedKeys;
-  }, [dt, maxFrame, selectedKeys]);
+    selectedKeysRef.current = effectiveSelectedKeys;
+  }, [dt, maxFrame, effectiveSelectedKeys]);
 
   useEffect(() => {
-    setPanelState(panelIdRef.current, "timeline", { selectedKeys });
-  }, [selectedKeys, setPanelState]);
+    setPanelState(panelIdRef.current, "timeline", { selectedKeys: effectiveSelectedKeys });
+  }, [effectiveSelectedKeys, setPanelState]);
 
   const times = useMemo(() => {
     const times: number[] = [];
@@ -188,41 +524,11 @@ export function Timeline({ api }: IDockviewPanelProps) {
     return times;
   }, [animationData, maxFrame]);
 
-  // 1. Prepare Data
-  const getChannelData = useCallback(
-    (key: ChannelKey) => {
-      switch (key) {
-        case "x":
-          return {
-            accessor: animationData.groundMotion.xAt,
-            config: CHANNEL_CONFIG.x,
-          };
-        case "y":
-          return {
-            accessor: animationData.groundMotion.yAt,
-            config: CHANNEL_CONFIG.y,
-          };
-        case "z":
-          return {
-            accessor: animationData.groundMotion.zAt,
-            config: CHANNEL_CONFIG.z,
-          };
-        case "magnitude":
-        default:
-          return {
-            accessor: (idx: number) => animationData.precomputed.groundMotion.magnitude.at(idx) ?? 0,
-            config: CHANNEL_CONFIG.magnitude,
-          };
-      }
-    },
-    [animationData],
-  );
-
   const chartData = useMemo(() => {
-    const activeKeys = CHANNEL_ORDER.filter((k) => selectedKeys.includes(k));
+    const activeKeys = CHANNEL_ORDER.filter((k) => effectiveSelectedKeys.includes(k));
 
     const seriesData = activeKeys.map((key) => {
-      const { accessor, config } = getChannelData(key);
+      const { accessor, config } = channelAccessors[key];
       const data: [number, number][] = [];
       for (let i = 0; i <= maxFrame; i++) {
         data.push([times[i], accessor(i)]);
@@ -231,7 +537,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
     });
 
     return { seriesData };
-  }, [maxFrame, selectedKeys, getChannelData, times]);
+  }, [channelAccessors, effectiveSelectedKeys, maxFrame, times]);
 
   // 2. Build ECharts Option
   const option: EChartsOption = useMemo((): EChartsOption => {
@@ -394,10 +700,8 @@ export function Timeline({ api }: IDockviewPanelProps) {
             if (!p || !p.seriesName || !p.data) return;
             if (p.seriesName.includes("Marker") || p.seriesName === "Playhead") return;
 
-            const configKey = Object.keys(CHANNEL_CONFIG).find(
-              (key) => CHANNEL_CONFIG[key as ChannelKey].label === p.seriesName,
-            );
-            const color = configKey ? CHANNEL_CONFIG[configKey as ChannelKey].color : (p.color as string);
+            const seriesMatch = chartData.seriesData.find((seriesItem) => seriesItem.config.label === p.seriesName);
+            const color = seriesMatch ? seriesMatch.config.color : (p.color as string);
             const value = (p.data as number[])[1];
 
             values.push({ name: p.seriesName, color, value });
@@ -539,7 +843,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       {/* Top Bar Row 1: Controls & Time */}
       <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0 relative">
         <div className="float-right ml-2 mt-0.5">
-          <CheckSelect options={CHANNEL_CONFIG} selected={selectedKeys} onChange={setSelectedKeys} />
+          <CheckSelect options={availableChannelOptions} selected={effectiveSelectedKeys} onChange={setSelectedKeys} />
         </div>
         <div className="text-sm text-neutral-700 flex items-center gap-2 flex-wrap">
           <span className="font-medium">Frame:</span>
@@ -561,7 +865,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
       {/* Chart Area */}
       <div className="flex-1 min-h-0 w-full relative" style={{ cursor: isDragging ? "grabbing" : "default" }}>
-        {selectedKeys.length > 0 ? (
+        {effectiveSelectedKeys.length > 0 ? (
           <ReactECharts
             ref={chartRef}
             option={option}

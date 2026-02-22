@@ -27,7 +27,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 
 // Import new panel components directly
@@ -317,14 +317,6 @@ export function CanvasWithControls({
         height: `${Math.abs(boxSelection.end.y - boxSelection.start.y) * 100}%`,
       }
     : null;
-  const boxWidthPct = boxSelection ? Math.abs(boxSelection.end.x - boxSelection.start.x) * 100 : 0;
-  const boxHeightPct = boxSelection ? Math.abs(boxSelection.end.y - boxSelection.start.y) * 100 : 0;
-  const boxLabelStyle = boxSelection
-    ? {
-        left: `${Math.min(boxSelection.start.x, boxSelection.end.x) * 100}%`,
-        top: `${Math.max(Math.min(boxSelection.start.y, boxSelection.end.y) * 100 - 4, 0)}%`,
-      }
-    : null;
 
   function NoFog() {
     const { scene } = useThree();
@@ -389,13 +381,6 @@ export function CanvasWithControls({
               className="absolute border-2 border-blue-500 border-dashed bg-blue-500/20 pointer-events-none"
               style={boxStyle}
             />
-            {boxLabelStyle && (
-              <div
-                className="absolute pointer-events-none rounded border border-blue-300 bg-blue-50/95 px-1.5 py-0.5 text-[10px] font-medium text-blue-700"
-                style={boxLabelStyle}>
-                Selecting... {boxWidthPct.toFixed(1)}% x {boxHeightPct.toFixed(1)}%
-              </div>
-            )}
           </>
         )}
       </div>
@@ -611,7 +596,7 @@ export function ViewControls({
       <div className={`flex flex-col max-h-full overflow-hidden ${docked ? "items-stretch" : "items-end gap-0.5"}`}>
         <AnimatePresence mode="popLayout">
           {!isExpanded ? (
-            <>
+            <div className="flex flex-col gap-0.5 items-end">
               <motion.div
                 key="collapsed"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -767,7 +752,7 @@ export function ViewControls({
                   </Tooltip>
                 </motion.div>
               )}
-            </>
+            </div>
           ) : (
             <motion.div
               ref={expandedPanelRef}

@@ -28,7 +28,7 @@ const tempColor = new THREE.Color();
 export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string }) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { selectNode } = useNodeSelection();
+  const { selectedNodes, selectNode } = useNodeSelection();
   const { getNodeColor } = useColor();
   const { mode, getVisibleNodes } = useViewMode();
   const { getExplodedPosition } = useExplodedView();
@@ -126,13 +126,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       // But for nodes not in any story (like corner nodes), show them
       return false;
     });
-  }, [
-    visibleNodesBasedOnMode,
-    getVisibleStoryOrder,
-    animationData.metadata.stories,
-    hideSelectedNodes,
-    hiddenNodeIds,
-  ]);
+  }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories, hideSelectedNodes, hiddenNodeIds]);
 
   // Keyboard handler for ctrl/cmd to control pan and enable box select mode
   useEffect(() => {
@@ -392,9 +386,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
   // Get positions and colors for all selected nodes
   const selectedNodesData = useMemo(() => {
-    const validSelectedNodeIds = Array.from(selectedNodeIds).filter((nodeId) => nodeId >= 0 && nodeId < nodeCount);
-
-    return validSelectedNodeIds.map((nodeId) => {
+    return selectedNodes.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
       const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       const exploded = getExplodedPosition(
@@ -410,7 +402,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         color: getNodePanelColor(nodeId), // Use unique color for selection
       };
     });
-  }, [selectedNodeIds, nodeCount, frameIndex, animationData, getExplodedPosition, offsets]);
+  }, [selectedNodes, frameIndex, animationData, getExplodedPosition, offsets]);
 
   return (
     <>

@@ -51,7 +51,28 @@ export interface CanvasPanelState {
 }
 
 export interface TimelinePanelState {
-  selectedKeys: ("x" | "y" | "z" | "magnitude")[];
+  selectedKeys: (
+    | "x"
+    | "y"
+    | "z"
+    | "magnitude"
+    | "avgDisplacementX"
+    | "avgDisplacementY"
+    | "avgDisplacementZ"
+    | "avgDisplacementMag"
+    | "avgVelocityX"
+    | "avgVelocityY"
+    | "avgVelocityZ"
+    | "avgVelocityMag"
+    | "avgAccelerationX"
+    | "avgAccelerationY"
+    | "avgAccelerationZ"
+    | "avgAccelerationMag"
+    | "avgRotationX"
+    | "avgRotationY"
+    | "avgRotationZ"
+    | "avgRotationMag"
+  )[];
 }
 
 export interface StoryDriftHeatmapPanelState {

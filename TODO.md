@@ -20,10 +20,10 @@
 
 ### 5.1 New Panels to Create
 
-- [ ] Rotation Time Series Panel
-- [ ] Velocity Distribution Panel
-- [ ] Acceleration Distribution Panel
-- [ ] Combined Metrics Panel (multiple metrics overlay)
+- [x] Rotation Time Series Panel
+- [x] Velocity Distribution Panel
+- [x] Acceleration Distribution Panel
+- [x] Combined Metrics Panel (multiple metrics overlay)
 - [ ] Time Range Analysis Panel
 
 ### 5.2 Existing Panel Improvements

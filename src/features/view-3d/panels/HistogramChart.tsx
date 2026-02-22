@@ -43,7 +43,7 @@ import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
@@ -54,6 +54,12 @@ const POSITION_AXIS_CONFIG = {
 } as const;
 
 type PositionAxis = keyof typeof POSITION_AXIS_CONFIG;
+
+interface HistogramChartProps {
+  initialMetric?: Metric;
+  metricOptions?: Metric[];
+  title?: string;
+}
 
 function SimpleSelect<T extends string>({
   options,
@@ -127,7 +133,11 @@ function TooltipContent({
   );
 }
 
-export function HistogramChart() {
+export function HistogramChart({
+  initialMetric = "displacementMag",
+  metricOptions,
+  title = "Threshold Histogram",
+}: HistogramChartProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   // const { thresholds, setThreshold } = useThresholds();
@@ -136,7 +146,23 @@ export function HistogramChart() {
   const { availableMetrics } = useColor();
 
   const [positionAxis, setPositionAxis] = useState<PositionAxis>("x");
-  const [valueType, setValueType] = useState<Metric>("displacementMag");
+  const filteredMetrics = useMemo(() => {
+    const allowed = metricOptions
+      ? availableMetrics.filter((metric) => metricOptions.includes(metric))
+      : availableMetrics;
+    return allowed.length > 0 ? allowed : availableMetrics;
+  }, [availableMetrics, metricOptions]);
+  const [valueType, setValueType] = useState<Metric>(initialMetric);
+
+  useEffect(() => {
+    if (filteredMetrics.includes(valueType)) {
+      return;
+    }
+
+    if (filteredMetrics.length > 0) {
+      setValueType(filteredMetrics[0]);
+    }
+  }, [filteredMetrics, valueType]);
 
   const staticConfig = useMemo(() => {
     const { nodeCount, stories, storyOrder } = animationData.metadata;
@@ -341,7 +367,7 @@ export function HistogramChart() {
       <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="text-sm text-neutral-700">
-            <span className="font-medium">Threshold Histogram</span>
+            <span className="font-medium">{title}</span>
           </div>
           <div className="flex items-center gap-1 ml-auto">
             <span className="text-xs text-neutral-500">Position:</span>
@@ -355,7 +381,7 @@ export function HistogramChart() {
           <div className="flex items-center gap-1">
             <span className="text-xs text-neutral-500">Value:</span>
             <SimpleSelect
-              options={availableMetrics}
+              options={filteredMetrics}
               value={valueType}
               onChange={(val) => setValueType(val)}
               labelFn={(v) => METRIC_CONFIGS[v].label}

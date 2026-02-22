@@ -6,9 +6,12 @@ import { DataTablePanel } from "@/features/view-3d/panels/DataTablePanel";
 import { FloorDisplacementChart } from "@/features/view-3d/panels/FloorDisplacementChart";
 import { StatisticsPanel } from "@/features/view-3d/panels/StatisticsPanel";
 import { VelocityTimeChart } from "@/features/view-3d/panels/VelocityTimeChart";
+import { RotationTimeChart } from "@/features/view-3d/panels/RotationTimeChart";
 import { StoryDriftHeatmap } from "@/features/view-3d/panels/StoryDriftHeatmap";
 import { PeakResponseTimePanel } from "@/features/view-3d/panels/PeakResponseTimePanel";
 import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
+import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDistributionPanel";
+import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
@@ -26,6 +29,9 @@ const PanelCatalog = {
   "Floor Displacement": FloorDisplacementChart,
   Statistics: StatisticsPanel,
   "Velocity Time": VelocityTimeChart,
+  "Rotation Time": RotationTimeChart,
+  "Velocity Distribution": VelocityDistributionPanel,
+  "Acceleration Distribution": AccelerationDistributionPanel,
   "Story Drift Heatmap": StoryDriftHeatmap,
   "Peak Response Time": PeakResponseTimePanel,
   "Damage Threshold": DamageThresholdPanel,

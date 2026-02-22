@@ -9,7 +9,6 @@ import {
   useColor,
   useExplodedView,
   useFloorVisibility,
-  useNodeVisibility,
   useSliceSelection,
   useViewMode,
 } from "@/features/view-3d/contexts/visualization";
@@ -17,6 +16,7 @@ import { ThresholdBuildingScene } from "@/features/view-3d/scenes/ThresholdBuild
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { isNodeInteractionMode, isSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
+import { useViewStore } from "@/state";
 import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -24,6 +24,12 @@ import * as THREE from "three";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
+
+function clampToViewport(value: number): number {
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+  return value;
+}
 
 export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string }) {
   const { animationData } = useAnimationData();
@@ -44,20 +50,20 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { camera } = useThree();
   const { setEnablePan } = useCamera();
   const { getVisibleStoryOrder } = useFloorVisibility();
-  const {
-    selectedNodeIds,
-    hiddenNodeIds,
-    startBoxSelection,
-    updateBoxSelection,
-    endBoxSelection,
-    setSelectedNodes,
-    addSelectedNodes,
-    hoveredNodeId,
-    setHoveredNodeId,
-    hideSelectedNodes,
-  } = useNodeVisibility();
+  const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
+  const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
+  const startBoxSelection = useViewStore((s) => s.startBoxSelection);
+  const updateBoxSelection = useViewStore((s) => s.updateBoxSelection);
+  const endBoxSelection = useViewStore((s) => s.endBoxSelection);
+  const setSelectedNodes = useViewStore((s) => s.setSelectedNodes);
+  const addSelectedNodes = useViewStore((s) => s.addSelectedNodes);
+  const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
+  const setHoveredNodeId = useViewStore((s) => s.setHoveredNodeId);
+  const hideSelectedNodes = useViewStore((s) => s.hideSelectedNodes);
   const nodeInteractionEnabled = isNodeInteractionMode(mode);
   const slabInteractionEnabled = isSlabInteractionMode(mode);
+  const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
+  const hiddenNodeIdSet = useMemo(() => new Set(hiddenNodeIds), [hiddenNodeIds]);
 
   useEffect(() => {
     if (!nodeInteractionEnabled) {
@@ -112,7 +118,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     const visibleStorySet = new Set(visibleStoryOrder);
 
     return visibleNodesBasedOnMode.filter((nodeId) => {
-      if (hideSelectedNodes && hiddenNodeIds.has(nodeId)) {
+      if (hideSelectedNodes && hiddenNodeIdSet.has(nodeId)) {
         return false;
       }
       // Check which floor this node belongs to
@@ -126,7 +132,13 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       // But for nodes not in any story (like corner nodes), show them
       return false;
     });
-  }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories, hideSelectedNodes, hiddenNodeIds]);
+  }, [
+    visibleNodesBasedOnMode,
+    getVisibleStoryOrder,
+    animationData.metadata.stories,
+    hideSelectedNodes,
+    hiddenNodeIdSet,
+  ]);
 
   // Keyboard handler for ctrl/cmd to control pan and enable box select mode
   useEffect(() => {
@@ -154,58 +166,132 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   // Component to attach mouse handlers to the canvas element
   function BoxSelectionHandler() {
     const { gl } = useThree();
-    const { boxSelection: currentBoxSelection } = useNodeVisibility();
+    const currentBoxSelection = useViewStore((s) => s.boxSelection);
     const boxSelectionRef = useRef(currentBoxSelection);
+    const panelIdRef = useRef(panelId);
+    const cameraRef = useRef(camera);
+    const startBoxSelectionRef = useRef(startBoxSelection);
+    const updateBoxSelectionRef = useRef(updateBoxSelection);
+    const endBoxSelectionRef = useRef(endBoxSelection);
+    const setSelectedNodesRef = useRef(setSelectedNodes);
+    const addSelectedNodesRef = useRef(addSelectedNodes);
+    const nodeInteractionEnabledRef = useRef(nodeInteractionEnabled);
+    const visibleNodesRef = useRef(visibleNodes);
+    const dragRectRef = useRef<DOMRect | null>(null);
+    const pendingPointRef = useRef<{ x: number; y: number } | null>(null);
+    const updateRafRef = useRef<number | null>(null);
 
-    // Update ref when boxSelection changes
-    useEffect(() => {
-      boxSelectionRef.current = currentBoxSelection;
-    }, [currentBoxSelection]);
+    boxSelectionRef.current = currentBoxSelection;
+    panelIdRef.current = panelId;
+    cameraRef.current = camera;
+    startBoxSelectionRef.current = startBoxSelection;
+    updateBoxSelectionRef.current = updateBoxSelection;
+    endBoxSelectionRef.current = endBoxSelection;
+    setSelectedNodesRef.current = setSelectedNodes;
+    addSelectedNodesRef.current = addSelectedNodes;
+    nodeInteractionEnabledRef.current = nodeInteractionEnabled;
+    visibleNodesRef.current = visibleNodes;
 
     useEffect(() => {
       const domElement = gl.domElement;
 
-      const handleMouseDown = (e: MouseEvent) => {
-        if (!nodeInteractionEnabled) return;
-        if (e.ctrlKey || e.metaKey) {
-          shiftHeldRef.current = e.shiftKey;
-          const rect = domElement.getBoundingClientRect();
-          const x = (e.clientX - rect.left) / rect.width;
-          const y = (e.clientY - rect.top) / rect.height;
-          isMouseDownRef.current = true;
-          startBoxSelection({ x, y }, panelId);
+      const clearPendingUpdate = () => {
+        pendingPointRef.current = null;
+        if (updateRafRef.current !== null) {
+          cancelAnimationFrame(updateRafRef.current);
+          updateRafRef.current = null;
         }
+      };
+
+      const toNormalizedPoint = (e: MouseEvent, rect: DOMRect) => ({
+        x: clampToViewport((e.clientX - rect.left) / rect.width),
+        y: clampToViewport((e.clientY - rect.top) / rect.height),
+      });
+
+      const flushPendingUpdate = () => {
+        updateRafRef.current = null;
+        const pendingPoint = pendingPointRef.current;
+        if (!pendingPoint) return;
+        pendingPointRef.current = null;
+        updateBoxSelectionRef.current(pendingPoint, panelIdRef.current);
+      };
+
+      const scheduleBoxUpdate = (point: { x: number; y: number }) => {
+        pendingPointRef.current = point;
+        if (updateRafRef.current !== null) return;
+        updateRafRef.current = requestAnimationFrame(flushPendingUpdate);
+      };
+
+      const endDrag = (commitSelection: boolean) => {
+        if (!isMouseDownRef.current) return;
+
+        clearPendingUpdate();
+
+        if (commitSelection && boxSelectionRef.current) {
+          const selected = performBoxSelection(
+            cameraRef.current,
+            meshRef,
+            boxSelectionRef.current,
+            visibleNodesRef.current,
+          );
+          if (shiftHeldRef.current) {
+            addSelectedNodesRef.current(selected);
+          } else {
+            setSelectedNodesRef.current(selected);
+          }
+        }
+
+        endBoxSelectionRef.current(panelIdRef.current);
+        isMouseDownRef.current = false;
+        shiftHeldRef.current = false;
+        dragRectRef.current = null;
+      };
+
+      const handleMouseDown = (e: MouseEvent) => {
+        if (!nodeInteractionEnabledRef.current) return;
+        if (!(e.ctrlKey || e.metaKey) || e.button !== 0) return;
+
+        const rect = domElement.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        dragRectRef.current = rect;
+        shiftHeldRef.current = e.shiftKey;
+        isMouseDownRef.current = true;
+        startBoxSelectionRef.current(toNormalizedPoint(e, rect), panelIdRef.current);
       };
 
       const handleMouseMove = (e: MouseEvent) => {
-        if (!nodeInteractionEnabled) return;
-        if (isMouseDownRef.current && (e.ctrlKey || e.metaKey)) {
-          const rect = domElement.getBoundingClientRect();
-          const x = (e.clientX - rect.left) / rect.width;
-          const y = (e.clientY - rect.top) / rect.height;
-          updateBoxSelection({ x, y }, panelId);
+        if (!isMouseDownRef.current) return;
+
+        if (!(e.ctrlKey || e.metaKey)) {
+          endDrag(false);
+          return;
         }
+
+        const rect = dragRectRef.current ?? domElement.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        scheduleBoxUpdate(toNormalizedPoint(e, rect));
       };
 
       const handleMouseUp = () => {
-        if (!nodeInteractionEnabled) return;
-        if (isMouseDownRef.current && boxSelectionRef.current) {
-          const selected = performBoxSelection(camera, meshRef, boxSelectionRef.current, visibleNodes);
-          if (shiftHeldRef.current) {
-            addSelectedNodes(selected);
-          } else {
-            setSelectedNodes(selected);
-          }
-          endBoxSelection(panelId);
-        }
-        isMouseDownRef.current = false;
+        endDrag(nodeInteractionEnabledRef.current);
       };
 
       const handleKeyUp = (e: KeyboardEvent) => {
-        if (!nodeInteractionEnabled) return;
-        if ((e.key === "Control" || e.key === "Meta" || e.key === "Ctrl") && isMouseDownRef.current) {
-          endBoxSelection(panelId);
-          isMouseDownRef.current = false;
+        if (!isMouseDownRef.current) return;
+        if (e.key === "Control" || e.key === "Meta") {
+          endDrag(false);
+        }
+      };
+
+      const handleWindowBlur = () => {
+        endDrag(false);
+      };
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "hidden") {
+          endDrag(false);
         }
       };
 
@@ -213,12 +299,17 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
       window.addEventListener("keyup", handleKeyUp);
+      window.addEventListener("blur", handleWindowBlur);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
 
       return () => {
+        clearPendingUpdate();
         domElement.removeEventListener("mousedown", handleMouseDown);
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
         window.removeEventListener("keyup", handleKeyUp);
+        window.removeEventListener("blur", handleWindowBlur);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
       };
     }, [gl]);
 
@@ -330,12 +421,12 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const boxSelectedIndices = useMemo(() => {
     const indices = new Set<number>();
     for (let i = 0; i < visibleNodes.length; i++) {
-      if (selectedNodeIds.has(visibleNodes[i])) {
+      if (selectedNodeIdSet.has(visibleNodes[i])) {
         indices.add(i);
       }
     }
     return indices;
-  }, [visibleNodes, selectedNodeIds]);
+  }, [visibleNodes, selectedNodeIdSet]);
 
   useFrame(() => {
     if (!meshRef.current || visibleNodes.length === 0) return;

@@ -403,16 +403,25 @@ export const createViewStore = () =>
           isBoxSelecting: true,
         }),
       updateBoxSelection: (end, panelId) =>
-        set((state) => ({
-          boxSelection:
-            state.boxSelection && (!panelId || state.boxSelectionPanelId === panelId)
-              ? { ...state.boxSelection, end }
-              : state.boxSelection,
-        })),
+        set((state) => {
+          if (!state.boxSelection) {
+            return state;
+          }
+          if (panelId && state.boxSelectionPanelId !== panelId) {
+            return state;
+          }
+          const currentEnd = state.boxSelection.end;
+          if (currentEnd.x === end.x && currentEnd.y === end.y) {
+            return state;
+          }
+          return {
+            boxSelection: { ...state.boxSelection, end },
+          };
+        }),
       endBoxSelection: (panelId) =>
         set((state) => {
           if (panelId && state.boxSelectionPanelId && state.boxSelectionPanelId !== panelId) {
-            return {};
+            return state;
           }
           return { isBoxSelecting: false, boxSelection: null, boxSelectionPanelId: null };
         }),

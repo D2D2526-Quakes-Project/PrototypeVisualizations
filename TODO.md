@@ -414,5 +414,7 @@ Every number with a unit should be hoverable with conversions.
 ## 18. Known Bugs
 
 - [x] When letting go of ctrl before releasing the mouse button, the box selection is not cleared
+- [x] The playback is not synced to real time. It should always pick the frame closest to the current time.
+- [x] Similar to above, the frame skip diff shown in the playback controls is not accurate of how many frames are skipped.
 
 _Last Updated: February 2026_

@@ -188,7 +188,7 @@ Every number with a unit should be hoverable with conversions.
 
 - [ ] Add visual feedback during box selection
 - [ ] Ensure selected nodes sync across all views
-- [ ] When there is a selection, these options should be available in both the View Menu and the Collapsed View Menu: Clear Selection, Hide Selected Nodes, Show All Nodes
+- [x] When there is a selection, these options should be available in both the View Menu and the Collapsed View Menu: Clear Selection, Hide Selected Nodes, Show All Nodes
 
 ---
 
@@ -200,5 +200,7 @@ Every number with a unit should be hoverable with conversions.
 ---
 
 ## Known Bugs
+
+- [x] When the view menu is docked, the ctrl+drag selection box is visually offset
 
 _Last Updated: February 2026_

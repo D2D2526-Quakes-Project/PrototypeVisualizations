@@ -368,15 +368,17 @@ export function CanvasWithControls({
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}>
-      <Canvas linear flat>
-        <NoFog />
-        <color attach="background" args={[backgroundColor]} />
-        {children}
-        <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan={enablePan} />
-      </Canvas>
-      {showBoxSelectionOverlay && boxStyle && (
-        <div className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none" style={boxStyle} />
-      )}
+      <div className="relative w-full h-full">
+        <Canvas linear flat>
+          <NoFog />
+          <color attach="background" args={[backgroundColor]} />
+          {children}
+          <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan={enablePan} />
+        </Canvas>
+        {showBoxSelectionOverlay && boxStyle && (
+          <div className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none" style={boxStyle} />
+        )}
+      </div>
       <ViewControls
         orbitControlsRef={orbitControlsRef}
         isOrthographic={isOrthographic}
@@ -490,8 +492,8 @@ export function ViewControls({
   ];
 
   const childVariants = {
-    initial: { opacity: 0, y: 4 },
-    animate: { opacity: 1, y: 0 },
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
   };
 
   const selectedIds = useMemo(() => Array.from(selectedNodeIds), [selectedNodeIds]);
@@ -526,9 +528,7 @@ export function ViewControls({
 
   return (
     <div
-      className={`absolute flex z-50 ${
-        docked ? "top-0 right-0 bottom-0" : "top-2 right-2 max-h-[calc(100%-1rem)]"
-      }`}>
+      className={`absolute flex z-50 ${docked ? "top-0 right-0 bottom-0" : "top-2 right-2 max-h-[calc(100%-1rem)]"}`}>
       <div className={`flex flex-col max-h-full overflow-hidden ${docked ? "items-stretch" : "items-end gap-0.5"}`}>
         <AnimatePresence mode="popLayout">
           {!isExpanded ? (
@@ -720,7 +720,37 @@ export function ViewControls({
                 <motion.div className="grid grid-cols-2 gap-1 mb-2" variants={childVariants}>
                   <ViewsPanel resetView={resetView} />
                 </motion.div>
-                <motion.div className="flex items-center gap-2 pt-1 border-t border-neutral-200" variants={childVariants}>
+                {showNodeVisibilityMenu && (
+                  <div className="pt-1 border-t border-neutral-200">
+                    <div className="text-xs font-medium text-neutral-700 mb-1">Selection</div>
+                    <div className="grid grid-cols-2 gap-1">
+                      <button
+                        onClick={() => hideNodes(selectedIds)}
+                        disabled={visibleSelectedCount === 0}
+                        className="inline-flex items-center justify-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-1.5 py-1 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <EyeOff size={10} />
+                        Hide ({visibleSelectedCount})
+                      </button>
+                      <button
+                        onClick={showAllNodes}
+                        disabled={hiddenCount === 0}
+                        className="inline-flex items-center justify-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-1.5 py-1 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <RotateCcw size={10} />
+                        Show All ({hiddenCount})
+                      </button>
+                    </div>
+                    <button
+                      onClick={clearSelection}
+                      disabled={selectedCount === 0}
+                      className="mt-1 w-full inline-flex items-center justify-center gap-1 rounded border border-red-200 bg-red-50 px-1.5 py-1 text-[10px] text-red-600 transition-colors hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <XCircle size={10} />
+                      Clear Selection ({selectedCount})
+                    </button>
+                  </div>
+                )}
+                <motion.div
+                  className="flex items-center gap-2 pt-1 border-t border-neutral-200"
+                  variants={childVariants}>
                   <span className="text-xs font-medium text-neutral-700">Persp</span>
                   <Switch size="sm" checked={isOrthographic} onCheckedChange={setIsOrthographic} />
                   <span className="text-xs font-medium text-neutral-700">Ortho</span>

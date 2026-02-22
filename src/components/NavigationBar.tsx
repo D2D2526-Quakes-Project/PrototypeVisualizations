@@ -55,6 +55,7 @@ function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState
     thresholds: state.thresholds,
     visibleFloors: state.visibleFloors,
     selectedNodeIds: state.selectedNodeIds,
+    hiddenNodeIds: state.hiddenNodeIds,
     hideSelectedNodes: state.hideSelectedNodes,
     explodedView: state.explodedView,
     sliceEnabled: state.sliceEnabled,

@@ -103,6 +103,7 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
 
     s.setVisibleFloors(initialState.visibleFloors);
     s.setSelectedNodes(initialState.selectedNodeIds);
+    s.setHiddenNodeIds(initialState.hiddenNodeIds ?? []);
     s.setHideSelectedNodes(initialState.hideSelectedNodes ?? false);
 
     s.setExplodedView(initialState.explodedView);

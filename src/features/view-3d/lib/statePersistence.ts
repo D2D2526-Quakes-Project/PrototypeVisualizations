@@ -79,6 +79,7 @@ export interface AppState {
   thresholds: ThresholdState;
   visibleFloors: string[];
   selectedNodeIds: number[];
+  hiddenNodeIds: number[];
   hideSelectedNodes: boolean;
   explodedView: ExplodedViewState;
   sliceEnabled: boolean;
@@ -144,8 +145,14 @@ function cloneAppState(state: AppState): AppState {
 }
 
 function normalizeState(state: AppState): AppState {
+  const legacySelectedAsHidden =
+    (!Array.isArray(state.hiddenNodeIds) || state.hiddenNodeIds.length === 0) && state.hideSelectedNodes
+      ? [...state.selectedNodeIds]
+      : [];
+
   return {
     ...state,
+    hiddenNodeIds: Array.isArray(state.hiddenNodeIds) ? state.hiddenNodeIds : legacySelectedAsHidden,
     version: STATE_VERSION,
     timestamp: Date.now(),
   };
@@ -248,6 +255,7 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     thresholds: { ...DEFAULT_THRESHOLDS },
     visibleFloors: [],
     selectedNodeIds: [],
+    hiddenNodeIds: [],
     hideSelectedNodes: false,
     explodedView: { ...DEFAULT_EXPLODED_STATE },
     sliceEnabled: false,
@@ -942,6 +950,10 @@ export function getStateForUrlWithDefaults(
   defaults: AppState,
   includePanelStates: boolean = false,
 ): AppState {
+  const hiddenNodeIds =
+    state.hiddenNodeIds ??
+    (state.hideSelectedNodes === true ? (state.selectedNodeIds ?? defaults.selectedNodeIds) : defaults.hiddenNodeIds);
+
   const mergedState: AppState = {
     ...defaults,
     ...state,
@@ -949,6 +961,7 @@ export function getStateForUrlWithDefaults(
     explodedView: { ...defaults.explodedView, ...(state.explodedView ?? {}) },
     camera: { ...defaults.camera, ...(state.camera ?? {}) },
     panelStates: includePanelStates ? (state.panelStates ?? {}) : {},
+    hiddenNodeIds,
     hideSelectedNodes: state.hideSelectedNodes ?? defaults.hideSelectedNodes,
   };
 

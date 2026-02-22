@@ -369,7 +369,16 @@ export function ViewControls({
   } = useExplodedView();
   const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
     useSliceSelection();
-  const { selectedNodeIds, clearSelection, hideSelectedNodes, toggleHideSelectedNodes } = useNodeVisibility();
+  const {
+    selectedNodeIds,
+    hiddenNodeIds,
+    clearSelection,
+    hideNodes,
+    showNodes,
+    showAllNodes,
+    hideSelectedNodes,
+    setHideSelectedNodes,
+  } = useNodeVisibility();
   const { thresholds, setThreshold } = useThresholds();
   const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
@@ -424,6 +433,14 @@ export function ViewControls({
     initial: { opacity: 0, y: 4 },
     animate: { opacity: 1, y: 0 },
   };
+
+  const selectedIds = useMemo(() => Array.from(selectedNodeIds), [selectedNodeIds]);
+  const hiddenIds = useMemo(() => Array.from(hiddenNodeIds), [hiddenNodeIds]);
+  const selectedCount = selectedIds.length;
+  const hiddenCount = hiddenIds.length;
+  const hiddenSelectedCount = selectedIds.filter((nodeId) => hiddenNodeIds.has(nodeId)).length;
+  const visibleSelectedCount = selectedCount - hiddenSelectedCount;
+  const showNodeVisibilityMenu = selectedCount > 0 || hiddenCount > 0;
 
   return (
     <div className="absolute flex top-2 right-2 z-50 max-h-[calc(100%-1rem)]">
@@ -605,24 +622,6 @@ export function ViewControls({
                   storyOrder={animationData.metadata.storyOrder}
                 />
               </motion.div>
-              {selectedNodeIds.size > 0 && (
-                <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                  <button
-                    onClick={toggleHideSelectedNodes}
-                    className={`w-full text-xs px-2 py-1 rounded border transition-colors mb-1 ${
-                      hideSelectedNodes
-                        ? "bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
-                        : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-300"
-                    }`}>
-                    {hideSelectedNodes ? "Show Selected Nodes" : "Hide Selected Nodes"}
-                  </button>
-                  <button
-                    onClick={clearSelection}
-                    className="w-full text-xs px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 rounded transition-colors">
-                    Clear Selection ({selectedNodeIds.size} nodes)
-                  </button>
-                </motion.div>
-              )}
               <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-xs font-medium text-neutral-700">Background</span>
@@ -651,6 +650,59 @@ export function ViewControls({
             </motion.div>
           )}
         </AnimatePresence>
+        {showNodeVisibilityMenu && (
+          <motion.div
+            key="node-visibility-menu"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-2 gap-1 w-full">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-semibold text-neutral-700">Node Visibility</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-neutral-500">Active</span>
+                <Switch size="sm" checked={hideSelectedNodes} onCheckedChange={setHideSelectedNodes} />
+              </div>
+            </div>
+
+            <div className="text-[10px] text-neutral-500 mb-1">
+              Hidden: {hiddenCount} {selectedCount > 0 ? `| Selected: ${selectedCount}` : ""}
+            </div>
+
+            {visibleSelectedCount > 0 && (
+              <button
+                onClick={() => hideNodes(selectedIds)}
+                className="w-full text-xs px-2 py-1 rounded border transition-colors mb-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-300">
+                Hide Selected ({visibleSelectedCount})
+              </button>
+            )}
+
+            {hiddenSelectedCount > 0 && (
+              <button
+                onClick={() => showNodes(selectedIds)}
+                className="w-full text-xs px-2 py-1 rounded border transition-colors mb-1 bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300">
+                Show Selected ({hiddenSelectedCount})
+              </button>
+            )}
+
+            {selectedCount > 0 && (
+              <button
+                onClick={clearSelection}
+                className="w-full text-xs px-2 py-1 rounded border transition-colors mb-1 bg-red-100 hover:bg-red-200 text-red-700 border-red-300">
+                Clear Selection ({selectedCount})
+              </button>
+            )}
+
+            {hiddenCount > 0 && (
+              <button
+                onClick={showAllNodes}
+                className="w-full text-xs px-2 py-1 rounded border transition-colors bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300">
+                Show All Nodes ({hiddenCount})
+              </button>
+            )}
+          </motion.div>
+        )}
       </div>
     </div>
   );

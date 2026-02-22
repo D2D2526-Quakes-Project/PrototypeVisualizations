@@ -5,14 +5,19 @@ import { useCallback, useMemo, type RefObject } from "react";
 
 interface NodeVisibilityContextType {
   selectedNodeIds: Set<number>;
+  hiddenNodeIds: Set<number>;
   boxSelection: StoreBoxSelection | null;
   boxSelectionPanelId: string | null;
   isBoxSelecting: boolean;
   hoveredNodeId: number | null;
   hideSelectedNodes: boolean;
   setSelectedNodes: (nodes: number[]) => void;
+  setHiddenNodeIds: (nodes: number[]) => void;
   addSelectedNodes: (nodes: number[]) => void;
   removeSelectedNode: (nodeId: number) => void;
+  hideNodes: (nodes: number[]) => void;
+  showNodes: (nodes: number[]) => void;
+  showAllNodes: () => void;
   setHideSelectedNodes: (hide: boolean) => void;
   toggleHideSelectedNodes: () => void;
   clearSelection: () => void;
@@ -29,14 +34,19 @@ export function NodeVisibilityProvider({ children }: { children: React.ReactNode
 
 export function useNodeVisibility(): NodeVisibilityContextType {
   const selectedNodeIdsArray = useViewStore((s) => s.selectedNodeIds);
+  const hiddenNodeIdsArray = useViewStore((s) => s.hiddenNodeIds);
   const boxSelection = useViewStore((s) => s.boxSelection);
   const boxSelectionPanelId = useViewStore((s) => s.boxSelectionPanelId);
   const isBoxSelecting = useViewStore((s) => s.isBoxSelecting);
   const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
   const hideSelectedNodes = useViewStore((s) => s.hideSelectedNodes);
   const setSelectedNodesStore = useViewStore((s) => s.setSelectedNodes);
+  const setHiddenNodeIdsStore = useViewStore((s) => s.setHiddenNodeIds);
   const removeSelectedNodeStore = useViewStore((s) => s.removeSelectedNode);
   const addSelectedNodesStore = useViewStore((s) => s.addSelectedNodes);
+  const hideNodesStore = useViewStore((s) => s.hideNodes);
+  const showNodesStore = useViewStore((s) => s.showNodes);
+  const showAllNodesStore = useViewStore((s) => s.showAllNodes);
   const setHideSelectedNodesStore = useViewStore((s) => s.setHideSelectedNodes);
   const toggleHideSelectedNodesStore = useViewStore((s) => s.toggleHideSelectedNodes);
   const clearSelectionStore = useViewStore((s) => s.clearSelection);
@@ -46,6 +56,7 @@ export function useNodeVisibility(): NodeVisibilityContextType {
   const setHoveredNodeIdStore = useViewStore((s) => s.setHoveredNodeId);
 
   const selectedNodeIds = useMemo(() => new Set(selectedNodeIdsArray), [selectedNodeIdsArray]);
+  const hiddenNodeIds = useMemo(() => new Set(hiddenNodeIdsArray), [hiddenNodeIdsArray]);
 
   const setSelectedNodes = useCallback(
     (nodes: number[]) => {
@@ -60,6 +71,31 @@ export function useNodeVisibility(): NodeVisibilityContextType {
     },
     [addSelectedNodesStore],
   );
+
+  const setHiddenNodeIds = useCallback(
+    (nodes: number[]) => {
+      setHiddenNodeIdsStore(nodes);
+    },
+    [setHiddenNodeIdsStore],
+  );
+
+  const hideNodes = useCallback(
+    (nodes: number[]) => {
+      hideNodesStore(nodes);
+    },
+    [hideNodesStore],
+  );
+
+  const showNodes = useCallback(
+    (nodes: number[]) => {
+      showNodesStore(nodes);
+    },
+    [showNodesStore],
+  );
+
+  const showAllNodes = useCallback(() => {
+    showAllNodesStore();
+  }, [showAllNodesStore]);
 
   const removeSelectedNode = useCallback(
     (nodeId: number) => {
@@ -114,14 +150,19 @@ export function useNodeVisibility(): NodeVisibilityContextType {
 
   return {
     selectedNodeIds,
+    hiddenNodeIds,
     boxSelection,
     boxSelectionPanelId,
     isBoxSelecting,
     hoveredNodeId,
     hideSelectedNodes,
     setSelectedNodes,
+    setHiddenNodeIds,
     addSelectedNodes,
     removeSelectedNode,
+    hideNodes,
+    showNodes,
+    showAllNodes,
     setHideSelectedNodes,
     toggleHideSelectedNodes,
     clearSelection,

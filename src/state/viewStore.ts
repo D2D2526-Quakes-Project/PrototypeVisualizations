@@ -158,13 +158,18 @@ export interface ViewState {
   // Node Visibility / Selection
   selectedNodeIds: number[];
   openedNodePanelIds: number[];
+  hiddenNodeIds: number[];
   boxSelection: BoxSelection | null;
   boxSelectionPanelId: string | null;
   isBoxSelecting: boolean;
   hideSelectedNodes: boolean;
   setSelectedNodes: (nodes: number[]) => void;
+  setHiddenNodeIds: (nodes: number[]) => void;
   removeSelectedNode: (nodeId: number) => void;
   addSelectedNodes: (nodes: number[]) => void;
+  hideNodes: (nodes: number[]) => void;
+  showNodes: (nodes: number[]) => void;
+  showAllNodes: () => void;
   setHideSelectedNodes: (hide: boolean) => void;
   toggleHideSelectedNodes: () => void;
   addOpenedNodePanel: (nodeId: number) => void;
@@ -345,11 +350,13 @@ export const createViewStore = () =>
       // Node Visibility / Selection
       selectedNodeIds: [],
       openedNodePanelIds: [],
+      hiddenNodeIds: [],
       boxSelection: null,
       boxSelectionPanelId: null,
       isBoxSelecting: false,
       hideSelectedNodes: false,
       setSelectedNodes: (selectedNodeIds) => set({ selectedNodeIds }),
+      setHiddenNodeIds: (hiddenNodeIds) => set({ hiddenNodeIds }),
       removeSelectedNode: (nodeId) =>
         set((state) => ({
           selectedNodeIds: state.selectedNodeIds.filter((id) => id !== nodeId),
@@ -358,6 +365,18 @@ export const createViewStore = () =>
         set((state) => ({
           selectedNodeIds: [...new Set([...state.selectedNodeIds, ...nodes])],
         })),
+      hideNodes: (nodes) =>
+        set((state) => ({
+          hiddenNodeIds: [...new Set([...state.hiddenNodeIds, ...nodes])],
+        })),
+      showNodes: (nodes) =>
+        set((state) => {
+          const nodesToShow = new Set(nodes);
+          return {
+            hiddenNodeIds: state.hiddenNodeIds.filter((id) => !nodesToShow.has(id)),
+          };
+        }),
+      showAllNodes: () => set({ hiddenNodeIds: [] }),
       setHideSelectedNodes: (hideSelectedNodes) => set({ hideSelectedNodes }),
       toggleHideSelectedNodes: () => set((state) => ({ hideSelectedNodes: !state.hideSelectedNodes })),
       addOpenedNodePanel: (nodeId) =>
@@ -368,7 +387,8 @@ export const createViewStore = () =>
         set((state) => ({
           openedNodePanelIds: state.openedNodePanelIds.filter((id) => id !== nodeId),
         })),
-      clearSelection: () => set({ selectedNodeIds: [], boxSelection: null, boxSelectionPanelId: null, isBoxSelecting: false }),
+      clearSelection: () =>
+        set({ selectedNodeIds: [], boxSelection: null, boxSelectionPanelId: null, isBoxSelecting: false }),
       startBoxSelection: (start, panelId) =>
         set({
           boxSelection: { start, end: start },

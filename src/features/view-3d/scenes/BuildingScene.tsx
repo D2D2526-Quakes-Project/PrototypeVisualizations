@@ -46,6 +46,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { getVisibleStoryOrder } = useFloorVisibility();
   const {
     selectedNodeIds,
+    hiddenNodeIds,
     startBoxSelection,
     updateBoxSelection,
     endBoxSelection,
@@ -111,7 +112,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     const visibleStorySet = new Set(visibleStoryOrder);
 
     return visibleNodesBasedOnMode.filter((nodeId) => {
-      if (hideSelectedNodes && selectedNodeIds.has(nodeId)) {
+      if (hideSelectedNodes && hiddenNodeIds.has(nodeId)) {
         return false;
       }
       // Check which floor this node belongs to
@@ -130,7 +131,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     getVisibleStoryOrder,
     animationData.metadata.stories,
     hideSelectedNodes,
-    selectedNodeIds,
+    hiddenNodeIds,
   ]);
 
   // Keyboard handler for ctrl/cmd to control pan and enable box select mode

@@ -72,7 +72,8 @@
 ### 7.2 Enhanced Rendering
 
 - [ ] Add displacement vector arrows to nodes (view toggle)
-
+- [ ] Add distance / metric markers numbers on the grid in the building scene.
+- [ ] Show the slice view cutting planes as planes in the building scene. Also show per axis a line filling with the visible area along that axis.
 - [ ] Add node labels (story/floor IDs)
 - [ ] Add marching cubes to create voxel grid volumes from nodes. Allow coloring and thresholding just like nodes, but toggle between hiding or showing values above the threshold
 
@@ -93,10 +94,10 @@
 
 - [ ] Add keyboard shortcuts for common actions
 - [ ] Add undo/redo for selections
-- [ ] Add "reset to defaults" button
+- [x] Add "reset to defaults" button
 - [ ] Improve panel drag/resize handles
 
-- [ ] Change the views menu popover to be a sidebar that takes up space next to the canvas
+- [x] Change the views menu popover to be a sidebar that takes up space next to the canvas
 
 - [ ] Update teh Damage Threshold panel to have a better layout and information. Remove the checkboxes and add a slider to set the threshold.
 

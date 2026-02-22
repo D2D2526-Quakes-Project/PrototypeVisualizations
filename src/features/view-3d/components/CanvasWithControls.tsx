@@ -146,10 +146,15 @@ export function CanvasWithControls({
   onMouseUp?: (e: React.MouseEvent) => void;
   panelId?: string;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const panelId = initialPanelId ?? "main-canvas";
   const setPanelState = useViewStore((s) => s.setPanelState);
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const store = useViewStoreRaw();
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [controlsWidth, setControlsWidth] = useState(0);
+  const [isViewControlsExpanded, setIsViewControlsExpanded] = useState(false);
+  const [isControlsDocked, setIsControlsDocked] = useState(false);
 
   // Initialize isOrthographic from saved state
   const [isOrthographic, setIsOrthographic] = useState(() => {
@@ -319,8 +324,50 @@ export function CanvasWithControls({
     return null;
   }
 
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    setContainerWidth(element.getBoundingClientRect().width);
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const borderBoxSize = Array.isArray(entry.borderBoxSize) ? entry.borderBoxSize[0] : entry.borderBoxSize;
+        setContainerWidth(borderBoxSize?.inlineSize ?? element.getBoundingClientRect().width);
+      }
+    });
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isViewControlsExpanded || controlsWidth <= 0) {
+      setIsControlsDocked(false);
+      return;
+    }
+
+    const dockEnterWidth = controlsWidth * 3;
+    const dockExitWidth = controlsWidth * 2.8;
+
+    setIsControlsDocked((current) => {
+      if (current) {
+        return containerWidth >= dockExitWidth;
+      }
+      return containerWidth >= dockEnterWidth;
+    });
+  }, [containerWidth, controlsWidth, isViewControlsExpanded]);
+
+  const rightPadding = isControlsDocked ? controlsWidth : 0;
+
   return (
-    <div className="relative w-full h-full" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
+    <div
+      ref={containerRef}
+      className="relative w-full h-full"
+      style={rightPadding > 0 ? { paddingRight: `${rightPadding}px` } : undefined}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}>
       <Canvas linear flat>
         <NoFog />
         <color attach="background" args={[backgroundColor]} />
@@ -336,6 +383,10 @@ export function CanvasWithControls({
         setIsOrthographic={setIsOrthographic}
         enableSmoothing={enableSmoothing}
         setEnableSmoothing={setEnableSmoothing}
+        isExpanded={isViewControlsExpanded}
+        setIsExpanded={setIsViewControlsExpanded}
+        onExpandedWidthChange={setControlsWidth}
+        docked={isControlsDocked}
       />
       {showPlaybackControls && (
         <div className="absolute top-2 left-2 z-50">
@@ -359,12 +410,20 @@ export function ViewControls({
   setIsOrthographic,
   enableSmoothing,
   setEnableSmoothing,
+  isExpanded,
+  setIsExpanded,
+  onExpandedWidthChange,
+  docked,
 }: {
   orbitControlsRef: RefObject<OrbitControlsImpl | null>;
   isOrthographic: boolean;
   setIsOrthographic: (value: boolean) => void;
   enableSmoothing: boolean;
   setEnableSmoothing: (value: boolean) => void;
+  isExpanded: boolean;
+  setIsExpanded: (expanded: boolean) => void;
+  onExpandedWidthChange: (width: number) => void;
+  docked: boolean;
 }) {
   const { animationData } = useAnimationData();
   const { currentMetric, setColorMetric, availableMetrics, thresholdHighlighting, setThresholdHighlighting } =
@@ -385,7 +444,7 @@ export function ViewControls({
   const backgroundColor = useViewStore((s) => s.backgroundColor);
   const setBackgroundColor = useViewStore((s) => s.setBackgroundColor);
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
-  const [isExpanded, setIsExpanded] = useState(false);
+  const expandedPanelRef = useRef<HTMLDivElement>(null);
 
   const config = getMetricConfig(currentMetric);
   const maxValue = config.getPrecomputedMax(animationData.precomputed);
@@ -443,9 +502,34 @@ export function ViewControls({
   const visibleSelectedCount = selectedCount - hiddenSelectedCount;
   const showNodeVisibilityMenu = selectedCount > 0 || hiddenCount > 0;
 
+  useEffect(() => {
+    if (!isExpanded) {
+      onExpandedWidthChange(0);
+      return;
+    }
+
+    const element = expandedPanelRef.current;
+    if (!element) return;
+
+    onExpandedWidthChange(element.offsetWidth);
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const borderBoxSize = Array.isArray(entry.borderBoxSize) ? entry.borderBoxSize[0] : entry.borderBoxSize;
+        onExpandedWidthChange(borderBoxSize?.inlineSize ?? element.getBoundingClientRect().width);
+      }
+    });
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [isExpanded, onExpandedWidthChange]);
+
   return (
-    <div className="absolute flex top-2 right-2 z-50 max-h-[calc(100%-1rem)]">
-      <div className="flex flex-col items-end gap-0.5 max-h-full overflow-hidden">
+    <div
+      className={`absolute flex z-50 ${
+        docked ? "top-0 right-0 bottom-0" : "top-2 right-2 max-h-[calc(100%-1rem)]"
+      }`}>
+      <div className={`flex flex-col max-h-full overflow-hidden ${docked ? "items-stretch" : "items-end gap-0.5"}`}>
         <AnimatePresence mode="popLayout">
           {!isExpanded ? (
             <>
@@ -607,6 +691,7 @@ export function ViewControls({
             </>
           ) : (
             <motion.div
+              ref={expandedPanelRef}
               key="expanded"
               variants={{
                 initial: { opacity: 0, scale: 0.95, x: 10 },
@@ -617,8 +702,12 @@ export function ViewControls({
               animate="animate"
               exit="exit"
               transition={{ duration: 0.15, delayChildren: stagger(0.05) }}
-              className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 pt-0 border border-neutral-200 min-w-40 origin-top-right overflow-y-auto max-h-full">
-              <div className="flex justify-between items-center mb-2 pt-2 sticky top-0">
+              className={`p-2 min-w-40 max-h-full overflow-hidden flex flex-col min-h-0 ${
+                docked
+                  ? "h-full bg-white border-l border-neutral-200 origin-top-right"
+                  : "bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 origin-top-right"
+              }`}>
+              <div className="flex justify-between items-center mb-2">
                 <div className="text-xs font-semibold text-neutral-700">Views</div>
                 <button
                   onClick={() => setIsExpanded(false)}
@@ -627,107 +716,109 @@ export function ViewControls({
                   <ChevronDown size={14} className="rotate-180" />
                 </button>
               </div>
-              <motion.div className="grid grid-cols-2 gap-1 mb-2" variants={childVariants}>
-                <ViewsPanel resetView={resetView} />
-              </motion.div>
-              <motion.div className="flex items-center gap-2 pt-1 border-t border-neutral-200" variants={childVariants}>
-                <span className="text-xs font-medium text-neutral-700">Persp</span>
-                <Switch size="sm" checked={isOrthographic} onCheckedChange={setIsOrthographic} />
-                <span className="text-xs font-medium text-neutral-700">Ortho</span>
-              </motion.div>
-              <motion.div
-                className="flex items-center gap-2 pt-1 border-t border-neutral-200 mt-1"
-                variants={childVariants}>
-                <span className="text-xs font-medium text-neutral-700">Sharp</span>
-                <Switch size="sm" checked={enableSmoothing} onCheckedChange={setEnableSmoothing} />
-                <span className="text-xs font-medium text-neutral-700">Smooth</span>
-              </motion.div>
-              <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <div className="flex items-center gap-1 mb-1">
-                  <Grid3X3 size={12} className="text-neutral-500" />
-                  <span className="text-xs font-medium text-neutral-700">View Mode</span>
-                </div>
-                <ViewModeSelect mode={mode} setMode={setMode} />
-              </motion.div>
-              <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <ColorPanel
-                  currentMetric={currentMetric}
-                  setColorMetric={setColorMetric}
-                  availableMetrics={availableMetrics}
-                  thresholdHighlighting={thresholdHighlighting}
-                  setThresholdHighlighting={setThresholdHighlighting}
-                  thresholds={thresholds}
-                  animationData={animationData}
-                />
-              </motion.div>
-              <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <ThresholdPanel
-                  animationData={animationData}
-                  setThreshold={setThreshold}
-                  currentMetric={currentMetric}
-                />
-              </motion.div>
-              <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <SliceViewPanel
-                  sliceEnabled={sliceEnabled}
-                  xRange={xRange}
-                  yRange={yRange}
-                  zRange={zRange}
-                  toggleSliceEnabled={toggleSliceEnabled}
-                  setXRange={setXRange}
-                  setYRange={setYRange}
-                  setZRange={setZRange}
-                />
-              </motion.div>
-              <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <ExplodedViewPanel
-                  explodedEnabled={explodedState.explodedEnabled}
-                  displacementEnabled={explodedState.displacementEnabled}
-                  xExplosion={explodedState.xExplosion}
-                  yExplosion={explodedState.yExplosion}
-                  zExplosion={explodedState.zExplosion}
-                  xzDisplacementScale={explodedState.xzDisplacementScale}
-                  zDisplacementScale={explodedState.zDisplacementScale}
-                  toggleExploded={toggleExploded}
-                  toggleDisplacement={toggleDisplacement}
-                  setExplosion={setExplosion}
-                  setDisplacementScale={setDisplacementScale}
-                />
-              </motion.div>
-              <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <FloorsPanel
-                  visibleFloors={visibleFloors}
-                  toggleFloor={toggleFloor}
-                  showAllFloors={showAllFloors}
-                  hideAllFloors={hideAllFloors}
-                  storyOrder={animationData.metadata.storyOrder}
-                />
-              </motion.div>
-              <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-medium text-neutral-700">Background</span>
-                </div>
-                <div className="flex gap-1">
-                  {[
-                    { label: "Gray", value: "#dcdcdc" },
-                    { label: "White", value: "#ffffff" },
-                    { label: "Black", value: "#1a1a1a" },
-                    { label: "Dark Blue", value: "#1e3a5f" },
-                  ].map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => setBackgroundColor(color.value)}
-                      className={`w-6 h-6 rounded border-2 transition-all ${
-                        backgroundColor === color.value
-                          ? "border-blue-500 scale-110"
-                          : "border-neutral-300 hover:border-neutral-400"
-                      }`}
-                      style={{ backgroundColor: color.value }}
-                      title={color.label}
-                    />
-                  ))}
-                </div>
-              </motion.div>
+              <div className="overflow-y-auto min-h-0 pr-1">
+                <motion.div className="grid grid-cols-2 gap-1 mb-2" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} />
+                </motion.div>
+                <motion.div className="flex items-center gap-2 pt-1 border-t border-neutral-200" variants={childVariants}>
+                  <span className="text-xs font-medium text-neutral-700">Persp</span>
+                  <Switch size="sm" checked={isOrthographic} onCheckedChange={setIsOrthographic} />
+                  <span className="text-xs font-medium text-neutral-700">Ortho</span>
+                </motion.div>
+                <motion.div
+                  className="flex items-center gap-2 pt-1 border-t border-neutral-200 mt-1"
+                  variants={childVariants}>
+                  <span className="text-xs font-medium text-neutral-700">Sharp</span>
+                  <Switch size="sm" checked={enableSmoothing} onCheckedChange={setEnableSmoothing} />
+                  <span className="text-xs font-medium text-neutral-700">Smooth</span>
+                </motion.div>
+                <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                  <div className="flex items-center gap-1 mb-1">
+                    <Grid3X3 size={12} className="text-neutral-500" />
+                    <span className="text-xs font-medium text-neutral-700">View Mode</span>
+                  </div>
+                  <ViewModeSelect mode={mode} setMode={setMode} />
+                </motion.div>
+                <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                  <ColorPanel
+                    currentMetric={currentMetric}
+                    setColorMetric={setColorMetric}
+                    availableMetrics={availableMetrics}
+                    thresholdHighlighting={thresholdHighlighting}
+                    setThresholdHighlighting={setThresholdHighlighting}
+                    thresholds={thresholds}
+                    animationData={animationData}
+                  />
+                </motion.div>
+                <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                  <ThresholdPanel
+                    animationData={animationData}
+                    setThreshold={setThreshold}
+                    currentMetric={currentMetric}
+                  />
+                </motion.div>
+                <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                  <SliceViewPanel
+                    sliceEnabled={sliceEnabled}
+                    xRange={xRange}
+                    yRange={yRange}
+                    zRange={zRange}
+                    toggleSliceEnabled={toggleSliceEnabled}
+                    setXRange={setXRange}
+                    setYRange={setYRange}
+                    setZRange={setZRange}
+                  />
+                </motion.div>
+                <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                  <ExplodedViewPanel
+                    explodedEnabled={explodedState.explodedEnabled}
+                    displacementEnabled={explodedState.displacementEnabled}
+                    xExplosion={explodedState.xExplosion}
+                    yExplosion={explodedState.yExplosion}
+                    zExplosion={explodedState.zExplosion}
+                    xzDisplacementScale={explodedState.xzDisplacementScale}
+                    zDisplacementScale={explodedState.zDisplacementScale}
+                    toggleExploded={toggleExploded}
+                    toggleDisplacement={toggleDisplacement}
+                    setExplosion={setExplosion}
+                    setDisplacementScale={setDisplacementScale}
+                  />
+                </motion.div>
+                <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                  <FloorsPanel
+                    visibleFloors={visibleFloors}
+                    toggleFloor={toggleFloor}
+                    showAllFloors={showAllFloors}
+                    hideAllFloors={hideAllFloors}
+                    storyOrder={animationData.metadata.storyOrder}
+                  />
+                </motion.div>
+                <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="text-xs font-medium text-neutral-700">Background</span>
+                  </div>
+                  <div className="flex gap-1">
+                    {[
+                      { label: "Gray", value: "#dcdcdc" },
+                      { label: "White", value: "#ffffff" },
+                      { label: "Black", value: "#1a1a1a" },
+                      { label: "Dark Blue", value: "#1e3a5f" },
+                    ].map((color) => (
+                      <button
+                        key={color.value}
+                        onClick={() => setBackgroundColor(color.value)}
+                        className={`w-6 h-6 rounded border-2 transition-all ${
+                          backgroundColor === color.value
+                            ? "border-blue-500 scale-110"
+                            : "border-neutral-300 hover:border-neutral-400"
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.label}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

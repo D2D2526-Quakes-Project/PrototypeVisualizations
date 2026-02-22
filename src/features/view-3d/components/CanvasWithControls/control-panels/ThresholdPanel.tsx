@@ -1,7 +1,7 @@
 import { useThresholds } from "@/features/view-3d/contexts/visualization";
 import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
-import { Layers, Sliders } from "lucide-react";
+import { Layers, RotateCcw, Sliders } from "lucide-react";
 import { ThresholdSlider } from "../ThresholdSlider";
 
 interface ThresholdPanelProps {
@@ -15,7 +15,7 @@ function isThresholdUsed(thresholdKey: Metric, currentMetric: Metric): boolean {
 }
 
 export function ThresholdPanel({ animationData, setThreshold, currentMetric }: ThresholdPanelProps) {
-  const { thresholds } = useThresholds();
+  const { thresholds, resetThresholds } = useThresholds();
 
   const maxDisp = animationData.precomputed.maxDisplacement * 1.2;
   const maxVel = (animationData.precomputed.maxVelocity ?? 10) * 1.2;
@@ -29,9 +29,18 @@ export function ThresholdPanel({ animationData, setThreshold, currentMetric }: T
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1 mb-1">
-        <Sliders size={12} className="text-neutral-500" />
-        <span className="text-xs font-medium text-neutral-700">Thresholds</span>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <div className="flex items-center gap-1">
+          <Sliders size={12} className="text-neutral-500" />
+          <span className="text-xs font-medium text-neutral-700">Thresholds</span>
+        </div>
+        <button
+          onClick={resetThresholds}
+          className="inline-flex items-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-200"
+          title="Reset all thresholds to default values">
+          <RotateCcw size={10} />
+          Reset
+        </button>
       </div>
 
       <ThresholdSlider

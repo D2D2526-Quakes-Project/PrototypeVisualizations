@@ -115,7 +115,9 @@ export interface ViewState {
 
   // Thresholds
   thresholds: ThresholdState;
+  defaultThresholds: ThresholdState;
   setThreshold: (type: Metric, value: number) => void;
+  resetThresholds: () => void;
   setThresholdsFromPrecomputed: (precomputed: ComputedStats) => void;
 
   // Color
@@ -243,48 +245,51 @@ export const createViewStore = () =>
 
       // Thresholds
       thresholds: { ...DEFAULT_THRESHOLDS },
+      defaultThresholds: { ...DEFAULT_THRESHOLDS },
       setThreshold: (type, value) =>
         set((state) => ({
           thresholds: { ...state.thresholds, [type]: value },
         })),
-      setThresholdsFromPrecomputed: (precomputed) =>
+      resetThresholds: () =>
         set((state) => ({
-          thresholds: {
-            ...state.thresholds,
-            displacement: precomputed.maxDisplacement / 4,
+          thresholds: { ...state.defaultThresholds },
+        })),
+      setThresholdsFromPrecomputed: (precomputed) =>
+        set((state) => {
+          const nextDefaults: ThresholdState = {
+            ...state.defaultThresholds,
             displacementX: precomputed.maxDisplacementX / 4,
             displacementY: precomputed.maxDisplacementY / 4,
             displacementZ: precomputed.maxDisplacementZ / 4,
             displacementMag: precomputed.maxDisplacement / 4,
-            velocity: (precomputed.maxVelocity ?? 10) / 4,
             velocityX: (precomputed.maxVelocityX ?? 10) / 4,
             velocityY: (precomputed.maxVelocityY ?? 10) / 4,
             velocityZ: (precomputed.maxVelocityZ ?? 10) / 4,
             velocityMag: (precomputed.maxVelocity ?? 10) / 4,
-            acceleration: (precomputed.maxAcceleration ?? 20) / 4,
             accelerationX: (precomputed.maxAccelerationX ?? 20) / 4,
             accelerationY: (precomputed.maxAccelerationY ?? 20) / 4,
             accelerationZ: (precomputed.maxAccelerationZ ?? 20) / 4,
             accelerationMag: (precomputed.maxAcceleration ?? 20) / 4,
-            rotation: (precomputed.maxRotation ?? 0.05) / 4,
             rotationX: (precomputed.maxRotationX ?? 0.05) / 4,
             rotationY: (precomputed.maxRotationY ?? 0.05) / 4,
             rotationZ: (precomputed.maxRotationZ ?? 0.05) / 4,
             rotationMag: (precomputed.maxRotation ?? 0.05) / 4,
-            rotationVelocity: (precomputed.maxRotationVelocity ?? 0.5) / 4,
             rotationVelocityX: (precomputed.maxRotationVelocityX ?? 0.5) / 4,
             rotationVelocityY: (precomputed.maxRotationVelocityY ?? 0.5) / 4,
             rotationVelocityZ: (precomputed.maxRotationVelocityZ ?? 0.5) / 4,
             rotationVelocityMag: (precomputed.maxRotationVelocity ?? 0.5) / 4,
-            rotationAcceleration: (precomputed.maxRotationAcceleration ?? 2) / 4,
             rotationAccelerationX: (precomputed.maxRotationAccelerationX ?? 2) / 4,
             rotationAccelerationY: (precomputed.maxRotationAccelerationY ?? 2) / 4,
             rotationAccelerationZ: (precomputed.maxRotationAccelerationZ ?? 2) / 4,
             rotationAccelerationMag: (precomputed.maxRotationAcceleration ?? 2) / 4,
             interstoryDrift: precomputed.maxStoryDrift / 4,
-            interstoryDriftAvg: precomputed.avgStoryDrift / 4,
-          },
-        })),
+          };
+
+          return {
+            defaultThresholds: nextDefaults,
+            thresholds: nextDefaults,
+          };
+        }),
 
       // Color
       currentMetric: "displacementMag",

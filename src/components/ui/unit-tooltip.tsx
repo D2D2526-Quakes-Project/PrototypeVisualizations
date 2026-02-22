@@ -1,7 +1,5 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatValue, getConversions, CONVERSION_UNITS as UNITS } from "@/lib/metrics";
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
 
 interface UnitTooltipProps {
   value: number;
@@ -20,18 +18,9 @@ export function UnitTooltip({
   side = "top",
   children,
 }: UnitTooltipProps) {
-  const [copied, setCopied] = useState(false);
-
   const unitInfo = UNITS[unit];
   const fullName = unitInfo?.fullName || unit;
   const conversions = showConversions ? getConversions(value, unit) : [];
-
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    await navigator.clipboard.writeText(formatValue(value, decimals));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
 
   const content = (
     <div className="flex flex-col gap-1 min-w-25">
@@ -53,21 +42,6 @@ export function UnitTooltip({
           ))}
         </div>
       )}
-      <button
-        onClick={handleCopy}
-        className="flex items-center justify-center gap-1 mt-1 pt-1 border-t border-white/20 text-xs text-white/70 hover:text-white hover:bg-white/10 rounded py-0.5 transition-colors">
-        {copied ? (
-          <>
-            <Check className="w-3 h-3" />
-            <span>Copied!</span>
-          </>
-        ) : (
-          <>
-            <Copy className="w-3 h-3" />
-            <span>Click to copy</span>
-          </>
-        )}
-      </button>
     </div>
   );
 

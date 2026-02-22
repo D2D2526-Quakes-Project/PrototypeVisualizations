@@ -163,6 +163,221 @@ export const UNITS: Record<Unit, UnitConfig> = {
   },
 };
 
+const INCH_TO_METER = 0.0254;
+const FEET_TO_METER = 0.3048;
+const RAD_TO_DEG = 57.29577951308232;
+
+export type UnitCategory =
+  | "length"
+  | "velocity"
+  | "acceleration"
+  | "rotation"
+  | "rotationVelocity"
+  | "rotationAcceleration"
+  | "percent"
+  | "time";
+
+export interface UnitConversionInfo {
+  abbr: string;
+  fullName: string;
+  category: UnitCategory;
+  toBase: (value: number) => number;
+  fromBase: (value: number) => number;
+}
+
+export const CONVERSION_UNITS: Record<string, UnitConversionInfo> = {
+  in: {
+    abbr: "in",
+    fullName: "inches",
+    category: "length",
+    toBase: (v) => v * INCH_TO_METER,
+    fromBase: (v) => v / INCH_TO_METER,
+  },
+  ft: {
+    abbr: "ft",
+    fullName: "feet",
+    category: "length",
+    toBase: (v) => v * FEET_TO_METER,
+    fromBase: (v) => v / FEET_TO_METER,
+  },
+  m: {
+    abbr: "m",
+    fullName: "meters",
+    category: "length",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+  },
+  "in/s": {
+    abbr: "in/s",
+    fullName: "inches/second",
+    category: "velocity",
+    toBase: (v) => v * INCH_TO_METER,
+    fromBase: (v) => v / INCH_TO_METER,
+  },
+  "ft/s": {
+    abbr: "ft/s",
+    fullName: "feet/second",
+    category: "velocity",
+    toBase: (v) => v * FEET_TO_METER,
+    fromBase: (v) => v / FEET_TO_METER,
+  },
+  "m/s": {
+    abbr: "m/s",
+    fullName: "meters/second",
+    category: "velocity",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+  },
+  "in/s²": {
+    abbr: "in/s²",
+    fullName: "inches/second²",
+    category: "acceleration",
+    toBase: (v) => v * INCH_TO_METER,
+    fromBase: (v) => v / INCH_TO_METER,
+  },
+  "ft/s²": {
+    abbr: "ft/s²",
+    fullName: "feet/second²",
+    category: "acceleration",
+    toBase: (v) => v * FEET_TO_METER,
+    fromBase: (v) => v / FEET_TO_METER,
+  },
+  "m/s²": {
+    abbr: "m/s²",
+    fullName: "meters/second²",
+    category: "acceleration",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+  },
+  rad: {
+    abbr: "rad",
+    fullName: "radians",
+    category: "rotation",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+  },
+  deg: {
+    abbr: "°",
+    fullName: "degrees",
+    category: "rotation",
+    toBase: (v) => v / RAD_TO_DEG,
+    fromBase: (v) => v * RAD_TO_DEG,
+  },
+  "rad/s": {
+    abbr: "rad/s",
+    fullName: "radians/second",
+    category: "rotationVelocity",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+  },
+  "°/s": {
+    abbr: "°/s",
+    fullName: "degrees/second",
+    category: "rotationVelocity",
+    toBase: (v) => v / RAD_TO_DEG,
+    fromBase: (v) => v * RAD_TO_DEG,
+  },
+  "rad/s²": {
+    abbr: "rad/s²",
+    fullName: "radians/second²",
+    category: "rotationAcceleration",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+  },
+  "°/s²": {
+    abbr: "°/s²",
+    fullName: "degrees/second²",
+    category: "rotationAcceleration",
+    toBase: (v) => v / RAD_TO_DEG,
+    fromBase: (v) => v * RAD_TO_DEG,
+  },
+  "%": {
+    abbr: "%",
+    fullName: "percent",
+    category: "percent",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+  },
+  s: {
+    abbr: "s",
+    fullName: "seconds",
+    category: "time",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+  },
+};
+
+export interface ConversionResult {
+  value: number;
+  unit: string;
+  fullName: string;
+}
+
+export function convertUnits(value: number, fromUnit: string, targetUnits: string[]): ConversionResult[] {
+  const fromInfo = CONVERSION_UNITS[fromUnit];
+  if (!fromInfo) {
+    return targetUnits.map((u) => ({
+      value,
+      unit: u,
+      fullName: u,
+    }));
+  }
+
+  const baseValue = fromInfo.toBase(value);
+
+  return targetUnits
+    .map((unit) => {
+      const info = CONVERSION_UNITS[unit];
+      if (!info || info.category !== fromInfo.category) {
+        return null;
+      }
+      return {
+        value: info.fromBase(baseValue),
+        unit: info.abbr,
+        fullName: info.fullName,
+      };
+    })
+    .filter((r): r is ConversionResult => r !== null);
+}
+
+export function getConversions(value: number, unit: string): ConversionResult[] {
+  const info = CONVERSION_UNITS[unit];
+  if (!info) return [];
+
+  switch (info.category) {
+    case "length":
+      return convertUnits(value, unit, ["in", "ft", "m"]);
+    case "velocity":
+      return convertUnits(value, unit, ["in/s", "ft/s", "m/s"]);
+    case "acceleration":
+      return convertUnits(value, unit, ["in/s²", "ft/s²", "m/s²"]);
+    case "rotation":
+      return convertUnits(value, unit, ["rad", "deg"]);
+    case "rotationVelocity":
+      return convertUnits(value, unit, ["rad/s", "°/s"]);
+    case "rotationAcceleration":
+      return convertUnits(value, unit, ["rad/s²", "°/s²"]);
+    default:
+      return [];
+  }
+}
+
+export function formatValue(value: number, decimals: number = 3): string {
+  if (value === 0) return "0";
+  const absValue = Math.abs(value);
+  if (absValue >= 1000) {
+    return value.toFixed(decimals);
+  }
+  if (absValue < 0.001 && absValue !== 0) {
+    return value.toExponential(decimals);
+  }
+  return value.toFixed(decimals);
+}
+
+export function getUnitFullName(unit: string): string {
+  return CONVERSION_UNITS[unit]?.fullName || unit;
+}
+
 export type MetricConfig = {
   metric: Metric;
   label: string;

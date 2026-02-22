@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ScanEye } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 interface SliceViewPanelProps {
   sliceEnabled: boolean;
@@ -40,7 +41,7 @@ export function SliceViewPanel({
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-neutral-500">X</span>
               <span className="text-[10px] text-neutral-500">
-                {xRange[0]} ↔ {xRange[1]}
+                <UnitTooltip value={xRange[0]} unit="in" decimals={0} /> ↔ <UnitTooltip value={xRange[1]} unit="in" decimals={0} />
               </span>
             </div>
             <Slider
@@ -53,7 +54,7 @@ export function SliceViewPanel({
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-neutral-500">Y</span>
               <span className="text-[10px] text-neutral-500">
-                {yRange[0]} ↔ {yRange[1]}
+                <UnitTooltip value={yRange[0]} unit="in" decimals={0} /> ↔ <UnitTooltip value={yRange[1]} unit="in" decimals={0} />
               </span>
             </div>
             <Slider
@@ -66,7 +67,7 @@ export function SliceViewPanel({
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-neutral-500">Z</span>
               <span className="text-[10px] text-neutral-500">
-                {zRange[0]} ↔ {zRange[1]}
+                <UnitTooltip value={zRange[0]} unit="in" decimals={0} /> ↔ <UnitTooltip value={zRange[1]} unit="in" decimals={0} />
               </span>
             </div>
             <Slider

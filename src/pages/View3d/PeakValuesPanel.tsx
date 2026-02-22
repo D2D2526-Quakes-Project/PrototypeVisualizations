@@ -36,6 +36,7 @@ import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 type SortKey = "node" | "x" | "y" | "z" | "magnitude";
 type SortDir = "asc" | "desc";
@@ -151,17 +152,25 @@ export function PeakValuesPanel() {
               <tr key={row.node} className="border-b border-neutral-100 hover:bg-neutral-50">
                 <td className="px-2 py-1 font-mono text-neutral-500">{idx + 1}</td>
                 <td className="px-2 py-1 font-mono" style={{ color: "#ef4444" }}>
-                  {row.x.toFixed(4)}
+                  <UnitTooltip value={row.x} unit="in" decimals={4} />
                 </td>
                 <td className="px-2 py-1 font-mono" style={{ color: "#22c55e" }}>
-                  {row.y.toFixed(4)}
+                  <UnitTooltip value={row.y} unit="in" decimals={4} />
                 </td>
                 <td className="px-2 py-1 font-mono" style={{ color: "#3b82f6" }}>
-                  {row.z.toFixed(4)}
+                  <UnitTooltip value={row.z} unit="in" decimals={4} />
                 </td>
-                <td className="px-2 py-1 font-mono font-medium">{row.magnitude.toFixed(4)}</td>
+                <td className="px-2 py-1 font-mono font-medium">
+                  <UnitTooltip value={row.magnitude} unit="in" decimals={4} />
+                </td>
                 <td className="px-2 py-1 font-mono text-neutral-500">{row.peakFrame + 1}</td>
-                <td className="px-2 py-1 font-mono text-neutral-400">{currentValues[row.node]?.toFixed(4) ?? "-"}</td>
+                <td className="px-2 py-1 font-mono text-neutral-400">
+                  {currentValues[row.node] !== undefined ? (
+                    <UnitTooltip value={currentValues[row.node]!} unit="in" decimals={4} />
+                  ) : (
+                    "-"
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

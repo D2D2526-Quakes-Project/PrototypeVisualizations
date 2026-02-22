@@ -32,6 +32,7 @@ import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 const PAGE_SIZE = 50;
 
@@ -123,15 +124,17 @@ export function DataTablePanel() {
                 <td className="px-2 py-1 font-mono text-neutral-500">{row.node}</td>
                 <td className="px-2 py-1">{row.story}</td>
                 <td className="px-2 py-1 font-mono text-right" style={{ color: "#ef4444" }}>
-                  {row.x.toFixed(4)}
+                  <UnitTooltip value={row.x} unit="in" decimals={4} />
                 </td>
                 <td className="px-2 py-1 font-mono text-right" style={{ color: "#22c55e" }}>
-                  {row.y.toFixed(4)}
+                  <UnitTooltip value={row.y} unit="in" decimals={4} />
                 </td>
                 <td className="px-2 py-1 font-mono text-right" style={{ color: "#3b82f6" }}>
-                  {row.z.toFixed(4)}
+                  <UnitTooltip value={row.z} unit="in" decimals={4} />
                 </td>
-                <td className="px-2 py-1 font-mono text-right font-medium">{row.magnitude.toFixed(4)}</td>
+                <td className="px-2 py-1 font-mono text-right font-medium">
+                  <UnitTooltip value={row.magnitude} unit="in" decimals={4} />
+                </td>
               </tr>
             ))}
           </tbody>

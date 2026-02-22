@@ -1,6 +1,7 @@
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { UnitConfig } from "@/lib/metrics";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 interface ThresholdSliderProps {
   label: string;
@@ -30,13 +31,13 @@ export function ThresholdSlider({
         <TooltipContent side="left" className="max-w-xs">
           {tooltip}
           <br />
-          Currently: {value.toFixed(2)} {unit.label}
+          Currently: <UnitTooltip value={value} unit={unit.abbr} decimals={2} />
         </TooltipContent>
       </Tooltip>
 
       <Slider value={[value]} onValueChange={(val) => onChange(val[0])} max={max} step={0.01} className="flex-1" />
       <span className="text-[10px] text-neutral-500 w-12 text-right shrink-0">
-        {value.toFixed(2)} {unit.abbr}
+        <UnitTooltip value={value} unit={unit.abbr} decimals={2} />
       </span>
     </div>
   );

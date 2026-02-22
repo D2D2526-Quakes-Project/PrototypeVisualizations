@@ -32,6 +32,7 @@
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useMemo } from "react";
 import { formatHex, interpolate } from "culori";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue400 = formatHex("oklch(70.7% 0.165 254.624)")!;
@@ -130,7 +131,9 @@ export function PeakResponseTimePanel() {
           <div key={row.story} className="grid grid-cols-[auto_1fr] gap-x-2 p-2 border-b border-neutral-100 hover:bg-neutral-50">
             <div className="flex flex-col">
               <span className="font-medium text-sm">{row.story}</span>
-              <span className="text-xs text-neutral-400">{row.elevation.toFixed(0)} ft</span>
+              <span className="text-xs text-neutral-400">
+                <UnitTooltip value={row.elevation * 12} unit="in" decimals={0} />
+              </span>
             </div>
             <div className="grid grid-cols-4 gap-1">
               {(["NW", "NE", "SW", "SE"] as const).map((corner) => {
@@ -147,10 +150,10 @@ export function PeakResponseTimePanel() {
                       title={`Drift: ${data.drift.toFixed(4)}%`}
                     />
                     <span className="font-mono font-medium" style={{ color: cornerColors[corner].text }}>
-                      {data.drift.toFixed(3)}%
+                      <UnitTooltip value={data.drift} unit="%" decimals={3} />
                     </span>
                     <span className="text-neutral-500">
-                      {data.time.toFixed(2)}s
+                      <UnitTooltip value={data.time} unit="s" decimals={2} showConversions={false} />
                     </span>
                     <span className="text-neutral-400">
                       F{data.frame + 1}

@@ -45,6 +45,7 @@ import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { renderToString } from "react-dom/server";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 const POSITION_AXIS_CONFIG = {
   x: { id: "x", label: "X Position", color: "#f87171" },
@@ -363,7 +364,7 @@ export function HistogramChart() {
         </div>
         <div className="flex items-center gap-2 mt-1 text-xs text-neutral-600">
           <span>
-            Threshold: {thresholds[valueType].toFixed(3)} {config.unit.abbr}
+            Threshold: <UnitTooltip value={thresholds[valueType]} unit={config.unit.abbr} decimals={3} />
           </span>
           {/* TODO: Input for threshold */}
           <span className="ml-auto">

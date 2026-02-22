@@ -35,8 +35,24 @@
 import { usePlayback } from "@/components/playback/PlaybackContext";
 import { useAnimationData } from "@/hooks/nodeDataHook";
 import { useMemo } from "react";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
-function StatRow({ label, value, unit = "" }: { label: string; value: string | number; unit?: string }) {
+function StatRow({ label, value, unit = "", decimals = 4 }: { label: string; value: string | number; unit?: string; decimals?: number }) {
+  const numericValue = typeof value === "number" ? value : parseFloat(value as string);
+  const isNumeric = typeof value === "number" || !isNaN(numericValue);
+
+  if (isNumeric && unit) {
+    const numVal = typeof value === "number" ? value : numericValue;
+    return (
+      <div className="flex justify-between py-1 border-b border-neutral-100">
+        <span className="text-neutral-500 text-xs">{label}</span>
+        <span className="font-mono text-xs">
+          <UnitTooltip value={numVal} unit={unit} decimals={decimals} showConversions={unit !== "s"} />
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-between py-1 border-b border-neutral-100">
       <span className="text-neutral-500 text-xs">{label}</span>
@@ -132,55 +148,55 @@ export function StatisticsPanel() {
         <StatGroup title="Simulation">
           <StatRow label="Nodes" value={stats.nodeCount} />
           <StatRow label="Frames" value={stats.frameCount} />
-          <StatRow label="Duration" value={stats.duration.toFixed(2)} unit="s" />
-          <StatRow label="Time Step" value={stats.dt.toFixed(4)} unit="s" />
+          <StatRow label="Duration" value={stats.duration} unit="s" decimals={2} />
+          <StatRow label="Time Step" value={stats.dt} unit="s" decimals={4} />
           <StatRow label="Stories" value={stats.storyCount} />
         </StatGroup>
 
         <StatGroup title="Current Frame">
           <StatRow label="Frame" value={stats.currentFrame + 1} />
-          <StatRow label="Time" value={stats.currentTime.toFixed(3)} unit="s" />
+          <StatRow label="Time" value={stats.currentTime} unit="s" decimals={3} />
         </StatGroup>
 
         <StatGroup title="Displacement Range">
-          <StatRow label="X Range" value={stats.displacement.range.x.toFixed(4)} unit="in" />
-          <StatRow label="Y Range" value={stats.displacement.range.y.toFixed(4)} unit="in" />
-          <StatRow label="Z Range" value={stats.displacement.range.z.toFixed(4)} unit="in" />
+          <StatRow label="X Range" value={stats.displacement.range.x} unit="in" />
+          <StatRow label="Y Range" value={stats.displacement.range.y} unit="in" />
+          <StatRow label="Z Range" value={stats.displacement.range.z} unit="in" />
         </StatGroup>
 
         <StatGroup title="Displacement Min">
-          <StatRow label="X Min" value={stats.displacement.min.x.toFixed(4)} unit="in" />
-          <StatRow label="Y Min" value={stats.displacement.min.y.toFixed(4)} unit="in" />
-          <StatRow label="Z Min" value={stats.displacement.min.z.toFixed(4)} unit="in" />
+          <StatRow label="X Min" value={stats.displacement.min.x} unit="in" />
+          <StatRow label="Y Min" value={stats.displacement.min.y} unit="in" />
+          <StatRow label="Z Min" value={stats.displacement.min.z} unit="in" />
         </StatGroup>
 
         <StatGroup title="Displacement Max">
-          <StatRow label="X Max" value={stats.displacement.max.x.toFixed(4)} unit="in" />
-          <StatRow label="Y Max" value={stats.displacement.max.y.toFixed(4)} unit="in" />
-          <StatRow label="Z Max" value={stats.displacement.max.z.toFixed(4)} unit="in" />
+          <StatRow label="X Max" value={stats.displacement.max.x} unit="in" />
+          <StatRow label="Y Max" value={stats.displacement.max.y} unit="in" />
+          <StatRow label="Z Max" value={stats.displacement.max.z} unit="in" />
         </StatGroup>
 
         <StatGroup title="Average Displacement">
-          <StatRow label="X Avg" value={stats.displacement.avg.x.toFixed(4)} unit="in" />
-          <StatRow label="Y Avg" value={stats.displacement.avg.y.toFixed(4)} unit="in" />
-          <StatRow label="Z Avg" value={stats.displacement.avg.z.toFixed(4)} unit="in" />
+          <StatRow label="X Avg" value={stats.displacement.avg.x} unit="in" />
+          <StatRow label="Y Avg" value={stats.displacement.avg.y} unit="in" />
+          <StatRow label="Z Avg" value={stats.displacement.avg.z} unit="in" />
         </StatGroup>
 
         <StatGroup title="Ground Motion">
-          <StatRow label="X" value={stats.groundMotion.x.toFixed(4)} unit="in" />
-          <StatRow label="Y" value={stats.groundMotion.y.toFixed(4)} unit="in" />
-          <StatRow label="Z" value={stats.groundMotion.z.toFixed(4)} unit="in" />
-          <StatRow label="Magnitude" value={stats.groundMotion.magnitude.toFixed(4)} unit="in" />
+          <StatRow label="X" value={stats.groundMotion.x} unit="in" />
+          <StatRow label="Y" value={stats.groundMotion.y} unit="in" />
+          <StatRow label="Z" value={stats.groundMotion.z} unit="in" />
+          <StatRow label="Magnitude" value={stats.groundMotion.magnitude} unit="in" />
         </StatGroup>
 
         <StatGroup title="Peak Values (All Time)">
-          <StatRow label="Max Displacement" value={stats.precomputed.maxDisplacement.toFixed(4)} unit="in" />
-          <StatRow label="Max GM Magnitude" value={stats.precomputed.groundMotion.maxMagnitude.toFixed(4)} unit="in" />
+          <StatRow label="Max Displacement" value={stats.precomputed.maxDisplacement} unit="in" />
+          <StatRow label="Max GM Magnitude" value={stats.precomputed.groundMotion.maxMagnitude} unit="in" />
           {stats.precomputed.maxVelocity && (
-            <StatRow label="Max Velocity" value={stats.precomputed.maxVelocity.toFixed(4)} unit="in/s" />
+            <StatRow label="Max Velocity" value={stats.precomputed.maxVelocity} unit="in/s" />
           )}
           {stats.precomputed.maxAcceleration && (
-            <StatRow label="Max Acceleration" value={stats.precomputed.maxAcceleration.toFixed(4)} unit="in/s²" />
+            <StatRow label="Max Acceleration" value={stats.precomputed.maxAcceleration} unit="in/s²" />
           )}
         </StatGroup>
       </div>

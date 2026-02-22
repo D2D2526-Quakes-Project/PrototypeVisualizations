@@ -7,6 +7,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../comp
 import { SmallTimeline } from "../../components/SmallTimeline";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 import { ThresholdBuilding } from "./ThresholdBuilding";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -133,7 +134,9 @@ export function ViewDamageThreshold() {
 
             <div className="flex flex-col gap-2">
               <label className="flex flex-col">
-                <span className="font-semibold">Warning Threshold ({warningThreshold.toFixed(3)})</span>
+                <span className="font-semibold">
+                  Warning Threshold: <UnitTooltip value={warningThreshold * 100} unit="%" decimals={3} />
+                </span>
                 <input
                   type="range"
                   min="0"
@@ -210,11 +213,19 @@ export function ViewDamageThreshold() {
                               }}
                             />
                             <div className="font-mono">{corner}</div>
-                            <span className="w-12 font-mono text-right shrink-0">{current.toFixed(4)}</span>
-                            <span className="w-12 font-mono text-right shrink-0">{peak.toFixed(4)}</span>
+                            <span className="w-12 font-mono text-right shrink-0">
+                              <UnitTooltip value={current} unit="%" decimals={4} />
+                            </span>
+                            <span className="w-12 font-mono text-right shrink-0">
+                              <UnitTooltip value={peak} unit="%" decimals={4} />
+                            </span>
                             <div
                               className={`w-14 font-mono text-center p-1 rounded ${thresholdFrame !== null ? "bg-yellow-200" : ""}`}>
-                              {thresholdFrame !== null ? (thresholdFrame * animationData.metadata.dt).toFixed(2) : "-"}
+                              {thresholdFrame !== null ? (
+                                <UnitTooltip value={thresholdFrame * animationData.metadata.dt} unit="s" decimals={2} showConversions={false} />
+                              ) : (
+                                "-"
+                              )}
                             </div>
                           </React.Fragment>
                         );

@@ -182,18 +182,18 @@ Every number with a unit should be hoverable with conversions.
 
 ### 15.1 Create UnitTooltip Component
 
-- [ ] Create reusable UnitTooltip component using shadcn Tooltip
-- [ ] Support conversions: inches ↔ feet ↔ meters
-- [ ] Show full unit name on hover (not just abbreviation)
-- [ ] Click to copy numeric value
+- [x] Create reusable UnitTooltip component using shadcn Tooltip
+- [x] Support conversions: inches ↔ feet ↔ meters
+- [x] Show full unit name on hover (not just abbreviation)
+- [x] Click to copy numeric value
 
 ### 15.2 Integrate Across App
 
-- [ ] Add UnitTooltip to all displacement values
-- [ ] Add UnitTooltip to all velocity values
-- [ ] Add UnitTooltip to all acceleration values
-- [ ] Add UnitTooltip to all rotation values
-- [ ] Add UnitTooltip to all time values
+- [x] Add UnitTooltip to all displacement values
+- [x] Add UnitTooltip to all velocity values
+- [x] Add UnitTooltip to all acceleration values
+- [x] Add UnitTooltip to all rotation values
+- [x] Add UnitTooltip to all time values
 
 ### 15.3 Unit Conversion Reference
 

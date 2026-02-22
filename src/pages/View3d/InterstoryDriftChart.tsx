@@ -40,6 +40,7 @@ import { renderToString } from "react-dom/server";
 import { useAnimationData } from "../../hooks/nodeDataHook";
 import { useFloorVisibility } from "@/contexts/visualization";
 import type { EChartsOption } from "echarts";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
 const cornerColors = {
   NW: "#3b82f6",
@@ -94,8 +95,12 @@ function TooltipContent({
               <span style={{ color: "#6b7280", fontSize: "11px" }}>{corner}</span>
             </div>
             <div style={{ textAlign: "right" }}>
-              <span style={{ fontWeight: 500 }}>{current.toFixed(4)}%</span>
-              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>/ {peak.toFixed(4)}%</span>
+              <span style={{ fontWeight: 500 }}>
+                <UnitTooltip value={current} unit="%" decimals={4} />
+              </span>
+              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>
+                / <UnitTooltip value={peak} unit="%" decimals={4} />
+              </span>
             </div>
           </div>
         );

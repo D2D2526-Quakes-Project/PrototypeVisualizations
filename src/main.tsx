@@ -4,35 +4,25 @@ import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 import * as THREE from "three";
 import { ErrorPage } from "./components/ErrorPage";
 import { NavigationBar } from "./components/NavigationBar";
-import { AnimationDataProvider } from "./hooks/nodeDataHook";
+import { AnimationDataProvider } from "./lib/useAnimationData";
 import "./index.css";
-import { ViewDamageThreshold } from "./pages/DamageThreshold/page";
-import { ViewDataExplorer } from "./pages/DataExplorer/page";
-import { ElevationSlice } from "./pages/ElevationSlice/page";
-import { FloorPlanTorsion } from "./pages/FloorPlanTorsion/page";
-import FloorTimeVolumePage from "./pages/FloorTimeVolume/page";
-import { ViewNodeGrid } from "./pages/NodeGrid/page";
-import { ViewSurface } from "./pages/Surface/page";
-import { ViewTemporalRibbons } from "./pages/TemporalRibbons/page";
-import { View3d } from "./pages/View3d/page";
-
-import { ViewVolumes } from "./pages/ViewVolumes/page";
-import { PlaybackProvider } from "./components/playback/PlaybackContext";
-import { SliceSelectionProvider } from "./contexts/visualization";
-import { ViewProvider } from "./stores";
-import { TooltipProvider } from "./components/ui/tooltip";
 import {
-  Box,
-  Database,
-  Layers,
-  Grid3x3,
-  Waves,
-  Gauge,
-  Scissors,
-  Rotate3D,
-  Boxes,
-  Timer,
-} from "lucide-react";
+  ViewDamageThreshold,
+  ViewDataExplorer,
+  ElevationSlice,
+  FloorPlanTorsion,
+  FloorTimeVolumePage,
+  ViewNodeGrid,
+  ViewSurface,
+  ViewTemporalRibbons,
+  View3d,
+  ViewVolumes,
+} from "./pages";
+import { PlaybackProvider } from "./features/playback/PlaybackContext";
+import { SliceSelectionProvider } from "./features/view-3d/contexts/visualization";
+import { ViewProvider } from "./state";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { Box, Database, Layers, Grid3x3, Waves, Gauge, Scissors, Rotate3D, Boxes, Timer } from "lucide-react";
 
 const routes = [
   {

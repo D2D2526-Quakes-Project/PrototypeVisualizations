@@ -8,10 +8,10 @@ import {
   saveNamedPreset,
   saveToLocalStorage,
   type AppState,
-} from "../lib/statePersistence";
-import { Button } from "./ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { useViewStoreRaw } from "@/stores";
+} from "@/features/view-3d/lib/statePersistence";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useViewStoreRaw } from "@/state";
 
 interface ShareButtonProps {
   className?: string;

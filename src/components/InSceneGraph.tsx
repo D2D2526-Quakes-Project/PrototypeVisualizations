@@ -1,4 +1,4 @@
-// import { useAnimationData } from "@/hooks/nodeDataHook";
+// import { useAnimationData } from "@/data/useAnimationData";
 // import { Line } from "@react-three/drei";
 // import { converter, interpolate } from "culori";
 

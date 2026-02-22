@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router";
 import { Check, LogOutIcon, Plus, RotateCcw, Share2, Trash2, type LucideIcon } from "lucide-react";
 
 import DataSources from "@/data/index";
-import { useAnimationData } from "@/hooks/nodeDataHook";
+import { useAnimationData } from "@/lib/useAnimationData";
 import {
   copyShareableUrlToClipboard,
   createUserProfile,
@@ -16,8 +16,8 @@ import {
   type AppState,
   type SaveProfile,
   getDefaultAppState,
-} from "@/lib/statePersistence";
-import { useViewStoreRaw } from "@/stores";
+} from "@/features/view-3d/lib/statePersistence";
+import { useViewStoreRaw } from "@/state";
 import {
   Menubar,
   MenubarContent,

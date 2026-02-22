@@ -18,6 +18,47 @@ The goal of this project is **maximum insight extraction** from simulation data.
 - Thresholding data for targeted flagging and spatial pattern detection
 - Many more creative visualization tools to show data in as many ways as possible
 
+## Project Structure
+
+The codebase uses a feature-first structure:
+
+```text
+src/
+├── pages/                         # Route entry files only
+├── features/
+│   ├── view-3d/
+│   │   ├── components/            # Dock/panel wiring, canvas controls, render helpers
+│   │   ├── contexts/              # View-3D-specific contexts
+│   │   ├── hooks/                 # View-3D-specific hooks
+│   │   ├── lib/                   # View-3D-specific persistence/interaction helpers
+│   │   ├── panels/                # Dockview panel implementations
+│   │   ├── scenes/                # Three.js scene implementations
+│   │   └── page.tsx               # View3D feature page
+│   ├── view-volumes/
+│   │   ├── VolumeScene.tsx
+│   │   └── page.tsx
+│   ├── damage-threshold/
+│   │   ├── ThresholdBuilding.tsx
+│   │   └── page.tsx
+│   └── playback/                  # Shared playback/timeline behavior and controls
+├── state/                         # Global Zustand store
+├── data/                          # Data index and animation data provider/loading hook
+├── components/
+│   ├── ui/                        # Reusable UI primitives (shadcn)
+│   ├── NavigationBar.tsx
+│   ├── ShareButton.tsx
+│   ├── ErrorPage.tsx
+│   └── resizable.tsx
+└── lib/                           # Cross-feature utilities/types (metrics, parser, colors, utils)
+```
+
+### Organization Rules
+
+1. If a file is only used by one feature, keep it in that feature folder.
+2. Keep `src/pages` thin: route wiring only.
+3. Keep `src/state`, `src/data`, and `src/lib` for truly cross-feature concerns.
+4. Keep `src/components/ui` for reusable presentational primitives only.
+
 ## Key Values System
 
 The project tracks and visualizes numerous key values, each with threshold controls for targeted analysis:
@@ -204,14 +245,10 @@ All visualizations must be designed for scientific accuracy and publication qual
 
 ## Architecture Notes
 
-### Context Providers
-- `ThresholdProvider`: Manages all threshold values
-- `FloorVisibilityProvider`: Manages visible floors
-- `ViewModeProvider`: Manages 3D view mode
-- `ColorProvider`: Manages color metric selection
-- `SliceSelectionProvider`: Manages cross-section planes
-- `NodeSelectionProvider`: Manages node selection state
-- `PlaybackContext`: Manages animation playback
+### State and Providers
+- Global state is managed in `src/state` via Zustand.
+- View-specific provider/context logic lives under `src/features/view-3d/contexts`.
+- Playback behavior and controls live under `src/features/playback`.
 
 ### Data Flow
 1. Animation data loaded from parsed simulation files
@@ -247,7 +284,7 @@ Simulation data is expected in the data folder with:
 
 ## Development Guidelines
 
-1. **Context First**: All shared state should use React context
+1. **Feature First**: Place code in feature folders unless it is truly cross-feature
 2. **Scientific Accuracy**: Always include units, labels, and legends
 3. **Synchronization**: All views must sync to the same timeline/selection
 4. **Performance**: Use memoization and efficient data structures

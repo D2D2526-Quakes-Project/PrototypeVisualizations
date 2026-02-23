@@ -12,11 +12,30 @@ import { PeakResponseTimePanel } from "@/features/view-3d/panels/PeakResponseTim
 import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
 import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDistributionPanel";
 import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
+import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
+import { HingeHotspotsPanel } from "@/features/view-3d/panels/HingeHotspotsPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { Timeline } from "./Timeline";
-import { Columns, Maximize2, Minimize2, MoreHorizontal, Plus, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  ChevronDown,
+  Columns,
+  Flame,
+  Gauge,
+  LineChart,
+  Maximize2,
+  Minimize2,
+  MoreHorizontal,
+  PanelTop,
+  Plus,
+  ShieldAlert,
+  Table,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 const PanelCatalog = {
@@ -32,12 +51,79 @@ const PanelCatalog = {
   "Rotation Time": RotationTimeChart,
   "Velocity Distribution": VelocityDistributionPanel,
   "Acceleration Distribution": AccelerationDistributionPanel,
+  "Hinge Distribution": HingeDistributionPanel,
+  "Hinge Hotspots": HingeHotspotsPanel,
   "Story Drift Heatmap": StoryDriftHeatmap,
   "Peak Response Time": PeakResponseTimePanel,
   "Damage Threshold": DamageThresholdPanel,
 } as const;
 
 type PanelType = keyof typeof PanelCatalog;
+
+type PanelCategory = "Canvas" | "Time Series" | "Distributions" | "Threshold / Damage" | "Summaries" | "Tables / Data";
+
+type PanelDefinition = {
+  category: PanelCategory;
+  icon: LucideIcon;
+  description: string;
+};
+
+const PANEL_DEFINITIONS: Record<PanelType, PanelDefinition> = {
+  Timeline: { category: "Time Series", icon: LineChart, description: "Playback timeline and overlays" },
+  "Interstory Drift Chart": { category: "Time Series", icon: LineChart, description: "Per-story drift traces" },
+  "Main Canvas": { category: "Canvas", icon: PanelTop, description: "3D structure viewport" },
+  "Histogram Chart": { category: "Distributions", icon: BarChart3, description: "Threshold exceedance by position" },
+  "Peak Values": { category: "Summaries", icon: Gauge, description: "Peak values for selected nodes" },
+  "Data Table": { category: "Tables / Data", icon: Table, description: "Raw node values table" },
+  "Floor Displacement": { category: "Time Series", icon: LineChart, description: "Floor average displacement traces" },
+  Statistics: { category: "Summaries", icon: Activity, description: "Simulation and current-frame stats" },
+  "Velocity Time": { category: "Time Series", icon: LineChart, description: "Velocity channels over time" },
+  "Rotation Time": { category: "Time Series", icon: LineChart, description: "Rotation channels over time" },
+  "Velocity Distribution": {
+    category: "Distributions",
+    icon: BarChart3,
+    description: "Velocity histogram distribution",
+  },
+  "Acceleration Distribution": {
+    category: "Distributions",
+    icon: BarChart3,
+    description: "Acceleration histogram distribution",
+  },
+  "Hinge Distribution": { category: "Distributions", icon: BarChart3, description: "Static hinge metric histogram" },
+  "Hinge Hotspots": { category: "Threshold / Damage", icon: Flame, description: "Static hinge hotspot ranking" },
+  "Story Drift Heatmap": {
+    category: "Threshold / Damage",
+    icon: ShieldAlert,
+    description: "Drift heatmap by story/time",
+  },
+  "Peak Response Time": { category: "Threshold / Damage", icon: Gauge, description: "When peaks happen in response" },
+  "Damage Threshold": {
+    category: "Threshold / Damage",
+    icon: ShieldAlert,
+    description: "Threshold evaluation summary",
+  },
+};
+
+const PANEL_CATEGORY_ORDER: PanelCategory[] = [
+  "Canvas",
+  "Time Series",
+  "Distributions",
+  "Threshold / Damage",
+  "Summaries",
+  "Tables / Data",
+];
+
+const FEATURED_PANEL_TYPES: PanelType[] = ["Main Canvas", "Data Table"];
+
+function getPanelsByCategory(): Array<{ category: PanelCategory; items: PanelType[] }> {
+  return PANEL_CATEGORY_ORDER.map((category) => ({
+    category,
+    items: (Object.keys(PanelCatalog) as PanelType[]).filter(
+      (panelType) =>
+        PANEL_DEFINITIONS[panelType].category === category && !FEATURED_PANEL_TYPES.includes(panelType),
+    ),
+  })).filter((group) => group.items.length > 0);
+}
 
 function isPanelType(value: unknown): value is PanelType {
   return typeof value === "string" && value in PanelCatalog;
@@ -60,6 +146,7 @@ export const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>)
 export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: PanelType }>) => {
   const currentPanelType = props.params.panelType;
   const [, setRenderTick] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     const bump = () => setRenderTick((value) => value + 1);
@@ -78,30 +165,141 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
 
   const showPanelPicker = props.tabLocation === "header" && (props.api.isActive || props.api.group.panels.length === 1);
 
-  const handlePanelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPanelType = event.target.value as PanelType;
+  const handlePanelChange = (newPanelType: PanelType) => {
     props.api.updateParameters({ panelType: newPanelType });
+    setPickerOpen(false);
   };
 
   return (
     <div className="flex z-10 h-full w-full items-center bg-neutral-200/80">
       {showPanelPicker ? (
-        <select
+        <PanelTypePicker
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
           value={currentPanelType}
           onChange={handlePanelChange}
-          className="mx-2 h-6 bg-transparent border-b border-neutral-400 px-2 py-0 text-sm font-medium text-neutral-700 cursor-pointer hover:border-neutral-500 transition-colors outline-none focus:ring-1 focus:ring-neutral-400">
-          {Object.keys(PanelCatalog).map((panelType) => (
-            <option key={panelType} value={panelType}>
-              {panelType}
-            </option>
-          ))}
-        </select>
+        />
       ) : (
-        <span className="px-4 py-0 text-sm font-medium text-neutral-700">{currentPanelType}</span>
+        <span className="px-4 py-0 text-sm font-medium text-neutral-700 flex items-center gap-1.5">
+          {(() => {
+            const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
+            return <Icon className="size-3.5 text-neutral-500" />;
+          })()}
+          {currentPanelType}
+        </span>
       )}
     </div>
   );
 };
+
+function PanelTypePicker({
+  open,
+  onOpenChange,
+  value,
+  onChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  value: PanelType;
+  onChange: (panelType: PanelType) => void;
+}) {
+  const selected = PANEL_DEFINITIONS[value];
+  const SelectedIcon = selected.icon;
+  const groupedPanels = getPanelsByCategory();
+  const featuredPanels = FEATURED_PANEL_TYPES;
+
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="mx-2 h-6 max-w-[19rem] min-w-0 px-2 text-sm font-medium text-neutral-700 cursor-pointer border-b border-neutral-400 hover:border-neutral-500 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 inline-flex items-center gap-1.5"
+          title="Choose panel type">
+          <SelectedIcon className="size-3.5 text-neutral-500 shrink-0" />
+          <span className="truncate">{value}</span>
+          <ChevronDown
+            className={`size-3.5 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[min(38rem,95vw)] p-2">
+        <div className="mb-2 px-1">
+          <div className="text-xs font-semibold text-neutral-700">Panel Picker</div>
+          <div className="text-[10px] text-neutral-500">Quick access + compact grouped browser</div>
+        </div>
+
+        <div className="mb-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {featuredPanels.map((panelType) => {
+            const meta = PANEL_DEFINITIONS[panelType];
+            const Icon = meta.icon;
+            const isActive = panelType === value;
+
+            return (
+              <div key={`${panelType}-featured`} className="rounded-md border border-neutral-200 bg-neutral-50/70 p-1.5">
+                <div className="px-1 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
+                  {meta.category}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onChange(panelType)}
+                  title={meta.description}
+                  className={`mt-1 w-full rounded-md px-2 py-1.5 text-left transition-colors border ${
+                    isActive
+                      ? "bg-white border-amber-300 shadow-sm"
+                      : "bg-white/80 border-transparent hover:bg-white hover:border-neutral-200"
+                  }`}>
+                  <div className="flex items-center gap-2">
+                    <Icon className={`size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`} />
+                    <span className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
+                      {panelType}
+                    </span>
+                  </div>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[56vh] overflow-auto pr-1">
+          {groupedPanels.map((group) => (
+            <div key={group.category} className="rounded-md border border-neutral-200/80 bg-white p-1.5">
+              <div className="px-1 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
+                {group.category}
+              </div>
+              <div className="mt-1 space-y-0.5">
+                {group.items.map((panelType) => {
+                  const meta = PANEL_DEFINITIONS[panelType];
+                  const Icon = meta.icon;
+                  const isActive = panelType === value;
+
+                  return (
+                    <button
+                      key={panelType}
+                      type="button"
+                      onClick={() => onChange(panelType)}
+                      title={meta.description}
+                      className={`w-full rounded-md px-2 py-1.5 text-left transition-colors border ${
+                        isActive
+                          ? "bg-white border-amber-300 shadow-sm"
+                          : "bg-white/80 border-transparent hover:bg-white hover:border-neutral-200"
+                      }`}>
+                      <div className="flex items-center gap-2">
+                        <Icon className={`size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`} />
+                        <span className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
+                          {panelType}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);

@@ -285,46 +285,69 @@ All `.bld` files follow a "Header-Body" architecture:
 - **Size**: `count_frames * 3 * 4` bytes
 - **Units**: Inches
 
-**D. Hinge Data (`hinge_data.bld`)**
+**D. Beam Connectivity Data (`beam_data.bld`)**
 
-- **Purpose**: Non-time-series hinge demand summaries for thresholding and distributions
-- **JSON Schema**:
+- **Purpose**: Building-level member connectivity using dense node indices (for cross-sections / overlays)
+- **JSON Schema (summary)**:
+  ```json
+  {
+    "type": "beam_data",
+    "version": 1,
+    "count_rows": <integer>,
+    "stride": 4,
+    "fields": ["elementId", "iNodeIndex", "jNodeIndex", "groupId"]
+  }
+  ```
+- **Binary Body**: `float32` row-major table, one row per `beam_data.csv` row
+- **Notes**:
+  - `iNodeIndex` / `jNodeIndex` are derived from the same `node_data.csv` ordering used for all simulation arrays
+  - `groupId` is retained for lightweight member-type filtering/styling
+
+**E. Hinge Data (`hinge_data.bld`)**
+
+- **Purpose**: Non-time-series hinge demand summaries paired by beam/member (PL1 only)
+- **Source Reduction**:
+  - Keeps only `Performance Level == 1`
+  - Resolves component numbers (`2/3 -> I`, `4/5 -> J`) during generation
+  - Stores one row per beam (`beamIndex`) with both `Max` and `Min` values in the same row
+- **JSON Schema (summary)**:
   ```json
   {
     "type": "hinge_data",
-    "version": 1,
+    "version": 2,
     "count_rows": <integer>,
-    "stride": 12,
+    "stride": 18,
     "fields": [
-      "groupId",
-      "elementId",
-      "componentNo",
-      "stepTypeIndex",
-      "performanceLevel",
-      "m3",
-      "r3",
-      "maxPosDeformDCRatio",
-      "maxNegDeformDCRatio",
-      "componentTypeIndex",
-      "componentNameIndex",
-      "loadCaseIndex"
+      "beamIndex",
+      "endMask",
+      "iM3Max",
+      "iM3Min",
+      "iR3Max",
+      "iR3Min",
+      "iMaxPosDcrMax",
+      "iMaxPosDcrMin",
+      "iMaxNegDcrMax",
+      "iMaxNegDcrMin",
+      "jM3Max",
+      "jM3Min",
+      "jR3Max",
+      "jR3Min",
+      "jMaxPosDcrMax",
+      "jMaxPosDcrMin",
+      "jMaxNegDcrMax",
+      "jMaxNegDcrMin"
     ],
-    "step_types": ["Max", "Min", "..."],
-    "component_types": ["..."],
-    "component_names": ["..."],
-    "load_cases": ["..."],
-    "summary": {
-      "counts": { "...": "..." },
-      "null_counts": { "...": "..." },
-      "metrics": { "...": "..." }
-    }
+    "step_types": ["Max", "Min"]
   }
   ```
 - **Binary Body**: `float32` row-major table, `count_rows * stride` values
+- **Key Fields**:
+  - `beamIndex`: Row index into `beam_data.bld`
+  - `endMask`: Bitmask (`1 = I present`, `2 = J present`)
 - **Units**:
   - `M3`: model output moment units from source export
   - `R3`: radians (rotation demand)
-  - `Max Pos/Neg Deform DCRatio`: unitless demand-capacity ratio
+  - `Max Pos/Neg DCR`: unitless demand-capacity ratio
 
 #### Technical Specifications
 

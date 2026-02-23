@@ -1,5 +1,6 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
+import { buildHingeEnrichedRows } from "@/lib/hingeAnalysis";
 import type { IDockviewPanelProps } from "dockview";
 import { useMemo } from "react";
 import { MiniTimeSeries } from "./MiniTimeSeries";
@@ -31,6 +32,56 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
       totalFloors: animationData.metadata.storyOrder.length,
     };
   }, [storyId, animationData]);
+
+  const hingeSliceSummary = useMemo(() => {
+    const hingeData = animationData.hingeData;
+    if (!hingeData) return null;
+
+    const rows = buildHingeEnrichedRows(hingeData, animationData.beamData);
+    if (rows.length === 0) return null;
+
+    let maxOnlyCount = 0;
+    let ge1 = 0;
+    let ge2 = 0;
+    let ge4 = 0;
+    let maxCritical = 0;
+    const topRows = rows
+      .filter((row) => row.stepType === "Max")
+      .slice()
+      .sort((a, b) => b.criticalDcr - a.criticalDcr)
+      .slice(0, 5);
+
+    for (const row of rows) {
+      if (row.stepType !== "Max") continue;
+      maxOnlyCount += 1;
+      if (row.criticalDcr > maxCritical) maxCritical = row.criticalDcr;
+      if (row.criticalDcr >= 1) ge1 += 1;
+      if (row.criticalDcr >= 2) ge2 += 1;
+      if (row.criticalDcr >= 4) ge4 += 1;
+    }
+
+    const dcrSummaryMax = hingeData.metadata.summary?.metrics.max_pos_deform_dc_ratio?.max;
+    const dcrSummaryMin = hingeData.metadata.summary?.metrics.max_pos_deform_dc_ratio?.min;
+    const negDcrSummaryMax = hingeData.metadata.summary?.metrics.max_neg_deform_dc_ratio?.max;
+    const negDcrSummaryMin = hingeData.metadata.summary?.metrics.max_neg_deform_dc_ratio?.min;
+    const p95Approx = Math.max(
+      dcrSummaryMax?.p95 ?? 0,
+      dcrSummaryMin?.p95 ?? 0,
+      negDcrSummaryMax?.p95 ?? 0,
+      negDcrSummaryMin?.p95 ?? 0,
+    );
+
+    return {
+      totalRows: rows.length,
+      maxOnlyCount,
+      ge1,
+      ge2,
+      ge4,
+      maxCritical,
+      p95Approx,
+      topRows,
+    };
+  }, [animationData.hingeData, animationData.beamData]);
 
   // DISPLACEMENT
   const displacementData = useMemo(() => {
@@ -298,6 +349,57 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
             </div>
           </div>
         </div>
+
+        {/* DISPLACEMENT */}
+        {hingeSliceSummary && (
+          <div className="border-t pt-2 animate-fade-in">
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <h3 className="font-bold text-sm">Hinge Analysis (Static)</h3>
+              <span className="text-[10px] text-neutral-500">Global; not frame-linked</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="text-neutral-500 uppercase tracking-wide">Rows (Max)</div>
+                <div className="font-mono text-neutral-800">{hingeSliceSummary.maxOnlyCount.toLocaleString()}</div>
+              </div>
+              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="text-neutral-500 uppercase tracking-wide">Max Crit D/C</div>
+                <div className="font-mono text-neutral-800">{hingeSliceSummary.maxCritical.toFixed(3)}</div>
+              </div>
+              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="text-neutral-500 uppercase tracking-wide">D/C {">="} 1 / 2 / 4</div>
+                <div className="font-mono text-neutral-800">
+                  {hingeSliceSummary.ge1} / {hingeSliceSummary.ge2} / {hingeSliceSummary.ge4}
+                </div>
+              </div>
+              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="text-neutral-500 uppercase tracking-wide">P95 (approx)</div>
+                <div className="font-mono text-neutral-800">{hingeSliceSummary.p95Approx.toFixed(3)}</div>
+              </div>
+            </div>
+
+            <div className="mt-2">
+              <div className="font-medium text-neutral-700 mb-1">Top Hinges (Max Step)</div>
+              <div className="space-y-1">
+                {hingeSliceSummary.topRows.map((row) => (
+                  <div
+                    key={`${row.beamIndex}-${row.end}-${row.stepType}`}
+                    className="grid grid-cols-[auto_auto_1fr_auto] gap-2 items-center text-[10px] border-b border-neutral-100 pb-1">
+                    <span className="font-mono text-neutral-600">E{row.elementId}</span>
+                    <span className="font-mono text-neutral-600">{row.end}</span>
+                    <span className="truncate text-neutral-500">
+                      Beam {row.beamIndex} · Node {row.nodeIndex >= 0 ? row.nodeIndex : "?"}
+                    </span>
+                    <span className="font-mono text-neutral-800">{row.criticalDcr.toFixed(3)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-[10px] text-neutral-400 italic">
+                Story/slice localization for hinge rows requires beam element connectivity mapping (next step).
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* DISPLACEMENT */}
         {displacementData && (

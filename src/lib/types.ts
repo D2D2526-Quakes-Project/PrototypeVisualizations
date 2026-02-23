@@ -47,6 +47,8 @@ export type BinaryBuilding = BaseBuilding & {
   size: number;
   /** Path to building data file (relative to /data/{folder}/) or full URL (http/https) */
   building_data: string;
+  /** Path to beam connectivity data file (relative to /data/{folder}/) or full URL (http/https) */
+  beamData?: string;
   building_data_size: number;
   simulations: BinarySimulation[];
 };
@@ -105,6 +107,22 @@ export interface GroundMotionMetadata {
   dt: number;
 }
 
+export interface BeamDataMetadata {
+  type: "beam_data";
+  version: number;
+  count_rows: number;
+  stride: number;
+  fields: string[];
+  summary?: {
+    counts?: {
+      rows?: number;
+      group_ids?: Record<string, number>;
+      group2_rows?: number;
+      hinge_lookup_rows?: number;
+    };
+  };
+}
+
 export interface HingeMetricSummary {
   count: number;
   min: number | null;
@@ -122,24 +140,21 @@ export interface HingeMetricSummary {
 
 export interface HingeSummary {
   counts: {
-    rows: number;
-    elements: number;
-    element_components: number;
+    source_rows: number;
+    rows_performance_level_1: number;
+    rows_paired: number;
+    beams: number;
+    beams_with_i: number;
+    beams_with_j: number;
     step_types: Record<string, number>;
-    performance_levels: Record<string, number>;
-    step_type_by_performance_level: Record<string, Record<string, number>>;
-  };
-  null_counts: {
-    m3: number;
-    r3: number;
-    max_pos_deform_dc_ratio: number;
-    max_neg_deform_dc_ratio: number;
+    component_numbers: Record<string, number>;
+    sides: Record<string, number>;
   };
   metrics: {
-    m3: HingeMetricSummary;
-    r3: HingeMetricSummary;
-    max_pos_deform_dc_ratio: HingeMetricSummary;
-    max_neg_deform_dc_ratio: HingeMetricSummary;
+    m3: { max: HingeMetricSummary; min: HingeMetricSummary };
+    r3: { max: HingeMetricSummary; min: HingeMetricSummary };
+    max_pos_deform_dc_ratio: { max: HingeMetricSummary; min: HingeMetricSummary };
+    max_neg_deform_dc_ratio: { max: HingeMetricSummary; min: HingeMetricSummary };
   };
 }
 
@@ -150,9 +165,6 @@ export interface HingeMetadata {
   stride: number;
   fields: string[];
   step_types: string[];
-  component_types: string[];
-  component_names: string[];
-  load_cases: string[];
   source_file?: string;
   source_format?: string;
   summary?: HingeSummary;
@@ -239,11 +251,17 @@ export interface BuildingAnimationData {
   groundMotion: IndexAccessor;
 
   /**
-   * Hinge Data (non-time-series).
+   * Beam/member connectivity (building-level static topology).
+   * Layout per row: [elementId, iNodeIndex, jNodeIndex, groupId]
+   */
+  beamData?: BeamDataAccessor;
+
+  /**
+   * Hinge Data (non-time-series), paired by beam/member.
    * Layout per row:
-   * [groupId, elementId, componentNo, stepTypeIndex, performanceLevel,
-   *  m3, r3, maxPosDeformDCRatio, maxNegDeformDCRatio,
-   *  componentTypeIndex, componentNameIndex, loadCaseIndex]
+   * [beamIndex, endMask,
+   *  iM3Max, iM3Min, iR3Max, iR3Min, iMaxPosDcrMax, iMaxPosDcrMin, iMaxNegDcrMax, iMaxNegDcrMin,
+   *  jM3Max, jM3Min, jR3Max, jR3Min, jMaxPosDcrMax, jMaxPosDcrMin, jMaxNegDcrMax, jMaxNegDcrMin]
    */
   hingeData?: HingeDataAccessor;
 }
@@ -263,19 +281,41 @@ export interface TimeIndexAccessor {
   atFrame: (idx: number) => IndexAccessor;
 }
 
-export interface HingeRow {
-  groupId: number;
+export interface BeamRow {
   elementId: number;
-  componentNo: number;
-  stepTypeIndex: number;
-  performanceLevel: number;
-  m3: number;
-  r3: number;
-  maxPosDeformDCRatio: number;
-  maxNegDeformDCRatio: number;
-  componentTypeIndex: number;
-  componentNameIndex: number;
-  loadCaseIndex: number;
+  iNodeIndex: number;
+  jNodeIndex: number;
+  groupId: number;
+}
+
+export interface BeamDataAccessor {
+  data: Float32Array;
+  stride: number;
+  count: number;
+  metadata: BeamDataMetadata;
+  at: (idx: number) => Float32Array;
+  getRow: (idx: number) => BeamRow;
+}
+
+export interface HingeRow {
+  beamIndex: number;
+  endMask: number;
+  iM3Max: number;
+  iM3Min: number;
+  iR3Max: number;
+  iR3Min: number;
+  iMaxPosDcrMax: number;
+  iMaxPosDcrMin: number;
+  iMaxNegDcrMax: number;
+  iMaxNegDcrMin: number;
+  jM3Max: number;
+  jM3Min: number;
+  jR3Max: number;
+  jR3Min: number;
+  jMaxPosDcrMax: number;
+  jMaxPosDcrMin: number;
+  jMaxNegDcrMax: number;
+  jMaxNegDcrMin: number;
 }
 
 export interface HingeDataAccessor {

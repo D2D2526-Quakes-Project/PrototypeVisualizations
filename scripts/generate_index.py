@@ -229,11 +229,42 @@ def generate_r2_index():
                 building_name = parts[0]
 
                 if building_name not in buildings:
-                    buildings[building_name] = {"data_type": "binary", "name": building_name, "folder": building_name, "building_data": None, "building_data_size": 0, "simulations": [], "size": 0}
+                    buildings[building_name] = {
+                        "data_type": "binary",
+                        "name": building_name,
+                        "folder": building_name,
+                        "building_data": None,
+                        "building_data_size": 0,
+                        "extra_building_files_size": 0,
+                        "simulations": [],
+                        "size": 0,
+                    }
 
                 buildings[building_name]["building_data"] = url
                 buildings[building_name]["building_data_size"] = size
                 print(f"  ✓ Building: {building_name}/building.bld ({size:,} bytes)")
+
+            elif len(parts) == 2:
+                # Additional building-level file: building_name/<file>.bld
+                building_name = parts[0]
+                file_name = parts[1]
+
+                if building_name not in buildings:
+                    buildings[building_name] = {
+                        "data_type": "binary",
+                        "name": building_name,
+                        "folder": building_name,
+                        "building_data": None,
+                        "building_data_size": 0,
+                        "extra_building_files_size": 0,
+                        "simulations": [],
+                        "size": 0,
+                    }
+
+                file_type = to_camel_case(file_name.replace(".bld", ""))
+                buildings[building_name][file_type] = url
+                buildings[building_name]["extra_building_files_size"] = buildings[building_name].get("extra_building_files_size", 0) + size
+                print(f"  ✓ Building extra: {building_name}/{file_name} ({size:,} bytes)")
 
             elif len(parts) == 3:
                 # Simulation file: building_name/sim_name/file.bld
@@ -243,7 +274,16 @@ def generate_r2_index():
 
                 # Ensure building exists
                 if building_name not in buildings:
-                    buildings[building_name] = {"data_type": "binary", "name": building_name, "folder": building_name, "building_data": None, "building_data_size": 0, "simulations": [], "size": 0}
+                    buildings[building_name] = {
+                        "data_type": "binary",
+                        "name": building_name,
+                        "folder": building_name,
+                        "building_data": None,
+                        "building_data_size": 0,
+                        "extra_building_files_size": 0,
+                        "simulations": [],
+                        "size": 0,
+                    }
 
                 # Find or create simulation
                 sim = next((s for s in buildings[building_name]["simulations"] if s["name"] == sim_name), None)
@@ -276,7 +316,8 @@ def generate_r2_index():
 
     # Calculate total sizes for each building
     for building in buildings.values():
-        building["size"] = building["building_data_size"] + sum(s["size"] for s in building["simulations"])
+        building["size"] = building["building_data_size"] + building.get("extra_building_files_size", 0) + sum(s["size"] for s in building["simulations"])
+        building.pop("extra_building_files_size", None)
 
     # Create index structure
     index = {"$schema": "./index.schema.json", "buildings": list(buildings.values()), "size": sum(b["size"] for b in buildings.values())}

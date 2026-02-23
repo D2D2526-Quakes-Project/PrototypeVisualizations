@@ -58,6 +58,30 @@
 - [x] Update data documentation with hinge binary contract
 - [x] Run lint/typecheck validation for the integration
 
+### 6.1.2 Hinge Visualization UI Integration (Current Sprint)
+
+- [x] Add static hinge analysis helpers for filtering/aggregation
+- [x] Add dock panel: hinge distribution histogram (non-time-series)
+- [x] Add dock panel: hinge hotspot ranking + performance breakdown
+- [x] Register hinge panels in panel picker/catalog
+- [x] Surface static hinge summary in slice panels (clearly marked non-time-series)
+- [x] Add beam connectivity mapping (`beam_data.bld`) and hinge beam-index pairing for localized rendering groundwork
+- [ ] Use `beam_data.bld` + story node membership to localize hinge rows to floors/slices in UI
+- [ ] Add hinge/beam mapping diagnostics (missing joins, duplicate side rows, missing Max/Min side entries) to generation summary
+
+### 6.1.3 Hinge Analysis Panels (Next Candidates)
+
+- [ ] Add `Hinge Floor Heatmap` panel (rows aggregated by story/floor after beam-to-story mapping)
+- [ ] Add `Hinge Component Type Breakdown` panel (stacked bars by component type / property family)
+- [ ] Add `Hinge Load Case Compare` panel (side-by-side distributions when multiple load cases exist)
+- [ ] Add `Hinge D/C CDF` panel (cumulative distribution for quick threshold percentile reading)
+- [ ] Add `Hinge Scatter` panel (e.g. `|R3|` vs critical D/C, colored by performance level)
+- [ ] Add `Hinge Outlier Inspector` panel (sortable table with filters + quick copy/export)
+- [ ] Add `Hinge Threshold Summary` panel (counts above user-defined D/C thresholds by step/perf level)
+- [ ] Add `Hinge Spatial Overlay Legend/Controls` panel for future on-structure rendering modes
+- [ ] Add `Story/Slice Hinge Summary` dock panel (same concepts as slice block but globally browsable by floor)
+- [ ] Add `Beam/Hinge Mapping Diagnostics` panel (unmapped elements, mapping coverage, data quality checks)
+
 ### 6.2 Multi-Simulation Comparison
 
 - [ ] Design data loading for multiple simulations

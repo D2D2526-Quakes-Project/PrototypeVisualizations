@@ -23,6 +23,10 @@
           "type": "string",
           "description": "Path to building data file (relative to /data/{folder}/) or full URL (http/https)"
         },
+        "beamData": {
+          "type": "string",
+          "description": "Path to beam connectivity file (relative to /data/{folder}/) or full URL (http/https)"
+        },
         "building_data_size": { "type": "number" },
         "simulations": {
           "type": "array",

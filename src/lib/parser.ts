@@ -1,5 +1,7 @@
 import type {
   AnimationMetadata,
+  BeamDataAccessor,
+  BeamDataMetadata,
   BuildingAnimationData,
   BuildingMetadata,
   ComputedStats,
@@ -80,6 +82,7 @@ export async function buildAnimationDataFromBinary({
   rawVelRot,
   rawAccelLin,
   rawAccelRot,
+  rawBeamData,
   rawHinge,
   onProgress,
 }: {
@@ -91,6 +94,7 @@ export async function buildAnimationDataFromBinary({
   rawVelRot?: ArrayBuffer;
   rawAccelLin?: ArrayBuffer;
   rawAccelRot?: ArrayBuffer;
+  rawBeamData?: ArrayBuffer;
   rawHinge?: ArrayBuffer;
   onProgress?: (p: number, msg: string) => void;
 }): Promise<BuildingAnimationData> {
@@ -119,6 +123,9 @@ export async function buildAnimationDataFromBinary({
   if (onProgress) onProgress(80, "Decompressing Ground Motion...");
   const gmBuff = await ensureDecompressed(rawGM);
 
+  if (onProgress && rawBeamData) onProgress(83, "Decompressing Beam Data...");
+  const beamBuff = rawBeamData ? await ensureDecompressed(rawBeamData) : undefined;
+
   if (onProgress && rawHinge) onProgress(85, "Decompressing Hinge Data...");
   const hingeBuff = rawHinge ? await ensureDecompressed(rawHinge) : undefined;
 
@@ -133,6 +140,7 @@ export async function buildAnimationDataFromBinary({
   const accelLinData = accelLinBuff ? parseBlob<SimulationMetadata>(accelLinBuff) : undefined;
   const accelRotData = accelRotBuff ? parseBlob<SimulationMetadata>(accelRotBuff) : undefined;
   const gmData = parseBlob<GroundMotionMetadata>(gmBuff);
+  const beamData = beamBuff ? parseBlob<BeamDataMetadata>(beamBuff) : undefined;
   const hingeData = hingeBuff ? parseBlob<HingeMetadata>(hingeBuff) : undefined;
 
   // 4. Verification
@@ -140,6 +148,21 @@ export async function buildAnimationDataFromBinary({
     throw new Error(
       `Mismatch: Building has ${bData.metadata.count_nodes} nodes, but Displacement Linear file has ${dispLinData.metadata.count_nodes}`,
     );
+  }
+
+  if (beamData) {
+    if (beamData.metadata.type !== "beam_data") {
+      throw new Error(`Mismatch: Expected beam_data metadata type, got ${beamData.metadata.type}`);
+    }
+    if (beamData.metadata.count_rows < 0 || beamData.metadata.stride <= 0) {
+      throw new Error("Invalid beam metadata: count_rows must be >= 0 and stride must be > 0");
+    }
+    const expectedLength = beamData.metadata.count_rows * beamData.metadata.stride;
+    if (beamData.bodyView.length < expectedLength) {
+      throw new Error(
+        `Invalid beam payload length: expected at least ${expectedLength} float values, got ${beamData.bodyView.length}`,
+      );
+    }
   }
 
   if (hingeData) {
@@ -217,6 +240,32 @@ export async function buildAnimationDataFromBinary({
     };
   }
 
+  function makeBeamAccessor(beamMetadata: BeamDataMetadata, body: Float32Array): BeamDataAccessor {
+    const stride = beamMetadata.stride;
+    const count = beamMetadata.count_rows;
+    const data = body.subarray(0, count * stride);
+    const valueAt = (row: Float32Array, index: number): number => row[index] ?? 0;
+
+    return {
+      data,
+      stride,
+      count,
+      metadata: beamMetadata,
+      at(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride);
+      },
+      getRow(idx: number) {
+        const row = data.subarray(idx * stride, (idx + 1) * stride);
+        return {
+          elementId: Math.trunc(valueAt(row, 0)),
+          iNodeIndex: Math.trunc(valueAt(row, 1)),
+          jNodeIndex: Math.trunc(valueAt(row, 2)),
+          groupId: Math.trunc(valueAt(row, 3)),
+        };
+      },
+    };
+  }
+
   function makeHingeAccessor(hingeMetadata: HingeMetadata, body: Float32Array): HingeDataAccessor {
     const stride = hingeMetadata.stride;
     const count = hingeMetadata.count_rows;
@@ -235,18 +284,24 @@ export async function buildAnimationDataFromBinary({
       getRow(idx: number) {
         const row = data.subarray(idx * stride, (idx + 1) * stride);
         return {
-          groupId: Math.trunc(valueAt(row, 0)),
-          elementId: Math.trunc(valueAt(row, 1)),
-          componentNo: Math.trunc(valueAt(row, 2)),
-          stepTypeIndex: Math.trunc(valueAt(row, 3)),
-          performanceLevel: Math.trunc(valueAt(row, 4)),
-          m3: valueAt(row, 5),
-          r3: valueAt(row, 6),
-          maxPosDeformDCRatio: valueAt(row, 7),
-          maxNegDeformDCRatio: valueAt(row, 8),
-          componentTypeIndex: Math.trunc(valueAt(row, 9)),
-          componentNameIndex: Math.trunc(valueAt(row, 10)),
-          loadCaseIndex: Math.trunc(valueAt(row, 11)),
+          beamIndex: Math.trunc(valueAt(row, 0)),
+          endMask: Math.trunc(valueAt(row, 1)),
+          iM3Max: valueAt(row, 2),
+          iM3Min: valueAt(row, 3),
+          iR3Max: valueAt(row, 4),
+          iR3Min: valueAt(row, 5),
+          iMaxPosDcrMax: valueAt(row, 6),
+          iMaxPosDcrMin: valueAt(row, 7),
+          iMaxNegDcrMax: valueAt(row, 8),
+          iMaxNegDcrMin: valueAt(row, 9),
+          jM3Max: valueAt(row, 10),
+          jM3Min: valueAt(row, 11),
+          jR3Max: valueAt(row, 12),
+          jR3Min: valueAt(row, 13),
+          jMaxPosDcrMax: valueAt(row, 14),
+          jMaxPosDcrMin: valueAt(row, 15),
+          jMaxNegDcrMax: valueAt(row, 16),
+          jMaxNegDcrMin: valueAt(row, 17),
         };
       },
     };
@@ -264,6 +319,7 @@ export async function buildAnimationDataFromBinary({
     accelerationLin: accelLinData ? makeTimeAccessor(accelLinData.bodyView, metadata.nodeCount) : undefined,
     accelerationRot: accelRotData ? makeTimeAccessor(accelRotData.bodyView, metadata.nodeCount) : undefined,
     groundMotion: makeAccessor(gmData.bodyView, 3), // [frame][x,y,z]
+    beamData: beamData ? makeBeamAccessor(beamData.metadata, beamData.bodyView) : undefined,
     hingeData: hingeData ? makeHingeAccessor(hingeData.metadata, hingeData.bodyView) : undefined,
   };
 }

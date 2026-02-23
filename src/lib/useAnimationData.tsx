@@ -68,6 +68,9 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         displacementLin: 0,
         groundMotion: 0,
       };
+      if (building.beamData) {
+        initialProgress.beamData = 0;
+      }
       if (simulation.hingeData) {
         initialProgress.hingeData = 0;
       }
@@ -100,6 +103,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           buildingBuffer,
           dispLinBuffer,
           /* dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer,*/ gmBuffer,
+          beamBuffer,
           hingeBuffer,
         ] = await Promise.all([
           fetchWithProgressAndCache(
@@ -149,6 +153,16 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
             },
             abortController.signal,
           ),
+          building.beamData
+            ? fetchWithProgressAndCache(
+                resolveUrl(building.beamData, building.folder),
+                (p) => {
+                  progressRef.current.beamData = p;
+                  setFileProgress((prev) => ({ ...prev, beamData: p * 100 }));
+                },
+                abortController.signal,
+              )
+            : Promise.resolve(undefined),
           simulation.hingeData
             ? fetchWithProgressAndCache(
                 resolveUrl(simulation.hingeData, `${building.folder}/${simulation.folder}`),
@@ -183,6 +197,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           rawVelRot: undefined, // velRotBuffer
           rawAccelLin: undefined, // accelLinBuffer
           rawAccelRot: undefined, // accelRotBuffer
+          rawBeamData: beamBuffer,
           rawHinge: hingeBuffer,
           onProgress: async (_p: number, msg?: string) => {
             if (abortController.signal.aborted) return;

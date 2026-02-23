@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """
-Generate index.json from R2 bucket contents
-Run this after uploading with rclone to create the index.json file
+Generate index.json from R2 bucket contents or local files.
+Run this after uploading with rclone to create the index.json file.
+
+Usage:
+  python generate_index.py           # Generate from R2 bucket
+  python generate_index.py --local    # Generate from local files
+  python generate_index.py -l         # Generate from local files
+  python generate_index.py --local /path/to/data  # Generate from specific local directory
 """
 
+import argparse
 import os
 import sys
 import json
@@ -21,6 +28,141 @@ def to_camel_case(snake_str: str) -> str:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Generate index.json from R2 bucket or local files")
+    parser.add_argument(
+        "--local",
+        "-l",
+        nargs="?",
+        const="default",
+        default=None,
+        help="Generate index from local files. Optional: specify local data directory path (default: data/binary)",
+    )
+    args = parser.parse_args()
+
+    is_local = args.local is not None
+    source_dir = args.local if args.local and args.local != "default" else None
+
+    if is_local:
+        generate_local_index(source_dir)
+    else:
+        generate_r2_index()
+
+
+def generate_local_index(source_dir: str | None = None):
+    """Generate index.json from local files."""
+    import shutil
+
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent if script_dir.name == "scripts" else script_dir
+
+    if source_dir:
+        data_dir = Path(source_dir).resolve()
+    else:
+        data_dir = project_root / "data" / "binary"
+
+    public_data_dir = project_root / "public" / "data"
+    index_out_dir = project_root / "src" / "data"
+
+    if not data_dir.exists():
+        print(f"❌ Data directory not found: {data_dir}")
+        sys.exit(1)
+
+    print("=" * 70)
+    print("Generate index.json from Local Files")
+    print("=" * 70)
+    print()
+    print(f"Source directory: {data_dir}")
+    print(f"Public data directory: {public_data_dir}")
+    print()
+
+    if public_data_dir.exists():
+        print(f"Removing existing public/data directory...")
+        shutil.rmtree(public_data_dir)
+
+    print(f"Copying data files to public/data...")
+    shutil.copytree(data_dir, public_data_dir)
+    print(f"✓ Copied data files")
+    print()
+
+    buildings: Dict[str, dict] = {}
+    total_files = 0
+
+    for building_dir in sorted(data_dir.iterdir()):
+        if not building_dir.is_dir():
+            continue
+
+        building_name = building_dir.name
+
+        building_file = building_dir / "building.bld"
+        if not building_file.exists():
+            print(f"⏭️  Skipping {building_name}: no building.bld found")
+            continue
+
+        building_size = building_file.stat().st_size
+        buildings[building_name] = {
+            "data_type": "binary",
+            "name": building_name,
+            "folder": building_name,
+            "building_data": "building.bld",
+            "building_data_size": building_size,
+            "simulations": [],
+            "size": 0,
+        }
+        print(f"  ✓ Building: {building_name}/building.bld ({building_size:,} bytes)")
+
+        for sim_dir in sorted(building_dir.iterdir()):
+            if not sim_dir.is_dir():
+                continue
+
+            sim_name = sim_dir.name
+            sim_files = {}
+            sim_size = 0
+
+            for bld_file in sorted(sim_dir.iterdir()):
+                if not bld_file.suffix == ".bld":
+                    continue
+
+                file_name = bld_file.name
+                file_size = bld_file.stat().st_size
+                sim_size += file_size
+                total_files += 1
+
+                file_type = to_camel_case(file_name.replace(".bld", ""))
+                sim_files[file_type] = file_name
+
+            if sim_files:
+                sim_entry = {"name": sim_name, "folder": sim_name, "size": sim_size, **sim_files}
+                buildings[building_name]["simulations"].append(sim_entry)
+                print(f"  ✓ Simulation: {building_name}/{sim_name}/ ({sim_size:,} bytes)")
+
+    print()
+    print(f"Found {total_files} total files")
+    print(f"Organized into {len(buildings)} buildings")
+    print()
+
+    for building in buildings.values():
+        building["size"] = building["building_data_size"] + sum(s["size"] for s in building["simulations"])
+
+    index = {"$schema": "./index.schema.json", "buildings": list(buildings.values()), "size": sum(b["size"] for b in buildings.values())}
+
+    output_file = index_out_dir / "index.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_file, "w") as f:
+        json.dump(index, f, indent=2)
+
+    print("=" * 70)
+    print("Summary")
+    print("=" * 70)
+    print(f"Buildings: {len(buildings)}")
+    print(f"Total size: {index['size']:,} bytes ({index['size'] / (1024**3):.2f} GB)")
+    print()
+    print(f"✅ Generated index.json")
+    print(f"💾 Saved to: {output_file}")
+    print("=" * 70)
+
+
+def generate_r2_index():
     # Load environment variables
     load_dotenv()
     load_dotenv(dotenv_path=Path(__file__).parent / ".env")

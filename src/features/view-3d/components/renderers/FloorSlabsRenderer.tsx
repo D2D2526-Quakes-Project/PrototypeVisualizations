@@ -1,5 +1,5 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useColor, useExplodedView, useSliceSelection } from "@/features/view-3d/contexts/visualization";
+import { useColor, useExpandedScale, useSliceSelection } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import * as THREE from "three";
@@ -11,7 +11,7 @@ interface FloorSlabsRendererProps {
 export function FloorSlabsRenderer({ nodeIds }: FloorSlabsRendererProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { getExplodedPosition } = useExplodedView();
+  const { getExpandedPosition } = useExpandedScale();
 
   const offset = useMemo(
     (): [number, number, number] => [
@@ -50,7 +50,7 @@ export function FloorSlabsRenderer({ nodeIds }: FloorSlabsRendererProps) {
           storyId={storyId}
           nodeIds={nodes}
           frameIndex={frameIndex}
-          getExplodedPosition={getExplodedPosition}
+          getExpandedPosition={getExpandedPosition}
           offset={offset}
         />
       ))}
@@ -62,11 +62,11 @@ interface FloorSlabProps {
   storyId: string;
   nodeIds: number[];
   frameIndex: number;
-  getExplodedPosition: ReturnType<typeof useExplodedView>["getExplodedPosition"];
+  getExpandedPosition: ReturnType<typeof useExpandedScale>["getExpandedPosition"];
   offset: [number, number, number];
 }
 
-function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }: FloorSlabProps) {
+function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset }: FloorSlabProps) {
   const { animationData } = useAnimationData();
   const { getNodeColor } = useColor();
   const { hoveredSlice, selectSlice, setHovered } = useSliceSelection();
@@ -81,14 +81,14 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }
     const positions = nodeIds.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
       const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-      const exploded = getExplodedPosition(
+      const expandedPosition = getExpandedPosition(
         nodeId,
         [pos[0], pos[1], pos[2]],
         [disp[0], disp[1], disp[2]],
         offset,
         animationData.metadata,
       );
-      return new THREE.Vector3(exploded[0], exploded[1], exploded[2]);
+      return new THREE.Vector3(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
     });
 
     // Find bounding box in 2D (X-Y plane)
@@ -119,7 +119,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExplodedPosition, offset }
     );
 
     return { geometry: geom, color: avgColor };
-  }, [nodeIds, frameIndex, animationData, getNodeColor, getExplodedPosition, offset]);
+  }, [nodeIds, frameIndex, animationData, getNodeColor, getExpandedPosition, offset]);
 
   const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();

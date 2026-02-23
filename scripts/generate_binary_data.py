@@ -766,25 +766,28 @@ def process_building(building):
     if not os.path.exists(building_output_dir):
         os.makedirs(building_output_dir)
 
-    # 1. Load Nodes
+    # 1. Load Nodes + Story Heights
     df_nodes = pd.read_csv(building["node_data"])
+    df_height = pd.read_csv(building["height"])
+    # node_data.csv coordinates are already in inches.
+    node_to_inches_scale = 1.0
+
     unique_ids = df_nodes["Node ID"].unique()
     id_to_index = {uid: i for i, uid in enumerate(unique_ids)}
     index_to_id = {i: uid for i, uid in enumerate(unique_ids)}
     count_nodes = len(unique_ids)
 
     # 2. Prepare Binary Buffer (Only XYZ)
-    # Note: node_data.csv coordinates are in feet, convert to inches for binary format
+    # node_data.csv is already in inches; write directly to the binary geometry buffer.
     buffer = np.zeros(count_nodes * 3, dtype=np.float32)
     for _, row in df_nodes.iterrows():
         idx = id_to_index.get(row["Node ID"])
         if idx is not None:
-            buffer[idx * 3 + 0] = row["H1"] * 12  # Convert feet to inches
-            buffer[idx * 3 + 1] = row["H2"] * 12  # Convert feet to inches
-            buffer[idx * 3 + 2] = row["V"] * 12  # Convert feet to inches
+            buffer[idx * 3 + 0] = row["H1"] * node_to_inches_scale
+            buffer[idx * 3 + 1] = row["H2"] * node_to_inches_scale
+            buffer[idx * 3 + 2] = row["V"] * node_to_inches_scale
 
     # 3. Load Stories & Corners
-    df_height = pd.read_csv(building["height"])
 
     # Cumulative elevation from ground for each story (story level -> elevation in inches)
     # This is the sum of all story heights from ground up to this story
@@ -803,21 +806,26 @@ def process_building(building):
     stories = {}
     storiesCorners = {}
 
-    min_x = df_nodes["H1"].min()
-    min_y = df_nodes["H2"].min()
-    min_v = df_nodes["V"].min()
+    min_x = df_nodes["H1"].min() * node_to_inches_scale
+    min_y = df_nodes["H2"].min() * node_to_inches_scale
+    min_v = df_nodes["V"].min() * node_to_inches_scale
+    story_levels = list(storiesElevations.keys())
+    story_elevations = np.array(list(storiesElevations.values()), dtype=np.float64)
 
     for _, row in df_nodes.iterrows():
         nid = row["Node ID"]
         idx = id_to_index.get(nid)
         if idx is not None:
-            x, y, z = row["H1"] - min_x, row["H2"] - min_y, row["V"] - min_v
+            x = row["H1"] * node_to_inches_scale - min_x
+            y = row["H2"] * node_to_inches_scale - min_y
+            z = row["V"] * node_to_inches_scale - min_v
 
             # Find story elevation closest to node
-            stidx = list(storiesElevations.values()).index(z) if z in list(storiesElevations.values()) else None
-            if stidx == None:
+            matches = np.where(np.isclose(story_elevations, z, atol=1e-2))[0]
+            stidx = int(matches[0]) if len(matches) else None
+            if stidx is None:
                 continue
-            story = list(storiesElevations.keys())[stidx]
+            story = story_levels[stidx]
             if story not in stories:
                 stories[story] = []
             stories[story].append(idx)
@@ -827,8 +835,8 @@ def process_building(building):
         # Get all coordinates for nodes at this story
         story_nodes = df_nodes[df_nodes["Node ID"].isin([index_to_id[idx] for idx in node_indices])]
 
-        xs = story_nodes["H1"].values - min_x
-        ys = story_nodes["H2"].values - min_y
+        xs = story_nodes["H1"].values * node_to_inches_scale - min_x
+        ys = story_nodes["H2"].values * node_to_inches_scale - min_y
 
         # Find the bounding box
         max_x, min_x_story = xs.max(), xs.min()

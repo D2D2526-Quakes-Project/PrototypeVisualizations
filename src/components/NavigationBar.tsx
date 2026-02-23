@@ -57,7 +57,7 @@ function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState
     selectedNodeIds: state.selectedNodeIds,
     hiddenNodeIds: state.hiddenNodeIds,
     hideSelectedNodes: state.hideSelectedNodes,
-    explodedView: state.explodedView,
+    expandedScale: state.expandedScale,
     sliceEnabled: state.sliceEnabled,
     xRange: state.xRange,
     yRange: state.yRange,

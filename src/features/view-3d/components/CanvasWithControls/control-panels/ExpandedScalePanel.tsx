@@ -2,44 +2,44 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { LayoutGrid } from "lucide-react";
 
-interface ExplodedViewPanelProps {
-  explodedEnabled: boolean;
+interface ExpandedScalePanelProps {
+  expansionEnabled: boolean;
   displacementEnabled: boolean;
-  xExplosion: number;
-  yExplosion: number;
-  zExplosion: number;
+  xExpansion: number;
+  yExpansion: number;
+  zExpansion: number;
   xzDisplacementScale: number;
   zDisplacementScale: number;
-  toggleExploded: () => void;
+  toggleExpansion: () => void;
   toggleDisplacement: () => void;
-  setExplosion: (axis: "x" | "y" | "z", factor: number) => void;
+  setExpansion: (axis: "x" | "y" | "z", factor: number) => void;
   setDisplacementScale: (axis: "xz" | "z", factor: number) => void;
 }
 
-export function ExplodedViewPanel({
-  explodedEnabled,
+export function ExpandedScalePanel({
+  expansionEnabled,
   displacementEnabled,
-  xExplosion,
-  yExplosion,
-  zExplosion,
+  xExpansion,
+  yExpansion,
+  zExpansion,
   xzDisplacementScale,
   zDisplacementScale,
-  toggleExploded,
+  toggleExpansion,
   toggleDisplacement,
-  setExplosion,
+  setExpansion,
   setDisplacementScale,
-}: ExplodedViewPanelProps) {
+}: ExpandedScalePanelProps) {
   return (
     <>
       <div className="flex items-center justify-between mb-1">
         <Label className="flex items-center gap-1 text-xs font-medium text-neutral-700 cursor-pointer">
           <LayoutGrid size={12} className="text-neutral-500" />
-          Exploded View
+          Expanded Scale
         </Label>
-        <Switch size="sm" checked={explodedEnabled} onCheckedChange={toggleExploded} />
+        <Switch size="sm" checked={expansionEnabled} onCheckedChange={toggleExpansion} />
       </div>
 
-      {explodedEnabled && (
+      {expansionEnabled && (
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-neutral-500 w-4">X</span>
@@ -48,12 +48,12 @@ export function ExplodedViewPanel({
               min="0"
               max="2"
               step="0.1"
-              value={xExplosion}
-              onChange={(e) => setExplosion("x", parseFloat(e.target.value))}
+              value={xExpansion}
+              onChange={(e) => setExpansion("x", parseFloat(e.target.value))}
               className="flex-1 h-1"
             />
             <span className="text-[10px] text-neutral-500 w-8 text-right">
-              {xExplosion.toFixed(1)}
+              {xExpansion.toFixed(1)}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -63,12 +63,12 @@ export function ExplodedViewPanel({
               min="0"
               max="2"
               step="0.1"
-              value={yExplosion}
-              onChange={(e) => setExplosion("y", parseFloat(e.target.value))}
+              value={yExpansion}
+              onChange={(e) => setExpansion("y", parseFloat(e.target.value))}
               className="flex-1 h-1"
             />
             <span className="text-[10px] text-neutral-500 w-8 text-right">
-              {yExplosion.toFixed(1)}
+              {yExpansion.toFixed(1)}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -78,12 +78,12 @@ export function ExplodedViewPanel({
               min="0"
               max="2"
               step="0.1"
-              value={zExplosion}
-              onChange={(e) => setExplosion("z", parseFloat(e.target.value))}
+              value={zExpansion}
+              onChange={(e) => setExpansion("z", parseFloat(e.target.value))}
               className="flex-1 h-1"
             />
             <span className="text-[10px] text-neutral-500 w-8 text-right">
-              {zExplosion.toFixed(1)}
+              {zExpansion.toFixed(1)}
             </span>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useExplodedView } from "@/features/view-3d/contexts/visualization";
+import { useExpandedScale } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import * as THREE from "three";
@@ -11,7 +11,7 @@ interface VerticalConnectionsRendererProps {
 export function VerticalConnectionsRenderer({ nodeIds }: VerticalConnectionsRendererProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { getExplodedPosition } = useExplodedView();
+  const { getExpandedPosition } = useExpandedScale();
 
   const offset = useMemo(
     (): [number, number, number] => [
@@ -56,7 +56,7 @@ export function VerticalConnectionsRenderer({ nodeIds }: VerticalConnectionsRend
       {connections.map((conn, idx) => {
         const posA = animationData.initialPositions.at(conn.nodeA);
         const dispA = animationData.displacementLin.atFrame(frameIndex).at(conn.nodeA);
-        const explodedA = getExplodedPosition(
+        const expandedA = getExpandedPosition(
           conn.nodeA,
           [posA[0], posA[1], posA[2]],
           [dispA[0], dispA[1], dispA[2]],
@@ -66,7 +66,7 @@ export function VerticalConnectionsRenderer({ nodeIds }: VerticalConnectionsRend
 
         const posB = animationData.initialPositions.at(conn.nodeB);
         const dispB = animationData.displacementLin.atFrame(frameIndex).at(conn.nodeB);
-        const explodedB = getExplodedPosition(
+        const expandedB = getExpandedPosition(
           conn.nodeB,
           [posB[0], posB[1], posB[2]],
           [dispB[0], dispB[1], dispB[2]],
@@ -74,8 +74,8 @@ export function VerticalConnectionsRenderer({ nodeIds }: VerticalConnectionsRend
           animationData.metadata,
         );
 
-        const start = new THREE.Vector3(explodedA[0], explodedA[1], explodedA[2]);
-        const end = new THREE.Vector3(explodedB[0], explodedB[1], explodedB[2]);
+        const start = new THREE.Vector3(expandedA[0], expandedA[1], expandedA[2]);
+        const end = new THREE.Vector3(expandedB[0], expandedB[1], expandedB[2]);
 
         const points = [start, end];
 

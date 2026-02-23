@@ -1,6 +1,6 @@
 export { ColorProvider, useColor } from './ColorContext';
 export { ViewModeProvider, useViewMode, type ViewMode } from './ViewModeContext';
-export { ExplodedViewProvider, useExplodedView } from './ExplodedViewContext';
+export { ExpandedScaleProvider, useExpandedScale } from './ExpandedScaleContext';
 export { 
   SliceSelectionProvider, 
   useSliceSelection, 

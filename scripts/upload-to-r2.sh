@@ -27,10 +27,11 @@ all)
     --progress \
     --size-only \
     --include "*.bld" \
-    --transfers 2 \
+    --transfers 4 \
     --checkers 2 \
-    --s3-chunk-size 100M \
-    --s3-upload-concurrency 1 \
+    --s3-chunk-size 64M \
+    --s3-upload-cutoff 100M \
+    --s3-upload-concurrency 16 \
     --stats 10s \
     --log-file rclone-upload.log \
     --log-level INFO
@@ -41,12 +42,12 @@ touch)
   echo "📤 Uploading all files (forced by touch)..."
   rclone copy "$SCRIPT_DIR/../data/binary" r2:quakes-binaries/ \
     --progress \
-    --size-only \
     --include "*.bld" \
-    --transfers 2 \
+    --transfers 4 \
     --checkers 2 \
-    --s3-chunk-size 100M \
-    --s3-upload-concurrency 1 \
+    --s3-chunk-size 64M \
+    --s3-upload-cutoff 100M \
+    --s3-upload-concurrency 16 \
     --stats 10s \
     --log-file rclone-upload.log \
     --log-level INFO

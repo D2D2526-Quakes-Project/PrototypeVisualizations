@@ -106,7 +106,7 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
     s.setHiddenNodeIds(initialState.hiddenNodeIds ?? []);
     s.setHideSelectedNodes(initialState.hideSelectedNodes ?? false);
 
-    s.setExplodedView(initialState.explodedView);
+    s.setExpandedScale(initialState.expandedScale);
 
     s.setSliceEnabled(initialState.sliceEnabled);
     s.setSliceRanges(initialState.xRange, initialState.yRange, initialState.zRange);

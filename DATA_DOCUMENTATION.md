@@ -30,13 +30,13 @@ public/data/
 
 ### Overview
 
-All measurements in the binary format use **inches** for consistency. However, source CSV files use a mix of units that must be converted during processing.
+All measurements in the binary format use **inches** for consistency. Source CSV files are mixed-unit by file type (for example, `node_data.csv` uses inches while `building_height.csv` uses feet).
 
 ### Unit Conversions
 
 | Data Type            | CSV Source Units | Binary Format Units | Conversion Factor | Notes                             |
 | :------------------- | :--------------- | :------------------ | :---------------- | :-------------------------------- |
-| **Node Coordinates** | Feet             | Inches              | × 12              | `node_data.csv` H1, H2, V columns |
+| **Node Coordinates** | Inches           | Inches              | × 1               | `node_data.csv` H1, H2, V columns |
 | **Story Heights**    | Feet             | Inches              | × 12              | `building_height.csv`             |
 | **Story Elevations** | Feet             | Inches              | × 12              | Cumulative height calculations    |
 | **Displacements**    | Inches           | Inches              | × 1               | Already in inches in source files |
@@ -50,14 +50,15 @@ All measurements in the binary format use **inches** for consistency. However, s
 - **H1 (X-axis)**: First horizontal direction
 - **H2 (Y-axis)**: Second horizontal direction
 - **V (Z-axis)**: Vertical direction (Up)
-- **Origin**: Building coordinates use large values (e.g., 5000+ feet) in a global coordinate system
+- **Origin**: Building coordinates use large values (e.g., 5000+ inches) in a global coordinate system
 - **WebGL/Three.js**: Apply root rotation of `-π/2` on X-axis for proper orientation (Y-up convention)
 
 ### Important Notes
 
-- Building geometry CSV files (`node_data.csv`, `building_height.csv`) store values in **feet**
+- `node_data.csv` stores building node coordinates in **inches**
+- `building_height.csv` stores story heights in **feet**
 - Simulation response files (Displacements, Velocities, Accelerations) store values in **inch-based units**
-- The binary conversion script (`scripts/generate_binary_data.py`) handles all unit conversions automatically
+- The binary conversion script (`scripts/generate_binary_data.py`) converts story heights/elevations to inches for binary metadata
 - Always verify units when working directly with CSV source files vs. binary output
 
 ## Data Types
@@ -110,7 +111,7 @@ All measurements in the binary format use **inches** for consistency. However, s
 - **Columns**:
   - `Node Name`: Node identifier
   - `Node ID`: Numeric node ID
-  - `H1`, `H2`, `V`: 3D coordinates (horizontal 1, horizontal 2, vertical)
+  - `H1`, `H2`, `V`: 3D coordinates in inches (horizontal 1, horizontal 2, vertical)
   - `Restraint UH1`, `Restraint UH2`, `Restraint UV`: Translational restraints (Free/Fixed)
   - `Restraint RH1`, `Restraint RH2`, `Restraint RV`: Rotational restraints (Free/Fixed)
 
@@ -436,7 +437,7 @@ Contains older format data with similar structure to main 15story data but with 
 ### Coordinate System
 
 - **Axes**: H1 (X), H2 (Y), V (Z-vertical)
-- **Origin**: Global coordinate system with large base values (~5000 feet)
+- **Origin**: Global coordinate system with large base values (~5000 inches)
 - **Orientation**: Z-up in source data, requires rotation for WebGL/Three.js (Y-up)
 
 ### Time Series Data
@@ -449,7 +450,7 @@ Contains older format data with similar structure to main 15story data but with 
 
 - **Total Nodes**: Thousands of nodes across the structure
 - **Floor Coverage**: Each floor has 4 corner nodes (NW, NE, SW, SE)
-- **Elevation Range**: Ground (0 ft) to Helipad (~7806 ft coordinate)
+- **Elevation Range**: Ground (0 ft story height reference) to Helipad (~7806 in node coordinate)
 
 ### Data Precision
 
@@ -470,7 +471,7 @@ Contains older format data with similar structure to main 15story data but with 
 - Automatic discovery of buildings and simulations
 - Supports both "Entire" and "Grid" file patterns
 - Parallel processing for faster conversion
-- Handles unit conversions (feet → inches for coordinates)
+- Handles unit conversions (story heights/elevations in feet → inches for binary metadata)
 - Creates compressed `.bld` files with JSON headers
 
 **Input Requirements**:
@@ -538,5 +539,5 @@ pip install -r requirements.txt
 3. **Binary Files**: Require specialized parsers for `.bld` format (see binary format specification below)
 4. **Node Mapping**: Use `node_mapping.csv` to understand corner node assignments
 5. **Coordinate System**: Building uses large coordinate values in a global coordinate system
-6. **Unit Consistency**: Always verify whether you're working with feet (CSV source) or inches (binary output)
+6. **Unit Consistency**: Always verify units per CSV file (`node_data.csv` in inches, `building_height.csv` in feet) versus binary output (inches)
 7. **Time Step**: All time series use consistent 0.01s (10ms) time step (100 Hz sampling)

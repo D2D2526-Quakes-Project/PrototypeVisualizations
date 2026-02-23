@@ -4,10 +4,10 @@ import type { SerializedDockview } from "dockview";
 import {
   DEFAULT_BACKGROUND_COLOR,
   DEFAULT_CAMERA_STATE,
-  DEFAULT_EXPLODED_STATE,
+  DEFAULT_EXPANDED_SCALE_STATE,
   DEFAULT_SLICE_RANGES,
   DEFAULT_THRESHOLDS,
-  type ExplodedViewState,
+  type ExpandedScaleState,
   type ThresholdState,
 } from "@/state/viewStore";
 
@@ -33,12 +33,12 @@ export interface CameraState {
 
 export interface CanvasPanelState {
   camera: CameraState;
-  explodedView?: {
-    explodedEnabled: boolean;
+  expandedScale?: {
+    expansionEnabled: boolean;
     displacementEnabled: boolean;
-    xExplosion: number;
-    yExplosion: number;
-    zExplosion: number;
+    xExpansion: number;
+    yExpansion: number;
+    zExpansion: number;
     xzDisplacementScale: number;
     zDisplacementScale: number;
   };
@@ -102,7 +102,7 @@ export interface AppState {
   selectedNodeIds: number[];
   hiddenNodeIds: number[];
   hideSelectedNodes: boolean;
-  explodedView: ExplodedViewState;
+  expandedScale: ExpandedScaleState;
   sliceEnabled: boolean;
   xRange: [number, number];
   yRange: [number, number];
@@ -165,14 +165,55 @@ function cloneAppState(state: AppState): AppState {
   return JSON.parse(JSON.stringify(state)) as AppState;
 }
 
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === "boolean";
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function getExpandedScalePatch(value: unknown): Partial<ExpandedScaleState> {
+  if (!isRecord(value)) return {};
+
+  const patch: Partial<ExpandedScaleState> = {};
+
+  if (isBoolean(value.expansionEnabled)) patch.expansionEnabled = value.expansionEnabled;
+  else if (isBoolean(value.explodedEnabled)) patch.expansionEnabled = value.explodedEnabled;
+
+  if (isBoolean(value.displacementEnabled)) patch.displacementEnabled = value.displacementEnabled;
+
+  if (isNumber(value.xExpansion)) patch.xExpansion = value.xExpansion;
+  else if (isNumber(value.xExplosion)) patch.xExpansion = value.xExplosion;
+
+  if (isNumber(value.yExpansion)) patch.yExpansion = value.yExpansion;
+  else if (isNumber(value.yExplosion)) patch.yExpansion = value.yExplosion;
+
+  if (isNumber(value.zExpansion)) patch.zExpansion = value.zExpansion;
+  else if (isNumber(value.zExplosion)) patch.zExpansion = value.zExplosion;
+
+  if (isNumber(value.xzDisplacementScale)) patch.xzDisplacementScale = value.xzDisplacementScale;
+  if (isNumber(value.zDisplacementScale)) patch.zDisplacementScale = value.zDisplacementScale;
+
+  return patch;
+}
+
 function normalizeState(state: AppState): AppState {
+  const stateWithLegacy = state as AppState & { explodedView?: unknown };
+  const { explodedView: _legacyExplodedView, ...stateWithoutLegacy } = stateWithLegacy;
   const legacySelectedAsHidden =
     (!Array.isArray(state.hiddenNodeIds) || state.hiddenNodeIds.length === 0) && state.hideSelectedNodes
       ? [...state.selectedNodeIds]
       : [];
+  const expandedScale = {
+    ...DEFAULT_EXPANDED_SCALE_STATE,
+    ...getExpandedScalePatch(stateWithLegacy.explodedView),
+    ...getExpandedScalePatch(state.expandedScale),
+  };
 
   return {
-    ...state,
+    ...stateWithoutLegacy,
+    expandedScale,
     hiddenNodeIds: Array.isArray(state.hiddenNodeIds) ? state.hiddenNodeIds : legacySelectedAsHidden,
     version: STATE_VERSION,
     timestamp: Date.now(),
@@ -237,7 +278,7 @@ export function getDefaultCameraState(): CameraState {
 export function getDefaultCanvasPanelState(): CanvasPanelState {
   return {
     camera: getDefaultCameraState(),
-    explodedView: { ...DEFAULT_EXPLODED_STATE },
+    expandedScale: { ...DEFAULT_EXPANDED_SCALE_STATE },
     sliceView: {
       sliceEnabled: false,
       xRange: [...DEFAULT_SLICE_RANGES.x] as [number, number],
@@ -278,7 +319,7 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     selectedNodeIds: [],
     hiddenNodeIds: [],
     hideSelectedNodes: false,
-    explodedView: { ...DEFAULT_EXPLODED_STATE },
+    expandedScale: { ...DEFAULT_EXPANDED_SCALE_STATE },
     sliceEnabled: false,
     xRange: [...DEFAULT_SLICE_RANGES.x] as [number, number],
     yRange: [...DEFAULT_SLICE_RANGES.y] as [number, number],
@@ -971,15 +1012,22 @@ export function getStateForUrlWithDefaults(
   defaults: AppState,
   includePanelStates: boolean = false,
 ): AppState {
+  const stateWithLegacy = state as Partial<AppState> & { explodedView?: unknown };
+  const { explodedView: _legacyExplodedView, ...stateWithoutLegacy } = stateWithLegacy;
   const hiddenNodeIds =
     state.hiddenNodeIds ??
     (state.hideSelectedNodes === true ? (state.selectedNodeIds ?? defaults.selectedNodeIds) : defaults.hiddenNodeIds);
+  const expandedScale = {
+    ...defaults.expandedScale,
+    ...getExpandedScalePatch(stateWithLegacy.explodedView),
+    ...getExpandedScalePatch(state.expandedScale),
+  };
 
   const mergedState: AppState = {
     ...defaults,
-    ...state,
+    ...stateWithoutLegacy,
     thresholds: { ...defaults.thresholds, ...(state.thresholds ?? {}) },
-    explodedView: { ...defaults.explodedView, ...(state.explodedView ?? {}) },
+    expandedScale,
     camera: { ...defaults.camera, ...(state.camera ?? {}) },
     panelStates: includePanelStates ? (state.panelStates ?? {}) : {},
     hiddenNodeIds,

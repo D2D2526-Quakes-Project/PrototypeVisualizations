@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   useColor,
-  useExplodedView,
+  useExpandedScale,
   useFloorVisibility,
   useSliceSelection,
   useThresholds,
@@ -30,7 +30,7 @@ import { useViewStore } from "@/state";
 
 import { ColorScaleBar } from "./ColorScaleBar";
 import { ColorPanel } from "./control-panels/ColorPanel";
-import { ExplodedViewPanel } from "./control-panels/ExplodedViewPanel";
+import { ExpandedScalePanel } from "./control-panels/ExpandedScalePanel";
 import { SliceViewPanel } from "./control-panels/SliceViewPanel";
 import { FloorsPanel, ThresholdPanel } from "./control-panels/ThresholdPanel";
 import { ViewModeSelect } from "./control-panels/ViewModeSelect";
@@ -66,12 +66,12 @@ export function ViewControls({
     useColor();
   const { mode, setMode } = useViewMode();
   const {
-    state: explodedState,
-    toggleExploded,
+    state: expandedScaleState,
+    toggleExpansion,
     toggleDisplacement,
-    setExplosion,
+    setExpansion,
     setDisplacementScale,
-  } = useExplodedView();
+  } = useExpandedScale();
   const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
     useSliceSelection();
   const { thresholds, setThreshold } = useThresholds();
@@ -503,17 +503,17 @@ export function ViewControls({
                   />
                 </motion.div>
                 <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
-                  <ExplodedViewPanel
-                    explodedEnabled={explodedState.explodedEnabled}
-                    displacementEnabled={explodedState.displacementEnabled}
-                    xExplosion={explodedState.xExplosion}
-                    yExplosion={explodedState.yExplosion}
-                    zExplosion={explodedState.zExplosion}
-                    xzDisplacementScale={explodedState.xzDisplacementScale}
-                    zDisplacementScale={explodedState.zDisplacementScale}
-                    toggleExploded={toggleExploded}
+                  <ExpandedScalePanel
+                    expansionEnabled={expandedScaleState.expansionEnabled}
+                    displacementEnabled={expandedScaleState.displacementEnabled}
+                    xExpansion={expandedScaleState.xExpansion}
+                    yExpansion={expandedScaleState.yExpansion}
+                    zExpansion={expandedScaleState.zExpansion}
+                    xzDisplacementScale={expandedScaleState.xzDisplacementScale}
+                    zDisplacementScale={expandedScaleState.zDisplacementScale}
+                    toggleExpansion={toggleExpansion}
                     toggleDisplacement={toggleDisplacement}
-                    setExplosion={setExplosion}
+                    setExpansion={setExpansion}
                     setDisplacementScale={setDisplacementScale}
                   />
                 </motion.div>

@@ -7,7 +7,7 @@ import { useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionConte
 import {
   performBoxSelection,
   useColor,
-  useExplodedView,
+  useExpandedScale,
   useFloorVisibility,
   useSliceSelection,
   useViewMode,
@@ -37,7 +37,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { selectedNodes, selectNode } = useNodeSelection();
   const { getNodeColor } = useColor();
   const { mode, getVisibleNodes } = useViewMode();
-  const { getExplodedPosition } = useExplodedView();
+  const { getExpandedPosition } = useExpandedScale();
   const {
     openSlicePanel,
     sliceEnabled,
@@ -444,7 +444,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       const initY = basePositions[i * 3 + 1];
       const initZ = basePositions[i * 3 + 2];
       const displacement = animationData.displacementLin.atFrame(currentFrame).at(nodeId);
-      const exploded = getExplodedPosition(
+      const expandedPosition = getExpandedPosition(
         nodeId,
         [initX, initY, initZ],
         [displacement[0], displacement[1], displacement[2]],
@@ -452,7 +452,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         animationData.metadata,
       );
 
-      tempObject.position.set(exploded[0], exploded[1], exploded[2]);
+      tempObject.position.set(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
 
       const scale = hoveredNodeId === nodeId ? 50 : 1 / UNIT_SCALE;
       tempObject.scale.set(scale, scale, scale);
@@ -480,7 +480,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     return selectedNodes.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
       const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-      const exploded = getExplodedPosition(
+      const expandedPosition = getExpandedPosition(
         nodeId,
         [pos[0], pos[1], pos[2]],
         [displacement[0], displacement[1], displacement[2]],
@@ -489,11 +489,11 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       );
       return {
         nodeId,
-        position: exploded,
+        position: expandedPosition,
         color: getNodePanelColor(nodeId), // Use unique color for selection
       };
     });
-  }, [selectedNodes, frameIndex, animationData, getExplodedPosition, offsets]);
+  }, [selectedNodes, frameIndex, animationData, getExpandedPosition, offsets]);
 
   return (
     <>

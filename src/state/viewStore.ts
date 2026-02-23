@@ -42,22 +42,22 @@ export const DEFAULT_THRESHOLDS: ThresholdState = {
   interstoryDrift: 0.5,
 };
 
-export interface ExplodedViewState {
-  explodedEnabled: boolean;
+export interface ExpandedScaleState {
+  expansionEnabled: boolean;
   displacementEnabled: boolean;
-  xExplosion: number;
-  yExplosion: number;
-  zExplosion: number;
+  xExpansion: number;
+  yExpansion: number;
+  zExpansion: number;
   xzDisplacementScale: number;
   zDisplacementScale: number;
 }
 
-export const DEFAULT_EXPLODED_STATE: ExplodedViewState = {
-  explodedEnabled: false,
+export const DEFAULT_EXPANDED_SCALE_STATE: ExpandedScaleState = {
+  expansionEnabled: false,
   displacementEnabled: false,
-  xExplosion: 0,
-  yExplosion: 0,
-  zExplosion: 1,
+  xExpansion: 0,
+  yExpansion: 0,
+  zExpansion: 1,
   xzDisplacementScale: 1,
   zDisplacementScale: 1,
 };
@@ -133,14 +133,14 @@ export interface ViewState {
   showAllFloors: (storyOrder: string[]) => void;
   hideAllFloors: () => void;
 
-  // Exploded View
-  explodedView: ExplodedViewState;
-  setExplodedView: (view: ExplodedViewState) => void;
-  toggleExploded: () => void;
+  // Expanded Scale
+  expandedScale: ExpandedScaleState;
+  setExpandedScale: (view: ExpandedScaleState) => void;
+  toggleExpansion: () => void;
   toggleDisplacement: () => void;
-  setExplosion: (axis: "x" | "y" | "z", factor: number) => void;
+  setExpansion: (axis: "x" | "y" | "z", factor: number) => void;
   setDisplacementScale: (axis: "xz" | "z", factor: number) => void;
-  resetExplodedView: () => void;
+  resetExpandedScale: () => void;
 
   // Slice
   sliceEnabled: boolean;
@@ -315,29 +315,29 @@ export const createViewStore = () =>
       showAllFloors: (storyOrder) => set({ visibleFloors: storyOrder }),
       hideAllFloors: () => set({ visibleFloors: [] }),
 
-      // Exploded View
-      explodedView: { ...DEFAULT_EXPLODED_STATE },
-      setExplodedView: (explodedView) => set({ explodedView }),
-      toggleExploded: () =>
+      // Expanded Scale
+      expandedScale: { ...DEFAULT_EXPANDED_SCALE_STATE },
+      setExpandedScale: (expandedScale) => set({ expandedScale }),
+      toggleExpansion: () =>
         set((state) => ({
-          explodedView: { ...state.explodedView, explodedEnabled: !state.explodedView.explodedEnabled },
+          expandedScale: { ...state.expandedScale, expansionEnabled: !state.expandedScale.expansionEnabled },
         })),
       toggleDisplacement: () =>
         set((state) => ({
-          explodedView: { ...state.explodedView, displacementEnabled: !state.explodedView.displacementEnabled },
+          expandedScale: { ...state.expandedScale, displacementEnabled: !state.expandedScale.displacementEnabled },
         })),
-      setExplosion: (axis, factor) =>
+      setExpansion: (axis, factor) =>
         set((state) => ({
-          explodedView: { ...state.explodedView, [`${axis}Explosion`]: factor },
+          expandedScale: { ...state.expandedScale, [`${axis}Expansion`]: factor },
         })),
       setDisplacementScale: (axis, factor) =>
         set((state) => ({
-          explodedView: {
-            ...state.explodedView,
+          expandedScale: {
+            ...state.expandedScale,
             [axis === "xz" ? "xzDisplacementScale" : "zDisplacementScale"]: factor,
           },
         })),
-      resetExplodedView: () => set({ explodedView: { ...DEFAULT_EXPLODED_STATE } }),
+      resetExpandedScale: () => set({ expandedScale: { ...DEFAULT_EXPANDED_SCALE_STATE } }),
 
       // Slice
       sliceEnabled: false,

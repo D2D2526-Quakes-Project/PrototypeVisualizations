@@ -63,15 +63,24 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
   const loadBinaryData = useCallback(
     async (building: BinaryBuilding, simulation: BinarySimulation) => {
+      const initialProgress: Record<string, number> = {
+        building: 0,
+        displacementLin: 0,
+        groundMotion: 0,
+      };
+      if (simulation.hingeData) {
+        initialProgress.hingeData = 0;
+      }
+
       setLoading(true);
       setError(null);
-      setFileProgress({ building: 0, groundMotion: 0 });
+      setFileProgress(initialProgress);
       setProgressMessage("");
       setAnimationData(null);
 
       const abortController = new AbortController();
 
-      const progressRef = { current: { building: 0, displacementLin: 0, groundMotion: 0 } };
+      const progressRef = { current: { ...initialProgress } };
 
       // Helper to resolve URL - supports both full URLs (http/https) and relative paths
       const resolveUrl = (pathOrUrl: string, folder: string): string => {
@@ -91,6 +100,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           buildingBuffer,
           dispLinBuffer,
           /* dispRotBuffer, velLinBuffer, velRotBuffer, accelLinBuffer, accelRotBuffer,*/ gmBuffer,
+          hingeBuffer,
         ] = await Promise.all([
           fetchWithProgressAndCache(
             resolveUrl(building.building_data, building.folder),
@@ -139,6 +149,16 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
             },
             abortController.signal,
           ),
+          simulation.hingeData
+            ? fetchWithProgressAndCache(
+                resolveUrl(simulation.hingeData, `${building.folder}/${simulation.folder}`),
+                (p) => {
+                  progressRef.current.hingeData = p;
+                  setFileProgress((prev) => ({ ...prev, hingeData: p * 100 }));
+                },
+                abortController.signal,
+              )
+            : Promise.resolve(undefined),
         ]);
 
         if (abortController.signal.aborted) return;
@@ -163,6 +183,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           rawVelRot: undefined, // velRotBuffer
           rawAccelLin: undefined, // accelLinBuffer
           rawAccelRot: undefined, // accelRotBuffer
+          rawHinge: hingeBuffer,
           onProgress: async (_p: number, msg?: string) => {
             if (abortController.signal.aborted) return;
             if (msg) setProgressMessage(msg);
@@ -486,7 +507,8 @@ function SimulationPickerOverlay({
                           (s.velocityRot && isIncomplete(s.velocityRot)) ||
                           (s.accelerationLin && isIncomplete(s.accelerationLin)) ||
                           (s.accelerationRot && isIncomplete(s.accelerationRot)) ||
-                          isIncomplete(s.groundMotion);
+                          isIncomplete(s.groundMotion) ||
+                          (s.hingeData && isIncomplete(s.hingeData));
                         return (
                           <button
                             key={s.folder}

@@ -74,6 +74,8 @@ export type BinarySimulation = BaseSimulation & {
   accelerationRot?: string;
   /** Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   groundMotion: string;
+  /** Path to hinge data file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  hingeData?: string;
 };
 
 export type Simulation = BinarySimulation;
@@ -101,6 +103,59 @@ export interface SimulationMetadata {
 export interface GroundMotionMetadata {
   count_frames: number;
   dt: number;
+}
+
+export interface HingeMetricSummary {
+  count: number;
+  min: number | null;
+  max: number | null;
+  mean: number | null;
+  std: number | null;
+  p50: number | null;
+  p95: number | null;
+  p99: number | null;
+  histogram: {
+    bin_edges: number[];
+    counts: number[];
+  };
+}
+
+export interface HingeSummary {
+  counts: {
+    rows: number;
+    elements: number;
+    element_components: number;
+    step_types: Record<string, number>;
+    performance_levels: Record<string, number>;
+    step_type_by_performance_level: Record<string, Record<string, number>>;
+  };
+  null_counts: {
+    m3: number;
+    r3: number;
+    max_pos_deform_dc_ratio: number;
+    max_neg_deform_dc_ratio: number;
+  };
+  metrics: {
+    m3: HingeMetricSummary;
+    r3: HingeMetricSummary;
+    max_pos_deform_dc_ratio: HingeMetricSummary;
+    max_neg_deform_dc_ratio: HingeMetricSummary;
+  };
+}
+
+export interface HingeMetadata {
+  type: "hinge_data";
+  version: number;
+  count_rows: number;
+  stride: number;
+  fields: string[];
+  step_types: string[];
+  component_types: string[];
+  component_names: string[];
+  load_cases: string[];
+  source_file?: string;
+  source_format?: string;
+  summary?: HingeSummary;
 }
 
 export interface AnimationMetadata {
@@ -182,6 +237,15 @@ export interface BuildingAnimationData {
    * Units: Inches
    */
   groundMotion: IndexAccessor;
+
+  /**
+   * Hinge Data (non-time-series).
+   * Layout per row:
+   * [groupId, elementId, componentNo, stepTypeIndex, performanceLevel,
+   *  m3, r3, maxPosDeformDCRatio, maxNegDeformDCRatio,
+   *  componentTypeIndex, componentNameIndex, loadCaseIndex]
+   */
+  hingeData?: HingeDataAccessor;
 }
 
 export interface IndexAccessor {
@@ -197,6 +261,30 @@ export interface TimeIndexAccessor {
   data: Float32Array;
   stride: number;
   atFrame: (idx: number) => IndexAccessor;
+}
+
+export interface HingeRow {
+  groupId: number;
+  elementId: number;
+  componentNo: number;
+  stepTypeIndex: number;
+  performanceLevel: number;
+  m3: number;
+  r3: number;
+  maxPosDeformDCRatio: number;
+  maxNegDeformDCRatio: number;
+  componentTypeIndex: number;
+  componentNameIndex: number;
+  loadCaseIndex: number;
+}
+
+export interface HingeDataAccessor {
+  data: Float32Array;
+  stride: number;
+  count: number;
+  metadata: HingeMetadata;
+  at: (idx: number) => Float32Array;
+  getRow: (idx: number) => HingeRow;
 }
 
 export interface ComputedStats {
@@ -323,4 +411,7 @@ export interface ComputedStats {
   // PERCENTILES
   /** 90th percentile velocity across all nodes/frames */
   velocityPercentile90?: number;
+
+  // HINGE SUMMARY (if hinge data exists)
+  hinge?: HingeSummary;
 }

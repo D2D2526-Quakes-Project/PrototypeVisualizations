@@ -18,6 +18,33 @@ DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 CSV_DIR = os.path.join(DATA_DIR, "csv")
 BINARY_DIR = os.path.join(DATA_DIR, "binary")
 
+HINGE_REQUIRED_COLUMNS = [
+    "Group ID",
+    "Element ID",
+    "Element Name",
+    "Load Case",
+    "Step Type",
+    "Component No.",
+    "Component Type",
+    "Component Name",
+    "Performance Level",
+    "M3",
+    "R3",
+    "Max Pos Deform DCRatio",
+    "Max Neg Deform DCRatio",
+]
+
+HINGE_NUMERIC_COLUMNS = [
+    "Group ID",
+    "Element ID",
+    "Component No.",
+    "Performance Level",
+    "M3",
+    "R3",
+    "Max Pos Deform DCRatio",
+    "Max Neg Deform DCRatio",
+]
+
 
 def discover_buildings():
     """Discover all buildings that have node_data.csv"""
@@ -71,6 +98,24 @@ def discover_buildings():
     return buildings
 
 
+def discover_hinge_file(simulation_path):
+    """
+    Locate a hinge results file in the simulation folder.
+
+    Search order:
+    1) Hinge results/hinge_data.csv
+    """
+    hinge_dir = os.path.join(simulation_path, "Hinge results")
+    if not os.path.exists(hinge_dir):
+        return None
+
+    preferred_csv = os.path.join(hinge_dir, "hinge_data.csv")
+    if os.path.exists(preferred_csv):
+        return preferred_csv
+
+    return None
+
+
 def discover_simulations(building_folder):
     """Discover all simulations for a building (subdirectories with data files)"""
     simulations = []
@@ -100,6 +145,7 @@ def discover_simulations(building_folder):
                 "has_velocity": False,
                 "has_acceleration": False,
                 "has_ground_motion": False,
+                "has_hinge_data": False,
                 "file_pattern": None,  # "Entire" or "Grid"
             }
 
@@ -149,15 +195,25 @@ def discover_simulations(building_folder):
                 sim_data["has_ground_motion"] = True
                 sim_data["ground_motion_file"] = gm_file
 
+            # Check for hinge results (non-time-series element data)
+            hinge_file = discover_hinge_file(item_path)
+            print(f"      hinge results: {'✓' if hinge_file else '✗ not found'}")
+            if hinge_file:
+                sim_data["has_hinge_data"] = True
+                sim_data["hinge_file"] = hinge_file
+                print(f"      hinge file: {hinge_file}")
+
             # Only add if it has at least some data
-            if sim_data["has_displacement"] or sim_data["has_velocity"] or sim_data["has_acceleration"]:
+            if sim_data["has_displacement"] or sim_data["has_velocity"] or sim_data["has_acceleration"] or sim_data["has_hinge_data"]:
                 simulations.append(sim_data)
                 print(f"    → Simulation ACCEPTED: {item}")
                 print(
-                    f"      Displacement: {sim_data['has_displacement']}, Velocity: {sim_data['has_velocity']}, Acceleration: {sim_data['has_acceleration']}, Ground Motion: {sim_data['has_ground_motion']}"
+                    f"      Displacement: {sim_data['has_displacement']}, Velocity: {sim_data['has_velocity']}, "
+                    f"Acceleration: {sim_data['has_acceleration']}, Ground Motion: {sim_data['has_ground_motion']}, "
+                    f"Hinge: {sim_data['has_hinge_data']}"
                 )
             else:
-                print(f"    → Simulation REJECTED: {item} (no displacement, velocity, or acceleration data found)")
+                print(f"    → Simulation REJECTED: {item} " f"(no displacement, velocity, acceleration, or hinge data found)")
 
     print(f"\n  Found {len(simulations)} simulation(s) for {building_folder}")
     return simulations
@@ -315,7 +371,7 @@ def merge_grid_data(file_list, id_to_index):
 
 def get_simulation_files(building_folder, simulation):
     """Get file paths for a simulation based on detected pattern"""
-    files: dict = {"displacement": None, "velocity": None, "acceleration": None, "ground_motion": None}
+    files: dict = {"displacement": None, "velocity": None, "acceleration": None, "ground_motion": None, "hinge": None}
 
     sim_path = simulation["path"]
     pattern = simulation.get("file_pattern", "Entire")
@@ -524,6 +580,13 @@ def get_simulation_files(building_folder, simulation):
         exists = "✓" if os.path.exists(gm_file) else "✗"
         print(f"      {exists} {gm_file}")
 
+    if simulation.get("has_hinge_data"):
+        print(f"\n    Hinge results file:")
+        hinge_file = simulation.get("hinge_file")
+        files["hinge"] = hinge_file
+        exists = "✓" if hinge_file and os.path.exists(hinge_file) else "✗"
+        print(f"      {exists} {hinge_file}")
+
     return files
 
 
@@ -624,7 +687,7 @@ def process_building(building):
         if idx is not None:
             buffer[idx * 3 + 0] = row["H1"] * 12  # Convert feet to inches
             buffer[idx * 3 + 1] = row["H2"] * 12  # Convert feet to inches
-            buffer[idx * 3 + 2] = row["V"] * 12   # Convert feet to inches
+            buffer[idx * 3 + 2] = row["V"] * 12  # Convert feet to inches
 
     # 3. Load Stories & Corners
     df_height = pd.read_csv(building["height"])
@@ -949,6 +1012,226 @@ def process_ground_motion(files_config, simulation_output_dir):
     write_bld_file("ground_motion.bld", header, buffer.tobytes(), simulation_output_dir)
 
 
+def load_hinge_dataframe(hinge_file):
+    """Load hinge table from CSV or Excel."""
+    suffix = Path(hinge_file).suffix.lower()
+
+    if suffix == ".csv":
+        return pd.read_csv(hinge_file)
+
+    print(f"⚠ Skipping unsupported hinge file format: {hinge_file}")
+    return None
+
+
+def summarize_hinge_metric(series, bins=64):
+    """Compute summary + histogram for a numeric hinge metric."""
+    values = pd.to_numeric(series, errors="coerce").to_numpy(dtype=np.float64)
+    values = values[np.isfinite(values)]
+    count = int(values.size)
+
+    if count == 0:
+        return {
+            "count": 0,
+            "min": None,
+            "max": None,
+            "mean": None,
+            "std": None,
+            "p50": None,
+            "p95": None,
+            "p99": None,
+            "histogram": {"bin_edges": [], "counts": []},
+        }
+
+    min_value = float(values.min())
+    max_value = float(values.max())
+    p50, p95, p99 = np.percentile(values, [50, 95, 99])
+
+    if np.isclose(min_value, max_value):
+        delta = max(abs(min_value) * 1e-6, 1e-6)
+        hist_edges = np.array([min_value - delta, max_value + delta], dtype=np.float64)
+        hist_counts = np.array([count], dtype=np.int64)
+    else:
+        hist_counts, hist_edges = np.histogram(values, bins=bins)
+
+    return {
+        "count": count,
+        "min": min_value,
+        "max": max_value,
+        "mean": float(values.mean()),
+        "std": float(values.std(ddof=0)),
+        "p50": float(p50),
+        "p95": float(p95),
+        "p99": float(p99),
+        "histogram": {
+            "bin_edges": [float(v) for v in hist_edges.tolist()],
+            "counts": [int(v) for v in hist_counts.tolist()],
+        },
+    }
+
+
+def normalize_hinge_dataframe(df_hinge, hinge_file):
+    """Normalize hinge table to canonical schema and validate key constraints."""
+    normalized = df_hinge.copy()
+    normalized.columns = [str(c).strip() for c in normalized.columns]
+
+    missing_columns = [column for column in HINGE_REQUIRED_COLUMNS if column not in normalized.columns]
+    if missing_columns:
+        print(f"❌ Hinge file missing required columns: {missing_columns}")
+        print(f"   Source: {hinge_file}")
+        return None
+
+    normalized = normalized[HINGE_REQUIRED_COLUMNS].copy()
+
+    for column in HINGE_NUMERIC_COLUMNS:
+        normalized[column] = pd.to_numeric(normalized[column], errors="coerce")
+
+    normalized["Step Type"] = normalized["Step Type"].fillna("").astype(str).str.strip()
+    normalized["Element Name"] = normalized["Element Name"].fillna("").astype(str).str.strip()
+    normalized["Load Case"] = normalized["Load Case"].fillna("").astype(str).str.strip()
+    normalized["Component Type"] = normalized["Component Type"].fillna("").astype(str).str.strip()
+    normalized["Component Name"] = normalized["Component Name"].fillna("").astype(str).str.strip()
+
+    invalid_key_rows = normalized["Step Type"].eq("") | normalized[["Group ID", "Element ID", "Component No.", "Performance Level"]].isna().any(axis=1)
+    invalid_count = int(invalid_key_rows.sum())
+    if invalid_count > 0:
+        print(f"⚠ Dropping {invalid_count} hinge rows with invalid key fields from: {hinge_file}")
+        normalized = normalized.loc[~invalid_key_rows].copy()
+
+    if normalized.empty:
+        print(f"❌ Hinge file has no valid rows after normalization: {hinge_file}")
+        return None
+
+    # Keys must remain unique for deterministic threshold/distribution usage.
+    key_columns = ["Element ID", "Component No.", "Step Type", "Performance Level"]
+    duplicate_count = int(normalized.duplicated(subset=key_columns).sum())
+    if duplicate_count > 0:
+        print(f"❌ Hinge data has {duplicate_count} duplicate key row(s): {hinge_file}")
+        print(f"   Key columns: {key_columns}")
+        return None
+
+    for column in ["Group ID", "Element ID", "Component No.", "Performance Level"]:
+        normalized[column] = normalized[column].round().astype(np.int32)
+
+    return normalized
+
+
+def process_hinge_data(files_config, simulation_output_dir):
+    """Process non-time-series hinge data for a simulation."""
+    print("\n--- Processing Hinge Data ---")
+    hinge_file = files_config.get("hinge")
+    if not hinge_file or not os.path.exists(hinge_file):
+        print("Hinge data file not found, skipping.")
+        return
+
+    df_hinge = load_hinge_dataframe(hinge_file)
+    if df_hinge is None:
+        return
+
+    normalized = normalize_hinge_dataframe(df_hinge, hinge_file)
+    if normalized is None:
+        return
+
+    step_types_raw = normalized["Step Type"].dropna().unique().tolist()
+    step_types = []
+    for step in ["Max", "Min"]:
+        if step in step_types_raw:
+            step_types.append(step)
+    for step in sorted(step_types_raw):
+        if step not in step_types:
+            step_types.append(step)
+
+    component_types = sorted(normalized["Component Type"].dropna().unique().tolist())
+    component_names = sorted(normalized["Component Name"].dropna().unique().tolist())
+    load_cases = sorted(normalized["Load Case"].dropna().unique().tolist())
+
+    step_to_index = {name: i for i, name in enumerate(step_types)}
+    component_type_to_index = {name: i for i, name in enumerate(component_types)}
+    component_name_to_index = {name: i for i, name in enumerate(component_names)}
+    load_case_to_index = {name: i for i, name in enumerate(load_cases)}
+
+    row_count = len(normalized)
+    stride = 12
+    fields = [
+        "groupId",
+        "elementId",
+        "componentNo",
+        "stepTypeIndex",
+        "performanceLevel",
+        "m3",
+        "r3",
+        "maxPosDeformDCRatio",
+        "maxNegDeformDCRatio",
+        "componentTypeIndex",
+        "componentNameIndex",
+        "loadCaseIndex",
+    ]
+
+    encoded = np.zeros((row_count, stride), dtype=np.float32)
+    encoded[:, 0] = normalized["Group ID"].to_numpy(dtype=np.float32)
+    encoded[:, 1] = normalized["Element ID"].to_numpy(dtype=np.float32)
+    encoded[:, 2] = normalized["Component No."].to_numpy(dtype=np.float32)
+    encoded[:, 3] = normalized["Step Type"].map(step_to_index).to_numpy(dtype=np.float32)
+    encoded[:, 4] = normalized["Performance Level"].to_numpy(dtype=np.float32)
+    encoded[:, 5] = normalized["M3"].to_numpy(dtype=np.float32)
+    encoded[:, 6] = normalized["R3"].to_numpy(dtype=np.float32)
+    encoded[:, 7] = normalized["Max Pos Deform DCRatio"].to_numpy(dtype=np.float32)
+    encoded[:, 8] = normalized["Max Neg Deform DCRatio"].to_numpy(dtype=np.float32)
+    encoded[:, 9] = normalized["Component Type"].map(component_type_to_index).to_numpy(dtype=np.float32)
+    encoded[:, 10] = normalized["Component Name"].map(component_name_to_index).to_numpy(dtype=np.float32)
+    encoded[:, 11] = normalized["Load Case"].map(load_case_to_index).to_numpy(dtype=np.float32)
+
+    step_type_counts = {str(k): int(v) for k, v in normalized["Step Type"].value_counts().sort_index().items()}
+    perf_counts = {str(int(k)): int(v) for k, v in normalized["Performance Level"].value_counts().sort_index().items()}
+    step_type_performance_counts = {}
+    grouped_counts = normalized.groupby(["Step Type", "Performance Level"]).size()
+    for (step_type, performance_level), count in grouped_counts.items():
+        if step_type not in step_type_performance_counts:
+            step_type_performance_counts[step_type] = {}
+        step_type_performance_counts[step_type][str(int(performance_level))] = int(count)
+
+    metrics_summary = {
+        "m3": summarize_hinge_metric(normalized["M3"]),
+        "r3": summarize_hinge_metric(normalized["R3"]),
+        "max_pos_deform_dc_ratio": summarize_hinge_metric(normalized["Max Pos Deform DCRatio"]),
+        "max_neg_deform_dc_ratio": summarize_hinge_metric(normalized["Max Neg Deform DCRatio"]),
+    }
+
+    null_counts = {
+        "m3": int(normalized["M3"].isna().sum()),
+        "r3": int(normalized["R3"].isna().sum()),
+        "max_pos_deform_dc_ratio": int(normalized["Max Pos Deform DCRatio"].isna().sum()),
+        "max_neg_deform_dc_ratio": int(normalized["Max Neg Deform DCRatio"].isna().sum()),
+    }
+
+    header = {
+        "type": "hinge_data",
+        "version": 1,
+        "count_rows": row_count,
+        "stride": stride,
+        "fields": fields,
+        "step_types": step_types,
+        "component_types": component_types,
+        "component_names": component_names,
+        "load_cases": load_cases,
+        "source_file": os.path.basename(hinge_file),
+        "source_format": Path(hinge_file).suffix.lower().lstrip("."),
+        "summary": {
+            "counts": {
+                "rows": row_count,
+                "elements": int(normalized["Element ID"].nunique()),
+                "element_components": int(normalized[["Element ID", "Component No."]].drop_duplicates().shape[0]),
+                "step_types": step_type_counts,
+                "performance_levels": perf_counts,
+                "step_type_by_performance_level": step_type_performance_counts,
+            },
+            "null_counts": null_counts,
+            "metrics": metrics_summary,
+        },
+    }
+
+    write_bld_file("hinge_data.bld", header, encoded.flatten().tobytes(), simulation_output_dir)
+
+
 def process_simulation_response_type(args):
     """Process a single response type for a simulation (for parallel execution)"""
     file_key, type_name, id_to_index, files_config, simulation_output_dir = args
@@ -967,7 +1250,9 @@ def process_simulation_parallel(building, simulation, id_to_index, building_outp
     print(f"\n{'-'*60}")
     print(f"Processing Simulation: {simulation_name}")
     print(f"Pattern: {simulation.get('file_pattern', 'Unknown')}")
-    print(f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, Acceleration: {simulation['has_acceleration']}")
+    print(
+        f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, " f"Acceleration: {simulation['has_acceleration']}, Hinge: {simulation.get('has_hinge_data', False)}"
+    )
     print(f"{'-'*60}")
 
     if not os.path.exists(simulation_output_dir):
@@ -998,6 +1283,10 @@ def process_simulation_parallel(building, simulation, id_to_index, building_outp
     if simulation["has_ground_motion"]:
         process_ground_motion(files_config, simulation_output_dir)
 
+    # Process non-time-series hinge data
+    if simulation.get("has_hinge_data"):
+        process_hinge_data(files_config, simulation_output_dir)
+
 
 def process_simulation(building, simulation, id_to_index, building_output_dir):
     """Process a single simulation for a building (sequential version)"""
@@ -1007,7 +1296,9 @@ def process_simulation(building, simulation, id_to_index, building_output_dir):
     print(f"\n{'-'*60}")
     print(f"Processing Simulation: {simulation_name}")
     print(f"Pattern: {simulation.get('file_pattern', 'Unknown')}")
-    print(f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, Acceleration: {simulation['has_acceleration']}")
+    print(
+        f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, " f"Acceleration: {simulation['has_acceleration']}, Hinge: {simulation.get('has_hinge_data', False)}"
+    )
     print(f"{'-'*60}")
 
     if not os.path.exists(simulation_output_dir):
@@ -1029,6 +1320,10 @@ def process_simulation(building, simulation, id_to_index, building_output_dir):
     # Process ground motion
     if simulation["has_ground_motion"]:
         process_ground_motion(files_config, simulation_output_dir)
+
+    # Process non-time-series hinge data
+    if simulation.get("has_hinge_data"):
+        process_hinge_data(files_config, simulation_output_dir)
 
 
 def process_complete_building(building):
@@ -1074,6 +1369,7 @@ if __name__ == "__main__":
     print(f"    - Acceleration: A_H1T_Entire.txt, A_H2T_Entire.txt, A_VT_Entire.txt (linear)")
     print(f"    - Acceleration: A_H1R_Entire.txt, A_H2R_Entire.txt, A_VR_Entire.txt (rotation)")
     print(f"    - Ground Motion: ground_motion.txt")
+    print(f"    - Hinge Results: Hinge results/hinge_data.csv (or first CSV in folder)")
     print(f"=" * 70)
 
     # Discover all buildings

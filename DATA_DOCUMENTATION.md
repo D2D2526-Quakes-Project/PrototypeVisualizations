@@ -176,6 +176,7 @@ _Additional Data Types_:
 - `Displacements/`: 6 files (H1R, H1T, H2R, H2T, VR, VT)
 - `Velocities/`: 6 files (same naming pattern with V\_ prefix)
 - `Accelerations/`: 6 files (same naming pattern with A\_ prefix)
+- `Hinge results/`: Element-level hinge response summaries (`hinge_data.csv` or `.xlsx`)
 
 _Naming Convention_:
 
@@ -183,6 +184,25 @@ _Naming Convention_:
 - `V`: Vertical direction
 - `R`, `T`: Likely "Right" and "Left" or different structural orientations
 - `Entire`: Full structure analysis (not just corners)
+
+#### Hinge Results Data (Non-Time-Series)
+
+`Hinge results/` contains element-level summaries used for thresholding and distribution analysis.
+
+- Typical files:
+  - `hinge_data.csv` (preferred and directly parsed)
+  - `.xlsx` exports (parsed when `openpyxl` is installed)
+- This data is **not frame/time indexed**.
+- Primary metrics:
+  - `M3` (moment demand)
+  - `R3` (rotation demand)
+  - `Max Pos Deform DCRatio`
+  - `Max Neg Deform DCRatio`
+- Key dimensions:
+  - `Element ID`
+  - `Component No.`
+  - `Step Type` (usually `Max` / `Min`)
+  - `Performance Level`
 
 ### 2. Binary Format Data (Binary15Story folder)
 
@@ -264,6 +284,47 @@ All `.bld` files follow a "Header-Body" architecture:
 - **Binary Body**: `float32` array `[x, y, z]` per frame
 - **Size**: `count_frames * 3 * 4` bytes
 - **Units**: Inches
+
+**D. Hinge Data (`hinge_data.bld`)**
+
+- **Purpose**: Non-time-series hinge demand summaries for thresholding and distributions
+- **JSON Schema**:
+  ```json
+  {
+    "type": "hinge_data",
+    "version": 1,
+    "count_rows": <integer>,
+    "stride": 12,
+    "fields": [
+      "groupId",
+      "elementId",
+      "componentNo",
+      "stepTypeIndex",
+      "performanceLevel",
+      "m3",
+      "r3",
+      "maxPosDeformDCRatio",
+      "maxNegDeformDCRatio",
+      "componentTypeIndex",
+      "componentNameIndex",
+      "loadCaseIndex"
+    ],
+    "step_types": ["Max", "Min", "..."],
+    "component_types": ["..."],
+    "component_names": ["..."],
+    "load_cases": ["..."],
+    "summary": {
+      "counts": { "...": "..." },
+      "null_counts": { "...": "..." },
+      "metrics": { "...": "..." }
+    }
+  }
+  ```
+- **Binary Body**: `float32` row-major table, `count_rows * stride` values
+- **Units**:
+  - `M3`: model output moment units from source export
+  - `R3`: radians (rotation demand)
+  - `Max Pos/Neg Deform DCRatio`: unitless demand-capacity ratio
 
 #### Technical Specifications
 
@@ -394,6 +455,7 @@ Contains older format data with similar structure to main 15story data but with 
 - Building folder with `node_data.csv` and `building_height.csv`
 - Simulation folders with response data files
 - Ground motion files (`ground_motion.txt`)
+- Optional hinge summary files in `Hinge results/` (`hinge_data.csv` preferred, `.xlsx` supported with `openpyxl`)
 
 **Output**:
 
@@ -402,12 +464,19 @@ Contains older format data with similar structure to main 15story data but with 
 - `velocity_lin.bld` / `velocity_rot.bld`: Time-series velocity data
 - `acceleration_lin.bld` / `acceleration_rot.bld`: Time-series acceleration data
 - `ground_motion.bld`: Ground motion acceleration data
+- `hinge_data.bld`: Non-time-series hinge summary data with metadata distributions
 
 **Running the Script**:
 
 ```bash
 cd scripts
 python generate_binary_data.py
+```
+
+If parsing `.xlsx` hinge files, install Python dependencies including `openpyxl`:
+
+```bash
+pip install -r requirements.txt
 ```
 
 ### File Naming Conventions

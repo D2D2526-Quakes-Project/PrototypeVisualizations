@@ -64,6 +64,10 @@
         "groundMotion": {
           "type": "string",
           "description": "Path to ground motion file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        },
+        "hingeData": {
+          "type": "string",
+          "description": "Path to hinge data file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
         }
       },
       "required": ["name", "folder", "size", "displacementLin", "groundMotion"]

@@ -43,6 +43,21 @@
 - [ ] Add hinge force/yielding visualization
 - [ ] Add beam moment diagrams
 
+### 6.1.1 Hinge Data Pipeline Integration (Current Sprint)
+
+- [x] Document hinge source formats (CSV/XLSX) and required fields
+- [x] Add Python hinge file discovery per simulation
+- [x] Add Python hinge normalization/validation (required columns, numeric coercion, key uniqueness)
+- [x] Generate `hinge_data.bld` with compact typed-array layout and metadata dictionaries
+- [x] Add hinge summary stats (min/max + distributions) into hinge metadata header
+- [x] Extend index typing/schema for simulation-level `hingeData` URL
+- [x] Add TypeScript hinge types and accessors
+- [x] Load optional `hingeData` from Cloudflare URLs in `useAnimationData`
+- [x] Parse and validate hinge binary payload in TypeScript parser
+- [x] Expose hinge data through `BuildingAnimationData` for threshold/distribution usage
+- [x] Update data documentation with hinge binary contract
+- [x] Run lint/typecheck validation for the integration
+
 ### 6.2 Multi-Simulation Comparison
 
 - [ ] Design data loading for multiple simulations
@@ -99,7 +114,7 @@
 
 - [x] Change the views menu popover to be a sidebar that takes up space next to the canvas
 
-- [ ] Update teh Damage Threshold panel to have a better layout and information. Remove the checkboxes and add a slider to set the threshold.
+- [ ] Update the Damage Threshold panel to have a better layout and information. Remove the checkboxes and add a slider to set the threshold.
 
 ### 9.2 Help & Documentation
 

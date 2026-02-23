@@ -4,6 +4,9 @@ import type {
   BuildingMetadata,
   ComputedStats,
   GroundMotionMetadata,
+  HingeDataAccessor,
+  HingeMetadata,
+  HingeSummary,
   IndexAccessor,
   SimulationMetadata,
   TimeIndexAccessor,
@@ -77,6 +80,7 @@ export async function buildAnimationDataFromBinary({
   rawVelRot,
   rawAccelLin,
   rawAccelRot,
+  rawHinge,
   onProgress,
 }: {
   rawBuilding: ArrayBuffer;
@@ -87,6 +91,7 @@ export async function buildAnimationDataFromBinary({
   rawVelRot?: ArrayBuffer;
   rawAccelLin?: ArrayBuffer;
   rawAccelRot?: ArrayBuffer;
+  rawHinge?: ArrayBuffer;
   onProgress?: (p: number, msg: string) => void;
 }): Promise<BuildingAnimationData> {
   // 1. Decompress all buffers
@@ -114,6 +119,9 @@ export async function buildAnimationDataFromBinary({
   if (onProgress) onProgress(80, "Decompressing Ground Motion...");
   const gmBuff = await ensureDecompressed(rawGM);
 
+  if (onProgress && rawHinge) onProgress(85, "Decompressing Hinge Data...");
+  const hingeBuff = rawHinge ? await ensureDecompressed(rawHinge) : undefined;
+
   // 2. Parse Building
   const bData = parseBlob<BuildingMetadata>(buildingBuff);
 
@@ -125,12 +133,28 @@ export async function buildAnimationDataFromBinary({
   const accelLinData = accelLinBuff ? parseBlob<SimulationMetadata>(accelLinBuff) : undefined;
   const accelRotData = accelRotBuff ? parseBlob<SimulationMetadata>(accelRotBuff) : undefined;
   const gmData = parseBlob<GroundMotionMetadata>(gmBuff);
+  const hingeData = hingeBuff ? parseBlob<HingeMetadata>(hingeBuff) : undefined;
 
   // 4. Verification
   if (dispLinData.metadata.count_nodes !== bData.metadata.count_nodes) {
     throw new Error(
       `Mismatch: Building has ${bData.metadata.count_nodes} nodes, but Displacement Linear file has ${dispLinData.metadata.count_nodes}`,
     );
+  }
+
+  if (hingeData) {
+    if (hingeData.metadata.type !== "hinge_data") {
+      throw new Error(`Mismatch: Expected hinge_data metadata type, got ${hingeData.metadata.type}`);
+    }
+    if (hingeData.metadata.count_rows < 0 || hingeData.metadata.stride <= 0) {
+      throw new Error("Invalid hinge metadata: count_rows must be >= 0 and stride must be > 0");
+    }
+    const expectedLength = hingeData.metadata.count_rows * hingeData.metadata.stride;
+    if (hingeData.bodyView.length < expectedLength) {
+      throw new Error(
+        `Invalid hinge payload length: expected at least ${expectedLength} float values, got ${hingeData.bodyView.length}`,
+      );
+    }
   }
 
   if (onProgress) onProgress(100, "Processing Complete");
@@ -155,6 +179,7 @@ export async function buildAnimationDataFromBinary({
     velRotData?.bodyView,
     accelLinData?.bodyView,
     accelRotData?.bodyView,
+    hingeData?.metadata.summary,
   );
 
   function makeAccessor(data: Float32Array, stride: number): IndexAccessor {
@@ -192,6 +217,41 @@ export async function buildAnimationDataFromBinary({
     };
   }
 
+  function makeHingeAccessor(hingeMetadata: HingeMetadata, body: Float32Array): HingeDataAccessor {
+    const stride = hingeMetadata.stride;
+    const count = hingeMetadata.count_rows;
+    const data = body.subarray(0, count * stride);
+
+    const valueAt = (row: Float32Array, index: number): number => row[index] ?? 0;
+
+    return {
+      data,
+      stride,
+      count,
+      metadata: hingeMetadata,
+      at(idx: number) {
+        return data.subarray(idx * stride, (idx + 1) * stride);
+      },
+      getRow(idx: number) {
+        const row = data.subarray(idx * stride, (idx + 1) * stride);
+        return {
+          groupId: Math.trunc(valueAt(row, 0)),
+          elementId: Math.trunc(valueAt(row, 1)),
+          componentNo: Math.trunc(valueAt(row, 2)),
+          stepTypeIndex: Math.trunc(valueAt(row, 3)),
+          performanceLevel: Math.trunc(valueAt(row, 4)),
+          m3: valueAt(row, 5),
+          r3: valueAt(row, 6),
+          maxPosDeformDCRatio: valueAt(row, 7),
+          maxNegDeformDCRatio: valueAt(row, 8),
+          componentTypeIndex: Math.trunc(valueAt(row, 9)),
+          componentNameIndex: Math.trunc(valueAt(row, 10)),
+          loadCaseIndex: Math.trunc(valueAt(row, 11)),
+        };
+      },
+    };
+  }
+
   // 5. Construct Final Object
   return {
     metadata,
@@ -204,6 +264,7 @@ export async function buildAnimationDataFromBinary({
     accelerationLin: accelLinData ? makeTimeAccessor(accelLinData.bodyView, metadata.nodeCount) : undefined,
     accelerationRot: accelRotData ? makeTimeAccessor(accelRotData.bodyView, metadata.nodeCount) : undefined,
     groundMotion: makeAccessor(gmData.bodyView, 3), // [frame][x,y,z]
+    hingeData: hingeData ? makeHingeAccessor(hingeData.metadata, hingeData.bodyView) : undefined,
   };
 }
 
@@ -217,6 +278,7 @@ function calculateStats(
   velRot?: Float32Array,
   accelLin?: Float32Array,
   accelRot?: Float32Array,
+  hingeSummary?: HingeSummary,
 ): ComputedStats {
   // --- 1. GEOMETRY BOUNDS ---
   let minX = Infinity,
@@ -752,5 +814,6 @@ function calculateStats(
     avgVelocityPerStory: avgVelPerStory,
     avgAccelerationPerStory: avgAccelPerStory,
     velocityPercentile90,
+    hinge: hingeSummary,
   } as ComputedStats;
 }

@@ -6,6 +6,7 @@ import {
   getAvailableHingeStepTypes,
   getHingeMetricValue,
   HINGE_METRIC_LABELS,
+  HINGE_METRIC_UNITS,
   type HingeMetricKey,
 } from "@/lib/hingeAnalysis";
 import type { EChartsOption } from "echarts";
@@ -61,8 +62,13 @@ export function HingeDistributionPanel() {
   }, [rows, stepType, performanceLevel]);
 
   const option = useMemo((): EChartsOption => {
+    const metricLabel = HINGE_METRIC_LABELS[metric];
+    const metricUnit = HINGE_METRIC_UNITS[metric];
+    const metricLabelWithUnit = metricUnit ? `${metricLabel} (${metricUnit})` : metricLabel;
+
     if (!histogram) {
       return {
+        legend: { data: ["Hinge Rows"] },
         xAxis: { type: "category", data: [] },
         yAxis: { type: "value" },
         series: [],
@@ -74,7 +80,14 @@ export function HingeDistributionPanel() {
 
     return {
       animation: false,
-      grid: { left: 56, right: 16, top: 18, bottom: 72 },
+      legend: {
+        top: 8,
+        right: 12,
+        textStyle: { fontSize: 10, color: "#525252" },
+        itemWidth: 10,
+        itemHeight: 10,
+      },
+      grid: { left: 64, right: 16, top: 36, bottom: 86 },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
@@ -85,15 +98,21 @@ export function HingeDistributionPanel() {
           const bin = histogram.bins[idx];
           if (!bin) return "";
           return [
-            `<div style="font-weight:600;margin-bottom:4px">${HINGE_METRIC_LABELS[metric]}</div>`,
-            `<div>Range: ${bin.x0.toFixed(4)} to ${bin.x1.toFixed(4)}</div>`,
+            `<div style="font-weight:600;margin-bottom:4px">Hinge Distribution</div>`,
+            `<div>${metricLabelWithUnit}</div>`,
+            `<div>Range Bin: ${bin.x0.toFixed(4)} to ${bin.x1.toFixed(4)}${metricUnit ? ` ${metricUnit}` : ""}</div>`,
             `<div>Count: ${first.value ?? bin.count}</div>`,
+            `<div style="margin-top:4px;color:#737373">Step: ${stepType} · Performance Level: ${String(performanceLevel)}</div>`,
           ].join("");
         },
       },
       xAxis: {
         type: "category",
         data: xLabels,
+        name: `Range Bin (${metricUnit || "metric"})`,
+        nameLocation: "middle",
+        nameGap: 64,
+        nameTextStyle: { color: "#737373", fontSize: 11 },
         axisLabel: {
           rotate: 45,
           color: "#525252",
@@ -103,7 +122,7 @@ export function HingeDistributionPanel() {
       },
       yAxis: {
         type: "value",
-        name: "Rows",
+        name: "Hinge Rows",
         nameTextStyle: { color: "#737373", fontSize: 11 },
         axisLabel: { color: "#525252", fontSize: 10 },
         splitLine: { lineStyle: { color: "#f0f0f0" } },
@@ -111,13 +130,14 @@ export function HingeDistributionPanel() {
       series: [
         {
           type: "bar",
+          name: "Hinge Rows",
           data: counts,
           itemStyle: { color: "#2563eb", borderRadius: [3, 3, 0, 0] },
           barMaxWidth: 20,
         },
       ],
     };
-  }, [histogram, metric]);
+  }, [histogram, metric, performanceLevel, stepType]);
 
   if (!hingeData) {
     return (
@@ -190,6 +210,16 @@ export function HingeDistributionPanel() {
         {histogram && <SummaryCard label="P95" value={histogram.p95.toFixed(3)} />}
         {histogram && <SummaryCard label="P99" value={histogram.p99.toFixed(3)} />}
         {histogram && <SummaryCard label="Max" value={histogram.max.toFixed(3)} />}
+      </div>
+
+      <div className="px-3 pt-2 pb-1 border-b border-neutral-100 bg-neutral-50/70">
+        <div className="text-xs font-medium text-neutral-700">
+          Histogram: {HINGE_METRIC_LABELS[metric]}
+          {HINGE_METRIC_UNITS[metric] ? ` (${HINGE_METRIC_UNITS[metric]})` : ""}
+        </div>
+        <div className="text-[10px] text-neutral-500">
+          X-axis: metric range bins · Y-axis: hinge row count · Tooltip shows exact bin bounds and active filters
+        </div>
       </div>
 
       <div className="flex-1 min-h-0">

@@ -61,7 +61,7 @@
   - Unify metric semantics, labels, color scale direction, and units so both views communicate the same quantity.
   - Prefer a single shared preview component / color-scale helper to avoid drift.
   - Decide whether legacy page should be upgraded, hidden, or replaced by the `Floor Torsion Map` panel.
-- [ ] Add required chart metadata across hinge/torsion plots (titles, axis labels, legends/color bars, tooltips)
+- [x] Add required chart metadata across hinge/torsion plots (titles, axis labels, legends/color bars, tooltips)
   - Apply project standard to every chart/plot: title, axis labels, legend or color bar, and tooltip.
   - `Hinge Distribution`: add x-axis title with selected metric + units, better tooltip context, and visible legend/annotation.
   - `Hinge Hotspots`: add chart subtitle/axis labels, stronger tooltip formatting, and unit labels in table headers (e.g. `R3 (rad)`).

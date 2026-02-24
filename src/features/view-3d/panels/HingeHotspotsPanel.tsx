@@ -1,4 +1,5 @@
 import { useAnimationData } from "@/lib/useAnimationData";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import {
   buildHingeEnrichedRows,
   getAvailableHingeStepTypes,
@@ -28,20 +29,49 @@ export function HingeHotspotsPanel() {
   const topChartOption = useMemo((): EChartsOption => {
     return {
       animation: false,
-      grid: { left: 94, right: 14, top: 16, bottom: 20 },
+      legend: {
+        top: 8,
+        right: 12,
+        textStyle: { fontSize: 10, color: "#525252" },
+        itemWidth: 10,
+        itemHeight: 10,
+      },
+      grid: { left: 104, right: 14, top: 34, bottom: 34 },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
+        formatter: (params: unknown) => {
+          if (!Array.isArray(params) || params.length === 0) return "";
+          const first = params[0] as { dataIndex?: number; value?: number };
+          const idx = first.dataIndex ?? 0;
+          const row = topRows[idx];
+          if (!row) return "";
+          return [
+            `<div style="font-weight:600;margin-bottom:4px">Beam-End Hinge Hotspot</div>`,
+            `<div>Element: E${row.elementId} (${row.end}-end)</div>`,
+            `<div>Step: ${row.stepType}</div>`,
+            `<div>Node: ${row.nodeIndex >= 0 ? row.nodeIndex : "unknown"}</div>`,
+            `<div>Critical D/C: ${(first.value ?? row.criticalDcr).toFixed(3)}</div>`,
+            `<div>R3: ${row.r3.toFixed(5)} rad</div>`,
+          ].join("");
+        },
       },
       xAxis: {
         type: "value",
-        name: "Critical D/C",
+        name: "Critical D/C Ratio",
+        nameLocation: "middle",
+        nameGap: 26,
+        nameTextStyle: { color: "#737373", fontSize: 11 },
         axisLabel: { color: "#525252", fontSize: 10 },
         splitLine: { lineStyle: { color: "#f0f0f0" } },
       },
       yAxis: {
         type: "category",
         data: topRows.map((row) => `E${row.elementId} ${row.end}`),
+        name: "Beam End",
+        nameLocation: "middle",
+        nameGap: 72,
+        nameTextStyle: { color: "#737373", fontSize: 11 },
         inverse: true,
         axisLabel: { color: "#525252", fontSize: 10 },
         axisLine: { lineStyle: { color: "#d4d4d4" } },
@@ -49,6 +79,7 @@ export function HingeHotspotsPanel() {
       series: [
         {
           type: "bar",
+          name: "Critical D/C",
           data: topRows.map((row) => row.criticalDcr),
           itemStyle: { color: "#dc2626", borderRadius: [0, 4, 4, 0] },
           barMaxWidth: 14,
@@ -60,8 +91,22 @@ export function HingeHotspotsPanel() {
   const breakdownChartOption = useMemo((): EChartsOption => {
     return {
       animation: false,
-      grid: { left: 42, right: 16, top: 22, bottom: 28 },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      grid: { left: 52, right: 16, top: 28, bottom: 42 },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: (params: unknown) => {
+          if (!Array.isArray(params) || params.length === 0) return "";
+          const idx = ((params[0] as { dataIndex?: number }).dataIndex ?? 0);
+          const level = breakdown.levels[idx];
+          const lines = [`<div style="font-weight:600;margin-bottom:4px">Performance Breakdown (PL${level})</div>`];
+          for (const item of params as Array<{ seriesName?: string; value?: number }>) {
+            lines.push(`<div>${item.seriesName}: ${item.value ?? 0}</div>`);
+          }
+          lines.push(`<div style="margin-top:4px;color:#737373">Step Filter: ${stepType}</div>`);
+          return lines.join("");
+        },
+      },
       legend: {
         top: 0,
         right: 0,
@@ -72,10 +117,16 @@ export function HingeHotspotsPanel() {
       xAxis: {
         type: "category",
         data: breakdown.levels.map(String),
+        name: "Performance Level",
+        nameLocation: "middle",
+        nameGap: 28,
+        nameTextStyle: { color: "#737373", fontSize: 11 },
         axisLabel: { color: "#525252", fontSize: 10 },
       },
       yAxis: {
         type: "value",
+        name: "Hinge Count",
+        nameTextStyle: { color: "#737373", fontSize: 11 },
         axisLabel: { color: "#525252", fontSize: 10 },
         splitLine: { lineStyle: { color: "#f0f0f0" } },
       },
@@ -85,7 +136,7 @@ export function HingeHotspotsPanel() {
         { name: ">=4", type: "bar", data: breakdown.exceeding4, itemStyle: { color: "#7f1d1d" }, barMaxWidth: 22 },
       ],
     };
-  }, [breakdown]);
+  }, [breakdown, stepType]);
 
   if (!hingeData) {
     return (
@@ -116,6 +167,9 @@ export function HingeHotspotsPanel() {
 
       <div className="px-3 py-2 border-b border-neutral-100">
         <div className="text-xs font-medium text-neutral-700 mb-1">Top Beam-End Hotspots (Critical D/C)</div>
+        <div className="text-[10px] text-neutral-500 mb-1">
+          X-axis: Critical D/C ratio · Y-axis: beam end (`E# I/J`) · Tooltip includes node and `R3 (rad)`
+        </div>
         <div className="h-48 rounded border border-neutral-100">
           <ReactECharts option={topChartOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
         </div>
@@ -123,6 +177,9 @@ export function HingeHotspotsPanel() {
 
       <div className="px-3 py-2 border-b border-neutral-100">
         <div className="text-xs font-medium text-neutral-700 mb-1">Counts (PL1 only)</div>
+        <div className="text-[10px] text-neutral-500 mb-1">
+          X-axis: performance level · Y-axis: count of hinges exceeding each D/C threshold
+        </div>
         <div className="h-36 rounded border border-neutral-100">
           <ReactECharts
             option={breakdownChartOption}
@@ -140,8 +197,8 @@ export function HingeHotspotsPanel() {
               <th className="px-2 py-1.5">End</th>
               <th className="px-2 py-1.5">Step</th>
               <th className="px-2 py-1.5 text-right">Node</th>
-              <th className="px-2 py-1.5 text-right">Crit D/C</th>
-              <th className="px-2 py-1.5 text-right">R3</th>
+              <th className="px-2 py-1.5 text-right">Crit D/C (ratio)</th>
+              <th className="px-2 py-1.5 text-right">R3 (rad)</th>
             </tr>
           </thead>
           <tbody>
@@ -152,7 +209,9 @@ export function HingeHotspotsPanel() {
                 <td className="px-2 py-1">{row.stepType}</td>
                 <td className="px-2 py-1 font-mono text-right">{row.nodeIndex >= 0 ? row.nodeIndex : "—"}</td>
                 <td className="px-2 py-1 font-mono text-right">{row.criticalDcr.toFixed(3)}</td>
-                <td className="px-2 py-1 font-mono text-right">{row.r3.toFixed(5)}</td>
+                <td className="px-2 py-1 font-mono text-right">
+                  <UnitTooltip value={row.r3} unit="rad" decimals={5} showConversions={false} />
+                </td>
               </tr>
             ))}
             {topRows.length === 0 && (

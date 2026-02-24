@@ -120,7 +120,28 @@ export interface AppState {
 export interface DataSelection {
   building: string;
   simulation: string;
+  optionalLoads?: Partial<OptionalDataLoadOptions>;
 }
+
+export interface OptionalDataLoadOptions {
+  beamData: boolean;
+  hingeData: boolean;
+  displacementRot: boolean;
+  velocityLin: boolean;
+  velocityRot: boolean;
+  accelerationLin: boolean;
+  accelerationRot: boolean;
+}
+
+export const OPTIONAL_DATA_LOAD_OPTION_KEYS = [
+  "beamData",
+  "hingeData",
+  "displacementRot",
+  "velocityLin",
+  "velocityRot",
+  "accelerationLin",
+  "accelerationRot",
+] as const satisfies readonly (keyof OptionalDataLoadOptions)[];
 
 export type SaveProfileKind = "system" | "user" | "ephemeral";
 
@@ -154,6 +175,15 @@ function isAppStateLike(value: unknown): value is AppState {
       typeof dataSelection.simulation !== "string"
     ) {
       return false;
+    }
+    if (dataSelection.optionalLoads !== undefined) {
+      if (!isRecord(dataSelection.optionalLoads)) return false;
+      for (const key of OPTIONAL_DATA_LOAD_OPTION_KEYS) {
+        const maybeValue = dataSelection.optionalLoads[key];
+        if (maybeValue !== undefined && typeof maybeValue !== "boolean") {
+          return false;
+        }
+      }
     }
   }
   return (
@@ -503,7 +533,9 @@ export function getDataSelectionFromUrlSearch(search: string): DataSelection | n
   const building = params.get("building");
   const simulation = params.get("simulation");
   if (!building || !simulation) return null;
-  return { building, simulation };
+
+  const optionalLoads = parseOptionalDataLoadsFromUrlParams(params);
+  return optionalLoads ? { building, simulation, optionalLoads } : { building, simulation };
 }
 
 export function getDataSelectionFromCurrentUrl(): DataSelection | null {
@@ -1022,6 +1054,68 @@ interface UrlStateResolution {
   state: AppState | null;
 }
 
+const OPTIONAL_LOADS_URL_PARAM = "optionalLoads";
+
+function parseOptionalDataLoadsFromUrlParams(params: URLSearchParams): Partial<OptionalDataLoadOptions> | undefined {
+  const encoded = params.get(OPTIONAL_LOADS_URL_PARAM);
+  if (!encoded) return undefined;
+  if (encoded.length !== OPTIONAL_DATA_LOAD_OPTION_KEYS.length) return undefined;
+
+  const parsed: Partial<OptionalDataLoadOptions> = {};
+  for (let i = 0; i < OPTIONAL_DATA_LOAD_OPTION_KEYS.length; i += 1) {
+    const char = encoded[i];
+    if (char !== "0" && char !== "1") return undefined;
+    parsed[OPTIONAL_DATA_LOAD_OPTION_KEYS[i]] = char === "1";
+  }
+  return parsed;
+}
+
+function encodeOptionalDataLoadsForUrl(optionalLoads?: Partial<OptionalDataLoadOptions>): string | null {
+  if (!optionalLoads) return null;
+
+  let hasAny = false;
+  const bits = OPTIONAL_DATA_LOAD_OPTION_KEYS.map((key) => {
+    const value = optionalLoads[key];
+    if (typeof value === "boolean") {
+      hasAny = true;
+      return value ? "1" : "0";
+    }
+    return "1";
+  }).join("");
+
+  return hasAny ? bits : null;
+}
+
+function applyDataSelectionToUrlParams(url: URL, selection?: DataSelection): void {
+  if (selection) {
+    url.searchParams.set("building", selection.building);
+    url.searchParams.set("simulation", selection.simulation);
+    const encodedOptionalLoads = encodeOptionalDataLoadsForUrl(selection.optionalLoads);
+    if (encodedOptionalLoads) {
+      url.searchParams.set(OPTIONAL_LOADS_URL_PARAM, encodedOptionalLoads);
+    } else {
+      url.searchParams.delete(OPTIONAL_LOADS_URL_PARAM);
+    }
+    return;
+  }
+
+  url.searchParams.delete("building");
+  url.searchParams.delete("simulation");
+  url.searchParams.delete(OPTIONAL_LOADS_URL_PARAM);
+}
+
+function mergeDataSelections(primary: DataSelection | null | undefined, override: DataSelection | null | undefined): DataSelection | null {
+  if (!primary && !override) return null;
+  if (!primary) return override ?? null;
+  if (!override) return primary;
+
+  return {
+    building: override.building,
+    simulation: override.simulation,
+    optionalLoads: override.optionalLoads ?? primary.optionalLoads,
+  };
+}
+
 const SHORT_LINK_PATH_REGEX = /^\/s\/([^/]+)$/;
 const SHARE_URL_PARAM = "share";
 const SHARE_API_BASE = import.meta.env.VITE_SHARE_API_BASE as string | undefined;
@@ -1074,7 +1168,7 @@ async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution>
   }
 
   if (state) {
-    const selection = explicitSelection ?? state.dataSelection;
+    const selection = mergeDataSelections(state.dataSelection, explicitSelection);
     if (selection) {
       state.dataSelection = selection;
     }
@@ -1088,13 +1182,7 @@ async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution>
     nextUrl.pathname = "/";
     nextUrl.searchParams.delete(SHARE_URL_PARAM);
     nextUrl.searchParams.delete("state");
-    if (selection) {
-      nextUrl.searchParams.set("building", selection.building);
-      nextUrl.searchParams.set("simulation", selection.simulation);
-    } else {
-      nextUrl.searchParams.delete("building");
-      nextUrl.searchParams.delete("simulation");
-    }
+    applyDataSelectionToUrlParams(nextUrl, selection);
 
     const nextHref = nextUrl.toString();
     if (nextHref !== currentUrl.toString()) {
@@ -1119,23 +1207,15 @@ export async function getStateFromCurrentUrl(): Promise<AppState | null> {
 
 export async function getSelectionFromCurrentUrlStateOrParams(): Promise<DataSelection | null> {
   const explicitSelection = getDataSelectionFromCurrentUrl();
-  if (explicitSelection) return explicitSelection;
-
   const state = await getStateFromCurrentUrl();
-  return state?.dataSelection ?? null;
+  return mergeDataSelections(state?.dataSelection, explicitSelection);
 }
 
 export function createShareableUrl(state: AppState): string {
   const url = new URL(window.location.href);
   const encodedState = encodeStateForUrl(state);
 
-  if (state.dataSelection) {
-    url.searchParams.set("building", state.dataSelection.building);
-    url.searchParams.set("simulation", state.dataSelection.simulation);
-  } else {
-    url.searchParams.delete("building");
-    url.searchParams.delete("simulation");
-  }
+  applyDataSelectionToUrlParams(url, state.dataSelection);
 
   url.searchParams.delete(SHARE_URL_PARAM);
 

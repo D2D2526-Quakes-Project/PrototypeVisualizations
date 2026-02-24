@@ -1,17 +1,15 @@
+import { memo, useMemo } from "react";
 import type { FloorTorsionSnapshot } from "@/features/view-3d/lib/floorTorsion";
 
-export function FloorTorsionPlanPreview({
-  snapshot,
-  fill,
-  className,
-  label,
-}: {
+type FloorTorsionPlanPreviewProps = {
   snapshot: FloorTorsionSnapshot;
   fill: string;
   className?: string;
   label?: string;
-}) {
-  const { bounds, polygon, rotationRad, storyId } = snapshot;
+};
+
+function FloorTorsionPlanStaticLayer({ snapshot }: { snapshot: FloorTorsionSnapshot }) {
+  const { bounds } = snapshot;
   const pad = Math.max(bounds.width, bounds.height) * 0.14 || 1;
   const viewMinX = bounds.minX - pad;
   const viewMinY = bounds.minY - pad;
@@ -20,21 +18,15 @@ export function FloorTorsionPlanPreview({
   const cx = bounds.minX + bounds.width / 2;
   const cy = bounds.minY + bounds.height / 2;
   const axisLen = Math.max(bounds.width, bounds.height) * 0.22 || 1;
-  const pointString = polygon.map(([x, y]) => `${x},${y}`).join(" ");
-  const referencePointString = snapshot.referencePolygon.map(([x, y]) => `${x},${y}`).join(" ");
+  const referencePointString = useMemo(
+    () => snapshot.referencePolygon.map(([x, y]) => `${x},${y}`).join(" "),
+    [snapshot.referencePolygon],
+  );
   const labelFontSize = Math.max(viewWidth, viewHeight) * 0.075;
   const labelInset = Math.max(pad * 0.35, Math.max(viewWidth, viewHeight) * 0.05);
 
   return (
-    <svg
-      className={className}
-      viewBox={`${viewMinX} ${viewMinY} ${viewWidth} ${viewHeight}`}
-      preserveAspectRatio="xMidYMid meet"
-      role="img"
-      aria-label={label ?? `Story ${storyId} floor plan rotation preview`}>
-      <title>
-        {`Story ${storyId}: top-down floor rotation ${rotationRad.toFixed(6)} rad (X-Y plan)`}
-      </title>
+    <>
       <rect
         x={viewMinX}
         y={viewMinY}
@@ -72,6 +64,37 @@ export function FloorTorsionPlanPreview({
         vectorEffect="non-scaling-stroke"
         strokeDasharray="3 2"
       />
+    </>
+  );
+}
+
+const MemoFloorTorsionPlanStaticLayer = memo(
+  FloorTorsionPlanStaticLayer,
+  (prev, next) => prev.snapshot.bounds === next.snapshot.bounds && prev.snapshot.referencePolygon === next.snapshot.referencePolygon,
+);
+
+function FloorTorsionPlanPreviewComponent({ snapshot, fill, className, label }: FloorTorsionPlanPreviewProps) {
+  const { bounds, polygon, rotationRad, storyId } = snapshot;
+  const pad = Math.max(bounds.width, bounds.height) * 0.14 || 1;
+  const viewMinX = bounds.minX - pad;
+  const viewMinY = bounds.minY - pad;
+  const viewWidth = Math.max(bounds.width + pad * 2, 1);
+  const viewHeight = Math.max(bounds.height + pad * 2, 1);
+  const cx = bounds.minX + bounds.width / 2;
+  const cy = bounds.minY + bounds.height / 2;
+  const pointString = useMemo(() => polygon.map(([x, y]) => `${x},${y}`).join(" "), [polygon]);
+
+  return (
+    <svg
+      className={className}
+      viewBox={`${viewMinX} ${viewMinY} ${viewWidth} ${viewHeight}`}
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label={label ?? `Story ${storyId} floor plan rotation preview`}>
+      <title>
+        {`Story ${storyId}: top-down floor rotation ${rotationRad.toFixed(6)} rad (X-Y plan)`}
+      </title>
+      <MemoFloorTorsionPlanStaticLayer snapshot={snapshot} />
       <polygon
         points={pointString}
         fill={fill}
@@ -84,3 +107,5 @@ export function FloorTorsionPlanPreview({
     </svg>
   );
 }
+
+export const FloorTorsionPlanPreview = memo(FloorTorsionPlanPreviewComponent);

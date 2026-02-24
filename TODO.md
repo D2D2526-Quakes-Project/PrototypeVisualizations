@@ -31,6 +31,40 @@
 - [ ] Add color bar legends to charts
 - [x] Add `Floor Torsion Map` magic panel with per-story top-down SVG previews colored by rotation
 - [x] Add floor torsion preview + rotation values to slice panel
+- [ ] Fix `Damage Thresholds` warning-crossing time computation
+  - Current bug: crossing time stores `storyIndex` instead of `frameIndex`, then converts that value to seconds.
+  - Also fix frame-0 behavior and use explicit `null` for "not crossed yet" so the UI can distinguish "0.00 s" from "never crossed".
+  - Validate against `animationData.metadata.dt` and a few known stories/corners.
+- [ ] Fix `Damage Thresholds` summary corner ordering mismatch
+  - Current bug: summary iterates corners as `NE, NW, SW, SE` but reads `storyDrift` values by array index as if the order matched.
+  - Confirm the canonical corner order returned by `storyDrift.getStoryDrift(...)` and map values by corner name instead of implicit index.
+  - Re-verify colors and values in both summary table and `ThresholdBuilding`.
+- [ ] Harden `Damage Thresholds` color normalization for zero-peak / near-zero stories
+  - Avoid `drift / peak` division by zero in `ThresholdBuilding` when peak drift is zero/missing.
+  - Define fallback color behavior for non-finite ratios (e.g. neutral color + tooltip note).
+  - Confirm no `NaN` / `Infinity` reaches Culori color interpolation.
+- [ ] Redesign `Damage Thresholds` summary layout for scanability and interpretation
+  - Replace dense row grid with clearer per-story grouping (cards or compact subtable) that keeps all 4 corners visually aligned.
+  - Add explicit legend/color scale explaining what slab/tile colors represent (signed ratio vs threshold state).
+  - Make threshold-crossing status visually obvious: crossed/not crossed, crossing time (`s`), and current-vs-threshold context.
+  - Keep unit labels/tooltips consistent (`%` for drift ratio, `s` for crossing time).
+- [ ] Rework legacy `Floor Torsion` page to use actual torsion rotation metrics (`buildFloorTorsionSnapshot`)
+  - Current issue: page is labeled "torsion" but colors floors by average displacement magnitude, not plan rotation.
+  - Reuse `features/view-3d/lib/floorTorsion.ts` (`buildFloorTorsionSnapshot`, peak helpers) so the page and dock panel use the same torsion definition (`rad`).
+  - Update labels, captions, and tooltips to explicitly state rotation units (`rad`) and what positive/negative sign means.
+- [ ] Fix legacy `Floor Torsion` story SVG preview geometry generation
+  - Bounds bug: `maxPoint` uses `Number.MIN_VALUE` (tiny positive number) instead of a negative sentinel; breaks viewBox sizing for negative coordinates.
+  - Geometry bug: preview comments say "convex hull" but code uses raw node order, which can self-intersect / misrepresent floor shape.
+  - Use stable polygon generation (actual hull or rectangle/reference polygon from torsion utilities) and verify all stories render.
+- [ ] Align floor torsion experiences (legacy page vs `Floor Torsion Map` panel)
+  - Unify metric semantics, labels, color scale direction, and units so both views communicate the same quantity.
+  - Prefer a single shared preview component / color-scale helper to avoid drift.
+  - Decide whether legacy page should be upgraded, hidden, or replaced by the `Floor Torsion Map` panel.
+- [ ] Add required chart metadata across hinge/torsion plots (titles, axis labels, legends/color bars, tooltips)
+  - Apply project standard to every chart/plot: title, axis labels, legend or color bar, and tooltip.
+  - `Hinge Distribution`: add x-axis title with selected metric + units, better tooltip context, and visible legend/annotation.
+  - `Hinge Hotspots`: add chart subtitle/axis labels, stronger tooltip formatting, and unit labels in table headers (e.g. `R3 (rad)`).
+  - `Floor Torsion` views: ensure color bars are present and labeled with signed rotation range in `rad`.
 
 ---
 
@@ -70,6 +104,14 @@
 - [x] Add beam connectivity mapping (`beam_data.bld`) and hinge beam-index pairing for localized rendering groundwork
 - [ ] Use `beam_data.bld` + story node membership to localize hinge rows to floors/slices in UI
 - [ ] Add hinge/beam mapping diagnostics (missing joins, duplicate side rows, missing Max/Min side entries) to generation summary
+- [ ] Preserve and expose hinge `Performance Level` from source data instead of hardcoding PL1 in analysis helpers/panels
+  - Current behavior hardcodes `performanceLevel: 1` in `buildHingeEnrichedRows`, so filters/labels imply more fidelity than the data model currently carries.
+  - Extend parser + hinge metadata/accessor to retain source performance level(s) when available.
+  - Update panel filter options and breakdown labels to reflect real available values (and gracefully degrade if absent).
+- [ ] Add unit labels/tooltips for hinge metrics (`R3` in rad, `M3` unit provenance/label) in charts and tables
+  - Use `HINGE_METRIC_UNITS` consistently in chart axis names, tooltips, summary cards, and table headers.
+  - Clarify `M3` unit source/provenance from hinge exports before exposing unit text in UI (avoid incorrect units).
+  - Add `UnitTooltip` where values have known units and keep static/dimensionless metrics explicitly labeled as such.
 
 ### 6.1.3 Hinge Analysis Panels (Next Candidates)
 
@@ -141,7 +183,8 @@
 
 - [x] Change the views menu popover to be a sidebar that takes up space next to the canvas
 
-- [ ] Update the Damage Threshold panel to have a better layout and information. Remove the checkboxes and add a slider to set the threshold.
+- [x] Update the Damage Threshold panel to have a better layout and information. Remove the checkboxes and add a slider to set the threshold.
+- [ ] Fix `Hide All` floor visibility action being overridden by empty-visible-floors fallback in floor visibility context
 
 ### 9.2 Help & Documentation
 

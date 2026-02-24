@@ -4,6 +4,7 @@ import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { Slider } from "@/components/ui/slider";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -40,10 +41,14 @@ export function DamageThresholdPanel() {
   const { animationData } = useAnimationData();
   const { storyOrder, dt } = animationData.metadata;
   const { frameIndex, playing } = usePlayback();
-  const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
+  const { visibleFloors, setFloorVisible, showAllFloors, hideAllFloors } = useFloorVisibility();
   const { thresholds, setThreshold } = useThresholds();
 
   const { storyDrift, peakStoryDrift } = animationData.precomputed;
+  const maxDriftThreshold = Math.max(
+    1,
+    Math.ceil(((animationData.precomputed.maxStoryDrift ?? thresholds.interstoryDrift ?? 0.5) * 1.2) / 0.05) * 0.05,
+  );
   const reversedStories = useMemo(
     () => storyOrder.map((storyId, storyIndex) => ({ storyId, storyIndex })).toReversed(),
     [storyOrder],
@@ -96,6 +101,69 @@ export function DamageThresholdPanel() {
     return storyThresholds;
   }, [storyDrift, thresholds.interstoryDrift, storyOrder]);
 
+  const visibleStoryRange = useMemo<[number, number]>(() => {
+    const visibleIndices = storyOrder
+      .map((storyId, storyIndex) => (visibleFloors.has(storyId) ? storyIndex : -1))
+      .filter((storyIndex) => storyIndex >= 0);
+
+    if (visibleIndices.length === 0) {
+      return [0, Math.max(storyOrder.length - 1, 0)];
+    }
+
+    return [visibleIndices[0], visibleIndices[visibleIndices.length - 1]];
+  }, [storyOrder, visibleFloors]);
+
+  const hasNonContiguousVisibility = useMemo(() => {
+    const [startIndex, endIndex] = visibleStoryRange;
+    for (let storyIndex = startIndex; storyIndex <= endIndex; storyIndex++) {
+      if (!visibleFloors.has(storyOrder[storyIndex])) {
+        return true;
+      }
+    }
+    return false;
+  }, [storyOrder, visibleFloors, visibleStoryRange]);
+
+  const visibleDamageSummary = useMemo(() => {
+    let currentExceededCorners = 0;
+    let everExceededCorners = 0;
+    let visibleStoryCount = 0;
+    const storyStride = storyDrift.frameCount * storyDrift.cornerCount;
+
+    for (let storyIndex = 0; storyIndex < storyOrder.length; storyIndex++) {
+      const storyId = storyOrder[storyIndex];
+      if (!visibleFloors.has(storyId)) continue;
+      visibleStoryCount += 1;
+
+      const thresholdFrames = storyThresholdFrame.get(storyId);
+      if (thresholdFrames) {
+        if (thresholdFrames.NW !== null) everExceededCorners += 1;
+        if (thresholdFrames.NE !== null) everExceededCorners += 1;
+        if (thresholdFrames.SW !== null) everExceededCorners += 1;
+        if (thresholdFrames.SE !== null) everExceededCorners += 1;
+      }
+
+      const frameBase = storyIndex * storyStride + frameIndex * storyDrift.cornerCount;
+      for (let cornerIndex = 0; cornerIndex < storyDrift.cornerCount; cornerIndex++) {
+        if (storyDrift.data[frameBase + cornerIndex] > thresholds.interstoryDrift) {
+          currentExceededCorners += 1;
+        }
+      }
+    }
+
+    return { currentExceededCorners, everExceededCorners, visibleStoryCount };
+  }, [frameIndex, storyDrift, storyOrder, storyThresholdFrame, thresholds.interstoryDrift, visibleFloors]);
+
+  const applyVisibleStoryRange = (range: number[]) => {
+    const [rawStart, rawEnd] = range;
+    const start = Math.max(0, Math.min(Math.round(rawStart ?? 0), storyOrder.length - 1));
+    const end = Math.max(start, Math.min(Math.round(rawEnd ?? start), storyOrder.length - 1));
+
+    storyOrder.forEach((storyId, storyIndex) => {
+      const inRange = storyIndex >= start && storyIndex <= end;
+      setFloorVisible(storyId, inRange);
+    });
+  };
+
   return (
     <div className="h-full w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar">
       <div>
@@ -104,43 +172,107 @@ export function DamageThresholdPanel() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="flex flex-col">
-          <span className="font-semibold">
-            Warning Threshold:{" "}
-            <UnitTooltip interactive={!playing} value={thresholds.interstoryDrift * 100} unit="%" decimals={3} />
-          </span>
-          <input
-            type="range"
-            min="0"
-            max="0.05"
-            step="0.001"
-            value={thresholds.interstoryDrift}
-            onChange={(e) => setThreshold("interstoryDrift", parseFloat(e.target.value))}
+        <div className="rounded-lg border border-neutral-200 bg-white p-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold">Warning Threshold</span>
+            <span className="font-mono text-sm">
+              <UnitTooltip interactive={!playing} value={thresholds.interstoryDrift} unit="%" decimals={3} />
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-neutral-600">
+            Floors and corners are flagged when interstory drift exceeds this percent threshold.
+          </p>
+          <Slider
+            value={[thresholds.interstoryDrift]}
+            min={0}
+            max={maxDriftThreshold}
+            step={0.01}
+            onValueChange={(values) => setThreshold("interstoryDrift", values[0] ?? thresholds.interstoryDrift)}
+            className="mt-3"
+            aria-label="Interstory drift warning threshold percent"
           />
-        </label>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
+            <span>0%</span>
+            <span>
+              Max panel range: <UnitTooltip interactive={!playing} value={maxDriftThreshold} unit="%" decimals={2} />
+            </span>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1">
+            {[0.2, 0.5, 1.0].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setThreshold("interstoryDrift", preset)}
+                className={`rounded border px-2 py-1 text-xs transition-colors ${
+                  Math.abs(thresholds.interstoryDrift - preset) < 0.001
+                    ? "border-blue-300 bg-blue-50 text-blue-700"
+                    : "border-neutral-300 bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                }`}>
+                {preset.toFixed(1)}%
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+            <div className="text-neutral-500">Visible Floors</div>
+            <div className="font-mono text-sm text-neutral-800">{visibleDamageSummary.visibleStoryCount}</div>
+          </div>
+          <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+            <div className="text-neutral-500">Current Exceedances</div>
+            <div className="font-mono text-sm text-neutral-800">{visibleDamageSummary.currentExceededCorners}</div>
+          </div>
+          <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+            <div className="text-neutral-500">Ever Exceeded</div>
+            <div className="font-mono text-sm text-neutral-800">{visibleDamageSummary.everExceededCorners}</div>
+          </div>
+        </div>
       </div>
 
       <div className="border-t pt-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <h3 className="text-lg font-bold">Floor Visibility</h3>
-          <button
-            onClick={visibleFloors.size === storyOrder.length ? hideAllFloors : showAllFloors}
-            className="text-xs px-2 py-1 bg-neutral-200 hover:bg-neutral-300 rounded">
-            {visibleFloors.size === storyOrder.length ? "Hide All" : "Show All"}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={showAllFloors}
+              className="rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs hover:bg-neutral-200">
+              Show All
+            </button>
+            <button
+              type="button"
+              onClick={hideAllFloors}
+              className="rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs hover:bg-neutral-200">
+              Hide All
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-4 gap-1">
-          {reversedStories.map(({ storyId }) => (
-            <label key={storyId} className="flex items-center gap-2 cursor-pointer hover:bg-neutral-100 p-1 rounded">
-              <input
-                type="checkbox"
-                checked={visibleFloors.has(storyId)}
-                onChange={() => toggleFloor(storyId)}
-                className="cursor-pointer"
-              />
-              <span className="font-mono text-sm">{storyId}</span>
-            </label>
-          ))}
+        <div className="rounded-lg border border-neutral-200 bg-white p-3">
+          <div className="flex items-center justify-between gap-2 text-xs text-neutral-600">
+            <span>Visible floor band (contiguous)</span>
+            <span className="font-mono">
+              {storyOrder[visibleStoryRange[0]]} - {storyOrder[visibleStoryRange[1]]}
+            </span>
+          </div>
+          <Slider
+            value={visibleStoryRange}
+            min={0}
+            max={Math.max(storyOrder.length - 1, 0)}
+            step={1}
+            onValueChange={applyVisibleStoryRange}
+            className="mt-3"
+            aria-label="Visible floor range"
+          />
+          <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
+            <span>{storyOrder[0]}</span>
+            <span>{storyOrder.at(-1)}</span>
+          </div>
+          {hasNonContiguousVisibility && (
+            <p className="mt-2 text-xs text-amber-700">
+              Current floor visibility contains gaps from other controls. Moving the slider will normalize it to one band.
+            </p>
+          )}
         </div>
       </div>
 

@@ -80,6 +80,20 @@ const maxColorScale = [
 const RESOLUTION_OPTIONS = [50, 100, 200, 400, 800, 1600] as const;
 type Resolution = (typeof RESOLUTION_OPTIONS)[number];
 
+function sanitizeSelectedCorners(value: unknown): Corner[] {
+  if (!Array.isArray(value)) return ["Max"];
+
+  const valid = value.filter((v): v is Corner => typeof v === "string" && (CORNER_OPTIONS as readonly string[]).includes(v));
+  if (valid.length === 0) return ["Max"];
+
+  if (valid.includes("Max")) return ["Max"];
+  return Array.from(new Set(valid));
+}
+
+function sanitizeResolution(value: unknown): Resolution {
+  return RESOLUTION_OPTIONS.includes(value as Resolution) ? (value as Resolution) : 200;
+}
+
 export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
@@ -94,8 +108,8 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const savedState = savedPanelState?.type === "storyDriftHeatmap" ? savedPanelState.state : defaultState;
 
-  const [selectedCorners, setSelectedCorner] = useState<Corner[]>(savedState.selectedCorners as Corner[]);
-  const [resolution, setResolution] = useState<Resolution>(savedState.resolution as Resolution);
+  const [selectedCorners, setSelectedCorner] = useState<Corner[]>(() => sanitizeSelectedCorners(savedState.selectedCorners));
+  const [resolution, setResolution] = useState<Resolution>(() => sanitizeResolution(savedState.resolution));
   const panelIdRef = useRef(panelId);
 
   useEffect(() => {
@@ -106,6 +120,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   }, [selectedCorners, resolution, setPanelState]);
 
   const isMaxSelected = selectedCorners.includes("Max");
+  const legendCorner = selectedCorners[0] ?? "Max";
   const visibleStories = useMemo(() => getVisibleStoryOrder().slice(1), [getVisibleStoryOrder]);
 
   const heatmapData = useMemo(() => {
@@ -156,12 +171,17 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
       );
     }
 
+    if (!Number.isFinite(maxValue) || maxValue <= 0) {
+      maxValue = 1;
+    }
+
     return {
       data,
       yAxisLabels,
       maxValue,
       timeStep,
       frameCount: Math.ceil(animationData.metadata.frameCount / timeStep),
+      hasVisibleStories: visibleStories.length > 0,
     };
   }, [animationData, visibleStories, selectedCorners, resolution, isMaxSelected]);
 
@@ -233,13 +253,14 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
         orient: "vertical",
         right: 5,
         top: "center",
+        show: heatmapData.hasVisibleStories,
         inRange: {
           color: isMaxSelected ? maxColorScale : ["#fffffff0", "#FFFFFF00"],
           opacity: 1,
         },
         controller: {
           inRange: {
-            color: cornerColor[selectedCorners[0]],
+            color: cornerColor[legendCorner],
             opacity: 1,
           },
         },
@@ -263,7 +284,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
       ],
       animation: false,
     };
-  }, [heatmapData, animationData.metadata.dt, selectedCorners, isMaxSelected]);
+  }, [heatmapData, animationData.metadata.dt, selectedCorners, isMaxSelected, legendCorner]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
@@ -286,7 +307,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
       <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0 flex items-center justify-between">
         <div className="text-sm text-neutral-700">
           <span className="font-medium">Story Drift Heatmap</span>
-          <span className="text-neutral-400 ml-2">- {selectedCorners.join(", ")} drift over time time</span>
+          <span className="text-neutral-400 ml-2">- {selectedCorners.join(", ")} drift over time</span>
         </div>
         <div className="flex items-center gap-1">
           <ToggleGroup
@@ -326,6 +347,11 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
           style={{ height: "100%", width: "100%" }}
           opts={{ renderer: "canvas" }}
         />
+        {!heatmapData.hasVisibleStories && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 text-sm text-neutral-600 pointer-events-none">
+            No visible stories above ground. Show at least one non-ground floor to render the heatmap.
+          </div>
+        )}
         <div
           ref={playheadRef}
           className="absolute top-0 bottom-8 w-0.5 bg-red-500 pointer-events-none"

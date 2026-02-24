@@ -29,6 +29,11 @@ const colorMap = interpolate(
   "oklab",
 );
 
+const _STORY_DRIFT_CORNER_ORDER = ["NW", "NE", "SW", "SE"] as const;
+const SUMMARY_DISPLAY_CORNER_ORDER = ["NE", "NW", "SW", "SE"] as const;
+
+type CornerThresholdFrame = Record<(typeof _STORY_DRIFT_CORNER_ORDER)[number], number | null>;
+
 export function ViewDamageThreshold() {
   const { animationData } = useAnimationData();
   const { storyOrder } = animationData.metadata;
@@ -61,16 +66,11 @@ export function ViewDamageThreshold() {
   };
 
   const storyThresholdFrame = useMemo(() => {
-    const thresholds = new Map();
+    const thresholds = new Map<string, CornerThresholdFrame>();
 
     for (let i = 0; i < storyDrift.storyCount; i++) {
       const storyId = storyOrder[i];
-      const time = {
-        NW: 0,
-        NE: 0,
-        SW: 0,
-        SE: 0,
-      };
+      const time: CornerThresholdFrame = { NW: null, NE: null, SW: null, SE: null };
 
       for (let f = 0; f < storyDrift.frameCount; f++) {
         const story = storyDrift.getStoryDrift(i, f);
@@ -79,19 +79,19 @@ export function ViewDamageThreshold() {
         const sw = story[2];
         const se = story[3];
 
-        if (nw > warningThreshold && !time.NW) {
-          time.NW = i;
+        if (nw > warningThreshold && time.NW === null) {
+          time.NW = f;
         }
-        if (ne > warningThreshold && !time.NE) {
-          time.NE = i;
+        if (ne > warningThreshold && time.NE === null) {
+          time.NE = f;
         }
-        if (sw > warningThreshold && !time.SW) {
-          time.SW = i;
+        if (sw > warningThreshold && time.SW === null) {
+          time.SW = f;
         }
-        if (se > warningThreshold && !time.SE) {
-          time.SE = i;
+        if (se > warningThreshold && time.SE === null) {
+          time.SE = f;
         }
-        if (time.NW !== 0 && time.NE !== 0 && time.SW !== 0 && time.SE !== 0) {
+        if (time.NW !== null && time.NE !== null && time.SW !== null && time.SE !== null) {
           break;
         }
       }
@@ -195,21 +195,30 @@ export function ViewDamageThreshold() {
 
                 if (!corners || !peaks || !thresholds) return null;
 
+                const currentByCorner = {
+                  NW: corners[0],
+                  NE: corners[1],
+                  SW: corners[2],
+                  SE: corners[3],
+                } satisfies Record<(typeof _STORY_DRIFT_CORNER_ORDER)[number], number>;
+
                 return (
                   <React.Fragment key={storyId}>
                     <div className="font-mono text-sm">{storyId}</div>
                     <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] items-center p-2 gap-2">
-                      {(["NE", "NW", "SW", "SE"] as const).map((corner, ci) => {
+                      {SUMMARY_DISPLAY_CORNER_ORDER.map((corner) => {
                         const thresholdFrame = thresholds[corner];
                         const peak = peaks[corner];
-                        const current = corners[ci];
+                        const current = currentByCorner[corner];
+                        const peakSafe = Math.max(Math.abs(peak), 1e-12);
+                        const ratio = Math.max(-1, Math.min(1, current / peakSafe));
 
                         return (
                           <React.Fragment key={corner}>
                             <div
                               className="h-4 aspect-square rotate-45"
                               style={{
-                                background: formatHex(colorMap(current / peak)),
+                                background: formatHex(colorMap(ratio)),
                               }}
                             />
                             <div className="font-mono">{corner}</div>

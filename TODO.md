@@ -31,15 +31,16 @@
 - [ ] Add color bar legends to charts
 - [x] Add `Floor Torsion Map` magic panel with per-story top-down SVG previews colored by rotation
 - [x] Add floor torsion preview + rotation values to slice panel
-- [ ] Fix `Damage Thresholds` warning-crossing time computation
+
+- [x] Fix `Damage Thresholds` warning-crossing time computation
   - Current bug: crossing time stores `storyIndex` instead of `frameIndex`, then converts that value to seconds.
   - Also fix frame-0 behavior and use explicit `null` for "not crossed yet" so the UI can distinguish "0.00 s" from "never crossed".
   - Validate against `animationData.metadata.dt` and a few known stories/corners.
-- [ ] Fix `Damage Thresholds` summary corner ordering mismatch
+- [x] Fix `Damage Thresholds` summary corner ordering mismatch
   - Current bug: summary iterates corners as `NE, NW, SW, SE` but reads `storyDrift` values by array index as if the order matched.
   - Confirm the canonical corner order returned by `storyDrift.getStoryDrift(...)` and map values by corner name instead of implicit index.
   - Re-verify colors and values in both summary table and `ThresholdBuilding`.
-- [ ] Harden `Damage Thresholds` color normalization for zero-peak / near-zero stories
+- [x] Harden `Damage Thresholds` color normalization for zero-peak / near-zero stories
   - Avoid `drift / peak` division by zero in `ThresholdBuilding` when peak drift is zero/missing.
   - Define fallback color behavior for non-finite ratios (e.g. neutral color + tooltip note).
   - Confirm no `NaN` / `Infinity` reaches Culori color interpolation.

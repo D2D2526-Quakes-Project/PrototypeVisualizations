@@ -64,11 +64,11 @@ export function ThresholdBuilding({
             const peaks = peakStoryDrift[storyId] ?? { NW: 0, NE: 0, SW: 0, SE: 0 };
 
             const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
-            const nodePositions = cornerOrder.map((corner) => {
+            const nodePositions = cornerOrder.map((corner, cornerIdx) => {
               const nodeId = corners[corner];
               return {
                 pos: getNodePosition(nodeId),
-                drift: drifts[cornerOrder.indexOf(corner)],
+                drift: drifts[cornerIdx],
                 peak: peaks[corner],
               };
             });
@@ -86,7 +86,9 @@ export function ThresholdBuilding({
             const vertexOrder = [0, 1, 2, 1, 3, 2];
 
             vertexOrder.forEach((cornerIdx, i) => {
-              const ratio = nodePositions[cornerIdx].drift / nodePositions[cornerIdx].peak;
+              const { drift, peak } = nodePositions[cornerIdx];
+              const ratio =
+                Number.isFinite(peak) && Math.abs(peak) > 1e-12 ? Math.max(-1, Math.min(1, drift / peak)) : 0;
               const colorHex = formatHex(colorMap(ratio));
               const rgb = rgbConverter(colorHex);
 

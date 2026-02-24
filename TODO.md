@@ -44,7 +44,7 @@
   - Avoid `drift / peak` division by zero in `ThresholdBuilding` when peak drift is zero/missing.
   - Define fallback color behavior for non-finite ratios (e.g. neutral color + tooltip note).
   - Confirm no `NaN` / `Infinity` reaches Culori color interpolation.
-- [ ] Redesign `Damage Thresholds` summary layout for scanability and interpretation
+- [x] Redesign `Damage Thresholds` summary layout for scanability and interpretation
   - Replace dense row grid with clearer per-story grouping (cards or compact subtable) that keeps all 4 corners visually aligned.
   - Add explicit legend/color scale explaining what slab/tile colors represent (signed ratio vs threshold state).
   - Make threshold-crossing status visually obvious: crossed/not crossed, crossing time (`s`), and current-vs-threshold context.

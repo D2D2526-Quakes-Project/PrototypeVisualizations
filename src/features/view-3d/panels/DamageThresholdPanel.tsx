@@ -1,5 +1,5 @@
 import { formatHex, interpolate } from "culori";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
@@ -36,6 +36,52 @@ const CORNER_DATA_INDEX: Record<CornerName, number> = {
 
 type CornerName = "NW" | "NE" | "SW" | "SE";
 type ThresholdCrossingFrames = Record<CornerName, number | null>;
+
+function SummaryCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded border border-neutral-300 bg-white p-2">
+      <div className="text-[10px] uppercase tracking-wide text-neutral-500">{label}</div>
+      <div className="font-mono text-sm text-neutral-900">{value}</div>
+      {hint ? <div className="text-[10px] text-neutral-500 mt-0.5">{hint}</div> : null}
+    </div>
+  );
+}
+
+function ThresholdStatusPill({
+  currentExceeded,
+  everExceeded,
+}: {
+  currentExceeded: boolean;
+  everExceeded: boolean;
+}) {
+  if (currentExceeded) {
+    return (
+      <span className="rounded border border-red-300 bg-red-100 px-1.5 py-0.5 text-[10px] text-red-900">
+        Exceeding Now
+      </span>
+    );
+  }
+  if (everExceeded) {
+    return (
+      <span className="rounded border border-yellow-300 bg-yellow-100 px-1.5 py-0.5 text-[10px] text-yellow-900">
+        Crossed Earlier
+      </span>
+    );
+  }
+  return (
+    <span className="rounded border border-neutral-300 bg-neutral-50 px-1.5 py-0.5 text-[10px] text-neutral-600">
+      Not Crossed
+    </span>
+  );
+}
 
 export function DamageThresholdPanel() {
   const { animationData } = useAnimationData();
@@ -131,6 +177,12 @@ export function DamageThresholdPanel() {
     return { currentExceededCorners, everExceededCorners, visibleStoryCount };
   }, [frameIndex, storyDrift, storyOrder, storyThresholdFrame, thresholds.interstoryDrift, visibleFloors]);
 
+  const visibleCornerCapacity = Math.max(visibleDamageSummary.visibleStoryCount * DISPLAY_CORNERS.length, 0);
+  const currentExceededPct =
+    visibleCornerCapacity > 0 ? (visibleDamageSummary.currentExceededCorners / visibleCornerCapacity) * 100 : 0;
+  const everExceededPct =
+    visibleCornerCapacity > 0 ? (visibleDamageSummary.everExceededCorners / visibleCornerCapacity) * 100 : 0;
+
   return (
     <div className="h-full w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar">
       <div>
@@ -166,32 +218,65 @@ export function DamageThresholdPanel() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded border border-neutral-300 bg-neutral-50 p-2">
-            <div className="text-neutral-500">Current Exceedances</div>
-            <div className="font-mono text-sm text-neutral-800">{visibleDamageSummary.currentExceededCorners}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <SummaryCard
+            label="Visible Stories"
+            value={visibleDamageSummary.visibleStoryCount.toLocaleString()}
+            hint={`Corners tracked: ${visibleCornerCapacity.toLocaleString()}`}
+          />
+          <SummaryCard
+            label="Current Exceedances"
+            value={visibleDamageSummary.currentExceededCorners.toLocaleString()}
+            hint={`${currentExceededPct.toFixed(1)}% of visible corners`}
+          />
+          <SummaryCard
+            label="Ever Exceeded"
+            value={visibleDamageSummary.everExceededCorners.toLocaleString()}
+            hint={`${everExceededPct.toFixed(1)}% of visible corners`}
+          />
+          <SummaryCard
+            label="Threshold"
+            value={`${thresholds.interstoryDrift.toFixed(3)}%`}
+            hint="Interstory drift warning threshold"
+          />
+        </div>
+
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+          <div className="flex items-center justify-between gap-2 text-xs text-neutral-700">
+            <span className="font-medium">Color Legend: Current Drift / Peak Drift Ratio</span>
+            <span className="font-mono">Blue → White → Red</span>
           </div>
-          <div className="rounded border border-neutral-300 bg-neutral-50 p-2">
-            <div className="text-neutral-500">Ever Exceeded</div>
-            <div className="font-mono text-sm text-neutral-800">{visibleDamageSummary.everExceededCorners}</div>
+          <div
+            className="mt-2 h-2 rounded border border-neutral-200"
+            style={{
+              background:
+                "linear-gradient(90deg, #223f78 0%, #3d74d6 25%, #ffffff 50%, #ea6d62 75%, #7b2330 100%)",
+            }}
+            title="Corner tile color is normalized by current drift divided by peak drift for that corner"
+          />
+          <div className="mt-1 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+            <span>-1.0</span>
+            <span>0.0</span>
+            <span>+1.0</span>
+          </div>
+          <div className="mt-1 text-[10px] text-neutral-500">
+            Each corner row shows current drift (`%`), peak drift (`%`), status (now / earlier / never), and first crossing
+            time (`s`).
           </div>
         </div>
       </div>
 
       <div>
         <h3 className="text-lg font-bold mt-4">Story Damage Summary</h3>
-        <div className="w-full rounded-t-md border border-b-0 border-neutral-300 bg-neutral-100 text-xs text-neutral-700 grid grid-cols-4 p-2 gap-2">
-          <span className="whitespace-nowrap font-semibold">Corner</span>
-          <span className="whitespace-nowrap text-center font-semibold">Current Drift</span>
-          <span className="whitespace-nowrap text-center font-semibold">Peak Drift</span>
-          <span
-            className="whitespace-nowrap text-center font-semibold"
-            title="Time in seconds the corner crossed warning threshold">
-            Warning (s)
-          </span>
+        <div className="mt-2 rounded border border-neutral-300 bg-neutral-50 px-2 py-1 text-[11px] text-neutral-600 grid grid-cols-[auto_auto_auto_auto_auto] gap-2">
+          <span className="font-semibold">Corner</span>
+          <span className="text-right font-semibold">Current (%)</span>
+          <span className="text-right font-semibold">Peak (%)</span>
+          <span className="text-center font-semibold">Status</span>
+          <span className="text-center font-semibold" title="First crossing time in seconds">First Cross (s)</span>
         </div>
 
-        <div className="rounded-b-md border border-neutral-300 divide-y divide-neutral-300 bg-white">
+        <div className="mt-2 space-y-2">
           {reversedStories.map(({ storyId, storyIndex }) => {
             if (!visibleFloors.has(storyId)) return null;
             const frameBase =
@@ -202,40 +287,60 @@ export function DamageThresholdPanel() {
 
             if (!peaks || !thresholdFrames) return null;
 
+            let storyCurrentExceeded = 0;
+            let storyEverExceeded = 0;
+            for (const corner of DISPLAY_CORNERS) {
+              const current = driftData[frameBase + CORNER_DATA_INDEX[corner]];
+              if (current > thresholds.interstoryDrift) storyCurrentExceeded += 1;
+              if (thresholdFrames[corner] !== null) storyEverExceeded += 1;
+            }
+
             return (
-              <div key={storyId} className="">
-                <div className="bg-neutral-50 px-2 py-1 font-mono text-sm font-semibold">{storyId}</div>
-                <div className="w-full text-xs text-neutral-700 grid grid-cols-4 divide-x divide-neutral-300 items-center *:px-2 p-2 gap-y-1">
+              <section key={storyId} className="rounded border border-neutral-300 bg-white overflow-hidden">
+                <div className="flex items-center justify-between gap-3 bg-neutral-50 px-2 py-1.5 border-b border-neutral-200">
+                  <div className="font-mono text-sm font-semibold text-neutral-900">{storyId}</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] leading-tight">
+                    <div className="text-neutral-500">Current Exceed</div>
+                    <div className="font-mono text-right text-neutral-800">{storyCurrentExceeded}/4</div>
+                    <div className="text-neutral-500">Ever Crossed</div>
+                    <div className="font-mono text-right text-neutral-700">{storyEverExceeded}/4</div>
+                  </div>
+                </div>
+
+                <div className="w-full text-xs text-neutral-700 p-2 space-y-1">
                   {DISPLAY_CORNERS.map((corner) => {
                     const thresholdFrame = thresholdFrames[corner];
                     const peak = peaks[corner];
                     const current = driftData[frameBase + CORNER_DATA_INDEX[corner]];
+                    const peakSafe = Math.max(Math.abs(peak || 0), 1e-12);
+                    const ratio = Math.max(-1, Math.min(1, current / peakSafe));
+                    const currentExceeded = current > thresholds.interstoryDrift;
 
                     return (
-                      <React.Fragment key={corner}>
-                        <div className="flex items-center gap-2 font-mono">
+                      <div
+                        key={corner}
+                        className="grid grid-cols-[auto_auto_auto_1fr_auto] items-center gap-2 rounded border border-neutral-200 bg-neutral-50 px-2 py-1">
+                        <div className="flex items-center gap-2 font-mono min-w-0">
                           <div
                             className="h-4 w-4 shrink-0 rotate-45 border border-neutral-300"
                             style={{
-                              background: formatHex(colorMap(current / (peak || 0.0001))),
+                              background: formatHex(colorMap(ratio)) ?? "#ffffff",
                             }}
                           />
                           <span>{corner}</span>
                         </div>
-                        <span className="font-mono text-right">
+                        <span className="font-mono text-right whitespace-nowrap">
                           <UnitTooltip interactive={!playing} value={current} unit="%" decimals={4} />
                         </span>
-                        <span className="font-mono text-right">
+                        <span className="font-mono text-right whitespace-nowrap">
                           <UnitTooltip interactive={!playing} value={peak || 0} unit="%" decimals={4} />
                         </span>
-                        <div className="border-0">
-                          <div
-                            className={`font-mono text-center p-1 rounded border ${
-                              thresholdFrame !== null
-                                ? "border-yellow-300 bg-yellow-100"
-                                : "border-neutral-200 bg-neutral-50"
-                            }`}>
-                            {thresholdFrame !== null ? (
+                        <div className="flex justify-center">
+                          <ThresholdStatusPill currentExceeded={currentExceeded} everExceeded={thresholdFrame !== null} />
+                        </div>
+                        <div className="font-mono text-center">
+                          {thresholdFrame !== null ? (
+                            <span className="inline-flex items-center justify-center rounded border border-yellow-300 bg-yellow-100 px-1.5 py-0.5 min-w-16">
                               <UnitTooltip
                                 interactive={!playing}
                                 value={thresholdFrame * dt}
@@ -243,16 +348,18 @@ export function DamageThresholdPanel() {
                                 decimals={2}
                                 showConversions={false}
                               />
-                            ) : (
-                              "-"
-                            )}
-                          </div>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center rounded border border-neutral-300 bg-white px-1.5 py-0.5 min-w-16 text-neutral-500">
+                              -
+                            </span>
+                          )}
                         </div>
-                      </React.Fragment>
+                      </div>
                     );
                   })}
                 </div>
-              </div>
+              </section>
             );
           })}
         </div>

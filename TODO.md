@@ -100,6 +100,7 @@
 - [x] Add static hinge analysis helpers for filtering/aggregation
 - [x] Add dock panel: hinge distribution histogram (non-time-series)
 - [x] Add dock panel: hinge hotspot ranking + performance breakdown
+- [x] Redesign `Hinge Hotspots` panel into explanatory analysis view (summary cards, severity mix, spotlights, reliable panel scrolling)
 - [x] Register hinge panels in panel picker/catalog
 - [x] Surface static hinge summary in slice panels (clearly marked non-time-series)
 - [x] Add beam connectivity mapping (`beam_data.bld`) and hinge beam-index pairing for localized rendering groundwork

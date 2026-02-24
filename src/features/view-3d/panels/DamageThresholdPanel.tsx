@@ -41,7 +41,7 @@ export function DamageThresholdPanel() {
   const { animationData } = useAnimationData();
   const { storyOrder, dt } = animationData.metadata;
   const { frameIndex, playing } = usePlayback();
-  const { visibleFloors, setFloorVisible, showAllFloors, hideAllFloors } = useFloorVisibility();
+  const { visibleFloors } = useFloorVisibility();
   const { thresholds, setThreshold } = useThresholds();
 
   const { storyDrift, peakStoryDrift } = animationData.precomputed;
@@ -101,28 +101,6 @@ export function DamageThresholdPanel() {
     return storyThresholds;
   }, [storyDrift, thresholds.interstoryDrift, storyOrder]);
 
-  const visibleStoryRange = useMemo<[number, number]>(() => {
-    const visibleIndices = storyOrder
-      .map((storyId, storyIndex) => (visibleFloors.has(storyId) ? storyIndex : -1))
-      .filter((storyIndex) => storyIndex >= 0);
-
-    if (visibleIndices.length === 0) {
-      return [0, Math.max(storyOrder.length - 1, 0)];
-    }
-
-    return [visibleIndices[0], visibleIndices[visibleIndices.length - 1]];
-  }, [storyOrder, visibleFloors]);
-
-  const hasNonContiguousVisibility = useMemo(() => {
-    const [startIndex, endIndex] = visibleStoryRange;
-    for (let storyIndex = startIndex; storyIndex <= endIndex; storyIndex++) {
-      if (!visibleFloors.has(storyOrder[storyIndex])) {
-        return true;
-      }
-    }
-    return false;
-  }, [storyOrder, visibleFloors, visibleStoryRange]);
-
   const visibleDamageSummary = useMemo(() => {
     let currentExceededCorners = 0;
     let everExceededCorners = 0;
@@ -153,17 +131,6 @@ export function DamageThresholdPanel() {
     return { currentExceededCorners, everExceededCorners, visibleStoryCount };
   }, [frameIndex, storyDrift, storyOrder, storyThresholdFrame, thresholds.interstoryDrift, visibleFloors]);
 
-  const applyVisibleStoryRange = (range: number[]) => {
-    const [rawStart, rawEnd] = range;
-    const start = Math.max(0, Math.min(Math.round(rawStart ?? 0), storyOrder.length - 1));
-    const end = Math.max(start, Math.min(Math.round(rawEnd ?? start), storyOrder.length - 1));
-
-    storyOrder.forEach((storyId, storyIndex) => {
-      const inRange = storyIndex >= start && storyIndex <= end;
-      setFloorVisible(storyId, inRange);
-    });
-  };
-
   return (
     <div className="h-full w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar">
       <div>
@@ -172,7 +139,7 @@ export function DamageThresholdPanel() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="rounded-lg border border-neutral-200 bg-white p-3">
+        <div className="rounded-lg bg-white p-3">
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold">Warning Threshold</span>
             <span className="font-mono text-sm">
@@ -197,150 +164,98 @@ export function DamageThresholdPanel() {
               Max panel range: <UnitTooltip interactive={!playing} value={maxDriftThreshold} unit="%" decimals={2} />
             </span>
           </div>
-          <div className="mt-3 flex flex-wrap gap-1">
-            {[0.2, 0.5, 1.0].map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => setThreshold("interstoryDrift", preset)}
-                className={`rounded border px-2 py-1 text-xs transition-colors ${
-                  Math.abs(thresholds.interstoryDrift - preset) < 0.001
-                    ? "border-blue-300 bg-blue-50 text-blue-700"
-                    : "border-neutral-300 bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-                }`}>
-                {preset.toFixed(1)}%
-              </button>
-            ))}
-          </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-            <div className="text-neutral-500">Visible Floors</div>
-            <div className="font-mono text-sm text-neutral-800">{visibleDamageSummary.visibleStoryCount}</div>
-          </div>
-          <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded border border-neutral-300 bg-neutral-50 p-2">
             <div className="text-neutral-500">Current Exceedances</div>
             <div className="font-mono text-sm text-neutral-800">{visibleDamageSummary.currentExceededCorners}</div>
           </div>
-          <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+          <div className="rounded border border-neutral-300 bg-neutral-50 p-2">
             <div className="text-neutral-500">Ever Exceeded</div>
             <div className="font-mono text-sm text-neutral-800">{visibleDamageSummary.everExceededCorners}</div>
           </div>
         </div>
       </div>
 
-      <div className="border-t pt-4">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h3 className="text-lg font-bold">Floor Visibility</h3>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={showAllFloors}
-              className="rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs hover:bg-neutral-200">
-              Show All
-            </button>
-            <button
-              type="button"
-              onClick={hideAllFloors}
-              className="rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs hover:bg-neutral-200">
-              Hide All
-            </button>
-          </div>
-        </div>
-        <div className="rounded-lg border border-neutral-200 bg-white p-3">
-          <div className="flex items-center justify-between gap-2 text-xs text-neutral-600">
-            <span>Visible floor band (contiguous)</span>
-            <span className="font-mono">
-              {storyOrder[visibleStoryRange[0]]} - {storyOrder[visibleStoryRange[1]]}
-            </span>
-          </div>
-          <Slider
-            value={visibleStoryRange}
-            min={0}
-            max={Math.max(storyOrder.length - 1, 0)}
-            step={1}
-            onValueChange={applyVisibleStoryRange}
-            className="mt-3"
-            aria-label="Visible floor range"
-          />
-          <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
-            <span>{storyOrder[0]}</span>
-            <span>{storyOrder.at(-1)}</span>
-          </div>
-          {hasNonContiguousVisibility && (
-            <p className="mt-2 text-xs text-amber-700">
-              Current floor visibility contains gaps from other controls. Moving the slider will normalize it to one band.
-            </p>
-          )}
-        </div>
-      </div>
-
       <div>
         <h3 className="text-lg font-bold mt-4">Story Damage Summary</h3>
-        <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] p-2 gap-1">
-          <span className="whitespace-nowrap">Corner</span>
-          <span className="whitespace-nowrap text-center">Current Drift</span>
-          <span className="whitespace-nowrap text-center">Peak Drift</span>
-          <span className="whitespace-nowrap text-center" title="Time in seconds the corner crossed warning threshold">
+        <div className="w-full rounded-t-md border border-b-0 border-neutral-300 bg-neutral-100 text-xs text-neutral-700 grid grid-cols-4 p-2 gap-2">
+          <span className="whitespace-nowrap font-semibold">Corner</span>
+          <span className="whitespace-nowrap text-center font-semibold">Current Drift</span>
+          <span className="whitespace-nowrap text-center font-semibold">Peak Drift</span>
+          <span
+            className="whitespace-nowrap text-center font-semibold"
+            title="Time in seconds the corner crossed warning threshold">
             Warning (s)
           </span>
         </div>
 
-        {reversedStories.map(({ storyId, storyIndex }) => {
-          if (!visibleFloors.has(storyId)) return null;
-          const frameBase = storyIndex * storyDrift.frameCount * storyDrift.cornerCount + frameIndex * storyDrift.cornerCount;
-          const driftData = storyDrift.data;
-          const peaks = peakStoryDrift[storyId];
-          const thresholdFrames = storyThresholdFrame.get(storyId);
+        <div className="rounded-b-md border border-neutral-300 divide-y divide-neutral-300 bg-white">
+          {reversedStories.map(({ storyId, storyIndex }) => {
+            if (!visibleFloors.has(storyId)) return null;
+            const frameBase =
+              storyIndex * storyDrift.frameCount * storyDrift.cornerCount + frameIndex * storyDrift.cornerCount;
+            const driftData = storyDrift.data;
+            const peaks = peakStoryDrift[storyId];
+            const thresholdFrames = storyThresholdFrame.get(storyId);
 
-          if (!peaks || !thresholdFrames) return null;
+            if (!peaks || !thresholdFrames) return null;
 
-          return (
-            <React.Fragment key={storyId}>
-              <div className="font-mono text-sm">{storyId}</div>
-              <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] items-center p-2 gap-2">
-                {DISPLAY_CORNERS.map((corner) => {
-                  const thresholdFrame = thresholdFrames[corner];
-                  const peak = peaks[corner];
-                  const current = driftData[frameBase + CORNER_DATA_INDEX[corner]];
+            return (
+              <div key={storyId} className="">
+                <div className="bg-neutral-50 px-2 py-1 font-mono text-sm font-semibold">{storyId}</div>
+                <div className="w-full text-xs text-neutral-700 grid grid-cols-4 divide-x divide-neutral-300 items-center *:px-2 p-2 gap-y-1">
+                  {DISPLAY_CORNERS.map((corner) => {
+                    const thresholdFrame = thresholdFrames[corner];
+                    const peak = peaks[corner];
+                    const current = driftData[frameBase + CORNER_DATA_INDEX[corner]];
 
-                  return (
-                    <React.Fragment key={corner}>
-                      <div
-                        className="h-4 aspect-square rotate-45"
-                        style={{
-                          background: formatHex(colorMap(current / (peak || 0.0001))),
-                        }}
-                      />
-                      <div className="font-mono">{corner}</div>
-                      <span className="w-12 font-mono text-right shrink-0">
-                        <UnitTooltip interactive={!playing} value={current} unit="%" decimals={4} />
-                      </span>
-                      <span className="w-12 font-mono text-right shrink-0">
-                        <UnitTooltip interactive={!playing} value={peak || 0} unit="%" decimals={4} />
-                      </span>
-                      <div
-                        className={`w-14 font-mono text-center p-1 rounded ${thresholdFrame !== null ? "bg-yellow-200" : ""}`}>
-                        {thresholdFrame !== null ? (
-                          <UnitTooltip
-                            interactive={!playing}
-                            value={thresholdFrame * dt}
-                            unit="s"
-                            decimals={2}
-                            showConversions={false}
+                    return (
+                      <React.Fragment key={corner}>
+                        <div className="flex items-center gap-2 font-mono">
+                          <div
+                            className="h-4 w-4 shrink-0 rotate-45 border border-neutral-300"
+                            style={{
+                              background: formatHex(colorMap(current / (peak || 0.0001))),
+                            }}
                           />
-                        ) : (
-                          "-"
-                        )}
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
+                          <span>{corner}</span>
+                        </div>
+                        <span className="font-mono text-right">
+                          <UnitTooltip interactive={!playing} value={current} unit="%" decimals={4} />
+                        </span>
+                        <span className="font-mono text-right">
+                          <UnitTooltip interactive={!playing} value={peak || 0} unit="%" decimals={4} />
+                        </span>
+                        <div className="border-0">
+                          <div
+                            className={`font-mono text-center p-1 rounded border ${
+                              thresholdFrame !== null
+                                ? "border-yellow-300 bg-yellow-100"
+                                : "border-neutral-200 bg-neutral-50"
+                            }`}>
+                            {thresholdFrame !== null ? (
+                              <UnitTooltip
+                                interactive={!playing}
+                                value={thresholdFrame * dt}
+                                unit="s"
+                                decimals={2}
+                                showConversions={false}
+                              />
+                            ) : (
+                              "-"
+                            )}
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
               </div>
-            </React.Fragment>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

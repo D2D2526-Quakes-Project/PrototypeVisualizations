@@ -49,15 +49,15 @@
   - Add explicit legend/color scale explaining what slab/tile colors represent (signed ratio vs threshold state).
   - Make threshold-crossing status visually obvious: crossed/not crossed, crossing time (`s`), and current-vs-threshold context.
   - Keep unit labels/tooltips consistent (`%` for drift ratio, `s` for crossing time).
-- [ ] Rework legacy `Floor Torsion` page to use actual torsion rotation metrics (`buildFloorTorsionSnapshot`)
+- [x] Rework legacy `Floor Torsion` page to use actual torsion rotation metrics (`buildFloorTorsionSnapshot`)
   - Current issue: page is labeled "torsion" but colors floors by average displacement magnitude, not plan rotation.
   - Reuse `features/view-3d/lib/floorTorsion.ts` (`buildFloorTorsionSnapshot`, peak helpers) so the page and dock panel use the same torsion definition (`rad`).
   - Update labels, captions, and tooltips to explicitly state rotation units (`rad`) and what positive/negative sign means.
-- [ ] Fix legacy `Floor Torsion` story SVG preview geometry generation
+- [x] Fix legacy `Floor Torsion` story SVG preview geometry generation
   - Bounds bug: `maxPoint` uses `Number.MIN_VALUE` (tiny positive number) instead of a negative sentinel; breaks viewBox sizing for negative coordinates.
   - Geometry bug: preview comments say "convex hull" but code uses raw node order, which can self-intersect / misrepresent floor shape.
   - Use stable polygon generation (actual hull or rectangle/reference polygon from torsion utilities) and verify all stories render.
-- [ ] Align floor torsion experiences (legacy page vs `Floor Torsion Map` panel)
+- [x] Align floor torsion experiences (legacy page vs `Floor Torsion Map` panel)
   - Unify metric semantics, labels, color scale direction, and units so both views communicate the same quantity.
   - Prefer a single shared preview component / color-scale helper to avoid drift.
   - Decide whether legacy page should be upgraded, hidden, or replaced by the `Floor Torsion Map` panel.

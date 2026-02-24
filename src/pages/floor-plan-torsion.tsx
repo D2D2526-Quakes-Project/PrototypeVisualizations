@@ -4,22 +4,30 @@ import { formatHex, interpolate } from "culori";
 import React, { useState, useMemo } from "react";
 import { DoubleSide, Vector3 } from "three";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/resizable";
+import { FloorTorsionPlanPreview } from "@/features/view-3d/components/FloorTorsionPlanPreview";
+import { buildFloorTorsionSnapshot } from "@/features/view-3d/lib/floorTorsion";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { SmallTimeline } from "@/features/playback/SmallTimeline";
 
-const amber400 = "oklch(82.8% 0.189 84.429)";
-const red700 = "oklch(50.5% 0.213 27.518)";
-const colorMap = interpolate([amber400, red700], "oklab");
+const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
+
+function formatSigned(value: number, digits = 5) {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
+}
 
 function PlaneShapes({
   displacementScale,
   anchorCorner,
   verticalSpacing,
+  storyRotationById,
+  rotationScaleAbsMax,
 }: {
   displacementScale: number;
   anchorCorner: boolean;
   verticalSpacing: number;
+  storyRotationById: ReadonlyMap<string, number>;
+  rotationScaleAbsMax: number;
 }) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
@@ -29,8 +37,6 @@ function PlaneShapes({
   const offsetX = -animationData.precomputed.boundingBox.center[0];
   const offsetY = -animationData.precomputed.boundingBox.center[1];
   const offsetZ = -animationData.precomputed.boundingBox.min[2];
-
-  const maxDisplacement = animationData.precomputed.maxDisplacement;
 
   // Create corner sets for quick lookup
   const cornerSets = useMemo(
@@ -127,22 +133,9 @@ function PlaneShapes({
             ...sortedPositions[3].pos,
           ]);
 
-          // Calculate average displacement for this story
-          let totalDx = 0,
-            totalDy = 0,
-            totalDz = 0;
-          for (const nodeIdx of nodeIndices) {
-            const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
-            totalDx += disp[0];
-            totalDy += disp[1];
-            totalDz += disp[2];
-          }
-          const avgDisp = Math.hypot(
-            totalDx / nodeIndices.length,
-            totalDy / nodeIndices.length,
-            totalDz / nodeIndices.length,
-          );
-          const floorColor = formatHex(colorMap(avgDisp / maxDisplacement));
+          const rotationRad = storyRotationById.get(storyId) ?? 0;
+          const normalized = Math.max(-1, Math.min(1, rotationRad / Math.max(rotationScaleAbsMax, 1e-6)));
+          const floorColor = formatHex(torsionColorScale((normalized + 1) / 2)) ?? "#f8fafc";
 
           return (
             <React.Fragment key={storyId}>
@@ -174,11 +167,27 @@ export function FloorPlanTorsion() {
   const { frameIndex } = usePlayback();
   const { animationData } = useAnimationData();
 
-  const { stories, storyOrder } = animationData.metadata;
-
   const [displacementScale, setDisplacementScale] = useState(1);
   const [anchorCorner, setAnchorCorner] = useState(false);
   const [verticalSpacing, setVerticalSpacing] = useState(1.1);
+
+  const torsionRows = useMemo(
+    () =>
+      animationData.metadata.storyOrder
+        .map((storyId) => buildFloorTorsionSnapshot(animationData, storyId, frameIndex))
+        .filter((row): row is NonNullable<typeof row> => row !== null),
+    [animationData, frameIndex],
+  );
+
+  const maxAbsRotation = useMemo(() => {
+    let maxAbs = 0;
+    for (const row of torsionRows) {
+      maxAbs = Math.max(maxAbs, Math.abs(row.rotationRad));
+    }
+    return Math.max(maxAbs, 1e-6);
+  }, [torsionRows]);
+
+  const storyRotationById = useMemo(() => new Map(torsionRows.map((row) => [row.storyId, row.rotationRad])), [torsionRows]);
 
   return (
     <div className="flex h-full min-h-0">
@@ -188,13 +197,13 @@ export function FloorPlanTorsion() {
             <div>
               <h2 className="text-xl font-bold">Floor Torsion</h2>
               <p className="text-sm text-neutral-600">
-                Analyzes the top-down rotation and displacement of a single floor and its neighbors.
+                Top-down floor rotation by story. Colors and previews show signed torsion rotation in radians (rad).
               </p>
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="flex flex-col">
-                <span className="font-semibold">Displacement Scale ({displacementScale.toFixed(1)})</span>
+                <span className="font-semibold">Displacement Scale (visual) ({displacementScale.toFixed(1)}x)</span>
                 <input
                   type="range"
                   min="1.0"
@@ -204,6 +213,9 @@ export function FloorPlanTorsion() {
                   onChange={(e) => setDisplacementScale(parseFloat(e.target.value))}
                 />
               </label>
+              <p className="text-xs text-neutral-500">
+                Visual exaggeration only. Torsion coloring uses computed plan rotation (`rad`), not displacement magnitude.
+              </p>
               <label className="flex gap-4">
                 <span className="font-semibold">Anchor Corner</span>
                 <input type="checkbox" checked={anchorCorner} onChange={(e) => setAnchorCorner(e.target.checked)} />
@@ -228,59 +240,53 @@ export function FloorPlanTorsion() {
             </div>
 
             <div>
+              <h3 className="text-lg font-bold mt-2">Torsion Color Scale</h3>
+              <div className="mt-2 rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="flex items-center justify-between text-[10px] text-neutral-600 mb-1">
+                  <span>Rotation (rad)</span>
+                  <span>Frame {frameIndex}</span>
+                </div>
+                <div
+                  className="h-2 rounded border border-neutral-200"
+                  style={{ background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)" }}
+                  title={`Torsion rotation color scale from -${maxAbsRotation.toFixed(6)} rad to +${maxAbsRotation.toFixed(6)} rad`}
+                />
+                <div className="mt-1 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+                  <span>{(-maxAbsRotation).toFixed(6)}</span>
+                  <span>0.000000</span>
+                  <span>{maxAbsRotation.toFixed(6)}</span>
+                </div>
+                <div className="mt-1 text-[10px] text-neutral-500">
+                  Previews include X/Y plan axes. 3D panes are labeled by viewing plane.
+                </div>
+              </div>
+            </div>
+
+            <div>
               <h3 className="text-lg font-bold mt-4">Stories</h3>
-              <div className="w-full text-xs text-neutral-600 flex flex-col p-2 gap-1">
-                {storyOrder.map((storyId) => {
-                  const nodeIndices = stories[storyId];
-
-                  const minPoint = [Number.MAX_VALUE, Number.MAX_VALUE];
-                  const maxPoint = [Number.MIN_VALUE, Number.MIN_VALUE];
-
-                  const locs: [number, number][] = nodeIndices.map((nodeIdx) => {
-                    const initialPos = animationData.initialPositions.at(nodeIdx);
-                    const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
-
-                    const posX = initialPos[0] + displacement[0] * displacementScale;
-                    const posZ = initialPos[2] + displacement[2] * displacementScale;
-
-                    minPoint[0] = Math.min(minPoint[0], posX);
-                    minPoint[1] = Math.min(minPoint[1], posZ);
-                    maxPoint[0] = Math.max(maxPoint[0], posX);
-                    maxPoint[1] = Math.max(maxPoint[1], posZ);
-
-                    return [posX, posZ];
-                  });
-
-                  // Simple convex hull approximation
-                  const hull = locs.length > 0 ? locs : [[0, 0]];
-                  const points = hull.map(([x, z]) => `${x},${z}`).join(" ");
-
-                  const width = maxPoint[0] - minPoint[0];
-                  const height = maxPoint[1] - minPoint[1];
-
-                  // Calculate average displacement
-                  let totalDx = 0,
-                    totalDy = 0,
-                    totalDz = 0;
-                  for (const nodeIdx of nodeIndices) {
-                    const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
-                    totalDx += disp[0];
-                    totalDy += disp[1];
-                    totalDz += disp[2];
-                  }
-                  const avgDisp = Math.hypot(
-                    totalDx / nodeIndices.length,
-                    totalDy / nodeIndices.length,
-                    totalDz / nodeIndices.length,
-                  );
-                  const floorColor = colorMap(avgDisp / animationData.precomputed.maxDisplacement);
+              <div className="w-full text-xs text-neutral-600 flex flex-col p-2 gap-2">
+                {torsionRows.toReversed().map((row) => {
+                  const normalized = Math.max(-1, Math.min(1, row.rotationRad / maxAbsRotation));
+                  const fill = formatHex(torsionColorScale((normalized + 1) / 2)) ?? "#f8fafc";
+                  const tooltip = `Story ${row.storyId}\nRotation: ${row.rotationRad.toFixed(6)} rad\nNodes: ${row.nodeCount}`;
 
                   return (
-                    <div key={storyId} className="flex items-center justify-between w-full h-24">
-                      <div className="font-mono">{storyId}</div>
-                      <svg viewBox={`${minPoint[0]} ${minPoint[1]} ${width} ${height}`} height="100%">
-                        <polygon points={points} fill={formatHex(floorColor)} stroke="black" strokeWidth="0.1" />
-                      </svg>
+                    <div key={row.storyId} className="rounded border border-neutral-200 bg-white p-2" title={tooltip}>
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-neutral-500">Story</div>
+                          <div className="font-mono text-xs text-neutral-800 truncate">{row.storyId}</div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] shrink-0">
+                          <span className="text-neutral-500">Rotation (rad)</span>
+                          <span className="font-mono text-right text-neutral-800">{formatSigned(row.rotationRad, 6)}</span>
+                          <span className="text-neutral-500">|Rotation|</span>
+                          <span className="font-mono text-right text-neutral-700">{Math.abs(row.rotationRad).toFixed(6)}</span>
+                        </div>
+                      </div>
+                      <div className="h-28 rounded border border-neutral-100 bg-neutral-50">
+                        <FloorTorsionPlanPreview snapshot={row} fill={fill} className="h-full w-full" />
+                      </div>
                     </div>
                   );
                 })}
@@ -292,11 +298,14 @@ export function FloorPlanTorsion() {
         <ResizablePanel defaultSize={70} className="min-h-0 flex h-full">
           <div className="relative w-full grid grid-cols-2 grid-rows-2">
             <div className="relative size-full border-r-2 border-b-2 border-neutral-300">
+              <div className="absolute top-2 left-2 font-mono text-xl z-10">Perspective</div>
               <Canvas>
                 <PlaneShapes
                   verticalSpacing={verticalSpacing}
                   anchorCorner={anchorCorner}
                   displacementScale={displacementScale}
+                  storyRotationById={storyRotationById}
+                  rotationScaleAbsMax={maxAbsRotation}
                 />
                 <OrbitControls />
               </Canvas>
@@ -309,6 +318,8 @@ export function FloorPlanTorsion() {
                   verticalSpacing={verticalSpacing * 2}
                   anchorCorner={anchorCorner}
                   displacementScale={displacementScale}
+                  storyRotationById={storyRotationById}
+                  rotationScaleAbsMax={maxAbsRotation}
                 />
                 <OrbitControls enablePan={false} enableRotate={false} />
               </Canvas>
@@ -321,6 +332,8 @@ export function FloorPlanTorsion() {
                   verticalSpacing={verticalSpacing * 2}
                   anchorCorner={anchorCorner}
                   displacementScale={displacementScale}
+                  storyRotationById={storyRotationById}
+                  rotationScaleAbsMax={maxAbsRotation}
                 />
                 <OrbitControls enablePan={false} enableRotate={false} />
               </Canvas>
@@ -333,6 +346,8 @@ export function FloorPlanTorsion() {
                   verticalSpacing={verticalSpacing * 2}
                   anchorCorner={anchorCorner}
                   displacementScale={displacementScale}
+                  storyRotationById={storyRotationById}
+                  rotationScaleAbsMax={maxAbsRotation}
                 />
                 <OrbitControls enablePan={false} enableRotate={false} />
               </Canvas>

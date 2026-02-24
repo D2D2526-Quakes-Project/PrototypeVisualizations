@@ -37,7 +37,7 @@ const CORNER_DATA_INDEX: Record<CornerName, number> = {
 type CornerName = "NW" | "NE" | "SW" | "SE";
 type ThresholdCrossingFrames = Record<CornerName, number | null>;
 const SUMMARY_GRID_CLASS =
-  "grid grid-cols-[minmax(3.5rem,auto)_minmax(5.5rem,auto)_minmax(5.5rem,auto)_minmax(8.5rem,1fr)_minmax(5.25rem,auto)] items-center gap-2";
+  "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)] items-center";
 const DAMAGE_RATIO_LEGEND_GRADIENT = `linear-gradient(90deg, ${blue900} 0%, ${blue600} 24.5%, ${blue400} 25%, ${white} 50%, ${red400} 75%, ${red600} 75.5%, ${red900} 100%)`;
 
 function ThresholdStatusPill({
@@ -176,7 +176,7 @@ export function DamageThresholdPanel() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="rounded-lg bg-white p-3">
+        <div className="py-1">
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold">Warning Threshold</span>
             <span className="font-mono text-sm">
@@ -195,9 +195,9 @@ export function DamageThresholdPanel() {
             className="mt-3"
             aria-label="Interstory drift warning threshold percent"
           />
-          <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
+          <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-neutral-500">
             <span>0%</span>
-            <span>
+            <span className="text-right">
               Max panel range: <UnitTooltip interactive={!playing} value={maxDriftThreshold} unit="%" decimals={2} />
             </span>
           </div>
@@ -255,12 +255,15 @@ export function DamageThresholdPanel() {
 
       <div>
         <h3 className="text-lg font-bold mt-4">Story Damage Summary</h3>
-        <div className={`mt-2 rounded border border-neutral-300 bg-neutral-50 px-2 py-1 text-[11px] text-neutral-600 ${SUMMARY_GRID_CLASS}`}>
-          <span className="font-semibold">Corner</span>
-          <span className="text-right font-semibold">Current (%)</span>
-          <span className="text-right font-semibold">Peak (%)</span>
-          <span className="text-center font-semibold">Status</span>
-          <span className="text-center font-semibold" title="First crossing time in seconds">First Cross (s)</span>
+        <div
+          className={`mt-2 rounded border border-neutral-300 bg-neutral-50 text-[11px] text-neutral-600 divide-x divide-neutral-300 ${SUMMARY_GRID_CLASS}`}>
+          <span className="font-semibold px-2 py-1 min-w-0">Corner</span>
+          <span className="text-right font-semibold px-2 py-1 min-w-0">Current (%)</span>
+          <span className="text-right font-semibold px-2 py-1 min-w-0">Peak (%)</span>
+          <span className="text-center font-semibold px-2 py-1 min-w-0">Status</span>
+          <span className="text-center font-semibold px-2 py-1 min-w-0 leading-tight" title="First crossing time in seconds">
+            First Cross (s)
+          </span>
         </div>
 
         <div className="mt-2 space-y-2">
@@ -295,7 +298,7 @@ export function DamageThresholdPanel() {
                   </div>
                 </div>
 
-                <div className="w-full text-xs text-neutral-700 p-2 space-y-1">
+                <div className="w-full text-xs text-neutral-700 px-2 py-1">
                   {DISPLAY_CORNERS.map((corner) => {
                     const thresholdFrame = thresholdFrames[corner];
                     const peak = peaks[corner];
@@ -307,8 +310,8 @@ export function DamageThresholdPanel() {
                     return (
                       <div
                         key={corner}
-                        className={`${SUMMARY_GRID_CLASS} rounded border border-neutral-200 bg-neutral-50 px-2 py-1`}>
-                        <div className="flex items-center gap-2 font-mono min-w-0">
+                        className={`${SUMMARY_GRID_CLASS} divide-x divide-neutral-200 ${corner === DISPLAY_CORNERS.at(-1) ? "" : "border-b border-neutral-100"}`}>
+                        <div className="flex items-center gap-2 font-mono min-w-0 px-2 py-1">
                           <div
                             className="h-4 w-4 shrink-0 rotate-45 border border-neutral-300"
                             style={{
@@ -317,18 +320,18 @@ export function DamageThresholdPanel() {
                           />
                           <span>{corner}</span>
                         </div>
-                        <span className="font-mono text-right whitespace-nowrap">
+                        <span className="font-mono text-right whitespace-nowrap px-2 py-1 min-w-0">
                           <UnitTooltip interactive={!playing} value={current} unit="%" decimals={4} />
                         </span>
-                        <span className="font-mono text-right whitespace-nowrap">
+                        <span className="font-mono text-right whitespace-nowrap px-2 py-1 min-w-0">
                           <UnitTooltip interactive={!playing} value={peak || 0} unit="%" decimals={4} />
                         </span>
-                        <div className="flex justify-center">
+                        <div className="flex justify-center px-2 py-1 min-w-0">
                           <ThresholdStatusPill currentExceeded={currentExceeded} everExceeded={thresholdFrame !== null} />
                         </div>
-                        <div className="font-mono text-center">
+                        <div className="font-mono text-center px-2 py-1 min-w-0">
                           {thresholdFrame !== null ? (
-                            <span className="inline-flex items-center justify-center rounded border border-yellow-300 bg-yellow-100 px-1.5 py-0.5 min-w-16">
+                            <span className="inline-flex items-center justify-center rounded border border-yellow-300 bg-yellow-100 px-1.5 py-0.5 min-w-0">
                               <UnitTooltip
                                 interactive={!playing}
                                 value={thresholdFrame * dt}
@@ -338,7 +341,7 @@ export function DamageThresholdPanel() {
                               />
                             </span>
                           ) : (
-                            <span className="inline-flex items-center justify-center rounded border border-neutral-300 bg-white px-1.5 py-0.5 min-w-16 text-neutral-500">
+                            <span className="inline-flex items-center justify-center rounded border border-neutral-300 bg-white px-1.5 py-0.5 min-w-0 text-neutral-500">
                               -
                             </span>
                           )}

@@ -29,6 +29,8 @@
 ### 5.2 Existing Panel Improvements
 
 - [ ] Add color bar legends to charts
+- [x] Add `Floor Torsion Map` magic panel with per-story top-down SVG previews colored by rotation
+- [x] Add floor torsion preview + rotation values to slice panel
 
 ---
 

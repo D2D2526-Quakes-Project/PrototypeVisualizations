@@ -14,6 +14,7 @@ import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDis
 import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
 import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
 import { HingeHotspotsPanel } from "@/features/view-3d/panels/HingeHotspotsPanel";
+import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
@@ -32,6 +33,7 @@ import {
   MoreHorizontal,
   PanelTop,
   Plus,
+  RotateCw,
   ShieldAlert,
   Table,
   X,
@@ -53,6 +55,7 @@ const PanelCatalog = {
   "Acceleration Distribution": AccelerationDistributionPanel,
   "Hinge Distribution": HingeDistributionPanel,
   "Hinge Hotspots": HingeHotspotsPanel,
+  "Floor Torsion Map": FloorTorsionMapPanel,
   "Story Drift Heatmap": StoryDriftHeatmap,
   "Peak Response Time": PeakResponseTimePanel,
   "Damage Threshold": DamageThresholdPanel,
@@ -91,6 +94,11 @@ const PANEL_DEFINITIONS: Record<PanelType, PanelDefinition> = {
   },
   "Hinge Distribution": { category: "Distributions", icon: BarChart3, description: "Static hinge metric histogram" },
   "Hinge Hotspots": { category: "Threshold / Damage", icon: Flame, description: "Static hinge hotspot ranking" },
+  "Floor Torsion Map": {
+    category: "Summaries",
+    icon: RotateCw,
+    description: "Top-down rotation preview per floor",
+  },
   "Story Drift Heatmap": {
     category: "Threshold / Damage",
     icon: ShieldAlert,

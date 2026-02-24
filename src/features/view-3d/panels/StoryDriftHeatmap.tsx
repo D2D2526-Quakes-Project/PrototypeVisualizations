@@ -309,7 +309,8 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
           <NativeSelect
             size="sm"
             value={resolution}
-            onChange={(e) => setResolution(Number(e.target.value) as Resolution)}>
+            onChange={(e) => setResolution(Number(e.target.value) as Resolution)}
+            className="min-w-20">
             {RESOLUTION_OPTIONS.map((res) => (
               <NativeSelectOption key={res} value={res}>
                 {res}

@@ -5,6 +5,11 @@ import type { IDockviewPanelProps } from "dockview";
 import { useMemo } from "react";
 import { MiniTimeSeries } from "./MiniTimeSeries";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { FloorTorsionPlanPreview } from "@/features/view-3d/components/FloorTorsionPlanPreview";
+import { buildFloorTorsionSnapshot, computeStoryPlanRotationPeak } from "@/features/view-3d/lib/floorTorsion";
+import { formatHex, interpolate } from "culori";
+
+const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
 export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
   const { sliceId } = props.params;
@@ -32,6 +37,22 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
       totalFloors: animationData.metadata.storyOrder.length,
     };
   }, [storyId, animationData]);
+
+  const floorTorsionPeak = useMemo(() => computeStoryPlanRotationPeak(animationData, storyId), [animationData, storyId]);
+
+  const floorTorsion = useMemo(() => {
+    const snapshot = buildFloorTorsionSnapshot(animationData, storyId, frameIndex);
+    if (!snapshot) return null;
+
+    const scaleMax = Math.max(Math.abs(snapshot.rotationRad), floorTorsionPeak.peakAbsRad, 1e-6);
+    const normalized = Math.max(-1, Math.min(1, snapshot.rotationRad / scaleMax));
+
+    return {
+      snapshot,
+      color: formatHex(torsionColorScale((normalized + 1) / 2)),
+      colorScaleAbsMax: scaleMax,
+    };
+  }, [animationData, storyId, frameIndex, floorTorsionPeak]);
 
   const hingeSliceSummary = useMemo(() => {
     const hingeData = animationData.hingeData;
@@ -349,6 +370,65 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
             </div>
           </div>
         </div>
+
+        {floorTorsion && (
+          <div className="border-t pt-2 animate-fade-in">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h3 className="font-bold text-sm">Floor Torsion (Top-Down)</h3>
+              <span className="text-[10px] text-neutral-500">X-Z plan</span>
+            </div>
+            <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+              <div className="h-32 w-full">
+                <FloorTorsionPlanPreview
+                  snapshot={floorTorsion.snapshot}
+                  fill={floorTorsion.color}
+                  className="h-full w-full"
+                  label={`Story ${storyId} floor torsion preview`}
+                />
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+                <div>
+                  <div className="text-neutral-500">Current Rotation</div>
+                  <div className="font-mono text-neutral-800">
+                    <UnitTooltip interactive={!playing} value={floorTorsion.snapshot.rotationRad} unit="rad" decimals={6} />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-neutral-500">Peak |Rotation|</div>
+                  <div className="font-mono text-neutral-800">
+                    <UnitTooltip interactive={!playing} value={floorTorsionPeak.peakAbsRad} unit="rad" decimals={6} />
+                  </div>
+                  <div className="text-neutral-400">@ {(floorTorsionPeak.peakFrameIndex * animationData.metadata.dt).toFixed(2)}s</div>
+                </div>
+                <div>
+                  <div className="text-neutral-500">Peak Signed Rotation</div>
+                  <div className="font-mono text-neutral-800">
+                    <UnitTooltip
+                      interactive={!playing}
+                      value={floorTorsionPeak.peakSignedRad}
+                      unit="rad"
+                      decimals={6}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-neutral-500">Color Scale (rad)</div>
+                  <div
+                    className="h-2 mt-1 rounded border border-neutral-200"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)",
+                    }}
+                    title={`Rotation color scale ±${floorTorsion.colorScaleAbsMax.toFixed(6)} rad`}
+                  />
+                  <div className="font-mono text-[9px] text-neutral-500 mt-1">
+                    ±{floorTorsion.colorScaleAbsMax.toFixed(6)} rad
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* DISPLACEMENT */}
         {hingeSliceSummary && (

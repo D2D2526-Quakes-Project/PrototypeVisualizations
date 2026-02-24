@@ -162,21 +162,14 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
   );
 
   const createDefaultLayout = useCallback((api: DockviewApi) => {
-    api.addPanel({
+    const mainCanvas = api.addPanel({
       id: "main-canvas",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "3D View",
       params: { panelType: "Main Canvas" },
-    });
-
-    api.addPanel({
-      id: "damage-threshold",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Damage Threshold",
-      position: { referencePanel: "main-canvas", direction: "right" },
-      params: { panelType: "Damage Threshold" },
+      initialWidth: 1200,
+      initialHeight: 760,
     });
 
     const timelinePanel = api.addPanel({
@@ -184,17 +177,89 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Timeline",
-      position: { direction: "below" },
+      position: { referencePanel: mainCanvas, direction: "below" },
       params: { panelType: "Timeline" },
+      initialHeight: 280,
     });
 
-    api.addPanel({
-      id: "chart",
+    const interstoryDriftPanel = api.addPanel({
+      id: "interstory-drift-chart",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Interstory Drift",
       position: { referencePanel: timelinePanel, direction: "right" },
       params: { panelType: "Interstory Drift Chart" },
+      initialWidth: 560,
+    });
+
+    api.addPanel({
+      id: "floor-displacement",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Floor Displacement",
+      position: { referencePanel: interstoryDriftPanel },
+      params: { panelType: "Floor Displacement" },
+      inactive: true,
+    });
+
+    api.addPanel({
+      id: "story-drift-heatmap",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Story Drift Heatmap",
+      position: { referencePanel: mainCanvas, direction: "right" },
+      params: { panelType: "Story Drift Heatmap" },
+      initialWidth: 460,
+    });
+
+    const reviewPanel = api.addPanel({
+      id: "damage-threshold",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Damage Threshold",
+      position: { referencePanel: "story-drift-heatmap", direction: "below" },
+      params: { panelType: "Damage Threshold" },
+      initialHeight: 260,
+    });
+
+    api.addPanel({
+      id: "statistics",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Statistics",
+      position: { referencePanel: reviewPanel },
+      params: { panelType: "Statistics" },
+      inactive: true,
+    });
+
+    api.addPanel({
+      id: "peak-response-time",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Peak Response Time",
+      position: { referencePanel: reviewPanel },
+      params: { panelType: "Peak Response Time" },
+      inactive: true,
+    });
+
+    api.addPanel({
+      id: "hinge-hotspots",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Hinge Hotspots",
+      position: { referencePanel: reviewPanel },
+      params: { panelType: "Hinge Hotspots" },
+      inactive: true,
+    });
+
+    api.addPanel({
+      id: "peak-values",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Peak Values",
+      position: { referencePanel: reviewPanel },
+      params: { panelType: "Peak Values" },
+      inactive: true,
     });
   }, []);
 

@@ -22,6 +22,9 @@ export const PROFILES_UPDATED_EVENT = "visuals:profiles-updated";
 
 export const SYSTEM_PROFILE_DEFAULT_ID = "system-default";
 export const SYSTEM_PROFILE_FLOOR_TORSION_ID = "system-floor-torsion";
+export const SYSTEM_PROFILE_DRIFT_ANALYSIS_ID = "system-drift-analysis";
+export const SYSTEM_PROFILE_ACCELERATION_REVIEW_ID = "system-acceleration-review";
+export const SYSTEM_PROFILE_DAMAGE_SCREENING_ID = "system-damage-screening";
 export const EPHEMERAL_SHARE_PROFILE_ID = "ephemeral-share-session";
 
 export interface CameraState {
@@ -271,6 +274,169 @@ function getFloorTorsionDefaultState(layout?: SerializedDockview | null): AppSta
   };
 }
 
+function getDriftAnalysisDefaultState(layout?: SerializedDockview | null): AppState {
+  const base = getDefaultAppState(layout);
+  const camera: CameraState = {
+    isOrthographic: true,
+    position: [85, 110, 85],
+    target: [0, 0, 0],
+    zoom: 42,
+  };
+  const canvasPanel = getDefaultCanvasPanelState();
+
+  const panelStates: Record<string, PanelState> = {
+    "main-canvas": {
+      type: "canvas",
+      panelId: "main-canvas",
+      state: {
+        ...canvasPanel,
+        camera,
+      },
+    },
+    timeline: {
+      type: "timeline",
+      panelId: "timeline",
+      state: {
+        selectedKeys: ["avgDisplacementX", "avgDisplacementY", "avgDisplacementMag", "avgRotationZ"],
+      },
+    },
+    "interstory-drift-chart": {
+      type: "interstoryDriftChart",
+      panelId: "interstory-drift-chart",
+      state: {
+        visibleCorners: ["NW", "NE", "SW", "SE"],
+      },
+    },
+    "story-drift-heatmap": {
+      type: "storyDriftHeatmap",
+      panelId: "story-drift-heatmap",
+      state: {
+        selectedCorners: ["Max"],
+        resolution: 200,
+      },
+    },
+  };
+
+  return {
+    ...base,
+    currentMetric: "interstoryDrift",
+    thresholdHighlighting: true,
+    thresholds: {
+      ...base.thresholds,
+      interstoryDrift: 0.35,
+    },
+    camera,
+    panelStates,
+  };
+}
+
+function getAccelerationReviewDefaultState(layout?: SerializedDockview | null): AppState {
+  const base = getDefaultAppState(layout);
+
+  const panelStates: Record<string, PanelState> = {
+    timeline: {
+      type: "timeline",
+      panelId: "timeline",
+      state: {
+        selectedKeys: ["x", "y", "magnitude", "avgAccelerationX", "avgAccelerationY", "avgAccelerationMag"],
+      },
+    },
+    "story-drift-heatmap": {
+      type: "storyDriftHeatmap",
+      panelId: "story-drift-heatmap",
+      state: {
+        selectedCorners: ["Max"],
+        resolution: 100,
+      },
+    },
+  };
+
+  return {
+    ...base,
+    currentMetric: "accelerationMag",
+    thresholdHighlighting: true,
+    thresholds: {
+      ...base.thresholds,
+      accelerationMag: 1.5,
+      accelerationX: 1.5,
+      accelerationY: 1.5,
+      accelerationZ: 1.5,
+    },
+    panelStates,
+  };
+}
+
+function getDamageScreeningDefaultState(layout?: SerializedDockview | null): AppState {
+  const base = getDefaultAppState(layout);
+  const camera: CameraState = {
+    isOrthographic: true,
+    position: [120, 90, 0],
+    target: [0, 0, 0],
+    zoom: 48,
+  };
+  const canvasPanel = getDefaultCanvasPanelState();
+  const canvasExpandedScale = canvasPanel.expandedScale ?? { ...DEFAULT_EXPANDED_SCALE_STATE };
+
+  const panelStates: Record<string, PanelState> = {
+    "main-canvas": {
+      type: "canvas",
+      panelId: "main-canvas",
+      state: {
+        ...canvasPanel,
+        camera,
+        expandedScale: {
+          ...canvasExpandedScale,
+          displacementEnabled: true,
+          xzDisplacementScale: 8,
+          zDisplacementScale: 4,
+        },
+      },
+    },
+    timeline: {
+      type: "timeline",
+      panelId: "timeline",
+      state: {
+        selectedKeys: ["avgDisplacementMag", "avgVelocityMag", "avgRotationZ", "avgRotationMag"],
+      },
+    },
+    "interstory-drift-chart": {
+      type: "interstoryDriftChart",
+      panelId: "interstory-drift-chart",
+      state: {
+        visibleCorners: ["NW", "NE", "SW", "SE"],
+      },
+    },
+    "story-drift-heatmap": {
+      type: "storyDriftHeatmap",
+      panelId: "story-drift-heatmap",
+      state: {
+        selectedCorners: ["NW", "NE", "SW", "SE"],
+        resolution: 200,
+      },
+    },
+  };
+
+  return {
+    ...base,
+    currentMetric: "rotationZ",
+    thresholdHighlighting: true,
+    thresholds: {
+      ...base.thresholds,
+      rotationZ: 0.006,
+      rotationMag: 0.008,
+      interstoryDrift: 0.35,
+    },
+    expandedScale: {
+      ...base.expandedScale,
+      displacementEnabled: true,
+      xzDisplacementScale: 8,
+      zDisplacementScale: 4,
+    },
+    camera,
+    panelStates,
+  };
+}
+
 export function getDefaultCameraState(): CameraState {
   return { ...DEFAULT_CAMERA_STATE };
 }
@@ -348,6 +514,9 @@ export function getDataSelectionFromCurrentUrl(): DataSelection | null {
 function getSystemDefaultProfiles(layout?: SerializedDockview | null): SaveProfile[] {
   const defaultState = getDefaultAppState(layout);
   const floorTorsionState = getFloorTorsionDefaultState(layout);
+  const driftAnalysisState = getDriftAnalysisDefaultState(layout);
+  const accelerationReviewState = getAccelerationReviewDefaultState(layout);
+  const damageScreeningState = getDamageScreeningDefaultState(layout);
 
   return [
     createProfile({
@@ -361,6 +530,24 @@ function getSystemDefaultProfiles(layout?: SerializedDockview | null): SaveProfi
       name: "Floor Torsion",
       kind: "system",
       defaultState: floorTorsionState,
+    }),
+    createProfile({
+      id: SYSTEM_PROFILE_DRIFT_ANALYSIS_ID,
+      name: "Drift Analysis",
+      kind: "system",
+      defaultState: driftAnalysisState,
+    }),
+    createProfile({
+      id: SYSTEM_PROFILE_ACCELERATION_REVIEW_ID,
+      name: "Acceleration Review",
+      kind: "system",
+      defaultState: accelerationReviewState,
+    }),
+    createProfile({
+      id: SYSTEM_PROFILE_DAMAGE_SCREENING_ID,
+      name: "Damage Screening",
+      kind: "system",
+      defaultState: damageScreeningState,
     }),
   ];
 }

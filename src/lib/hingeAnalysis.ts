@@ -62,8 +62,8 @@ export const HINGE_METRIC_UNITS: Partial<Record<HingeMetricKey, string>> = {
   maxNegDeformDCRatio: "",
   r3Abs: "rad",
   r3: "rad",
-  m3Abs: "",
-  m3: "",
+  m3Abs: "source moment units",
+  m3: "source moment units",
 };
 
 export function getAvailableHingeStepTypes(hingeData?: HingeDataAccessor): string[] {

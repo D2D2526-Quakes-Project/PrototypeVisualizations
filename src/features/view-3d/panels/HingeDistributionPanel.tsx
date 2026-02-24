@@ -220,6 +220,11 @@ export function HingeDistributionPanel() {
         <div className="text-[10px] text-neutral-500">
           X-axis: metric range bins · Y-axis: hinge row count · Tooltip shows exact bin bounds and active filters
         </div>
+        {(metric === "m3" || metric === "m3Abs") && (
+          <div className="text-[10px] text-neutral-500">
+            `M3` values are shown in source-export model moment units (dataset-dependent; no conversion applied).
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-h-0">

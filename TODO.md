@@ -109,7 +109,7 @@
   - Current behavior hardcodes `performanceLevel: 1` in `buildHingeEnrichedRows`, so filters/labels imply more fidelity than the data model currently carries.
   - Extend parser + hinge metadata/accessor to retain source performance level(s) when available.
   - Update panel filter options and breakdown labels to reflect real available values (and gracefully degrade if absent).
-- [ ] Add unit labels/tooltips for hinge metrics (`R3` in rad, `M3` unit provenance/label) in charts and tables
+- [x] Add unit labels/tooltips for hinge metrics (`R3` in rad, `M3` unit provenance/label) in charts and tables
   - Use `HINGE_METRIC_UNITS` consistently in chart axis names, tooltips, summary cards, and table headers.
   - Clarify `M3` unit source/provenance from hinge exports before exposing unit text in UI (avoid incorrect units).
   - Add `UnitTooltip` where values have known units and keep static/dimensionless metrics explicitly labeled as such.

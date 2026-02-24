@@ -53,6 +53,7 @@ export function HingeHotspotsPanel() {
             `<div>Node: ${row.nodeIndex >= 0 ? row.nodeIndex : "unknown"}</div>`,
             `<div>Critical D/C: ${(first.value ?? row.criticalDcr).toFixed(3)}</div>`,
             `<div>R3: ${row.r3.toFixed(5)} rad</div>`,
+            `<div>M3: ${row.m3.toFixed(3)} (source moment units)</div>`,
           ].join("");
         },
       },
@@ -168,7 +169,7 @@ export function HingeHotspotsPanel() {
       <div className="px-3 py-2 border-b border-neutral-100">
         <div className="text-xs font-medium text-neutral-700 mb-1">Top Beam-End Hotspots (Critical D/C)</div>
         <div className="text-[10px] text-neutral-500 mb-1">
-          X-axis: Critical D/C ratio · Y-axis: beam end (`E# I/J`) · Tooltip includes node and `R3 (rad)`
+          X-axis: Critical D/C ratio · Y-axis: beam end (`E# I/J`) · Tooltip includes node, `R3 (rad)`, and `M3` source units
         </div>
         <div className="h-48 rounded border border-neutral-100">
           <ReactECharts option={topChartOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
@@ -199,6 +200,11 @@ export function HingeHotspotsPanel() {
               <th className="px-2 py-1.5 text-right">Node</th>
               <th className="px-2 py-1.5 text-right">Crit D/C (ratio)</th>
               <th className="px-2 py-1.5 text-right">R3 (rad)</th>
+              <th
+                className="px-2 py-1.5 text-right"
+                title="Model output moment units from source export (dataset-dependent)">
+                M3 (source units)
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -212,11 +218,16 @@ export function HingeHotspotsPanel() {
                 <td className="px-2 py-1 font-mono text-right">
                   <UnitTooltip value={row.r3} unit="rad" decimals={5} showConversions={false} />
                 </td>
+                <td
+                  className="px-2 py-1 font-mono text-right"
+                  title="Model output moment units from source export (dataset-dependent)">
+                  {row.m3.toFixed(3)}
+                </td>
               </tr>
             ))}
             {topRows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-2 py-4 text-center text-neutral-500">
+                <td colSpan={7} className="px-2 py-4 text-center text-neutral-500">
                   No hinge rows match the selected step filter.
                 </td>
               </tr>

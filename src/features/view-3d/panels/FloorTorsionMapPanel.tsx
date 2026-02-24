@@ -56,7 +56,7 @@ export function FloorTorsionMapPanel() {
             <span>0.000000</span>
             <span>{maxAbsRotation.toFixed(6)}</span>
           </div>
-          <div className="mt-1 text-[10px] text-neutral-500">Axes: X (horizontal), Z (vertical) in inches (in)</div>
+          <div className="mt-1 text-[10px] text-neutral-500">Axes: X (horizontal), Y (vertical) in inches (in)</div>
         </div>
       </div>
 
@@ -65,20 +65,28 @@ export function FloorTorsionMapPanel() {
           const normalized = Math.max(-1, Math.min(1, row.rotationRad / maxAbsRotation));
           const fill = formatHex(torsionColorScale((normalized + 1) / 2));
           const tooltip = `Story ${row.storyId}\nRotation: ${row.rotationRad.toFixed(6)} rad\nNodes: ${row.nodeCount}`;
+          const absRotation = Math.abs(row.rotationRad);
 
           return (
-            <div
-              key={row.storyId}
-              className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded border border-neutral-200 bg-white p-2"
-              title={tooltip}>
-              <div className="font-mono text-xs text-neutral-700 min-w-10">L{row.storyId}</div>
-              <div className="h-20 min-w-0">
-                <FloorTorsionPlanPreview snapshot={row} fill={fill} className="h-full w-full" />
+            <div key={row.storyId} className="rounded border border-neutral-200 bg-white p-2" title={tooltip}>
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] text-neutral-500">Story</div>
+                  <div className="font-mono text-xs text-neutral-800 truncate" title={row.storyId}>
+                    {row.storyId}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] leading-tight shrink-0">
+                  <div className="text-neutral-500">Rotation (rad)</div>
+                  <div className="font-mono text-neutral-800 text-right">{formatSigned(row.rotationRad, 6)}</div>
+                  <div className="text-neutral-500">|Rotation|</div>
+                  <div className="font-mono text-neutral-700 text-right">{absRotation.toFixed(6)}</div>
+                  <div className="text-neutral-500">Nodes</div>
+                  <div className="text-neutral-500 text-right">{row.nodeCount}</div>
+                </div>
               </div>
-              <div className="text-right text-[10px] leading-tight">
-                <div className="text-neutral-500">Rotation (rad)</div>
-                <div className="font-mono text-neutral-800">{formatSigned(row.rotationRad, 6)}</div>
-                <div className="text-neutral-400 mt-1">{row.nodeCount} nodes</div>
+              <div className="h-32 min-w-0 rounded border border-neutral-100 bg-neutral-50">
+                <FloorTorsionPlanPreview snapshot={row} fill={fill} className="h-full w-full" />
               </div>
             </div>
           );

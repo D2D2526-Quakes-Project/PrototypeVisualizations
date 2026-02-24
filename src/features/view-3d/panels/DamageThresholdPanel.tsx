@@ -25,45 +25,65 @@ const colorMap = interpolate(
   "oklab",
 );
 
+const DISPLAY_CORNERS = ["NE", "NW", "SW", "SE"] as const;
+const CORNER_DATA_INDEX: Record<CornerName, number> = {
+  NW: 0,
+  NE: 1,
+  SW: 2,
+  SE: 3,
+};
+
+type CornerName = "NW" | "NE" | "SW" | "SE";
+type ThresholdCrossingFrames = Record<CornerName, number | null>;
+
 export function DamageThresholdPanel() {
   const { animationData } = useAnimationData();
-  const { storyOrder } = animationData.metadata;
-  const { frameIndex } = usePlayback();
+  const { storyOrder, dt } = animationData.metadata;
+  const { frameIndex, playing } = usePlayback();
   const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
   const { thresholds, setThreshold } = useThresholds();
 
   const { storyDrift, peakStoryDrift } = animationData.precomputed;
+  const reversedStories = useMemo(
+    () => storyOrder.map((storyId, storyIndex) => ({ storyId, storyIndex })).toReversed(),
+    [storyOrder],
+  );
 
   const storyThresholdFrame = useMemo(() => {
-    const storyThresholds = new Map();
+    const storyThresholds = new Map<string, ThresholdCrossingFrames>();
+    const { data, frameCount, cornerCount, storyCount } = storyDrift;
+    const storyStride = frameCount * cornerCount;
+    const threshold = thresholds.interstoryDrift;
 
-    for (let i = 0; i < storyDrift.storyCount; i++) {
-      const storyId = storyOrder[i];
-      const time = {
+    // Skip ground story (index 0): parser only computes interstory drift for stories above ground.
+    for (let storyIndex = 1; storyIndex < storyCount; storyIndex++) {
+      const storyId = storyOrder[storyIndex];
+      const time: ThresholdCrossingFrames = {
         NW: null as number | null,
         NE: null as number | null,
         SW: null as number | null,
         SE: null as number | null,
       };
+      const storyBase = storyIndex * storyStride;
 
-      for (let f = 0; f < storyDrift.frameCount; f++) {
-        const story = storyDrift.getStoryDrift(i, f);
-        const nw = story[0];
-        const ne = story[1];
-        const sw = story[2];
-        const se = story[3];
+      for (let frame = 0; frame < frameCount; frame++) {
+        const frameBase = storyBase + frame * cornerCount;
+        const nw = data[frameBase];
+        const ne = data[frameBase + 1];
+        const sw = data[frameBase + 2];
+        const se = data[frameBase + 3];
 
-        if (nw > thresholds.interstoryDrift && time.NW === null) {
-          time.NW = f;
+        if (nw > threshold && time.NW === null) {
+          time.NW = frame;
         }
-        if (ne > thresholds.interstoryDrift && time.NE === null) {
-          time.NE = f;
+        if (ne > threshold && time.NE === null) {
+          time.NE = frame;
         }
-        if (sw > thresholds.interstoryDrift && time.SW === null) {
-          time.SW = f;
+        if (sw > threshold && time.SW === null) {
+          time.SW = frame;
         }
-        if (se > thresholds.interstoryDrift && time.SE === null) {
-          time.SE = f;
+        if (se > threshold && time.SE === null) {
+          time.SE = frame;
         }
         if (time.NW !== null && time.NE !== null && time.SW !== null && time.SE !== null) {
           break;
@@ -86,7 +106,8 @@ export function DamageThresholdPanel() {
       <div className="flex flex-col gap-2">
         <label className="flex flex-col">
           <span className="font-semibold">
-            Warning Threshold: <UnitTooltip value={thresholds.interstoryDrift * 100} unit="%" decimals={3} />
+            Warning Threshold:{" "}
+            <UnitTooltip interactive={!playing} value={thresholds.interstoryDrift * 100} unit="%" decimals={3} />
           </span>
           <input
             type="range"
@@ -109,7 +130,7 @@ export function DamageThresholdPanel() {
           </button>
         </div>
         <div className="grid grid-cols-4 gap-1">
-          {storyOrder.toReversed().map((storyId) => (
+          {reversedStories.map(({ storyId }) => (
             <label key={storyId} className="flex items-center gap-2 cursor-pointer hover:bg-neutral-100 p-1 rounded">
               <input
                 type="checkbox"
@@ -134,22 +155,23 @@ export function DamageThresholdPanel() {
           </span>
         </div>
 
-        {storyOrder.toReversed().map((storyId, i) => {
+        {reversedStories.map(({ storyId, storyIndex }) => {
           if (!visibleFloors.has(storyId)) return null;
-          const corners = storyDrift.getStoryDrift(storyOrder.length - i - 1, frameIndex);
+          const frameBase = storyIndex * storyDrift.frameCount * storyDrift.cornerCount + frameIndex * storyDrift.cornerCount;
+          const driftData = storyDrift.data;
           const peaks = peakStoryDrift[storyId];
-          const thresholds = storyThresholdFrame.get(storyId);
+          const thresholdFrames = storyThresholdFrame.get(storyId);
 
-          if (!corners || !peaks || !thresholds) return null;
+          if (!peaks || !thresholdFrames) return null;
 
           return (
             <React.Fragment key={storyId}>
               <div className="font-mono text-sm">{storyId}</div>
               <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] items-center p-2 gap-2">
-                {(["NE", "NW", "SW", "SE"] as const).map((corner, ci) => {
-                  const thresholdFrame = thresholds[corner];
+                {DISPLAY_CORNERS.map((corner) => {
+                  const thresholdFrame = thresholdFrames[corner];
                   const peak = peaks[corner];
-                  const current = corners[ci];
+                  const current = driftData[frameBase + CORNER_DATA_INDEX[corner]];
 
                   return (
                     <React.Fragment key={corner}>
@@ -161,16 +183,17 @@ export function DamageThresholdPanel() {
                       />
                       <div className="font-mono">{corner}</div>
                       <span className="w-12 font-mono text-right shrink-0">
-                        <UnitTooltip value={current} unit="%" decimals={4} />
+                        <UnitTooltip interactive={!playing} value={current} unit="%" decimals={4} />
                       </span>
                       <span className="w-12 font-mono text-right shrink-0">
-                        <UnitTooltip value={peak || 0} unit="%" decimals={4} />
+                        <UnitTooltip interactive={!playing} value={peak || 0} unit="%" decimals={4} />
                       </span>
                       <div
                         className={`w-14 font-mono text-center p-1 rounded ${thresholdFrame !== null ? "bg-yellow-200" : ""}`}>
                         {thresholdFrame !== null ? (
                           <UnitTooltip
-                            value={thresholdFrame * animationData.metadata.dt}
+                            interactive={!playing}
+                            value={thresholdFrame * dt}
                             unit="s"
                             decimals={2}
                             showConversions={false}

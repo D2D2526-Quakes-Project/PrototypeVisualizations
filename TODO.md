@@ -91,6 +91,7 @@
 - [ ] Implement synchronized playback
 - [ ] Add difference visualization
 - [ ] Add simulation selector UI
+- [ ] Upgrade main menu simulation picker from single-select staged open to true multi-select split-view launch flow
 
 ### 6.3 Export Functionality
 
@@ -116,7 +117,7 @@
 - [ ] Add distance / metric markers numbers on the grid in the building scene.
 - [ ] Show the slice view cutting planes as planes in the building scene. Also show per axis a line filling with the visible area along that axis.
 - [ ] Add node labels (story/floor IDs)
-- [ ] Add marching cubes to create voxel grid volumes from nodes. Allow coloring and thresholding just like nodes, but toggle between hiding or showing values above the threshold
+- [ ] Add marching squares (2D) / marching cubes (3D) to create voxel grid volumes from nodes. Allow threshold-based surface rendering where the surface is drawn based on thresholded nodes - either showing nodes that pass the threshold or toggling to show nodes below the threshold. Allow coloring and thresholding just like nodes.
 
 ---
 

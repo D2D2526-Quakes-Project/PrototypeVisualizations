@@ -94,7 +94,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
 
   const backToHome = () => {
     clearSelection();
-    navigate({ pathname: "/", search: window.location.search });
+    navigate("/");
   };
 
   const switchProfile = (profile: SaveProfile) => {

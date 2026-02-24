@@ -375,16 +375,16 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
           <div className="border-t pt-2 animate-fade-in">
             <div className="flex items-center justify-between gap-2 mb-2">
               <h3 className="font-bold text-sm">Floor Torsion (Top-Down)</h3>
-              <span className="text-[10px] text-neutral-500">X-Z plan</span>
+              <span className="text-[10px] text-neutral-500">X-Y plan (Z vertical)</span>
             </div>
             <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-              <div className="h-32 w-full">
-                <FloorTorsionPlanPreview
-                  snapshot={floorTorsion.snapshot}
-                  fill={floorTorsion.color}
-                  className="h-full w-full"
-                  label={`Story ${storyId} floor torsion preview`}
-                />
+              <div className="h-32 w-full rounded border border-neutral-100 bg-white">
+                  <FloorTorsionPlanPreview
+                    snapshot={floorTorsion.snapshot}
+                    fill={floorTorsion.color}
+                    className="h-full w-full"
+                    label={`Story ${storyId} floor torsion preview`}
+                  />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
                 <div>

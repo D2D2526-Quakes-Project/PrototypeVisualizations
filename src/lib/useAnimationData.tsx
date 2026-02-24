@@ -508,7 +508,7 @@ function LoadingOverlay({
             <span className="capitalize text text-neutral-400 w-32 truncate shrink-0">{name}</span>
             <div className="flex-1 h-2 bg-neutral-300 rounded-full overflow-hidden">
               <div
-                style={{ width: `${p * 100}%` }}
+                style={{ width: `${p}%` }}
                 className="bg-amber-400 h-full rounded-full transition-all duration-100 ease-out"
               />
             </div>

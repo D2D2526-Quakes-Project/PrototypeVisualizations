@@ -33,6 +33,7 @@ import ReactECharts from "echarts-for-react";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useThresholds } from "@/features/view-3d/contexts/visualization";
+import { getDefaultVelocityTimeChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,12 +42,14 @@ import { ChevronDown } from "lucide-react";
 import { renderToString } from "react-dom/server";
 import { formatFixed3 } from "@/lib/utils";
 import type { EChartsOption } from "echarts";
+import type { IDockviewPanelProps } from "dockview";
+import { useViewStore } from "@/state";
 
 const CHANNEL_CONFIG = {
-  x: { id: "x", label: "X Velocity", shortName: "X", color: "#f87171" },
-  y: { id: "y", label: "Y Velocity", shortName: "Y", color: "#4ade80" },
-  z: { id: "z", label: "Z Velocity", shortName: "Z", color: "#60a5fa" },
-  magnitude: { id: "magnitude", label: "Speed", shortName: "Spd", color: "#fbbf24" },
+  x: { id: "x", label: "X Velocity", shortName: "X", color: "#f87171", unit: "in/s" },
+  y: { id: "y", label: "Y Velocity", shortName: "Y", color: "#4ade80", unit: "in/s" },
+  z: { id: "z", label: "Z Velocity", shortName: "Z", color: "#60a5fa", unit: "in/s" },
+  magnitude: { id: "magnitude", label: "Speed", shortName: "Spd", color: "#fbbf24", unit: "in/s" },
 } as const;
 
 type ChannelKey = keyof typeof CHANNEL_CONFIG;
@@ -59,7 +62,7 @@ function TooltipContent({
 }: {
   frame: number;
   time: number;
-  values: Array<{ name: string; color: string; value: number }>;
+  values: Array<{ name: string; color: string; value: number; unit: string }>;
 }) {
   return (
     <div style={{ minWidth: "180px" }}>
@@ -78,7 +81,9 @@ function TooltipContent({
         <div key={item.name} style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color }} />
           <span style={{ color: "#6b7280", fontSize: "10px" }}>{item.name}:</span>
-          <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>{item.value.toFixed(4)}</span>
+          <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>
+            {item.value.toFixed(4)} {item.unit}
+          </span>
         </div>
       ))}
     </div>
@@ -148,13 +153,25 @@ function CheckSelect({
   );
 }
 
-export function VelocityTimeChart() {
+function sanitizeSelectedKeys(value: unknown): ChannelKey[] {
+  if (!Array.isArray(value)) return ["magnitude"];
+  const valid = value.filter((v): v is ChannelKey => typeof v === "string" && CHANNEL_ORDER.includes(v as ChannelKey));
+  return valid.length > 0 ? Array.from(new Set(valid)) : ["magnitude"];
+}
+
+export function VelocityTimeChart({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const { thresholds } = useThresholds();
-  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(["magnitude"]);
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const panelId = api?.id ?? "velocity-time-chart";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultVelocityTimeChartPanelState();
+  const savedState = savedPanelState?.type === "velocityTimeChart" ? savedPanelState.state : defaultState;
+  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(() => sanitizeSelectedKeys(savedState.selectedKeys));
   const chartRef = useRef<ReactECharts>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const panelIdRef = useRef(panelId);
 
   const maxFrame = animationData.metadata.frameCount - 1;
 
@@ -166,57 +183,23 @@ export function VelocityTimeChart() {
     return t;
   }, [animationData, maxFrame]);
 
-  const velocityData = useMemo(() => {
-    const { nodeCount, frameCount } = animationData.metadata;
-    const { displacementLin } = animationData;
-
-    const avgVelX: number[] = [];
-    const avgVelY: number[] = [];
-    const avgVelZ: number[] = [];
-    const avgSpeed: number[] = [];
-
-    for (let frame = 1; frame < frameCount; frame++) {
-      const prevFrame = displacementLin.atFrame(frame - 1);
-      const currFrame = displacementLin.atFrame(frame);
-      const dt = animationData.metadata.dt;
-
-      let sumVx = 0,
-        sumVy = 0,
-        sumVz = 0;
-
-      for (let nodeIdx = 0; nodeIdx < nodeCount; nodeIdx++) {
-        const prevPos = prevFrame.at(nodeIdx);
-        const currPos = currFrame.at(nodeIdx);
-        sumVx += (currPos[0] - prevPos[0]) / dt;
-        sumVy += (currPos[1] - prevPos[1]) / dt;
-        sumVz += (currPos[2] - prevPos[2]) / dt;
-      }
-
-      const count = nodeCount;
-      avgVelX.push(sumVx / count);
-      avgVelY.push(sumVy / count);
-      avgVelZ.push(sumVz / count);
-      avgSpeed.push(Math.sqrt((sumVx / count) ** 2 + (sumVy / count) ** 2 + (sumVz / count) ** 2));
-    }
-
-    return { avgVelX, avgVelY, avgVelZ, avgSpeed };
-  }, [animationData]);
-
   const getChannelData = useCallback(
     (key: ChannelKey) => {
+      const { precomputed } = animationData;
+      if (!precomputed.avgVelocityPerFrame) return undefined;
       switch (key) {
         case "x":
-          return { data: velocityData.avgVelX, config: CHANNEL_CONFIG.x };
+          return { data: precomputed.avgVelocityPerFrame.x, config: CHANNEL_CONFIG.x };
         case "y":
-          return { data: velocityData.avgVelY, config: CHANNEL_CONFIG.y };
+          return { data: precomputed.avgVelocityPerFrame.y, config: CHANNEL_CONFIG.y };
         case "z":
-          return { data: velocityData.avgVelZ, config: CHANNEL_CONFIG.z };
+          return { data: precomputed.avgVelocityPerFrame.z, config: CHANNEL_CONFIG.z };
         case "magnitude":
         default:
-          return { data: velocityData.avgSpeed, config: CHANNEL_CONFIG.magnitude };
+          return { data: precomputed.avgVelocityPerFrame.mag, config: CHANNEL_CONFIG.magnitude };
       }
     },
-    [velocityData],
+    [animationData],
   );
 
   const option: EChartsOption = useMemo((): EChartsOption => {
@@ -232,7 +215,10 @@ export function VelocityTimeChart() {
     const AVAILABLE_HEIGHT_PCT = 92;
 
     activeKeys.forEach((key, index) => {
-      const { data, config } = getChannelData(key);
+      const channelData = getChannelData(key);
+      if (!channelData) return;
+      const { data, config } = channelData;
+
       const isLast = index === activeKeys.length - 1;
       const rowHeight = AVAILABLE_HEIGHT_PCT / activeKeys.length;
       const topPct = 2 + index * rowHeight;
@@ -247,13 +233,13 @@ export function VelocityTimeChart() {
       });
 
       titles.push({
-        text: config.label,
+        text: `${config.label} (${config.unit})`,
         left: LEFT_MARGIN + 5,
         top: `${topPct}%`,
         textStyle: { fontSize: 11, fontWeight: "bold", color: config.color },
       });
 
-      const seriesData: [number, number][] = data.map((v, i) => [times[i + 1], v]);
+      const seriesData: [number, number][] = Array.from(data, (v, i) => [times[i] ?? 0, v]);
 
       xAxes.push({
         gridIndex: index,
@@ -262,12 +248,20 @@ export function VelocityTimeChart() {
         max: maxFrame * animationData.metadata.dt,
         axisLine: { show: isLast, lineStyle: { color: "#d1d5db" } },
         axisLabel: { show: isLast, color: "#6b7280", fontSize: 10 },
+        name: isLast ? "Time (s)" : undefined,
+        nameLocation: "middle",
+        nameGap: 26,
+        nameTextStyle: { color: "#4b5563", fontSize: 10 },
         splitLine: { show: true, lineStyle: { color: "#f3f4f6" } },
       });
 
       yAxes.push({
         gridIndex: index,
         type: "value",
+        name: config.unit,
+        nameLocation: "end",
+        nameGap: 8,
+        nameTextStyle: { color: "#6b7280", fontSize: 10 },
         axisLine: { lineStyle: { color: "#d1d5db" } },
         axisLabel: { color: "#6b7280", fontSize: 10 },
         splitLine: { lineStyle: { color: "#f3f4f6" } },
@@ -343,6 +337,7 @@ export function VelocityTimeChart() {
           const values = params.map((p) => ({
             name: p.seriesName!,
             color: CHANNEL_CONFIG[p.seriesName?.toLowerCase().split(" ")[0] as ChannelKey]?.color || p.color,
+            unit: CHANNEL_CONFIG[p.seriesName?.toLowerCase().split(" ")[0] as ChannelKey]?.unit || "in/s",
             value: (p.data as number[])[1],
           }));
           return renderToString(<TooltipContent frame={frame} time={time} values={values} />);
@@ -351,6 +346,10 @@ export function VelocityTimeChart() {
       animation: false,
     };
   }, [selectedKeys, frameIndex, thresholds, animationData.metadata.dt, maxFrame, times, getChannelData]);
+
+  useEffect(() => {
+    setPanelState(panelIdRef.current, "velocityTimeChart", { selectedKeys });
+  }, [selectedKeys, setPanelState]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
@@ -407,6 +406,17 @@ export function VelocityTimeChart() {
           <span className="font-mono">Frame {frameIndex + 1}</span>
           <span className="text-neutral-400">|</span>
           <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)}s</span>
+          <span className="text-neutral-400">|</span>
+          <span className="text-xs text-neutral-500">Units: in/s</span>
+          <span className="text-neutral-400">|</span>
+          <span className="text-xs text-neutral-500">
+            Source:{" "}
+            {animationData.precomputed.avgVelocityPerFrame
+              ? "precomputed avg velocity"
+              : animationData.velocityLin
+                ? "velocityLin"
+                : "derived from displacement"}
+          </span>
         </div>
       </div>
       <div className="flex-1 min-h-0 w-full relative" style={{ cursor: isDragging ? "grabbing" : "default" }}>

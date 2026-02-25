@@ -34,6 +34,11 @@ Per-panel state currently includes:
 - Timeline panel legend/channel choices
 - Story drift heatmap controls
 - Interstory drift chart legend visibility
+- Velocity time chart channel choices
+- Rotation time chart channel choices
+- Histogram chart axis/metric choices
+- Data table page
+- Peak values table sort
 
 ## 3. Save/Restore Pipeline
 

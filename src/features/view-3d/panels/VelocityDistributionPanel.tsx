@@ -1,8 +1,9 @@
 import { HistogramChart } from "@/features/view-3d/panels/HistogramChart";
 import type { Metric } from "@/lib/metrics";
+import type { IDockviewPanelProps } from "dockview";
 
 const VELOCITY_METRICS: Metric[] = ["velocityMag", "velocityX", "velocityY", "velocityZ"];
 
-export function VelocityDistributionPanel() {
-  return <HistogramChart title="Velocity Distribution" initialMetric="velocityMag" metricOptions={VELOCITY_METRICS} />;
+export function VelocityDistributionPanel({ api }: IDockviewPanelProps) {
+  return <HistogramChart api={api} title="Velocity Distribution" initialMetric="velocityMag" metricOptions={VELOCITY_METRICS} />;
 }

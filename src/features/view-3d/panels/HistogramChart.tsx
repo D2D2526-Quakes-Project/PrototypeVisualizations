@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
+import { getDefaultHistogramChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { EChartsOption } from "echarts";
@@ -46,6 +47,8 @@ import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import type { IDockviewPanelProps } from "dockview";
+import { useViewStore } from "@/state";
 
 const POSITION_AXIS_CONFIG = {
   x: { id: "x", label: "X Position", color: "#f87171" },
@@ -59,6 +62,7 @@ interface HistogramChartProps {
   initialMetric?: Metric;
   metricOptions?: Metric[];
   title?: string;
+  api?: IDockviewPanelProps["api"];
 }
 
 function SimpleSelect<T extends string>({
@@ -137,6 +141,7 @@ export function HistogramChart({
   initialMetric = "displacementMag",
   metricOptions,
   title = "Threshold Histogram",
+  api,
 }: HistogramChartProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
@@ -144,15 +149,27 @@ export function HistogramChart({
   const { thresholds } = useThresholds();
   const { visibleFloors } = useFloorVisibility();
   const { availableMetrics } = useColor();
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const panelId = api?.id ?? "histogram-chart";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultHistogramChartPanelState();
+  const savedState = savedPanelState?.type === "histogramChart" ? savedPanelState.state : defaultState;
 
-  const [positionAxis, setPositionAxis] = useState<PositionAxis>("x");
+  const [positionAxis, setPositionAxis] = useState<PositionAxis>(() =>
+    savedState.positionAxis === "x" || savedState.positionAxis === "y" || savedState.positionAxis === "z"
+      ? savedState.positionAxis
+      : "x",
+  );
   const filteredMetrics = useMemo(() => {
     const allowed = metricOptions
       ? availableMetrics.filter((metric) => metricOptions.includes(metric))
       : availableMetrics;
     return allowed.length > 0 ? allowed : availableMetrics;
   }, [availableMetrics, metricOptions]);
-  const [valueType, setValueType] = useState<Metric>(initialMetric);
+  const [valueType, setValueType] = useState<Metric>(() => {
+    const candidate = savedState.valueType;
+    return typeof candidate === "string" && candidate in METRIC_CONFIGS ? (candidate as Metric) : initialMetric;
+  });
 
   useEffect(() => {
     if (filteredMetrics.includes(valueType)) {
@@ -163,6 +180,10 @@ export function HistogramChart({
       setValueType(filteredMetrics[0]);
     }
   }, [filteredMetrics, valueType]);
+
+  useEffect(() => {
+    setPanelState(panelId, "histogramChart", { positionAxis, valueType });
+  }, [panelId, positionAxis, setPanelState, valueType]);
 
   const staticConfig = useMemo(() => {
     const { nodeCount, stories, storyOrder } = animationData.metadata;
@@ -294,7 +315,7 @@ export function HistogramChart({
       },
       xAxis: {
         type: "value",
-        name: posLabel,
+        name: `${posLabel} (in)`,
         nameLocation: "middle",
         nameGap: 30,
         nameTextStyle: { fontSize: 11, color: "#4b5563" },
@@ -304,7 +325,7 @@ export function HistogramChart({
         axisLabel: {
           color: "#6b7280",
           fontSize: 10,
-          formatter: (v: number) => (v / 12).toFixed(0) + " ft",
+          formatter: (v: number) => `${v.toFixed(0)} in`,
         },
         splitLine: { show: true, lineStyle: { color: "#f3f4f6" } },
       },

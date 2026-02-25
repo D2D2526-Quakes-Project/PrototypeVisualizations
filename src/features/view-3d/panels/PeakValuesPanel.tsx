@@ -33,13 +33,26 @@
  */
 
 import { usePlayback } from "@/features/playback/PlaybackContext";
+import { getDefaultPeakValuesPanelState } from "@/features/view-3d/lib/statePersistence";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import type { IDockviewPanelProps } from "dockview";
+import { useViewStore } from "@/state";
 
 type SortKey = "node" | "x" | "y" | "z" | "magnitude";
 type SortDir = "asc" | "desc";
+
+function sanitizeSortKey(value: unknown): SortKey {
+  return value === "node" || value === "x" || value === "y" || value === "z" || value === "magnitude"
+    ? value
+    : "magnitude";
+}
+
+function sanitizeSortDir(value: unknown): SortDir {
+  return value === "asc" || value === "desc" ? value : "desc";
+}
 
 function SortHeader({
   label,
@@ -64,11 +77,16 @@ function SortHeader({
   );
 }
 
-export function PeakValuesPanel() {
+export function PeakValuesPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, playing } = usePlayback();
-  const [sortKey, setSortKey] = useState<SortKey>("magnitude");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const panelId = api?.id ?? "peak-values";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultPeakValuesPanelState();
+  const savedState = savedPanelState?.type === "peakValues" ? savedPanelState.state : defaultState;
+  const [sortKey, setSortKey] = useState<SortKey>(() => sanitizeSortKey(savedState.sortKey));
+  const [sortDir, setSortDir] = useState<SortDir>(() => sanitizeSortDir(savedState.sortDir));
 
   const { metadata, precomputed, displacementLin } = animationData;
   const { nodeCount } = metadata;
@@ -138,6 +156,10 @@ export function PeakValuesPanel() {
       setSortDir("desc");
     }
   };
+
+  useEffect(() => {
+    setPanelState(panelId, "peakValues", { sortKey, sortDir });
+  }, [panelId, setPanelState, sortDir, sortKey]);
 
   return (
     <div className="h-full w-full flex flex-col bg-white">

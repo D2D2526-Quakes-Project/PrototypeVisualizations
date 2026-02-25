@@ -28,20 +28,34 @@
  */
 
 import { usePlayback } from "@/features/playback/PlaybackContext";
+import { getDefaultDataTablePanelState } from "@/features/view-3d/lib/statePersistence";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import type { IDockviewPanelProps } from "dockview";
+import { useViewStore } from "@/state";
 
 const PAGE_SIZE = 50;
 
-export function DataTablePanel() {
+export function DataTablePanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, playing } = usePlayback();
-  const [page, setPage] = useState(0);
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const panelId = api?.id ?? "data-table";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultDataTablePanelState();
+  const savedState = savedPanelState?.type === "dataTable" ? savedPanelState.state : defaultState;
+  const [page, setPage] = useState(() => Math.max(0, Math.floor(savedState.page)));
 
   const { nodeCount, stories } = animationData.metadata;
+  const totalPages = Math.ceil(nodeCount / PAGE_SIZE);
+  const safePage = Math.min(page, Math.max(totalPages - 1, 0));
+
+  useEffect(() => {
+    setPanelState(panelId, "dataTable", { page: safePage });
+  }, [panelId, safePage, setPanelState]);
 
   const tableData = useMemo(() => {
     const { displacementLin } = animationData;
@@ -62,7 +76,7 @@ export function DataTablePanel() {
       });
     });
 
-    const start = page * PAGE_SIZE;
+    const start = safePage * PAGE_SIZE;
     const end = Math.min(start + PAGE_SIZE, nodeCount);
 
     for (let i = start; i < end; i++) {
@@ -79,9 +93,7 @@ export function DataTablePanel() {
     }
 
     return data;
-  }, [animationData, frameIndex, page, nodeCount, stories]);
-
-  const totalPages = Math.ceil(nodeCount / PAGE_SIZE);
+  }, [animationData, frameIndex, safePage, nodeCount, stories]);
 
   return (
     <div className="h-full w-full flex flex-col bg-white">
@@ -90,17 +102,21 @@ export function DataTablePanel() {
           <div className="text-sm text-neutral-700">
             <span className="font-medium">Data Table</span>
             <span className="text-neutral-400 ml-2">
-              - Nodes {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, nodeCount)} of {nodeCount}
+              - Nodes {safePage * PAGE_SIZE + 1}-{Math.min((safePage + 1) * PAGE_SIZE, nodeCount)} of {nodeCount}
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="xs" disabled={page === 0} onClick={() => setPage(page - 1)}>
+            <Button variant="outline" size="xs" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>
               <ChevronLeft className="w-3 h-3" />
             </Button>
             <span className="text-xs text-neutral-500 px-1">
-              {page + 1}/{totalPages}
+              {safePage + 1}/{totalPages}
             </span>
-            <Button variant="outline" size="xs" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>
+            <Button
+              variant="outline"
+              size="xs"
+              disabled={safePage >= totalPages - 1}
+              onClick={() => setPage(safePage + 1)}>
               <ChevronRight className="w-3 h-3" />
             </Button>
           </div>

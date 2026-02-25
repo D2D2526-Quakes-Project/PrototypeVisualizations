@@ -165,6 +165,7 @@ export const UNITS: Record<Unit, UnitConfig> = {
 
 const INCH_TO_METER = 0.0254;
 const FEET_TO_METER = 0.3048;
+const G_TO_M_S2 = 9.80665;
 const RAD_TO_DEG = 57.29577951308232;
 
 export type UnitCategory =
@@ -248,6 +249,13 @@ export const CONVERSION_UNITS: Record<string, UnitConversionInfo> = {
     category: "acceleration",
     toBase: (v) => v,
     fromBase: (v) => v,
+  },
+  g: {
+    abbr: "g",
+    fullName: "gravity (g)",
+    category: "acceleration",
+    toBase: (v) => v * G_TO_M_S2,
+    fromBase: (v) => v / G_TO_M_S2,
   },
   rad: {
     abbr: "rad",
@@ -350,7 +358,7 @@ export function getConversions(value: number, unit: string): ConversionResult[] 
     case "velocity":
       return convertUnits(value, unit, ["in/s", "ft/s", "m/s"]);
     case "acceleration":
-      return convertUnits(value, unit, ["in/s²", "ft/s²", "m/s²"]);
+      return convertUnits(value, unit, ["in/s²", "ft/s²", "m/s²", "g"]);
     case "rotation":
       return convertUnits(value, unit, ["rad", "deg"]);
     case "rotationVelocity":

@@ -87,11 +87,38 @@ export interface InterstoryDriftChartPanelState {
   visibleCorners: string[];
 }
 
+export interface VelocityTimeChartPanelState {
+  selectedKeys: ("x" | "y" | "z" | "magnitude")[];
+}
+
+export interface RotationTimeChartPanelState {
+  selectedKeys: ("rx" | "ry" | "rz" | "magnitude")[];
+}
+
+export interface HistogramChartPanelState {
+  positionAxis: "x" | "y" | "z";
+  valueType: string;
+}
+
+export interface DataTablePanelState {
+  page: number;
+}
+
+export interface PeakValuesPanelState {
+  sortKey: "node" | "x" | "y" | "z" | "magnitude";
+  sortDir: "asc" | "desc";
+}
+
 export type PanelState =
   | { type: "canvas"; state: CanvasPanelState; panelId: string }
   | { type: "timeline"; state: TimelinePanelState; panelId: string }
   | { type: "storyDriftHeatmap"; state: StoryDriftHeatmapPanelState; panelId: string }
   | { type: "interstoryDriftChart"; state: InterstoryDriftChartPanelState; panelId: string }
+  | { type: "velocityTimeChart"; state: VelocityTimeChartPanelState; panelId: string }
+  | { type: "rotationTimeChart"; state: RotationTimeChartPanelState; panelId: string }
+  | { type: "histogramChart"; state: HistogramChartPanelState; panelId: string }
+  | { type: "dataTable"; state: DataTablePanelState; panelId: string }
+  | { type: "peakValues"; state: PeakValuesPanelState; panelId: string }
   | { type: "unknown"; state: Record<string, unknown>; panelId: string };
 
 export interface AppState {
@@ -500,6 +527,38 @@ export function getDefaultStoryDriftHeatmapPanelState(): StoryDriftHeatmapPanelS
 export function getDefaultInterstoryDriftChartPanelState(): InterstoryDriftChartPanelState {
   return {
     visibleCorners: ["NW", "NE", "SW", "SE"],
+  };
+}
+
+export function getDefaultVelocityTimeChartPanelState(): VelocityTimeChartPanelState {
+  return {
+    selectedKeys: ["magnitude"],
+  };
+}
+
+export function getDefaultRotationTimeChartPanelState(): RotationTimeChartPanelState {
+  return {
+    selectedKeys: ["magnitude"],
+  };
+}
+
+export function getDefaultHistogramChartPanelState(): HistogramChartPanelState {
+  return {
+    positionAxis: "x",
+    valueType: "displacementMag",
+  };
+}
+
+export function getDefaultDataTablePanelState(): DataTablePanelState {
+  return {
+    page: 0,
+  };
+}
+
+export function getDefaultPeakValuesPanelState(): PeakValuesPanelState {
+  return {
+    sortKey: "magnitude",
+    sortDir: "desc",
   };
 }
 

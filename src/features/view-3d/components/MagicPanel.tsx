@@ -43,38 +43,20 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const PanelCatalog = {
-  Timeline: Timeline,
-  "Interstory Drift Chart": InterstoryDriftChart,
-  "Main Canvas": MainCanvasPanel,
-  "Histogram Chart": HistogramChart,
-  "Peak Values": PeakValuesPanel,
-  "Data Table": DataTablePanel,
-  "Floor Displacement": FloorDisplacementChart,
-  Statistics: StatisticsPanel,
-  "Velocity Time": VelocityTimeChart,
-  "Rotation Time": RotationTimeChart,
-  "Velocity Distribution": VelocityDistributionPanel,
-  "Acceleration Distribution": AccelerationDistributionPanel,
-  "Hinge Distribution": HingeDistributionPanel,
-  "Hinge Hotspots": HingeHotspotsPanel,
-  "Floor Torsion Map": FloorTorsionMapPanel,
-  "Story Drift Heatmap": StoryDriftHeatmap,
-  "Peak Response Time": PeakResponseTimePanel,
-  "Damage Threshold": DamageThresholdPanel,
-} as const;
-
-type PanelType = keyof typeof PanelCatalog;
-
 type PanelCategory = "Canvas" | "Time Series" | "Distributions" | "Threshold / Damage" | "Summaries" | "Tables / Data";
 
+type PanelType = keyof typeof PANEL_DEFINITIONS;
+
 type PanelDefinition = {
+  component: React.ComponentType<IDockviewPanelProps>;
   category: PanelCategory;
   icon: LucideIcon;
   description: string;
+  requiredOptionalData: PanelDataKey[];
+  optionalEnhancementData: PanelDataKey[];
 };
 
-type OptionalPanelDataKey =
+type PanelDataKey =
   | "beamData"
   | "hingeData"
   | "displacementRot"
@@ -83,53 +65,154 @@ type OptionalPanelDataKey =
   | "accelerationLin"
   | "accelerationRot";
 
-type PanelDataRequirementDescriptor = {
-  requiredOptionalData: OptionalPanelDataKey[];
-  optionalEnhancementData: OptionalPanelDataKey[];
-};
-
-const PANEL_DEFINITIONS: Record<PanelType, PanelDefinition> = {
-  Timeline: { category: "Time Series", icon: LineChart, description: "Playback timeline and overlays" },
-  "Interstory Drift Chart": { category: "Time Series", icon: LineChart, description: "Per-story drift traces" },
-  "Main Canvas": { category: "Canvas", icon: PanelTop, description: "3D structure viewport" },
-  "Histogram Chart": { category: "Distributions", icon: BarChart3, description: "Threshold exceedance by position" },
-  "Peak Values": { category: "Summaries", icon: Gauge, description: "Peak values for selected nodes" },
-  "Data Table": { category: "Tables / Data", icon: Table, description: "Raw node values table" },
-  "Floor Displacement": { category: "Time Series", icon: LineChart, description: "Floor average displacement traces" },
-  Statistics: { category: "Summaries", icon: Activity, description: "Simulation and current-frame stats" },
-  "Velocity Time": { category: "Time Series", icon: LineChart, description: "Velocity channels over time" },
-  "Rotation Time": { category: "Time Series", icon: LineChart, description: "Rotation channels over time" },
+const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
+  Timeline: {
+    component: Timeline,
+    category: "Time Series",
+    icon: LineChart,
+    description: "Playback timeline and overlays",
+    requiredOptionalData: [],
+    optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot"],
+  },
+  "Interstory Drift Chart": {
+    component: InterstoryDriftChart,
+    category: "Time Series",
+    icon: LineChart,
+    description: "Per-story drift traces",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  "Main Canvas": {
+    component: MainCanvasPanel,
+    category: "Canvas",
+    icon: PanelTop,
+    description: "3D structure viewport",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  "Histogram Chart": {
+    component: HistogramChart,
+    category: "Distributions",
+    icon: BarChart3,
+    description: "Threshold exceedance by position",
+    requiredOptionalData: [],
+    optionalEnhancementData: ["velocityLin", "accelerationLin"],
+  },
+  "Peak Values": {
+    component: PeakValuesPanel,
+    category: "Summaries",
+    icon: Gauge,
+    description: "Peak values for selected nodes",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  "Data Table": {
+    component: DataTablePanel,
+    category: "Tables / Data",
+    icon: Table,
+    description: "Raw node values table",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  "Floor Displacement": {
+    component: FloorDisplacementChart,
+    category: "Time Series",
+    icon: LineChart,
+    description: "Floor average displacement traces",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  Statistics: {
+    component: StatisticsPanel,
+    category: "Summaries",
+    icon: Activity,
+    description: "Simulation and current-frame stats",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  "Velocity Time": {
+    component: VelocityTimeChart,
+    category: "Time Series",
+    icon: LineChart,
+    description: "Velocity channels over time",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  "Rotation Time": {
+    component: RotationTimeChart,
+    category: "Time Series",
+    icon: LineChart,
+    description: "Rotation channels over time",
+    requiredOptionalData: ["velocityRot"],
+    optionalEnhancementData: [],
+  },
   "Velocity Distribution": {
+    component: VelocityDistributionPanel,
     category: "Distributions",
     icon: BarChart3,
     description: "Velocity histogram distribution",
+    requiredOptionalData: ["velocityLin"],
+    optionalEnhancementData: [],
   },
   "Acceleration Distribution": {
+    component: AccelerationDistributionPanel,
     category: "Distributions",
     icon: BarChart3,
     description: "Acceleration histogram distribution",
+    requiredOptionalData: ["accelerationLin"],
+    optionalEnhancementData: [],
   },
-  "Hinge Distribution": { category: "Distributions", icon: BarChart3, description: "Static hinge metric histogram" },
-  "Hinge Hotspots": { category: "Threshold / Damage", icon: Flame, description: "Static hinge hotspot ranking" },
+  "Hinge Distribution": {
+    component: HingeDistributionPanel,
+    category: "Distributions",
+    icon: BarChart3,
+    description: "Static hinge metric histogram",
+    requiredOptionalData: ["hingeData"],
+    optionalEnhancementData: ["beamData"],
+  },
+  "Hinge Hotspots": {
+    component: HingeHotspotsPanel,
+    category: "Threshold / Damage",
+    icon: Flame,
+    description: "Static hinge hotspot ranking",
+    requiredOptionalData: ["hingeData"],
+    optionalEnhancementData: ["beamData"],
+  },
   "Floor Torsion Map": {
+    component: FloorTorsionMapPanel,
     category: "Summaries",
     icon: RotateCw,
     description: "Top-down rotation preview per floor",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
   },
   "Story Drift Heatmap": {
+    component: StoryDriftHeatmap,
     category: "Threshold / Damage",
     icon: ShieldAlert,
     description: "Drift heatmap by story/time",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
   },
-  "Peak Response Time": { category: "Threshold / Damage", icon: Gauge, description: "When peaks happen in response" },
+  "Peak Response Time": {
+    component: PeakResponseTimePanel,
+    category: "Threshold / Damage",
+    icon: Gauge,
+    description: "When peaks happen in response",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
   "Damage Threshold": {
+    component: DamageThresholdPanel,
     category: "Threshold / Damage",
     icon: ShieldAlert,
     description: "Threshold evaluation summary",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
   },
-};
+} as const;
 
-const OPTIONAL_PANEL_DATA_LABELS: Record<OptionalPanelDataKey, string> = {
+const PANEL_DATA_LABELS: Record<PanelDataKey, string> = {
   beamData: "beam connectivity data",
   hingeData: "hinge data",
   displacementRot: "rotational displacement data",
@@ -139,50 +222,26 @@ const OPTIONAL_PANEL_DATA_LABELS: Record<OptionalPanelDataKey, string> = {
   accelerationRot: "rotational acceleration data",
 };
 
-const PANEL_DATA_REQUIREMENTS: Record<PanelType, PanelDataRequirementDescriptor> = {
-  Timeline: { requiredOptionalData: [], optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot"] },
-  "Interstory Drift Chart": { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Main Canvas": { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Histogram Chart": { requiredOptionalData: [], optionalEnhancementData: ["velocityLin", "accelerationLin"] },
-  "Peak Values": { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Data Table": { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Floor Displacement": { requiredOptionalData: [], optionalEnhancementData: [] },
-  Statistics: { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Velocity Time": { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Rotation Time": { requiredOptionalData: ["velocityRot"], optionalEnhancementData: [] },
-  "Velocity Distribution": { requiredOptionalData: ["velocityLin"], optionalEnhancementData: [] },
-  "Acceleration Distribution": { requiredOptionalData: ["accelerationLin"], optionalEnhancementData: [] },
-  "Hinge Distribution": { requiredOptionalData: ["hingeData"], optionalEnhancementData: ["beamData"] },
-  "Hinge Hotspots": { requiredOptionalData: ["hingeData"], optionalEnhancementData: ["beamData"] },
-  "Floor Torsion Map": { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Story Drift Heatmap": { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Peak Response Time": { requiredOptionalData: [], optionalEnhancementData: [] },
-  "Damage Threshold": { requiredOptionalData: [], optionalEnhancementData: [] },
-};
-
 const PANEL_CATEGORY_ORDER: PanelCategory[] = [
   "Canvas",
+  "Tables / Data",
   "Time Series",
   "Distributions",
   "Threshold / Damage",
   "Summaries",
-  "Tables / Data",
 ];
-
-const FEATURED_PANEL_TYPES: PanelType[] = ["Main Canvas", "Data Table"];
 
 function getPanelsByCategory(): Array<{ category: PanelCategory; items: PanelType[] }> {
   return PANEL_CATEGORY_ORDER.map((category) => ({
     category,
-    items: (Object.keys(PanelCatalog) as PanelType[]).filter(
-      (panelType) =>
-        PANEL_DEFINITIONS[panelType].category === category && !FEATURED_PANEL_TYPES.includes(panelType),
+    items: (Object.keys(PANEL_DEFINITIONS) as PanelType[]).filter(
+      (panelType) => PANEL_DEFINITIONS[panelType].category === category,
     ),
   })).filter((group) => group.items.length > 0);
 }
 
 function isPanelType(value: unknown): value is PanelType {
-  return typeof value === "string" && value in PanelCatalog;
+  return typeof value === "string" && value in PANEL_DEFINITIONS;
 }
 
 function joinHumanList(items: string[]): string {
@@ -193,31 +252,31 @@ function joinHumanList(items: string[]): string {
 }
 
 function getPanelRequirementDescriptorText(panelType: PanelType): string {
-  const { requiredOptionalData, optionalEnhancementData } = PANEL_DATA_REQUIREMENTS[panelType];
+  const { requiredOptionalData, optionalEnhancementData } = PANEL_DEFINITIONS[panelType];
   const parts = ["Data: core simulation data"];
 
   if (requiredOptionalData.length > 0) {
-    parts.push(`Requires: ${joinHumanList(requiredOptionalData.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}`);
+    parts.push(`Requires: ${joinHumanList(requiredOptionalData.map((key) => PANEL_DATA_LABELS[key]))}`);
   }
 
   if (optionalEnhancementData.length > 0) {
-    parts.push(`Optional: ${joinHumanList(optionalEnhancementData.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}`);
+    parts.push(`Optional: ${joinHumanList(optionalEnhancementData.map((key) => PANEL_DATA_LABELS[key]))}`);
   }
 
   return parts.join(" | ");
 }
 
-function getMissingPanelDataRequirements(panelType: PanelType, animationData: BuildingAnimationData): OptionalPanelDataKey[] {
-  return PANEL_DATA_REQUIREMENTS[panelType].requiredOptionalData.filter((key) => !animationData[key]);
+function getMissingPanelDataRequirements(panelType: PanelType, animationData: BuildingAnimationData): PanelDataKey[] {
+  return PANEL_DEFINITIONS[panelType].requiredOptionalData.filter((key) => !animationData[key]);
 }
 
-function getMissingOptionalEnhancementData(panelType: PanelType, animationData: BuildingAnimationData): OptionalPanelDataKey[] {
-  return PANEL_DATA_REQUIREMENTS[panelType].optionalEnhancementData.filter((key) => !animationData[key]);
+function getMissingOptionalEnhancementData(panelType: PanelType, animationData: BuildingAnimationData): PanelDataKey[] {
+  return PANEL_DEFINITIONS[panelType].optionalEnhancementData.filter((key) => !animationData[key]);
 }
 
 function getPanelAvailabilityInfo(panelType: PanelType, animationData: BuildingAnimationData | null, loading: boolean) {
   const descriptorText = getPanelRequirementDescriptorText(panelType);
-  const optionalEnhancementData = PANEL_DATA_REQUIREMENTS[panelType].optionalEnhancementData;
+  const optionalEnhancementData = PANEL_DEFINITIONS[panelType].optionalEnhancementData;
 
   if (loading || !animationData) {
     return {
@@ -225,7 +284,7 @@ function getPanelAvailabilityInfo(panelType: PanelType, animationData: BuildingA
       descriptorText,
       disabledReason: "This panel is not available yet because simulation data is still loading.",
       optionalNotice: optionalEnhancementData.length
-        ? `Optional enhancements: ${joinHumanList(optionalEnhancementData.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}.`
+        ? `Optional enhancements: ${joinHumanList(optionalEnhancementData.map((key) => PANEL_DATA_LABELS[key]))}.`
         : null,
     };
   }
@@ -235,15 +294,15 @@ function getPanelAvailabilityInfo(panelType: PanelType, animationData: BuildingA
     const missingOptional = getMissingOptionalEnhancementData(panelType, animationData);
     const optionalNotice =
       missingOptional.length > 0
-        ? `This panel is available, but additional detail requires ${joinHumanList(missingOptional.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}, and ${missingOptional.length === 1 ? "it is" : "they are"} not loaded.`
+        ? `This panel is available, but additional detail requires ${joinHumanList(missingOptional.map((key) => PANEL_DATA_LABELS[key]))}, and ${missingOptional.length === 1 ? "it is" : "they are"} not loaded.`
         : optionalEnhancementData.length > 0
-          ? `Optional enhancements are loaded: ${joinHumanList(optionalEnhancementData.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}.`
+          ? `Optional enhancements are loaded: ${joinHumanList(optionalEnhancementData.map((key) => PANEL_DATA_LABELS[key]))}.`
           : null;
 
     return { isAvailable: true, descriptorText, disabledReason: null as string | null, optionalNotice };
   }
 
-  const missingLabels = missing.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]);
+  const missingLabels = missing.map((key) => PANEL_DATA_LABELS[key]);
   return {
     isAvailable: false,
     descriptorText,
@@ -254,7 +313,7 @@ function getPanelAvailabilityInfo(panelType: PanelType, animationData: BuildingA
 
 export const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>) => {
   const currentPanelType = props.params.panelType;
-  const CurrentComponent = PanelCatalog[currentPanelType];
+  const CurrentComponent = PANEL_DEFINITIONS[currentPanelType].component;
 
   return (
     <div className="h-full w-full relative">
@@ -329,7 +388,6 @@ function PanelTypePicker({
   const selected = PANEL_DEFINITIONS[value];
   const SelectedIcon = selected.icon;
   const groupedPanels = getPanelsByCategory();
-  const featuredPanels = FEATURED_PANEL_TYPES;
   const { animationData, loading } = useAnimationData();
 
   return (
@@ -337,7 +395,7 @@ function PanelTypePicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="mx-2 h-6 max-w-[19rem] min-w-0 px-2 text-sm font-medium text-neutral-700 cursor-pointer border-b border-neutral-400 hover:border-neutral-500 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 inline-flex items-center gap-1.5"
+          className="mx-2 h-6 max-w-76 min-w-0 px-2 text-sm font-medium text-neutral-700 cursor-pointer border-b border-neutral-400 hover:border-neutral-500 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 inline-flex items-center gap-1.5"
           title="Choose panel type">
           <SelectedIcon className="size-3.5 text-neutral-500 shrink-0" />
           <span className="truncate">{value}</span>
@@ -352,85 +410,14 @@ function PanelTypePicker({
           <div className="text-[10px] text-neutral-500">Quick access + compact grouped browser</div>
         </div>
 
-        <div className="mb-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {featuredPanels.map((panelType) => {
-            const meta = PANEL_DEFINITIONS[panelType];
-            const Icon = meta.icon;
-            const isActive = panelType === value;
-            const availability = getPanelAvailabilityInfo(panelType, loading ? null : animationData, loading);
-            const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
-              .filter(Boolean)
-              .join("\n");
-
-            const button = (
-              <button
-                type="button"
-                onClick={() => {
-                  if (availability.isAvailable) onChange(panelType);
-                }}
-                disabled={!availability.isAvailable}
-                title={availability.isAvailable ? buttonTitle : undefined}
-                className={`mt-1 w-full rounded-md px-2 py-1.5 text-left transition-colors border ${
-                  isActive
-                    ? "bg-white border-amber-300 shadow-sm"
-                    : "bg-white/80 border-transparent hover:bg-white hover:border-neutral-200"
-                } ${availability.isAvailable ? "" : "opacity-55 cursor-not-allowed pointer-events-none"}`}>
-                <div className="flex items-start gap-2">
-                  <Icon className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`} />
-                  <div className="min-w-0">
-                    <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>{panelType}</div>
-                    <div className="text-[10px] text-neutral-500 truncate">{availability.descriptorText}</div>
-                  </div>
-                </div>
-              </button>
-            );
-
-            return (
-              <div key={`${panelType}-featured`} className="rounded-md border border-neutral-200 bg-neutral-50/70 p-1.5">
-                <div className="px-1 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
-                  {meta.category}
-                </div>
-                {availability.isAvailable && !availability.optionalNotice ? (
-                  button
-                ) : availability.isAvailable ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="mt-1 block" tabIndex={0}>
-                        {button}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <div className="font-medium">{panelType}</div>
-                      {availability.optionalNotice ? <div className="mt-0.5">{availability.optionalNotice}</div> : null}
-                      <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="mt-1 block" tabIndex={0}>
-                        {button}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <div className="font-medium">{panelType}</div>
-                      <div className="mt-0.5">{availability.disabledReason}</div>
-                      {availability.optionalNotice ? <div className="mt-0.5">{availability.optionalNotice}</div> : null}
-                      <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[56vh] overflow-auto pr-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 overflow-auto pr-1">
           {groupedPanels.map((group) => (
             <div key={group.category} className="rounded-md border border-neutral-200/80 bg-white p-1.5">
-              <div className="px-1 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
-                {group.category}
-              </div>
+              {group.items.length > 1 && (
+                <div className="px-1 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
+                  {group.category}
+                </div>
+              )}
               <div className="mt-1 space-y-0.5">
                 {group.items.map((panelType) => {
                   const meta = PANEL_DEFINITIONS[panelType];
@@ -456,7 +443,9 @@ function PanelTypePicker({
                           : "bg-white/80 border-transparent hover:bg-white hover:border-neutral-200"
                       } ${availability.isAvailable ? "" : "opacity-55 cursor-not-allowed pointer-events-none"}`}>
                       <div className="flex items-start gap-2">
-                        <Icon className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`} />
+                        <Icon
+                          className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`}
+                        />
                         <div className="min-w-0">
                           <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
                             {panelType}
@@ -480,8 +469,12 @@ function PanelTypePicker({
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
                         <div className="font-medium">{panelType}</div>
-                        {availability.disabledReason ? <div className="mt-0.5">{availability.disabledReason}</div> : null}
-                        {availability.optionalNotice ? <div className="mt-0.5">{availability.optionalNotice}</div> : null}
+                        {availability.disabledReason ? (
+                          <div className="mt-0.5">{availability.disabledReason}</div>
+                        ) : null}
+                        {availability.optionalNotice ? (
+                          <div className="mt-0.5">{availability.optionalNotice}</div>
+                        ) : null}
                         <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
                       </TooltipContent>
                     </Tooltip>

@@ -1,6 +1,7 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useThresholds } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
+import { getDefaultRotationTimeChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { formatFixed3 } from "@/lib/utils";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
@@ -11,12 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { IDockviewPanelProps } from "dockview";
+import { useViewStore } from "@/state";
 
 const CHANNEL_CONFIG = {
-  rx: { id: "rx", label: "RX Angular Velocity", shortName: "RX", color: "#f87171" },
-  ry: { id: "ry", label: "RY Angular Velocity", shortName: "RY", color: "#4ade80" },
-  rz: { id: "rz", label: "RZ Angular Velocity", shortName: "RZ", color: "#60a5fa" },
-  magnitude: { id: "magnitude", label: "Angular Speed", shortName: "Mag", color: "#fbbf24" },
+  rx: { id: "rx", label: "RX Angular Velocity", shortName: "RX", color: "#f87171", unit: "rad/s" },
+  ry: { id: "ry", label: "RY Angular Velocity", shortName: "RY", color: "#4ade80", unit: "rad/s" },
+  rz: { id: "rz", label: "RZ Angular Velocity", shortName: "RZ", color: "#60a5fa", unit: "rad/s" },
+  magnitude: { id: "magnitude", label: "Angular Speed", shortName: "Mag", color: "#fbbf24", unit: "rad/s" },
 } as const;
 
 type ChannelKey = keyof typeof CHANNEL_CONFIG;
@@ -29,7 +32,7 @@ function TooltipContent({
 }: {
   frame: number;
   time: number;
-  values: Array<{ name: string; color: string; value: number }>;
+  values: Array<{ name: string; color: string; value: number; unit: string }>;
 }) {
   return (
     <div style={{ minWidth: "180px" }}>
@@ -47,7 +50,9 @@ function TooltipContent({
         <div key={item.name} style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color }} />
           <span style={{ color: "#6b7280", fontSize: "10px" }}>{item.name}:</span>
-          <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>{item.value.toFixed(4)}</span>
+          <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>
+            {item.value.toFixed(4)} {item.unit}
+          </span>
         </div>
       ))}
     </div>
@@ -111,14 +116,26 @@ function CheckSelect({
   );
 }
 
-export function RotationTimeChart() {
+function sanitizeSelectedKeys(value: unknown): ChannelKey[] {
+  if (!Array.isArray(value)) return ["magnitude"];
+  const valid = value.filter((v): v is ChannelKey => typeof v === "string" && CHANNEL_ORDER.includes(v as ChannelKey));
+  return valid.length > 0 ? Array.from(new Set(valid)) : ["magnitude"];
+}
+
+export function RotationTimeChart({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const { thresholds } = useThresholds();
-  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(["magnitude"]);
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const panelId = api?.id ?? "rotation-time-chart";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultRotationTimeChartPanelState();
+  const savedState = savedPanelState?.type === "rotationTimeChart" ? savedPanelState.state : defaultState;
+  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(() => sanitizeSelectedKeys(savedState.selectedKeys));
   const chartRef = useRef<ReactECharts>(null);
   const [isDragging, setIsDragging] = useState(false);
   const hasRotationVelocity = Boolean(animationData.velocityRot);
+  const panelIdRef = useRef(panelId);
 
   const maxFrame = animationData.metadata.frameCount - 1;
 
@@ -204,7 +221,7 @@ export function RotationTimeChart() {
       });
 
       titles.push({
-        text: config.label,
+        text: `${config.label} (${config.unit})`,
         left: LEFT_MARGIN + 5,
         top: `${topPct}%`,
         textStyle: { fontSize: 11, fontWeight: "bold", color: config.color },
@@ -217,12 +234,20 @@ export function RotationTimeChart() {
         max: maxFrame * animationData.metadata.dt,
         axisLine: { show: isLast, lineStyle: { color: "#d1d5db" } },
         axisLabel: { show: isLast, color: "#6b7280", fontSize: 10 },
+        name: isLast ? "Time (s)" : undefined,
+        nameLocation: "middle",
+        nameGap: 26,
+        nameTextStyle: { color: "#4b5563", fontSize: 10 },
         splitLine: { show: true, lineStyle: { color: "#f3f4f6" } },
       });
 
       yAxes.push({
         gridIndex: index,
         type: "value",
+        name: config.unit,
+        nameLocation: "end",
+        nameGap: 8,
+        nameTextStyle: { color: "#6b7280", fontSize: 10 },
         axisLine: { lineStyle: { color: "#d1d5db" } },
         axisLabel: { color: "#6b7280", fontSize: 10 },
         splitLine: { lineStyle: { color: "#f3f4f6" } },
@@ -296,6 +321,7 @@ export function RotationTimeChart() {
           const values = params.map((param) => ({
             name: param.seriesName ?? "Series",
             color: typeof param.color === "string" ? param.color : "#6b7280",
+            unit: CHANNEL_CONFIG[param.seriesName?.split(" ")[0].toLowerCase() as ChannelKey]?.unit || "rad/s",
             value: (param.data as number[])[1],
           }));
 
@@ -305,6 +331,10 @@ export function RotationTimeChart() {
       animation: false,
     };
   }, [animationData.metadata.dt, frameIndex, maxFrame, rotationData, selectedKeys, thresholds, times]);
+
+  useEffect(() => {
+    setPanelState(panelIdRef.current, "rotationTimeChart", { selectedKeys });
+  }, [selectedKeys, setPanelState]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
@@ -372,6 +402,8 @@ export function RotationTimeChart() {
           <span className="font-mono">Frame {frameIndex + 1}</span>
           <span className="text-neutral-400">|</span>
           <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)}s</span>
+          <span className="text-neutral-400">|</span>
+          <span className="text-xs text-neutral-500">Units: rad/s</span>
         </div>
       </div>
       <div className="flex-1 min-h-0 w-full relative" style={{ cursor: isDragging ? "grabbing" : "default" }}>

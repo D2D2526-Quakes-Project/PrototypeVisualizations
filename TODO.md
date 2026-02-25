@@ -34,11 +34,11 @@
   - Standardize panel header layout/caption pattern (title + subtitle + controls) across charts/tables/analysis panels.
   - Standardize panel-local UI state persistence via `useViewStore` + `panelId` for panels with user selections (channel filters, axis selectors, sort state, pagination).
   - Recheck unit labels against `DATA_DOCUMENTATION.md` and project standard (`in`, `rad`, `s`) for all displayed values and axes.
-- [ ] Fix `Story Drift Heatmap` color bar labels double-scaling drift percent values (`%` formatter multiplies by 100 again)
-- [ ] Fix `Histogram Chart` position-axis tick unit mismatch (axis label shows feet while panel/tooltips/documentation otherwise use inches)
-- [ ] Fix `Statistics` panel ground motion units (source ground motion is `g`, not inches)
-- [ ] Fix `Damage Thresholds` visible summary denominator/count logic to exclude ground story (story drift array reserves a ground slot with no computed drift)
-- [ ] Align time-series panels (`Timeline`, `Velocity Time`, `Rotation Time`) on persisted channel selection + axis/unit labeling conventions
+- [x] Fix `Story Drift Heatmap` color bar labels double-scaling drift percent values (`%` formatter multiplies by 100 again)
+- [x] Fix `Histogram Chart` position-axis tick unit mismatch (axis label shows feet while panel/tooltips/documentation otherwise use inches)
+- [x] Fix `Statistics` panel ground motion units (source ground motion is `g`, not inches)
+- [x] Fix `Damage Thresholds` visible summary denominator/count logic to exclude ground story (story drift array reserves a ground slot with no computed drift)
+- [x] Align time-series panels (`Timeline`, `Velocity Time`, `Rotation Time`) on persisted channel selection + axis/unit labeling conventions
 - [x] Add `Floor Torsion Map` magic panel with per-story top-down SVG previews colored by rotation
 - [x] Add floor torsion preview + rotation values to slice panel
 

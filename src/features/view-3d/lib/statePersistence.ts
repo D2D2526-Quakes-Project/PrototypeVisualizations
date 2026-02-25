@@ -109,6 +109,16 @@ export interface PeakValuesPanelState {
   sortDir: "asc" | "desc";
 }
 
+export interface HingeDistributionPanelState {
+  metric: string;
+  stepType: string;
+  performanceLevel: number | "All";
+}
+
+export interface HingeHotspotsPanelState {
+  stepType: string;
+}
+
 export type PanelState =
   | { type: "canvas"; state: CanvasPanelState; panelId: string }
   | { type: "timeline"; state: TimelinePanelState; panelId: string }
@@ -119,6 +129,8 @@ export type PanelState =
   | { type: "histogramChart"; state: HistogramChartPanelState; panelId: string }
   | { type: "dataTable"; state: DataTablePanelState; panelId: string }
   | { type: "peakValues"; state: PeakValuesPanelState; panelId: string }
+  | { type: "hingeDistribution"; state: HingeDistributionPanelState; panelId: string }
+  | { type: "hingeHotspots"; state: HingeHotspotsPanelState; panelId: string }
   | { type: "unknown"; state: Record<string, unknown>; panelId: string };
 
 export interface AppState {
@@ -559,6 +571,20 @@ export function getDefaultPeakValuesPanelState(): PeakValuesPanelState {
   return {
     sortKey: "magnitude",
     sortDir: "desc",
+  };
+}
+
+export function getDefaultHingeDistributionPanelState(): HingeDistributionPanelState {
+  return {
+    metric: "criticalDcr",
+    stepType: "All",
+    performanceLevel: "All",
+  };
+}
+
+export function getDefaultHingeHotspotsPanelState(): HingeHotspotsPanelState {
+  return {
+    stepType: "Max",
   };
 }
 

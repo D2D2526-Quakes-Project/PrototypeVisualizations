@@ -36,6 +36,7 @@ import { useMemo } from "react";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import type { EChartsOption } from "echarts";
+import { formatFixed3 } from "@/lib/utils";
 
 export function FloorDisplacementChart() {
   const { animationData } = useAnimationData();
@@ -194,6 +195,17 @@ export function FloorDisplacementChart() {
         <div className="text-sm text-neutral-700">
           <span className="font-medium">Floor Displacement</span>
           <span className="text-neutral-400 ml-2">- Average displacement per story</span>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+          <span>Frame {frameIndex + 1}</span>
+          <span className="text-neutral-300">•</span>
+          <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+          <span className="text-neutral-300">•</span>
+          <span>Visible stories: {chartData.length}</span>
+          <span className="text-neutral-300">•</span>
+          <span>X-axis: in</span>
+          <span className="text-neutral-300">•</span>
+          <span>Story labels include elevation (ft)</span>
         </div>
       </div>
       <div className="flex-1 min-h-0 w-full">

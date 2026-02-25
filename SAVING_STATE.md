@@ -39,6 +39,8 @@ Per-panel state currently includes:
 - Histogram chart axis/metric choices
 - Data table page
 - Peak values table sort
+- Hinge distribution filters (metric / step type / performance level)
+- Hinge hotspots step filter
 
 ## 3. Save/Restore Pipeline
 

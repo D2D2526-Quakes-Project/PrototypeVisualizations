@@ -1,4 +1,5 @@
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { getDefaultHingeHotspotsPanelState } from "@/features/view-3d/lib/statePersistence";
 import { useAnimationData } from "@/lib/useAnimationData";
 import {
   buildHingeEnrichedRows,
@@ -6,9 +7,11 @@ import {
   getHingePerformanceBreakdown,
   getTopHingeHotspots,
 } from "@/lib/hingeAnalysis";
+import { useViewStore } from "@/state";
+import type { IDockviewPanelProps } from "dockview";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function getSeverityColor(value: number) {
   if (value >= 4) return "#7f1d1d";
@@ -49,10 +52,15 @@ function SummaryCard({
   );
 }
 
-export function HingeHotspotsPanel() {
+export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const hingeData = animationData.hingeData;
-  const [stepType, setStepType] = useState<string>("Max");
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const panelId = api?.id ?? "hinge-hotspots";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultHingeHotspotsPanelState();
+  const savedState = savedPanelState?.type === "hingeHotspots" ? savedPanelState.state : defaultState;
+  const [stepType, setStepType] = useState<string>(() => (typeof savedState.stepType === "string" ? savedState.stepType : "Max"));
 
   const rows = useMemo(
     () => buildHingeEnrichedRows(hingeData, animationData.beamData),
@@ -66,13 +74,19 @@ export function HingeHotspotsPanel() {
     return ["All", "Max", ...unique.filter((value) => value !== "All" && value !== "Max")];
   }, [hingeData]);
 
+  const effectiveStepType = stepTypes.includes(stepType) ? stepType : (stepTypes.includes("Max") ? "Max" : (stepTypes[0] ?? "All"));
+
+  useEffect(() => {
+    setPanelState(panelId, "hingeHotspots", { stepType: effectiveStepType });
+  }, [effectiveStepType, panelId, setPanelState]);
+
   const filteredRows = useMemo(
-    () => rows.filter((row) => stepType === "All" || row.stepType === stepType),
-    [rows, stepType],
+    () => rows.filter((row) => effectiveStepType === "All" || row.stepType === effectiveStepType),
+    [rows, effectiveStepType],
   );
 
-  const topRows = useMemo(() => getTopHingeHotspots(rows, { stepType }, 12), [rows, stepType]);
-  const breakdown = useMemo(() => getHingePerformanceBreakdown(rows, { stepType }), [rows, stepType]);
+  const topRows = useMemo(() => getTopHingeHotspots(rows, { stepType: effectiveStepType }, 12), [rows, effectiveStepType]);
+  const breakdown = useMemo(() => getHingePerformanceBreakdown(rows, { stepType: effectiveStepType }), [rows, effectiveStepType]);
 
   const summary = useMemo(() => {
     let total = 0;
@@ -242,7 +256,7 @@ export function HingeHotspotsPanel() {
           for (const item of params as Array<{ seriesName?: string; value?: number }>) {
             lines.push(`<div>${item.seriesName}: ${item.value ?? 0}</div>`);
           }
-          lines.push(`<div style="margin-top:4px;color:#737373">Step Filter: ${stepType}</div>`);
+          lines.push(`<div style="margin-top:4px;color:#737373">Step Filter: ${effectiveStepType}</div>`);
           return lines.join("");
         },
       },
@@ -275,7 +289,7 @@ export function HingeHotspotsPanel() {
         { name: ">=4", type: "bar", data: breakdown.exceeding4, itemStyle: { color: "#7f1d1d" }, barMaxWidth: 22 },
       ],
     };
-  }, [breakdown, stepType]);
+  }, [breakdown, effectiveStepType]);
 
   if (!hingeData) {
     return (
@@ -300,7 +314,7 @@ export function HingeHotspotsPanel() {
               Step
               <select
                 className="h-7 rounded border border-neutral-200 bg-white px-2 text-xs"
-                value={stepType}
+                value={effectiveStepType}
                 onChange={(event) => setStepType(event.target.value)}>
                 {stepTypes.map((step) => (
                   <option key={step} value={step}>
@@ -323,7 +337,7 @@ export function HingeHotspotsPanel() {
           </section>
 
           <section className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <SummaryCard label="Filtered Hinges" value={summary.total.toLocaleString()} hint={`Step: ${stepType}`} />
+            <SummaryCard label="Filtered Hinges" value={summary.total.toLocaleString()} hint={`Step: ${effectiveStepType}`} />
             <SummaryCard
               label="Top Critical D/C"
               value={summary.maxCritical.toFixed(3)}

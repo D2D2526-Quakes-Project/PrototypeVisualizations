@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import type { IDockviewPanelProps } from "dockview";
 import { useViewStore } from "@/state";
+import { formatFixed3 } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 
@@ -120,6 +121,15 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
               <ChevronRight className="w-3 h-3" />
             </Button>
           </div>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+          <span>Frame {frameIndex + 1}</span>
+          <span className="text-neutral-300">•</span>
+          <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+          <span className="text-neutral-300">•</span>
+          <span>Page Size: {PAGE_SIZE}</span>
+          <span className="text-neutral-300">•</span>
+          <span>Units: in</span>
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-auto">

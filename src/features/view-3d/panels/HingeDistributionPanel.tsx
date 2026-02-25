@@ -1,4 +1,5 @@
 import { useAnimationData } from "@/lib/useAnimationData";
+import { getDefaultHingeDistributionPanelState } from "@/features/view-3d/lib/statePersistence";
 import {
   buildHingeEnrichedRows,
   computeHingeHistogram,
@@ -9,9 +10,11 @@ import {
   HINGE_METRIC_UNITS,
   type HingeMetricKey,
 } from "@/lib/hingeAnalysis";
+import { useViewStore } from "@/state";
+import type { IDockviewPanelProps } from "dockview";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const HINGE_METRICS: HingeMetricKey[] = [
   "criticalDcr",
@@ -21,13 +24,24 @@ const HINGE_METRICS: HingeMetricKey[] = [
   "m3Abs",
 ];
 
-export function HingeDistributionPanel() {
+export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const hingeData = animationData.hingeData;
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const panelId = api?.id ?? "hinge-distribution";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultHingeDistributionPanelState();
+  const savedState = savedPanelState?.type === "hingeDistribution" ? savedPanelState.state : defaultState;
 
-  const [metric, setMetric] = useState<HingeMetricKey>("criticalDcr");
-  const [stepType, setStepType] = useState<string>("All");
-  const [performanceLevel, setPerformanceLevel] = useState<number | "All">("All");
+  const [metric, setMetric] = useState<HingeMetricKey>(() =>
+    HINGE_METRICS.includes(savedState.metric as HingeMetricKey) ? (savedState.metric as HingeMetricKey) : "criticalDcr",
+  );
+  const [stepType, setStepType] = useState<string>(() => (typeof savedState.stepType === "string" ? savedState.stepType : "All"));
+  const [performanceLevel, setPerformanceLevel] = useState<number | "All">(() =>
+    savedState.performanceLevel === "All" || typeof savedState.performanceLevel === "number"
+      ? savedState.performanceLevel
+      : "All",
+  );
 
   const rows = useMemo(() => buildHingeEnrichedRows(hingeData, animationData.beamData), [hingeData, animationData.beamData]);
   const stepTypes = useMemo(() => ["All", ...getAvailableHingeStepTypes(hingeData)], [hingeData]);
@@ -36,9 +50,21 @@ export function HingeDistributionPanel() {
     [hingeData],
   );
 
+  const effectiveStepType = stepTypes.includes(stepType) ? stepType : "All";
+  const validPerformanceLevels = new Set<number | "All">(performanceLevels);
+  const effectivePerformanceLevel = validPerformanceLevels.has(performanceLevel) ? performanceLevel : "All";
+
+  useEffect(() => {
+    setPanelState(panelId, "hingeDistribution", {
+      metric,
+      stepType: effectiveStepType,
+      performanceLevel: effectivePerformanceLevel,
+    });
+  }, [effectivePerformanceLevel, effectiveStepType, metric, panelId, setPanelState]);
+
   const histogram = useMemo(
-    () => computeHingeHistogram(rows, metric, { stepType, performanceLevel }, 26),
-    [rows, metric, stepType, performanceLevel],
+    () => computeHingeHistogram(rows, metric, { stepType: effectiveStepType, performanceLevel: effectivePerformanceLevel }, 26),
+    [rows, metric, effectiveStepType, effectivePerformanceLevel],
   );
 
   const filteredSummary = useMemo(() => {
@@ -48,8 +74,8 @@ export function HingeDistributionPanel() {
     let ge4 = 0;
 
     for (const row of rows) {
-      if (stepType !== "All" && row.stepType !== stepType) continue;
-      if (performanceLevel !== "All" && row.performanceLevel !== performanceLevel) continue;
+      if (effectiveStepType !== "All" && row.stepType !== effectiveStepType) continue;
+      if (effectivePerformanceLevel !== "All" && row.performanceLevel !== effectivePerformanceLevel) continue;
 
       count += 1;
       const critical = getHingeMetricValue(row, "criticalDcr");
@@ -59,7 +85,7 @@ export function HingeDistributionPanel() {
     }
 
     return { count, ge1, ge2, ge4 };
-  }, [rows, stepType, performanceLevel]);
+  }, [rows, effectiveStepType, effectivePerformanceLevel]);
 
   const option = useMemo((): EChartsOption => {
     const metricLabel = HINGE_METRIC_LABELS[metric];
@@ -102,7 +128,7 @@ export function HingeDistributionPanel() {
             `<div>${metricLabelWithUnit}</div>`,
             `<div>Range Bin: ${bin.x0.toFixed(4)} to ${bin.x1.toFixed(4)}${metricUnit ? ` ${metricUnit}` : ""}</div>`,
             `<div>Count: ${first.value ?? bin.count}</div>`,
-            `<div style="margin-top:4px;color:#737373">Step: ${stepType} · Performance Level: ${String(performanceLevel)}</div>`,
+            `<div style="margin-top:4px;color:#737373">Step: ${effectiveStepType} · Performance Level: ${String(effectivePerformanceLevel)}</div>`,
           ].join("");
         },
       },
@@ -137,7 +163,7 @@ export function HingeDistributionPanel() {
         },
       ],
     };
-  }, [histogram, metric, performanceLevel, stepType]);
+  }, [histogram, metric, effectivePerformanceLevel, effectiveStepType]);
 
   if (!hingeData) {
     return (
@@ -173,7 +199,7 @@ export function HingeDistributionPanel() {
           Step Type
           <select
             className="h-8 rounded border border-neutral-200 bg-white px-2 text-xs"
-            value={stepType}
+            value={effectiveStepType}
             onChange={(event) => setStepType(event.target.value)}>
             {stepTypes.map((step) => (
               <option key={step} value={step}>
@@ -187,7 +213,7 @@ export function HingeDistributionPanel() {
           Performance Level
           <select
             className="h-8 rounded border border-neutral-200 bg-white px-2 text-xs"
-            value={String(performanceLevel)}
+            value={String(effectivePerformanceLevel)}
             onChange={(event) => {
               const next = event.target.value;
               setPerformanceLevel(next === "All" ? "All" : Number(next));

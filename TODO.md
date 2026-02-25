@@ -34,6 +34,8 @@
   - Standardize panel header layout/caption pattern (title + subtitle + controls) across charts/tables/analysis panels.
   - Standardize panel-local UI state persistence via `useViewStore` + `panelId` for panels with user selections (channel filters, axis selectors, sort state, pagination).
   - Recheck unit labels against `DATA_DOCUMENTATION.md` and project standard (`in`, `rad`, `s`) for all displayed values and axes.
+- [x] Persist analysis-panel UI state for `Histogram`, `Data Table`, `Peak Values`, `Hinge Distribution`, and `Hinge Hotspots`
+- [x] Add secondary metadata/status rows to older panels (`Data Table`, `Peak Values`, `Statistics`, `Floor Displacement`) for consistency with newer analysis panels
 - [x] Fix `Story Drift Heatmap` color bar labels double-scaling drift percent values (`%` formatter multiplies by 100 again)
 - [x] Fix `Histogram Chart` position-axis tick unit mismatch (axis label shows feet while panel/tooltips/documentation otherwise use inches)
 - [x] Fix `Statistics` panel ground motion units (source ground motion is `g`, not inches)
@@ -362,5 +364,7 @@ Every number with a unit should be hoverable with conversions.
 - [ ] Floors toggle should be a single vertical column with extra details per floor on the right
 - [ ] Floors toggle should allow you to click and drag to toggle all floors dragged over
 - [ ] Keyboard shortcuts bar doesn't show mouse controls like panning with right click
+- [ ] The peak Values table is pointless and completely useless
+- [ ] Peak response time panel is awful and completely disgusting
 
 _Last Updated: February 2026_

@@ -160,6 +160,15 @@ export function StatisticsPanel() {
           <span className="font-medium">Statistics</span>
           <span className="text-neutral-400 ml-2">- Frame {frameIndex + 1}</span>
         </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+          <span>Time: {(frameIndex * animationData.metadata.dt).toFixed(3)} s</span>
+          <span className="text-neutral-300">•</span>
+          <span>Displacement/velocity/acceleration in in, in/s, in/s²</span>
+          <span className="text-neutral-300">•</span>
+          <span>Ground motion in g</span>
+          <span className="text-neutral-300">•</span>
+          <span>Hover values for unit conversions</span>
+        </div>
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-3">
         <StatGroup title="Simulation">

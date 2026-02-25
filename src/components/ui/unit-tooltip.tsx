@@ -22,7 +22,10 @@ interface TooltipBodyProps {
 const TooltipBody = memo(function TooltipBody({ value, unit, decimals, showConversions }: TooltipBodyProps) {
   const unitInfo = UNITS[unit];
   const fullName = unitInfo?.fullName || unit;
-  const conversions = useMemo(() => (showConversions ? getConversions(value, unit) : []), [showConversions, value, unit]);
+  const conversions = useMemo(
+    () => (showConversions ? getConversions(value, unit) : []),
+    [showConversions, value, unit],
+  );
 
   return (
     <div className="flex flex-col gap-1 min-w-25">
@@ -63,8 +66,7 @@ function UnitTooltipComponent({
     <span className={interactive ? "cursor-help" : undefined}>
       {children || (
         <span>
-          {formattedValue}
-          {unit}
+          {formattedValue} {unit}
         </span>
       )}
     </span>

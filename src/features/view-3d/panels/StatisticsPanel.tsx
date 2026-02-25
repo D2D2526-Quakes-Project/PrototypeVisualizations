@@ -200,15 +200,15 @@ export function StatisticsPanel() {
         </StatGroup>
 
         <StatGroup title="Ground Motion">
-          <StatRow label="X" value={stats.groundMotion.x} unit="in" />
-          <StatRow label="Y" value={stats.groundMotion.y} unit="in" />
-          <StatRow label="Z" value={stats.groundMotion.z} unit="in" />
-          <StatRow label="Magnitude" value={stats.groundMotion.magnitude} unit="in" />
+          <StatRow label="X" value={stats.groundMotion.x} unit="g" />
+          <StatRow label="Y" value={stats.groundMotion.y} unit="g" />
+          <StatRow label="Z" value={stats.groundMotion.z} unit="g" />
+          <StatRow label="Magnitude" value={stats.groundMotion.magnitude} unit="g" />
         </StatGroup>
 
         <StatGroup title="Peak Values (All Time)">
           <StatRow label="Max Displacement" value={stats.precomputed.maxDisplacement} unit="in" />
-          <StatRow label="Max GM Magnitude" value={stats.precomputed.groundMotion.maxMagnitude} unit="in" />
+          <StatRow label="Max GM Magnitude" value={stats.precomputed.groundMotion.maxMagnitude} unit="g" />
           {stats.precomputed.maxVelocity && (
             <StatRow label="Max Velocity" value={stats.precomputed.maxVelocity} unit="in/s" />
           )}

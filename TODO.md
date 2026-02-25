@@ -29,6 +29,16 @@
 ### 5.2 Existing Panel Improvements
 
 - [ ] Add color bar legends to charts
+- [ ] Run view-3d panel consistency sweep and normalize chart metadata/state patterns
+  - Audit all dock panels for required chart metadata (title, axis labels, legend/color bar, tooltip) and add missing pieces.
+  - Standardize panel header layout/caption pattern (title + subtitle + controls) across charts/tables/analysis panels.
+  - Standardize panel-local UI state persistence via `useViewStore` + `panelId` for panels with user selections (channel filters, axis selectors, sort state, pagination).
+  - Recheck unit labels against `DATA_DOCUMENTATION.md` and project standard (`in`, `rad`, `s`) for all displayed values and axes.
+- [ ] Fix `Story Drift Heatmap` color bar labels double-scaling drift percent values (`%` formatter multiplies by 100 again)
+- [ ] Fix `Histogram Chart` position-axis tick unit mismatch (axis label shows feet while panel/tooltips/documentation otherwise use inches)
+- [ ] Fix `Statistics` panel ground motion units (source ground motion is `g`, not inches)
+- [ ] Fix `Damage Thresholds` visible summary denominator/count logic to exclude ground story (story drift array reserves a ground slot with no computed drift)
+- [ ] Align time-series panels (`Timeline`, `Velocity Time`, `Rotation Time`) on persisted channel selection + axis/unit labeling conventions
 - [x] Add `Floor Torsion Map` magic panel with per-story top-down SVG previews colored by rotation
 - [x] Add floor torsion preview + rotation values to slice panel
 
@@ -265,13 +275,66 @@ Every number with a unit should be hoverable with conversions.
 
 ---
 
-## 16. Node Panel & Selection Issues
+## 17. Node Selection & Floor Interaction Fixes
 
-### 16.1 Fix Node Panel Problems
+### 17.1 Floor Slab Hover Effect
+
+- [ ] Change floor slab hover effect to use the same color highlighting as nodes
+  - Currently floor slabs highlight in a different color than nodes when hovered
+  - Should use the node highlighting color scheme (or configurable metric-based color)
+  - Update hover state rendering in floor slab components to match node hover behavior
+
+### 17.2 Floor Tab Highlighting
+
+- [ ] Add floor highlighting when a floor tab is opened in the sidebar
+  - When user clicks on a floor tab (e.g., in the slice panel), the corresponding floor slab in the 3D view should highlight
+  - Should mirror the existing node highlighting behavior when nodes are selected
+  - Add floor-to-slab mapping and highlight state management
+  - Consider adding a toggle to enable/disable this auto-highlight behavior
+
+### 17.3 Node Panel vs Node Selection Separation
+
+- [ ] Refactor node click behavior: clicking a node should open the detail panel WITHOUT selecting the node
+  - Currently clicking a node both opens the panel AND selects the node
+  - These should be separate actions:
+    - Click node → Open panel (view details without selection)
+    - Explicit action (e.g., Ctrl+click, checkbox, or "Select" button) → Select node
+  - Update click handlers in node components to decouple panel open from selection
+  - Update panel state management to track "viewed node" separately from "selected nodes"
+
+- [ ] Rename variables, functions, and UI labels to clearly distinguish between:
+  - `selectedNodes`: Array of node IDs actively selected (for batch operations like hide/delete/export)
+  - `viewedNode` / `inspectedNode`: The node currently showing details in the side panel
+  - `highlightedNode`: Node under cursor (hover state)
+- [ ] Update Zustand store to have separate state slices:
+  - `selectedNodeIds: string[]` - for selection (batch operations)
+  - `inspectedNodeId: string | null` - for panel display (read-only details)
+  - Keep existing `hoveredNodeId` for hover effects
+- [ ] Add documentation in code comments explaining the distinction
+- [ ] Update UI labels:
+  - "Selected Nodes" section in View Menu → clarify this is for batch operations
+  - "Node Details" panel title → clarify this shows inspected node info
+- [ ] Add tooltips explaining the difference between selection and inspection
+
+### 17.4 Node Hide Functionality
+
+- [ ] Fix hide selected nodes not working
+  - When a node is selected and "Hide Selected" is triggered, the node remains visible
+  - Investigate: Is the hide action being called? Is the visibility state being updated? Is the render reflecting the state?
+  - Check if `hiddenNodeIds` in the store is being updated correctly
+  - Verify that hidden nodes are filtered out in the 3D render loop
+  - Add console logging or debug mode to trace hide action flow
+  - Test with single node selection and bulk selection
+
+---
+
+## 18. Node Panel & Selection Issues
+
+### 18.1 Fix Node Panel Problems
 
 - [ ] Ensure selected nodes highlight correctly in all view modes
 
-### 16.2 Selection System
+### 18.2 Selection System
 
 - [x] Add visual feedback during box selection
 - [x] Ensure selected nodes sync across all views
@@ -279,15 +342,25 @@ Every number with a unit should be hoverable with conversions.
 
 ---
 
-### 17.14 Zustand Architecture Follow-ups
-
-- [ ] Introduce workspace-scoped state shape (`workspaces[workspaceId]`) for split-view support
-- [ ] Separate persisted state from transient runtime state (`fps`, drag state, hover state)
-
----
-
 ## Known Bugs
 
 - [x] When the view menu is docked, the ctrl+drag selection box is visually offset
+
+- [ ] Timeline current values list doesn't show units
+- [ ] Show warning / tooltip in header if some data isn't loaded with buttons to load it
+- [ ] Add small colored bar (border-l-2) for the color of each metric
+- [ ] Add return to home camera position button
+- [ ] View menu north, east, south ... buttons should be 3 columns and full width
+- [ ] Ortho and smooth toggles should be in the same row
+- [ ] Quick buttons in the !isExpanded view menu should still be visible
+- [ ] SlicePanel should be renamed to floor panel & tab header is not consitent with other tabs
+- [ ] Hitting the back button in browser doesn't navigate back correctly (just changes the URL)
+- [ ] Node hover effects should be more visible
+- [ ] Playback controls should also be in the timeline panel
+- [ ] Keyboard shortcuts bar is too wide and has too much text
+- [ ] View menu is behind the keyboard shortcuts bar
+- [ ] Floors toggle should be a single vertical column with extra details per floor on the right
+- [ ] Floors toggle should allow you to click and drag to toggle all floors dragged over
+- [ ] Keyboard shortcuts bar doesn't show mouse controls like panning with right click
 
 _Last Updated: February 2026_

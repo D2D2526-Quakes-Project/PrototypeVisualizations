@@ -17,6 +17,9 @@ import { HingeHotspotsPanel } from "@/features/view-3d/panels/HingeHotspotsPanel
 import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAnimationData } from "@/lib/useAnimationData";
+import type { BuildingAnimationData } from "@/lib/types";
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { Timeline } from "./Timeline";
 import type { LucideIcon } from "lucide-react";
@@ -71,6 +74,20 @@ type PanelDefinition = {
   description: string;
 };
 
+type OptionalPanelDataKey =
+  | "beamData"
+  | "hingeData"
+  | "displacementRot"
+  | "velocityLin"
+  | "velocityRot"
+  | "accelerationLin"
+  | "accelerationRot";
+
+type PanelDataRequirementDescriptor = {
+  requiredOptionalData: OptionalPanelDataKey[];
+  optionalEnhancementData: OptionalPanelDataKey[];
+};
+
 const PANEL_DEFINITIONS: Record<PanelType, PanelDefinition> = {
   Timeline: { category: "Time Series", icon: LineChart, description: "Playback timeline and overlays" },
   "Interstory Drift Chart": { category: "Time Series", icon: LineChart, description: "Per-story drift traces" },
@@ -112,6 +129,37 @@ const PANEL_DEFINITIONS: Record<PanelType, PanelDefinition> = {
   },
 };
 
+const OPTIONAL_PANEL_DATA_LABELS: Record<OptionalPanelDataKey, string> = {
+  beamData: "beam connectivity data",
+  hingeData: "hinge data",
+  displacementRot: "rotational displacement data",
+  velocityLin: "linear velocity data",
+  velocityRot: "rotational velocity data",
+  accelerationLin: "linear acceleration data",
+  accelerationRot: "rotational acceleration data",
+};
+
+const PANEL_DATA_REQUIREMENTS: Record<PanelType, PanelDataRequirementDescriptor> = {
+  Timeline: { requiredOptionalData: [], optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot"] },
+  "Interstory Drift Chart": { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Main Canvas": { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Histogram Chart": { requiredOptionalData: [], optionalEnhancementData: ["velocityLin", "accelerationLin"] },
+  "Peak Values": { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Data Table": { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Floor Displacement": { requiredOptionalData: [], optionalEnhancementData: [] },
+  Statistics: { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Velocity Time": { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Rotation Time": { requiredOptionalData: ["velocityRot"], optionalEnhancementData: [] },
+  "Velocity Distribution": { requiredOptionalData: ["velocityLin"], optionalEnhancementData: [] },
+  "Acceleration Distribution": { requiredOptionalData: ["accelerationLin"], optionalEnhancementData: [] },
+  "Hinge Distribution": { requiredOptionalData: ["hingeData"], optionalEnhancementData: ["beamData"] },
+  "Hinge Hotspots": { requiredOptionalData: ["hingeData"], optionalEnhancementData: ["beamData"] },
+  "Floor Torsion Map": { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Story Drift Heatmap": { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Peak Response Time": { requiredOptionalData: [], optionalEnhancementData: [] },
+  "Damage Threshold": { requiredOptionalData: [], optionalEnhancementData: [] },
+};
+
 const PANEL_CATEGORY_ORDER: PanelCategory[] = [
   "Canvas",
   "Time Series",
@@ -135,6 +183,73 @@ function getPanelsByCategory(): Array<{ category: PanelCategory; items: PanelTyp
 
 function isPanelType(value: unknown): value is PanelType {
   return typeof value === "string" && value in PanelCatalog;
+}
+
+function joinHumanList(items: string[]): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+function getPanelRequirementDescriptorText(panelType: PanelType): string {
+  const { requiredOptionalData, optionalEnhancementData } = PANEL_DATA_REQUIREMENTS[panelType];
+  const parts = ["Data: core simulation data"];
+
+  if (requiredOptionalData.length > 0) {
+    parts.push(`Requires: ${joinHumanList(requiredOptionalData.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}`);
+  }
+
+  if (optionalEnhancementData.length > 0) {
+    parts.push(`Optional: ${joinHumanList(optionalEnhancementData.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}`);
+  }
+
+  return parts.join(" | ");
+}
+
+function getMissingPanelDataRequirements(panelType: PanelType, animationData: BuildingAnimationData): OptionalPanelDataKey[] {
+  return PANEL_DATA_REQUIREMENTS[panelType].requiredOptionalData.filter((key) => !animationData[key]);
+}
+
+function getMissingOptionalEnhancementData(panelType: PanelType, animationData: BuildingAnimationData): OptionalPanelDataKey[] {
+  return PANEL_DATA_REQUIREMENTS[panelType].optionalEnhancementData.filter((key) => !animationData[key]);
+}
+
+function getPanelAvailabilityInfo(panelType: PanelType, animationData: BuildingAnimationData | null, loading: boolean) {
+  const descriptorText = getPanelRequirementDescriptorText(panelType);
+  const optionalEnhancementData = PANEL_DATA_REQUIREMENTS[panelType].optionalEnhancementData;
+
+  if (loading || !animationData) {
+    return {
+      isAvailable: false,
+      descriptorText,
+      disabledReason: "This panel is not available yet because simulation data is still loading.",
+      optionalNotice: optionalEnhancementData.length
+        ? `Optional enhancements: ${joinHumanList(optionalEnhancementData.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}.`
+        : null,
+    };
+  }
+
+  const missing = getMissingPanelDataRequirements(panelType, animationData);
+  if (missing.length === 0) {
+    const missingOptional = getMissingOptionalEnhancementData(panelType, animationData);
+    const optionalNotice =
+      missingOptional.length > 0
+        ? `This panel is available, but additional detail requires ${joinHumanList(missingOptional.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}, and ${missingOptional.length === 1 ? "it is" : "they are"} not loaded.`
+        : optionalEnhancementData.length > 0
+          ? `Optional enhancements are loaded: ${joinHumanList(optionalEnhancementData.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]))}.`
+          : null;
+
+    return { isAvailable: true, descriptorText, disabledReason: null as string | null, optionalNotice };
+  }
+
+  const missingLabels = missing.map((key) => OPTIONAL_PANEL_DATA_LABELS[key]);
+  return {
+    isAvailable: false,
+    descriptorText,
+    disabledReason: `This panel is not available because it requires ${joinHumanList(missingLabels)}, but ${missing.length === 1 ? "it is" : "they are"} not loaded.`,
+    optionalNotice: null as string | null,
+  };
 }
 
 export const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>) => {
@@ -215,6 +330,7 @@ function PanelTypePicker({
   const SelectedIcon = selected.icon;
   const groupedPanels = getPanelsByCategory();
   const featuredPanels = FEATURED_PANEL_TYPES;
+  const { animationData, loading } = useAnimationData();
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -241,28 +357,69 @@ function PanelTypePicker({
             const meta = PANEL_DEFINITIONS[panelType];
             const Icon = meta.icon;
             const isActive = panelType === value;
+            const availability = getPanelAvailabilityInfo(panelType, loading ? null : animationData, loading);
+            const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
+              .filter(Boolean)
+              .join("\n");
+
+            const button = (
+              <button
+                type="button"
+                onClick={() => {
+                  if (availability.isAvailable) onChange(panelType);
+                }}
+                disabled={!availability.isAvailable}
+                title={availability.isAvailable ? buttonTitle : undefined}
+                className={`mt-1 w-full rounded-md px-2 py-1.5 text-left transition-colors border ${
+                  isActive
+                    ? "bg-white border-amber-300 shadow-sm"
+                    : "bg-white/80 border-transparent hover:bg-white hover:border-neutral-200"
+                } ${availability.isAvailable ? "" : "opacity-55 cursor-not-allowed pointer-events-none"}`}>
+                <div className="flex items-start gap-2">
+                  <Icon className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`} />
+                  <div className="min-w-0">
+                    <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>{panelType}</div>
+                    <div className="text-[10px] text-neutral-500 truncate">{availability.descriptorText}</div>
+                  </div>
+                </div>
+              </button>
+            );
 
             return (
               <div key={`${panelType}-featured`} className="rounded-md border border-neutral-200 bg-neutral-50/70 p-1.5">
                 <div className="px-1 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
                   {meta.category}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onChange(panelType)}
-                  title={meta.description}
-                  className={`mt-1 w-full rounded-md px-2 py-1.5 text-left transition-colors border ${
-                    isActive
-                      ? "bg-white border-amber-300 shadow-sm"
-                      : "bg-white/80 border-transparent hover:bg-white hover:border-neutral-200"
-                  }`}>
-                  <div className="flex items-center gap-2">
-                    <Icon className={`size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`} />
-                    <span className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
-                      {panelType}
-                    </span>
-                  </div>
-                </button>
+                {availability.isAvailable && !availability.optionalNotice ? (
+                  button
+                ) : availability.isAvailable ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="mt-1 block" tabIndex={0}>
+                        {button}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <div className="font-medium">{panelType}</div>
+                      {availability.optionalNotice ? <div className="mt-0.5">{availability.optionalNotice}</div> : null}
+                      <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="mt-1 block" tabIndex={0}>
+                        {button}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <div className="font-medium">{panelType}</div>
+                      <div className="mt-0.5">{availability.disabledReason}</div>
+                      {availability.optionalNotice ? <div className="mt-0.5">{availability.optionalNotice}</div> : null}
+                      <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             );
           })}
@@ -279,25 +436,55 @@ function PanelTypePicker({
                   const meta = PANEL_DEFINITIONS[panelType];
                   const Icon = meta.icon;
                   const isActive = panelType === value;
+                  const availability = getPanelAvailabilityInfo(panelType, loading ? null : animationData, loading);
+                  const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
+                    .filter(Boolean)
+                    .join("\n");
 
-                  return (
+                  const button = (
                     <button
                       key={panelType}
                       type="button"
-                      onClick={() => onChange(panelType)}
-                      title={meta.description}
+                      onClick={() => {
+                        if (availability.isAvailable) onChange(panelType);
+                      }}
+                      disabled={!availability.isAvailable}
+                      title={availability.isAvailable ? buttonTitle : undefined}
                       className={`w-full rounded-md px-2 py-1.5 text-left transition-colors border ${
                         isActive
                           ? "bg-white border-amber-300 shadow-sm"
                           : "bg-white/80 border-transparent hover:bg-white hover:border-neutral-200"
-                      }`}>
-                      <div className="flex items-center gap-2">
-                        <Icon className={`size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`} />
-                        <span className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
-                          {panelType}
-                        </span>
+                      } ${availability.isAvailable ? "" : "opacity-55 cursor-not-allowed pointer-events-none"}`}>
+                      <div className="flex items-start gap-2">
+                        <Icon className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`} />
+                        <div className="min-w-0">
+                          <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
+                            {panelType}
+                          </div>
+                          <div className="text-[10px] text-neutral-500 truncate">{availability.descriptorText}</div>
+                        </div>
                       </div>
                     </button>
+                  );
+
+                  if (availability.isAvailable && !availability.optionalNotice) {
+                    return button;
+                  }
+
+                  return (
+                    <Tooltip key={`${panelType}-${availability.isAvailable ? "optional" : "disabled"}`}>
+                      <TooltipTrigger asChild>
+                        <span className="block" tabIndex={0}>
+                          {button}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <div className="font-medium">{panelType}</div>
+                        {availability.disabledReason ? <div className="mt-0.5">{availability.disabledReason}</div> : null}
+                        {availability.optionalNotice ? <div className="mt-0.5">{availability.optionalNotice}</div> : null}
+                        <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
+                      </TooltipContent>
+                    </Tooltip>
                   );
                 })}
               </div>

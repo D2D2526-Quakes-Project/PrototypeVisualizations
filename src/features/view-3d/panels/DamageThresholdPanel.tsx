@@ -138,7 +138,7 @@ export function DamageThresholdPanel() {
     let visibleStoryCount = 0;
     const storyStride = storyDrift.frameCount * storyDrift.cornerCount;
 
-    for (let storyIndex = 0; storyIndex < storyOrder.length; storyIndex++) {
+    for (let storyIndex = 1; storyIndex < storyOrder.length; storyIndex++) {
       const storyId = storyOrder[storyIndex];
       if (!visibleFloors.has(storyId)) continue;
       visibleStoryCount += 1;

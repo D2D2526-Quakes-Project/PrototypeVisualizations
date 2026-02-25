@@ -291,15 +291,6 @@ The project uses a dockview-based panel system allowing:
 - Multiple panels of the same type
 - Panel minimize/maximize/close controls
 
-## Routes
-
-| Route               | Description                    |
-| ------------------- | ------------------------------ |
-| `/`                 | Main 3D View (View3d)          |
-| `/hamburger`        | Hamburger view                 |
-| `/texture`          | Texture view                   |
-| `/damage-threshold` | Damage threshold analysis view |
-
 ## Data Sources
 
 Simulation data is expected in the data folder with:

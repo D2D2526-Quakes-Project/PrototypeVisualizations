@@ -265,7 +265,8 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
           },
         },
         textStyle: { fontSize: 10 },
-        formatter: (v) => `${((v as number) * 100).toFixed(2)}%`,
+        // Drift values are already stored as percent in precomputed story drift data.
+        formatter: (v) => `${(v as number).toFixed(2)}%`,
       },
       series: [
         {

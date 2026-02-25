@@ -37,6 +37,7 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import type { EChartsOption } from "echarts";
 import { formatFixed3 } from "@/lib/utils";
+import { PanelHeader } from "@/features/view-3d/components/PanelHeader";
 
 export function FloorDisplacementChart() {
   const { animationData } = useAnimationData();
@@ -191,23 +192,23 @@ export function FloorDisplacementChart() {
 
   return (
     <div className="h-full w-full flex flex-col bg-white">
-      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
-        <div className="text-sm text-neutral-700">
-          <span className="font-medium">Floor Displacement</span>
-          <span className="text-neutral-400 ml-2">- Average displacement per story</span>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-          <span>Frame {frameIndex + 1}</span>
-          <span className="text-neutral-300">•</span>
-          <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
-          <span className="text-neutral-300">•</span>
-          <span>Visible stories: {chartData.length}</span>
-          <span className="text-neutral-300">•</span>
-          <span>X-axis: in</span>
-          <span className="text-neutral-300">•</span>
-          <span>Story labels include elevation (ft)</span>
-        </div>
-      </div>
+      <PanelHeader
+        title="Floor Displacement"
+        subtitle="- Average displacement per story"
+        meta={
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+            <span>Frame {frameIndex + 1}</span>
+            <span className="text-neutral-300">•</span>
+            <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+            <span className="text-neutral-300">•</span>
+            <span>Visible stories: {chartData.length}</span>
+            <span className="text-neutral-300">•</span>
+            <span>X-axis: in</span>
+            <span className="text-neutral-300">•</span>
+            <span>Story labels include elevation (ft)</span>
+          </div>
+        }
+      />
       <div className="flex-1 min-h-0 w-full">
         <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
       </div>

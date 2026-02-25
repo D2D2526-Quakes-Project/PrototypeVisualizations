@@ -41,6 +41,7 @@ import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import type { IDockviewPanelProps } from "dockview";
 import { useViewStore } from "@/state";
 import { formatFixed3 } from "@/lib/utils";
+import { PanelHeader } from "@/features/view-3d/components/PanelHeader";
 
 type SortKey = "node" | "x" | "y" | "z" | "magnitude";
 type SortDir = "asc" | "desc";
@@ -164,21 +165,21 @@ export function PeakValuesPanel({ api }: IDockviewPanelProps) {
 
   return (
     <div className="h-full w-full flex flex-col bg-white">
-      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
-        <div className="text-sm text-neutral-700">
-          <span className="font-medium">Peak Values</span>
-          <span className="text-neutral-400 ml-2">- Top 10 nodes by peak displacement</span>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-          <span>Frame {frameIndex + 1}</span>
-          <span className="text-neutral-300">•</span>
-          <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
-          <span className="text-neutral-300">•</span>
-          <span>Sort: {sortKey} ({sortDir})</span>
-          <span className="text-neutral-300">•</span>
-          <span>Units: in</span>
-        </div>
-      </div>
+      <PanelHeader
+        title="Peak Values"
+        subtitle="- Top 10 nodes by peak displacement"
+        meta={
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+            <span>Frame {frameIndex + 1}</span>
+            <span className="text-neutral-300">•</span>
+            <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+            <span className="text-neutral-300">•</span>
+            <span>Sort: {sortKey} ({sortDir})</span>
+            <span className="text-neutral-300">•</span>
+            <span>Units: in</span>
+          </div>
+        }
+      />
       <div className="flex-1 min-h-0 overflow-auto">
         <table className="w-full text-xs">
           <thead className="sticky top-0 bg-neutral-50 border-b border-neutral-200">

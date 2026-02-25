@@ -37,6 +37,7 @@ import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import type { IDockviewPanelProps } from "dockview";
 import { useViewStore } from "@/state";
 import { formatFixed3 } from "@/lib/utils";
+import { PanelHeader } from "@/features/view-3d/components/PanelHeader";
 
 const PAGE_SIZE = 50;
 
@@ -98,14 +99,10 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
 
   return (
     <div className="h-full w-full flex flex-col bg-white">
-      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-neutral-700">
-            <span className="font-medium">Data Table</span>
-            <span className="text-neutral-400 ml-2">
-              - Nodes {safePage * PAGE_SIZE + 1}-{Math.min((safePage + 1) * PAGE_SIZE, nodeCount)} of {nodeCount}
-            </span>
-          </div>
+      <PanelHeader
+        title="Data Table"
+        subtitle={`- Nodes ${safePage * PAGE_SIZE + 1}-${Math.min((safePage + 1) * PAGE_SIZE, nodeCount)} of ${nodeCount}`}
+        actions={
           <div className="flex items-center gap-1">
             <Button variant="outline" size="xs" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>
               <ChevronLeft className="w-3 h-3" />
@@ -121,17 +118,19 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
               <ChevronRight className="w-3 h-3" />
             </Button>
           </div>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-          <span>Frame {frameIndex + 1}</span>
-          <span className="text-neutral-300">•</span>
-          <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
-          <span className="text-neutral-300">•</span>
-          <span>Page Size: {PAGE_SIZE}</span>
-          <span className="text-neutral-300">•</span>
-          <span>Units: in</span>
-        </div>
-      </div>
+        }
+        meta={
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+            <span>Frame {frameIndex + 1}</span>
+            <span className="text-neutral-300">•</span>
+            <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+            <span className="text-neutral-300">•</span>
+            <span>Page Size: {PAGE_SIZE}</span>
+            <span className="text-neutral-300">•</span>
+            <span>Units: in</span>
+          </div>
+        }
+      />
       <div className="flex-1 min-h-0 overflow-auto">
         <table className="w-full text-xs">
           <thead className="sticky top-0 bg-neutral-50 border-b border-neutral-200">

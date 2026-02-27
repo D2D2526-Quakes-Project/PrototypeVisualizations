@@ -4,7 +4,7 @@ import { CheckIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 // import { buildAnimationData, type BuildingAnimationData } from "../lib/parser";
-import { fetchWithProgressAndCache } from "@/lib/dataLoader";
+import { clearCache, fetchWithProgressAndCache } from "@/lib/dataLoader";
 import { buildAnimationDataFromBinary } from "@/lib/parser";
 import { useViewStoreRaw } from "@/state";
 import {
@@ -33,13 +33,13 @@ const AnimationDataContext = createContext<AnimationDataContextType>(undefined!)
 type OptionalDataLoadKey = keyof OptionalDataLoadOptions;
 
 const DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS: OptionalDataLoadOptions = {
-  beamData: true,
-  hingeData: true,
-  displacementRot: true,
-  velocityLin: true,
-  velocityRot: true,
-  accelerationLin: true,
-  accelerationRot: true,
+  beamData: false,
+  hingeData: false,
+  displacementRot: false,
+  velocityLin: false,
+  velocityRot: false,
+  accelerationLin: false,
+  accelerationRot: false,
 };
 
 function normalizeOptionalDataLoadOptions(options?: Partial<OptionalDataLoadOptions>): OptionalDataLoadOptions {
@@ -743,13 +743,20 @@ function SimulationPickerOverlay({
                   <span className="text-neutral-400">Select a simulation above</span>
                 )}
               </div>
-              <button
-                type="button"
-                disabled={!pendingSelection}
-                onClick={openSelectedSimulation}
-                className="shrink-0 px-3 py-1.5 rounded bg-neutral-800 text-neutral-100 font-medium disabled:cursor-not-allowed disabled:opacity-35 hover:bg-neutral-700 transition-colors">
-                Open
-              </button>
+              <div className="flex gap-2 items-center">
+                <button
+                  className="shrink-0 px-3 py-1.5 rounded bg-neutral-800 text-neutral-100 font-medium disabled:cursor-not-allowed disabled:opacity-35 hover:bg-neutral-700 transition-colors"
+                  onClick={() => clearCache()}>
+                  Clear Cache
+                </button>
+                <button
+                  type="button"
+                  disabled={!pendingSelection}
+                  onClick={openSelectedSimulation}
+                  className="shrink-0 px-3 py-1.5 rounded bg-neutral-800 text-neutral-100 font-medium disabled:cursor-not-allowed disabled:opacity-35 hover:bg-neutral-700 transition-colors">
+                  Open
+                </button>
+              </div>
             </div>
 
             {/* Optional toggles */}

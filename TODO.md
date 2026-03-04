@@ -321,7 +321,7 @@ Every number with a unit should be hoverable with conversions.
 
 ### 17.4 Node Hide Functionality
 
-- [ ] Fix hide selected nodes not working
+- [x] Fix hide selected nodes not working
   - When a node is selected and "Hide Selected" is triggered, the node remains visible
   - Investigate: Is the hide action being called? Is the visibility state being updated? Is the render reflecting the state?
   - Check if `hiddenNodeIds` in the store is being updated correctly

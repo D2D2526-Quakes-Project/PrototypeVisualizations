@@ -59,7 +59,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const addSelectedNodes = useViewStore((s) => s.addSelectedNodes);
   const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
   const setHoveredNodeId = useViewStore((s) => s.setHoveredNodeId);
-  const hideSelectedNodes = useViewStore((s) => s.hideSelectedNodes);
   const nodeInteractionEnabled = isNodeInteractionMode(mode);
   const slabInteractionEnabled = isSlabInteractionMode(mode);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -118,7 +117,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     const visibleStorySet = new Set(visibleStoryOrder);
 
     return visibleNodesBasedOnMode.filter((nodeId) => {
-      if (hideSelectedNodes && hiddenNodeIdSet.has(nodeId)) {
+      if (hiddenNodeIdSet.has(nodeId)) {
         return false;
       }
       // Check which floor this node belongs to
@@ -136,7 +135,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     visibleNodesBasedOnMode,
     getVisibleStoryOrder,
     animationData.metadata.stories,
-    hideSelectedNodes,
     hiddenNodeIdSet,
   ]);
 

@@ -182,14 +182,29 @@ export async function buildAnimationDataFromBinary({
 
   if (onProgress) onProgress(100, "Processing Complete");
 
+  const normalizeStoryName = (name: string): string => {
+    return name === "Internal Mezzanine" ? "Mezzanine" : name;
+  };
+
+  const normalizedStoryOrder = bData.metadata.story_order.map(normalizeStoryName);
+  const normalizedStories = Object.fromEntries(
+    Object.entries(bData.metadata.stories).map(([storyId, nodeIds]) => [normalizeStoryName(storyId), nodeIds]),
+  );
+  const normalizedCorners = Object.fromEntries(
+    Object.entries(bData.metadata.corners).map(([storyId, corners]) => [normalizeStoryName(storyId), corners]),
+  );
+  const normalizedStoryHeights = Object.fromEntries(
+    Object.entries(bData.metadata.story_heights).map(([storyId, height]) => [normalizeStoryName(storyId), height]),
+  );
+
   const metadata: AnimationMetadata = {
     nodeCount: bData.metadata.count_nodes,
     frameCount: dispLinData.metadata.count_frames,
     dt: dispLinData.metadata.dt,
-    stories: bData.metadata.stories,
-    corners: bData.metadata.corners,
-    storyHeights: bData.metadata.story_heights,
-    storyOrder: bData.metadata.story_order,
+    stories: normalizedStories,
+    corners: normalizedCorners,
+    storyHeights: normalizedStoryHeights,
+    storyOrder: normalizedStoryOrder,
   };
 
   const precomputed = calculateStats(

@@ -463,7 +463,7 @@ _Last Updated: February 2026_
 ### 20.13 Floor Settings
 
 - [ ] Building should come with default floor hiding settings
-- [ ] Rename floor data from "Internal Mezzanine" to just "Mezzanine"
+- [x] Rename floor data from "Internal Mezzanine" to just "Mezzanine"
 
 ### 20.14 Settings Menu
 

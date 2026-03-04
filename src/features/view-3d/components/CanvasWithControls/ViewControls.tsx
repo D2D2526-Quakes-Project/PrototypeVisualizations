@@ -370,69 +370,67 @@ export function ViewControls({
                   </div>
                 </TooltipContent>
               </Tooltip>
-              {showNodeVisibilityMenu && (
-                <motion.div
-                  key="node-visibility-menu"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  transition={{ duration: 0.15 }}
-                  className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5">
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => hideNodes(selectedIds)}
-                        disabled={visibleSelectedCount === 0}
-                        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <EyeOff size={14} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      Hide Selected ({visibleSelectedCount})
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => showNodes(selectedIds)}
-                        disabled={hiddenSelectedCount === 0}
-                        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <Eye size={14} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      Show Selected ({hiddenSelectedCount})
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={showAllNodes}
-                        disabled={hiddenCount === 0}
-                        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <RotateCcw size={14} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      Show All Nodes ({hiddenCount})
-                    </TooltipContent>
-                  </Tooltip>
-                  <div className="w-px h-4 bg-neutral-300 mx-0.5" />
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={clearSelection}
-                        disabled={selectedCount === 0}
-                        className="p-1 rounded hover:bg-red-100 transition-colors text-red-600 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <XCircle size={14} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      Clear Selection ({selectedCount})
-                    </TooltipContent>
-                  </Tooltip>
-                </motion.div>
-              )}
+              <motion.div
+                key="node-visibility-menu"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.15 }}
+                className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5">
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => hideNodes(selectedIds)}
+                      disabled={visibleSelectedCount === 0}
+                      className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <EyeOff size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    Hide Selected ({visibleSelectedCount})
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => showNodes(selectedIds)}
+                      disabled={hiddenSelectedCount === 0}
+                      className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <Eye size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    Show Selected ({hiddenSelectedCount})
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={showAllNodes}
+                      disabled={hiddenCount === 0}
+                      className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <RotateCcw size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    Show All Nodes ({hiddenCount})
+                  </TooltipContent>
+                </Tooltip>
+                <div className="w-px h-4 bg-neutral-300 mx-0.5" />
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={clearSelection}
+                      disabled={selectedCount === 0}
+                      className="p-1 rounded hover:bg-red-100 transition-colors text-red-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <XCircle size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    Clear Selection ({selectedCount})
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
             </div>
           ) : (
             <motion.div

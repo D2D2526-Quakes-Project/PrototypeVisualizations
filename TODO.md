@@ -289,7 +289,7 @@ Every number with a unit should be hoverable with conversions.
 
 ### 17.2 Floor Tab Highlighting
 
-- [ ] Add floor highlighting when a floor tab is opened in the sidebar
+- [x] Add floor highlighting when a floor tab is opened in the sidebar
   - When user clicks on a floor tab (e.g., in the slice panel), the corresponding floor slab in the 3D view should highlight
   - Should mirror the existing node highlighting behavior when nodes are selected
   - Add floor-to-slab mapping and highlight state management

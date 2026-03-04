@@ -71,9 +71,9 @@ interface FloorSlabProps {
 function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset }: FloorSlabProps) {
   const { animationData } = useAnimationData();
   const { getNodeColor } = useColor();
-  const { hoveredSlice, selectSlice, setHovered } = useSliceSelection();
+  const { hoveredSlice, selectedSlice, selectSlice, setHovered } = useSliceSelection();
 
-  const isHovered = hoveredSlice?.storyId === storyId;
+  const isHovered = hoveredSlice?.storyId === storyId || selectedSlice?.storyId === storyId;
 
   const { geometry, color } = useMemo(() => {
     if (nodeIds.length < 3) {

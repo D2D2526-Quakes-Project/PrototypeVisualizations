@@ -433,7 +433,7 @@ _Last Updated: February 2026_
 ### 20.8 Node Interaction
 
 - [ ] Make hovering a node more apparent
-- [ ] Clicking a node to open panel should NOT select the node
+- [x] Clicking a node to open panel should NOT select the node
 
 ### 20.9 Panels & Tabs
 

@@ -46,8 +46,6 @@ export function useNodeSelection(): NodeSelectionContextType {
 
   const selectNode = useCallback(
     (nodeId: number) => {
-      store.getState().addSelectedNodes([nodeId]);
-
       if (!dockviewApiRef) {
         return;
       }

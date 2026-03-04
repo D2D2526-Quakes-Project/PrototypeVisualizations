@@ -360,11 +360,11 @@ Every number with a unit should be hoverable with conversions.
 - [ ] Hitting the back button in browser doesn't navigate back correctly (just changes the URL)
 - [ ] Node hover effects should be more visible
 - [ ] Playback controls should also be in the timeline panel
-- [ ] Keyboard shortcuts bar is too wide and has too much text
-- [ ] View menu is behind the keyboard shortcuts bar
+- [x] Keyboard shortcuts bar is too wide and has too much text
+- [x] View menu is behind the keyboard shortcuts bar
 - [ ] Floors toggle should be a single vertical column with extra details per floor on the right
 - [ ] Floors toggle should allow you to click and drag to toggle all floors dragged over
-- [ ] Keyboard shortcuts bar doesn't show mouse controls like panning with right click
+- [x] Keyboard shortcuts bar doesn't show mouse controls like panning with right click
 - [ ] The peak Values table is pointless and completely useless
 - [ ] Peak response time panel is awful and completely disgusting
 
@@ -401,8 +401,8 @@ _Last Updated: February 2026_
 
 ### 20.3 Keyboard Shortcuts & Help
 
-- [ ] Keyboard shortcuts helper: add mouse controls on second row
-- [ ] Keyboard shortcuts helper: make smaller, show fewer icons
+- [x] Keyboard shortcuts helper: add mouse controls on second row
+- [x] Keyboard shortcuts helper: make smaller, show fewer icons
 
 ### 20.4 Visualization
 

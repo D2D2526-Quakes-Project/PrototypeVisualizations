@@ -4,6 +4,8 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import * as THREE from "three";
 
+const HOVER_HIGHLIGHT_COLOR = "#028cb4";
+
 interface FloorSlabsRendererProps {
   nodeIds: number[];
 }
@@ -154,7 +156,12 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset }
 
   return (
     <mesh geometry={geometry} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick}>
-      <meshBasicMaterial color={color} transparent opacity={isHovered ? 0.9 : 0.6} side={THREE.DoubleSide} />
+      <meshBasicMaterial
+        color={isHovered ? HOVER_HIGHLIGHT_COLOR : color}
+        transparent
+        opacity={isHovered ? 0.9 : 0.6}
+        side={THREE.DoubleSide}
+      />
     </mesh>
   );
 }

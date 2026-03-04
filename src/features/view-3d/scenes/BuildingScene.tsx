@@ -454,7 +454,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
       tempObject.position.set(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
 
-      const scale = hoveredNodeId === nodeId ? 50 : 1 / UNIT_SCALE;
+      const baseNodeScale = 1 / UNIT_SCALE;
+      const scale = hoveredNodeId === nodeId ? baseNodeScale * 1.35 : baseNodeScale;
       tempObject.scale.set(scale, scale, scale);
 
       tempObject.updateMatrix();

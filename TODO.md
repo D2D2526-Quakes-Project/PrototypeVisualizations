@@ -282,7 +282,7 @@ Every number with a unit should be hoverable with conversions.
 
 ### 17.1 Floor Slab Hover Effect
 
-- [ ] Change floor slab hover effect to use the same color highlighting as nodes
+- [x] Change floor slab hover effect to use the same color highlighting as nodes
   - Currently floor slabs highlight in a different color than nodes when hovered
   - Should use the node highlighting color scheme (or configurable metric-based color)
   - Update hover state rendering in floor slab components to match node hover behavior
@@ -358,7 +358,7 @@ Every number with a unit should be hoverable with conversions.
 - [ ] Quick buttons in the !isExpanded view menu should still be visible
 - [x] SlicePanel should be renamed to floor panel & tab header is not consitent with other tabs
 - [ ] Hitting the back button in browser doesn't navigate back correctly (just changes the URL)
-- [ ] Node hover effects should be more visible
+- [x] Node hover effects should be more visible
 - [x] Playback controls should also be in the timeline panel
 - [x] Keyboard shortcuts bar is too wide and has too much text
 - [x] View menu is behind the keyboard shortcuts bar
@@ -432,7 +432,7 @@ _Last Updated: February 2026_
 
 ### 20.8 Node Interaction
 
-- [ ] Make hovering a node more apparent
+- [x] Make hovering a node more apparent
 - [x] Clicking a node to open panel should NOT select the node
 
 ### 20.9 Panels & Tabs

@@ -1,7 +1,7 @@
 import { DockviewWrapper } from "@/features/view-3d/components/dockviewWrapper";
 import { MagicPanel, MagicPanelHeaderActions, MagicPanelTab } from "@/features/view-3d/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/features/view-3d/components/NodePanel";
-import { SlicePanel } from "@/features/view-3d/components/SlicePanel";
+import { FloorPanel, SlicePanel } from "@/features/view-3d/components/SlicePanel";
 import { NodeSelectionProvider, useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
 import { useSliceSelection } from "@/features/view-3d/contexts/visualization";
 import { useAutoSave } from "@/features/view-3d/hooks/useAutoSave";
@@ -20,6 +20,8 @@ import { useCallback, useEffect, useState, useRef } from "react";
 const components = {
   nodePanel: NodePanel,
   magicPanel: MagicPanel,
+  floorPanel: FloorPanel,
+  // Backward compatibility for saved layouts using the legacy key.
   slicePanel: SlicePanel,
 };
 

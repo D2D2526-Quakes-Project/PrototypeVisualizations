@@ -356,7 +356,7 @@ Every number with a unit should be hoverable with conversions.
 - [x] View menu north, east, south ... buttons should be 3 columns and full width
 - [x] Ortho and smooth toggles should be in the same row
 - [ ] Quick buttons in the !isExpanded view menu should still be visible
-- [ ] SlicePanel should be renamed to floor panel & tab header is not consitent with other tabs
+- [x] SlicePanel should be renamed to floor panel & tab header is not consitent with other tabs
 - [ ] Hitting the back button in browser doesn't navigate back correctly (just changes the URL)
 - [ ] Node hover effects should be more visible
 - [x] Playback controls should also be in the timeline panel

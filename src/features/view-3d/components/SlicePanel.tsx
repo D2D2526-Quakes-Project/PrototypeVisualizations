@@ -11,7 +11,7 @@ import { formatHex, interpolate } from "culori";
 
 const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
-export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
+export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
   const { sliceId } = props.params;
   const { animationData } = useAnimationData();
   const { frameIndex, playing } = usePlayback();
@@ -721,10 +721,12 @@ export function SlicePanel(props: IDockviewPanelProps<{ sliceId: string }>) {
   );
 }
 
+export const SlicePanel = FloorPanel;
+
 export function SliceTab(props: { sliceId: string; storyId: string }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2 border-b cursor-grab active:cursor-grabbing bg-neutral-100 border-neutral-300">
-      <span className="text-sm font-semibold text-neutral-700">Floor {props.storyId}</span>
+    <div className="flex z-10 h-full w-full items-center bg-neutral-200/80">
+      <span className="px-4 py-0 text-sm font-medium text-neutral-700">Floor {props.storyId}</span>
     </div>
   );
 }

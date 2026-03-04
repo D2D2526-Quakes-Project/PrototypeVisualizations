@@ -121,7 +121,7 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
 
     dockviewApiRef.addPanel({
       id: panelId,
-      component: "slicePanel",
+      component: "floorPanel",
       title: `Floor ${storyId}`,
       params: { sliceId },
       maximumWidth: 300,

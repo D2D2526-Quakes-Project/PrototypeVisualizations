@@ -407,7 +407,7 @@ _Last Updated: February 2026_
 ### 20.4 Visualization
 
 - [ ] Add rotatable cube in top showing view orientation
-- [ ] Change grid floor N, E, S, W labels to "+X", "+Y", "-X", "-Y"
+- [x] Change grid floor N, E, S, W labels to "+X", "+Y", "-X", "-Y"
 - [ ] Add more default view options for building (corners)
 - [ ] Add displacement scale option for pinning one corner to see rotation without displacement
 - [ ] Remove "Smooth" view option

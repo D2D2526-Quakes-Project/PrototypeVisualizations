@@ -3,10 +3,10 @@ interface ViewsPanelProps {
 }
 
 const viewButtons: { view: "top" | "bottom" | "left" | "right" | "front" | "back"; label: string }[] = [
-  { view: "front", label: "North" },
-  { view: "right", label: "East" },
-  { view: "back", label: "South" },
-  { view: "left", label: "West" },
+  { view: "front", label: "+Y" },
+  { view: "right", label: "+X" },
+  { view: "back", label: "-Y" },
+  { view: "left", label: "-X" },
   { view: "top", label: "Top" },
   { view: "bottom", label: "Bottom" },
 ];

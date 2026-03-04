@@ -136,10 +136,10 @@ export function ViewControls({
   }, [isOrthographic, setIsOrthographic]);
 
   const viewButtons = [
-    { view: "front" as const, label: "North" },
-    { view: "right" as const, label: "East" },
-    { view: "back" as const, label: "South" },
-    { view: "left" as const, label: "West" },
+    { view: "front" as const, label: "+Y" },
+    { view: "right" as const, label: "+X" },
+    { view: "back" as const, label: "-Y" },
+    { view: "left" as const, label: "-X" },
     { view: "top" as const, label: "Top" },
     { view: "bottom" as const, label: "Bottom" },
   ];

@@ -428,7 +428,7 @@ _Last Updated: February 2026_
 
 ### 20.7 ISD Graph
 
-- [ ] Change Y axis labels to show floor elevation not story height (e.g., "Floor 6 (85ft)" instead of "6 (13ft)")
+- [x] Change Y axis labels to show floor elevation not story height (e.g., "Floor 6 (85ft)" instead of "6 (13ft)")
 
 ### 20.8 Node Interaction
 

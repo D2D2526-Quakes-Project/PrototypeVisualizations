@@ -16,7 +16,7 @@
  * DATA SOURCES:
  * - Story drift: animationData.precomputed.storyDrift
  * - Peak drift: animationData.precomputed.peakStoryDrift
- * - Story heights: animationData.metadata.storyHeights
+ * - Story elevations: animationData.precomputed.storyElevations
  *
  * CALCULATION:
  * - Drift = |displacement_top - displacement_bottom| / story_height * 100
@@ -73,7 +73,7 @@ function TooltipContent({
   return (
     <div style={{ minWidth: "200px" }}>
       <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "13px" }}>
-        Story {storyId} ({elevationFt.toFixed(0)}ft)
+        Floor {storyId} ({elevationFt.toFixed(0)}ft)
       </div>
       {corners.map((corner) => {
         const current = currentDrifts[storyId]?.[corner] || 0;
@@ -152,14 +152,15 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
   // Static configuration that doesn't change with frameIndex
   const staticConfig = useMemo(() => {
     const { storyHeights } = animationData.metadata;
+    const { storyElevations } = precomputed;
     const { peakStoryDrift } = precomputed;
     const visibleStoryOrder = getVisibleStoryOrder();
     const storyOrderWithoutGround = visibleStoryOrder.filter((id) => id !== "G"); // Filter out ground
 
     const yAxisData = storyOrderWithoutGround.map((storyId) => {
-      const heightIn = storyHeights[storyId] || 0;
-      const heightFt = heightIn / 12;
-      return `${storyId} (${heightFt.toFixed(0)}ft)`;
+      const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;
+      const elevationFt = elevationIn / 12;
+      return `Floor ${storyId} (${elevationFt.toFixed(0)}ft)`;
     });
 
     // Pre-compute max peak ratio
@@ -180,10 +181,12 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       maxPeakRatio,
       peakStoryDrift,
       storyHeights,
+      storyElevations,
     };
   }, [animationData.metadata, precomputed, getVisibleStoryOrder]);
 
-  const { storyOrderWithoutGround, yAxisData, maxPeakRatio, peakStoryDrift, storyHeights } = staticConfig;
+  const { storyOrderWithoutGround, yAxisData, maxPeakRatio, peakStoryDrift, storyHeights, storyElevations } =
+    staticConfig;
 
   // Current drifts that change with frameIndex
   // const [currentDrifts, setCurrentDrifts] = useState<Record<string, Record<string, number>>>({});
@@ -236,8 +239,8 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
 
           const storyIdx = params[0].dataIndex;
           const storyId = storyOrderWithoutGround[storyIdx];
-          const heightIn = storyHeights[storyId] || 0;
-          const heightFt = heightIn / 12;
+          const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;
+          const heightFt = elevationIn / 12;
 
           return renderToString(
             <TooltipContent
@@ -292,7 +295,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       },
       animation: false,
     };
-  }, [storyOrderWithoutGround, yAxisData, storyHeights, peakStoryDrift, currentDrifts]);
+  }, [storyOrderWithoutGround, yAxisData, storyHeights, storyElevations, peakStoryDrift, currentDrifts]);
 
   // Dynamic parts that change with frameIndex
   const seriesData = useMemo(() => {

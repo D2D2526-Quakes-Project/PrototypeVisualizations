@@ -412,6 +412,16 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     })();
   }, [loadBinaryData]);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      // URL params drive selection/state bootstrap; reload to re-hydrate correctly on browser back/forward.
+      window.location.reload();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const providerValue = {
     animationData: animationData!,
     loading,

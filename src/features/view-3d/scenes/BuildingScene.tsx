@@ -580,7 +580,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
       {/* Direction indicators */}
       <Text position={[0, 116, 0]} fontSize={32} color="#fff" anchorX="center" anchorY="middle">
-        N
+        +Y
       </Text>
       <Text
         position={[0, -116, 0]}
@@ -589,7 +589,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         color="#fff"
         anchorX="center"
         anchorY="middle">
-        S
+        -Y
       </Text>
       <Text
         position={[116, 0, 0]}
@@ -598,7 +598,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         color="#fff"
         anchorX="center"
         anchorY="middle">
-        E
+        +X
       </Text>
       <Text
         position={[-116, 0, 0]}
@@ -607,7 +607,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         color="#fff"
         anchorX="center"
         anchorY="middle">
-        W
+        -X
       </Text>
     </>
   );

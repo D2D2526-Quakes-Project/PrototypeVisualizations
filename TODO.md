@@ -410,7 +410,7 @@ _Last Updated: February 2026_
 - [x] Change grid floor N, E, S, W labels to "+X", "+Y", "-X", "-Y"
 - [ ] Add more default view options for building (corners)
 - [ ] Add displacement scale option for pinning one corner to see rotation without displacement
-- [ ] Remove "Smooth" view option
+- [x] Remove "Smooth" view option
 - [x] Fix zoom level of 3D scene not saving
 - [x] Fix camera position and target not saving sometimes
 

@@ -43,8 +43,6 @@ interface ViewControlsProps {
   orbitControlsRef: RefObject<OrbitControlsImpl | null>;
   isOrthographic: boolean;
   setIsOrthographic: (value: boolean) => void;
-  enableSmoothing: boolean;
-  setEnableSmoothing: (value: boolean) => void;
   isExpanded: boolean;
   setIsExpanded: (expanded: boolean) => void;
   onExpandedWidthChange: (width: number) => void;
@@ -55,8 +53,6 @@ export function ViewControls({
   orbitControlsRef,
   isOrthographic,
   setIsOrthographic,
-  enableSmoothing,
-  setEnableSmoothing,
   isExpanded,
   setIsExpanded,
   onExpandedWidthChange,
@@ -489,10 +485,6 @@ export function ViewControls({
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-neutral-700">Ortho</span>
                     <Switch size="sm" checked={isOrthographic} onCheckedChange={setIsOrthographic} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-neutral-700">Smooth</span>
-                    <Switch size="sm" checked={enableSmoothing} onCheckedChange={setEnableSmoothing} />
                   </div>
                 </motion.div>
                 <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>

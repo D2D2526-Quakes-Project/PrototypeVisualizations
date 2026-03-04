@@ -47,7 +47,6 @@ export function CanvasWithControls({
     }
     return savedPanelState.state.camera.isOrthographic;
   });
-  const [enableSmoothing, setEnableSmoothing] = useState(false);
   const hasHydratedPanelRef = useRef(false);
   const { orbitControlsRef, getCameraState } = useCamera();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
@@ -223,7 +222,7 @@ export function CanvasWithControls({
           }}>
           <color attach="background" args={[backgroundColor]} />
           {children}
-          <CameraManager isOrthographic={isOrthographic} enableSmoothing={enableSmoothing} enablePan />
+          <CameraManager isOrthographic={isOrthographic} enableSmoothing={false} enablePan />
         </Canvas>
         <BoxSelectionOverlay panelId={panelId} />
       </div>
@@ -231,8 +230,6 @@ export function CanvasWithControls({
         orbitControlsRef={orbitControlsRef}
         isOrthographic={isOrthographic}
         setIsOrthographic={setIsOrthographic}
-        enableSmoothing={enableSmoothing}
-        setEnableSmoothing={setEnableSmoothing}
         isExpanded={isViewControlsExpanded}
         setIsExpanded={setIsViewControlsExpanded}
         onExpandedWidthChange={setControlsWidth}

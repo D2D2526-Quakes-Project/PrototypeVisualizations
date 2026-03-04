@@ -8,6 +8,7 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePlayback } from "@/features/playback/PlaybackContext";
+import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { formatFixed3 } from "@/lib/utils";
@@ -870,6 +871,8 @@ export function Timeline({ api }: IDockviewPanelProps) {
           <CheckSelect options={availableChannelOptions} selected={effectiveSelectedKeys} onChange={setSelectedKeys} />
         </div>
         <div className="text-sm text-neutral-700 flex items-center gap-2 flex-wrap">
+          <SmallPlaybackControls />
+          <span className="text-neutral-300">|</span>
           <span className="font-medium">Frame:</span>
           <span className="font-mono">{frameIndex + 1}</span>
           <span className="text-neutral-300">|</span>

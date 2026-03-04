@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   Grid3X3,
+  Home,
   RotateCcw,
   ScanEye,
   XCircle,
@@ -87,6 +88,8 @@ export function ViewControls({
   const setBackgroundColor = useViewStore((s) => s.setBackgroundColor);
 
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
+  const buildingVerticalCenter =
+    (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
   const expandedPanelRef = useRef<HTMLDivElement>(null);
 
   const config = getMetricConfig(currentMetric);
@@ -117,6 +120,15 @@ export function ViewControls({
 
       controls.update();
     }
+  };
+
+  const resetHomeView = () => {
+    if (!orbitControlsRef?.current) return;
+    const controls = orbitControlsRef.current;
+    const camera = controls.object;
+    controls.target.set(0, 0, buildingVerticalCenter);
+    camera.position.set(cameraDistance, cameraDistance, buildingVerticalCenter + cameraDistance);
+    controls.update();
   };
 
   const toggleCameraType = useCallback(() => {
@@ -273,6 +285,20 @@ export function ViewControls({
                   </TooltipContent>
                 </Tooltip>
                 <div className="w-px h-4 bg-neutral-300 mx-0.5" />
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={resetHomeView}
+                      className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700"
+                      title="Home View">
+                      <Home size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    Home View
+                  </TooltipContent>
+                </Tooltip>
+                <div className="w-px h-4 bg-neutral-300 mx-0.5" />
 
                 <Tooltip disableHoverableContent>
                   <TooltipTrigger asChild>
@@ -422,6 +448,14 @@ export function ViewControls({
               <div className="overflow-y-auto min-h-0 pr-1">
                 <motion.div className="mb-2 w-full" variants={childVariants}>
                   <ViewsPanel resetView={resetView} />
+                </motion.div>
+                <motion.div className="mb-2 w-full" variants={childVariants}>
+                  <button
+                    onClick={resetHomeView}
+                    className="w-full inline-flex items-center justify-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-200">
+                    <Home size={12} />
+                    Home View
+                  </button>
                 </motion.div>
                 {showNodeVisibilityMenu && (
                   <div className="pt-1 border-t border-neutral-200">

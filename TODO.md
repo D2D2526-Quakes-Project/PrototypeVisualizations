@@ -352,14 +352,14 @@ Every number with a unit should be hoverable with conversions.
 - [x] Timeline current values list doesn't show units
 - [ ] Show warning / tooltip in header if some data isn't loaded with buttons to load it
 - [x] Add small colored bar (border-l-2) for the color of each metric
-- [ ] Add return to home camera position button
+- [x] Add return to home camera position button
 - [x] View menu north, east, south ... buttons should be 3 columns and full width
 - [x] Ortho and smooth toggles should be in the same row
 - [ ] Quick buttons in the !isExpanded view menu should still be visible
 - [ ] SlicePanel should be renamed to floor panel & tab header is not consitent with other tabs
 - [ ] Hitting the back button in browser doesn't navigate back correctly (just changes the URL)
 - [ ] Node hover effects should be more visible
-- [ ] Playback controls should also be in the timeline panel
+- [x] Playback controls should also be in the timeline panel
 - [x] Keyboard shortcuts bar is too wide and has too much text
 - [x] View menu is behind the keyboard shortcuts bar
 - [ ] Floors toggle should be a single vertical column with extra details per floor on the right

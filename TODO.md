@@ -350,7 +350,7 @@ Every number with a unit should be hoverable with conversions.
 - [x] When the view menu is docked, the ctrl+drag selection box is visually offset
 
 - [x] Timeline current values list doesn't show units
-- [ ] Show warning / tooltip in header if some data isn't loaded with buttons to load it
+- [x] Show warning / tooltip in header if some data isn't loaded with buttons to load it
 - [x] Add small colored bar (border-l-2) for the color of each metric
 - [x] Add return to home camera position button
 - [x] View menu north, east, south ... buttons should be 3 columns and full width
@@ -380,7 +380,7 @@ _Last Updated: February 2026_
 - [ ] Main menu: clearer explanations of what is here and what optional data means
 - [ ] Data generation: rename "Lin" to "Translational"
 - [ ] Remove magnitude metrics (hide by default, add "Show Magnitude Metrics" setting)
-- [ ] In header show name of building and simulation currently loaded
+- [x] In header show name of building and simulation currently loaded
 - [ ] Loading: load until mandatory data (building, ground, simulation, displacementTranslational) is ready before opening app
 - [ ] Loading: show loading progress in header with popover containing all progress bars
 - [ ] Loading: load and parse data in background, add to animation data when ready
@@ -396,7 +396,7 @@ _Last Updated: February 2026_
 
 ### 20.2 Header & Navigation
 
-- [ ] Header: show name of building and simulation currently loaded
+- [x] Header: show name of building and simulation currently loaded
 - [ ] Header: show loading progress with popover containing progress bars
 
 ### 20.3 Keyboard Shortcuts & Help

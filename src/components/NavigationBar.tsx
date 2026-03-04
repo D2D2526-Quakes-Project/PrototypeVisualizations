@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { Check, LogOutIcon, Plus, RotateCcw, Share2, Trash2, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Check, LogOutIcon, Plus, RotateCcw, Share2, Trash2, type LucideIcon } from "lucide-react";
 
 import DataSources from "@/data/index";
 import { useAnimationData } from "@/lib/useAnimationData";
@@ -34,6 +34,7 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
 } from "@/components/ui/menubar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const VERSION = "0.1.0";
 
@@ -74,7 +75,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
   const location = useLocation();
   const navigate = useNavigate();
   const store = useViewStoreRaw();
-  const { clearSelection } = useAnimationData();
+  const { animationData, clearSelection, currentBuilding, currentSimulation, loadSelection } = useAnimationData();
 
   const [profiles, setProfiles] = useState<SaveProfile[]>(() => loadSaveProfiles());
   const [activeProfileId, setActiveProfileId] = useState<string>(() => getActiveProfileId());
@@ -166,6 +167,92 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
 
   const profileKindLabel =
     activeProfile?.kind === "system" ? "default" : activeProfile?.kind === "ephemeral" ? "session" : "user";
+
+  const optionalDataWarnings = useMemo(() => {
+    const checks: Array<{
+      key:
+        | "beamData"
+        | "hingeData"
+        | "displacementRot"
+        | "velocityLin"
+        | "velocityRot"
+        | "accelerationLin"
+        | "accelerationRot";
+      label: string;
+      available: boolean;
+      loaded: boolean;
+    }> = [
+      {
+        key: "beamData",
+        label: "Beam Data",
+        available: Boolean(currentBuilding?.beamData),
+        loaded: Boolean(animationData?.beamData),
+      },
+      {
+        key: "hingeData",
+        label: "Hinge Data",
+        available: Boolean(currentSimulation?.hingeData),
+        loaded: Boolean(animationData?.hingeData),
+      },
+      {
+        key: "displacementRot",
+        label: "Rotation Displacement",
+        available: Boolean(currentSimulation?.displacementRot),
+        loaded: Boolean(animationData?.displacementRot),
+      },
+      {
+        key: "velocityLin",
+        label: "Linear Velocity",
+        available: Boolean(currentSimulation?.velocityLin),
+        loaded: Boolean(animationData?.velocityLin),
+      },
+      {
+        key: "velocityRot",
+        label: "Rotation Velocity",
+        available: Boolean(currentSimulation?.velocityRot),
+        loaded: Boolean(animationData?.velocityRot),
+      },
+      {
+        key: "accelerationLin",
+        label: "Linear Acceleration",
+        available: Boolean(currentSimulation?.accelerationLin),
+        loaded: Boolean(animationData?.accelerationLin),
+      },
+      {
+        key: "accelerationRot",
+        label: "Rotation Acceleration",
+        available: Boolean(currentSimulation?.accelerationRot),
+        loaded: Boolean(animationData?.accelerationRot),
+      },
+    ];
+
+    return checks.filter((entry) => entry.available && !entry.loaded);
+  }, [animationData, currentBuilding, currentSimulation]);
+
+  const loadOptionalDataKey = useCallback(
+    (
+      key:
+        | "beamData"
+        | "hingeData"
+        | "displacementRot"
+        | "velocityLin"
+        | "velocityRot"
+        | "accelerationLin"
+        | "accelerationRot",
+    ) => {
+      if (!currentBuilding || !currentSimulation) return;
+      loadSelection(currentBuilding, currentSimulation, {
+        beamData: Boolean(animationData?.beamData) || key === "beamData",
+        hingeData: Boolean(animationData?.hingeData) || key === "hingeData",
+        displacementRot: Boolean(animationData?.displacementRot) || key === "displacementRot",
+        velocityLin: Boolean(animationData?.velocityLin) || key === "velocityLin",
+        velocityRot: Boolean(animationData?.velocityRot) || key === "velocityRot",
+        accelerationLin: Boolean(animationData?.accelerationLin) || key === "accelerationLin",
+        accelerationRot: Boolean(animationData?.accelerationRot) || key === "accelerationRot",
+      });
+    },
+    [animationData, currentBuilding, currentSimulation, loadSelection],
+  );
 
   return (
     <div className="px-2 py-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
@@ -288,7 +375,38 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
       </div>
 
       <div className="flex items-center justify-end min-w-0">
-        <div className="text-xs text-neutral-500">Quakes v{VERSION}</div>
+        <div className="flex items-center gap-3 text-xs text-neutral-500">
+          <div className="truncate">
+            {currentBuilding?.name} / {currentSimulation?.name}
+          </div>
+          {optionalDataWarnings.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700">
+                  <AlertTriangle size={11} />
+                  {optionalDataWarnings.length} optional dataset
+                  {optionalDataWarnings.length === 1 ? "" : "s"} not loaded
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end" className="max-w-sm">
+                <div className="space-y-1">
+                  <div className="font-medium">Optional data available but not loaded</div>
+                  {optionalDataWarnings.map((warning) => (
+                    <div key={warning.key} className="flex items-center gap-2 justify-between">
+                      <span>{warning.label}</span>
+                      <button
+                        onClick={() => loadOptionalDataKey(warning.key)}
+                        className="rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-[10px] text-neutral-700 hover:bg-neutral-100">
+                        Load
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <div>Quakes v{VERSION}</div>
+        </div>
       </div>
     </div>
   );

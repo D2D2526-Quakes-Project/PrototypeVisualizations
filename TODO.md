@@ -369,3 +369,129 @@ Every number with a unit should be hoverable with conversions.
 - [ ] Peak response time panel is awful and completely disgusting
 
 _Last Updated: February 2026_
+
+---
+
+## 19. Data & Loading Improvements
+
+- [ ] Fix "52Story" building data being really small and incorrectly scaled
+- [ ] Main menu: don't show available data for each station, show groundmotion location map instead
+- [ ] Main menu: show small preview of building shape
+- [ ] Main menu: clearer explanations of what is here and what optional data means
+- [ ] Data generation: rename "Lin" to "Translational"
+- [ ] Remove magnitude metrics (hide by default, add "Show Magnitude Metrics" setting)
+- [ ] In header show name of building and simulation currently loaded
+- [ ] Loading: load until mandatory data (building, ground, simulation, displacementTranslational) is ready before opening app
+- [ ] Loading: show loading progress in header with popover containing all progress bars
+- [ ] Loading: load and parse data in background, add to animation data when ready
+
+---
+
+## 20. UI/UX Improvements
+
+### 20.1 Main Menu
+
+- [ ] Panel picker: use opacity/border color for loadable vs not loadable, move details to tooltip
+- [ ] Panel picker: too large, goes off screen - needs redesign
+
+### 20.2 Header & Navigation
+
+- [ ] Header: show name of building and simulation currently loaded
+- [ ] Header: show loading progress with popover containing progress bars
+
+### 20.3 Keyboard Shortcuts & Help
+
+- [ ] Keyboard shortcuts helper: add mouse controls on second row
+- [ ] Keyboard shortcuts helper: make smaller, show fewer icons
+
+### 20.4 Visualization
+
+- [ ] Add rotatable cube in top showing view orientation
+- [ ] Change grid floor N, E, S, W labels to "+X", "+Y", "-X", "-Y"
+- [ ] Add more default view options for building (corners)
+- [ ] Add displacement scale option for pinning one corner to see rotation without displacement
+- [ ] Remove "Smooth" view option
+- [ ] Fix zoom level of 3D scene not saving
+- [ ] Fix camera position and target not saving sometimes
+
+### 20.5 Color Bars & Labels
+
+- [ ] Colorbar overlay: show metric name and min/threshold/max numbers
+- [ ] Colorbar in view menu: fix incorrect min numbers when metric can be negative
+- [ ] Colorbar: center number should show 0 when metric can be negative, show threshold midway between 0 and pos
+- [ ] Change green color bars to show red
+
+### 20.6 Rotation Units
+
+- [ ] Fix rotation units bug showing numbers larger than 145,000 rad/s
+- [ ] Fix rotation panel and all rotation displays
+
+### 20.7 ISD Graph
+
+- [ ] Change Y axis labels to show floor elevation not story height (e.g., "Floor 6 (85ft)" instead of "6 (13ft)")
+
+### 20.8 Node Interaction
+
+- [ ] Make hovering a node more apparent
+- [ ] Clicking a node to open panel should NOT select the node
+
+### 20.9 Panels & Tabs
+
+- [ ] Remove header text at top of panels (redundant with tab names)
+- [ ] Rename "Damage Threshold" panel to "ISD Threshold"
+- [ ] Rename "Damage" to "ISD" across the app
+- [ ] Create panel for hinges called "Hinge Performance"
+- [ ] Change tab color to be more distinct for currently selected tab
+- [ ] Move panel/tab type dropdown picker from tab name to three dots menu
+
+### 20.10 Tables & Sorting
+
+- [ ] Add sort features to all panels with tables (sort by floor, peak, max current)
+- [ ] Fix sort functions sorting floor name strings (leads to "10" before "1")
+
+### 20.11 Performance Level
+
+- [ ] Remove "performance level" in hinges
+- [ ] Preserve and expose hinge Performance Level from source data
+
+### 20.12 Precision & Display
+
+- [ ] Reduce precision on all numbers - keep at 1 or 2 decimal places instead of 4
+- [ ] Fix histograms not showing values that cross negative threshold
+- [ ] Histograms: use color to differentiate
+
+### 20.13 Floor Settings
+
+- [ ] Building should come with default floor hiding settings
+- [ ] Rename floor data from "Internal Mezzanine" to just "Mezzanine"
+
+### 20.14 Settings Menu
+
+- [ ] Create dedicated settings menu
+
+### 20.15 Default View
+
+- [ ] Make default view simpler with fewer tabs and panels
+
+### 20.16 Heatmap & Charts
+
+- [ ] Improve heatmap communication (users think it's "spatial")
+- [ ] Consider continuous time instead of discrete grid for heatmap
+- [ ] Add charts showing all floors with line chart per floor for same metrics like ISD
+
+### 20.17 Floor Wide Values
+
+- [ ] Option to pick how "floor wide" values are calculated: one corner, average of all corners, or average of all nodes
+
+---
+
+## 21. Data Computation & Caching
+
+- [ ] Cache calculated data in store to avoid recomputing metrics
+- [ ] Compute ISD for every node that has a node on the floor below (precomputation, not just corners)
+
+---
+
+## 22. Station/Simulation Information
+
+- [ ] Add more data about each "station"/"simulation" including where groundmotion is from

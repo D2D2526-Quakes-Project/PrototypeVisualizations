@@ -349,9 +349,9 @@ Every number with a unit should be hoverable with conversions.
 
 - [x] When the view menu is docked, the ctrl+drag selection box is visually offset
 
-- [ ] Timeline current values list doesn't show units
+- [x] Timeline current values list doesn't show units
 - [ ] Show warning / tooltip in header if some data isn't loaded with buttons to load it
-- [ ] Add small colored bar (border-l-2) for the color of each metric
+- [x] Add small colored bar (border-l-2) for the color of each metric
 - [ ] Add return to home camera position button
 - [ ] View menu north, east, south ... buttons should be 3 columns and full width
 - [ ] Ortho and smooth toggles should be in the same row

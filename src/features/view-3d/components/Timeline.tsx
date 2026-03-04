@@ -20,6 +20,7 @@ const GROUND_CHANNEL_CONFIG = {
     label: "X Ground Motion",
     shortName: "X",
     color: "#f87171",
+    unit: "g",
     group: "Ground Motion",
   },
   y: {
@@ -27,6 +28,7 @@ const GROUND_CHANNEL_CONFIG = {
     label: "Y Ground Motion",
     shortName: "Y",
     color: "#4ade80",
+    unit: "g",
     group: "Ground Motion",
   },
   z: {
@@ -34,6 +36,7 @@ const GROUND_CHANNEL_CONFIG = {
     label: "Z Ground Motion",
     shortName: "Z",
     color: "#60a5fa",
+    unit: "g",
     group: "Ground Motion",
   },
   magnitude: {
@@ -41,6 +44,7 @@ const GROUND_CHANNEL_CONFIG = {
     label: "Ground Motion",
     shortName: "Mag",
     color: "#fbbf24",
+    unit: "g",
     group: "Ground Motion",
   },
 } as const;
@@ -51,6 +55,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Displacement X",
     shortName: "Disp X",
     color: "#16a34a",
+    unit: "in",
     group: "Node Averages",
   },
   avgDisplacementY: {
@@ -58,6 +63,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Displacement Y",
     shortName: "Disp Y",
     color: "#65a30d",
+    unit: "in",
     group: "Node Averages",
   },
   avgDisplacementZ: {
@@ -65,6 +71,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Displacement Z",
     shortName: "Disp Z",
     color: "#84cc16",
+    unit: "in",
     group: "Node Averages",
   },
   avgDisplacementMag: {
@@ -72,6 +79,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Displacement",
     shortName: "Disp Mag",
     color: "#22c55e",
+    unit: "in",
     group: "Node Averages",
   },
   avgVelocityX: {
@@ -79,6 +87,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Velocity X",
     shortName: "Vel X",
     color: "#0891b2",
+    unit: "in/s",
     group: "Node Averages",
   },
   avgVelocityY: {
@@ -86,6 +95,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Velocity Y",
     shortName: "Vel Y",
     color: "#0284c7",
+    unit: "in/s",
     group: "Node Averages",
   },
   avgVelocityZ: {
@@ -93,6 +103,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Velocity Z",
     shortName: "Vel Z",
     color: "#0369a1",
+    unit: "in/s",
     group: "Node Averages",
   },
   avgVelocityMag: {
@@ -100,6 +111,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Velocity",
     shortName: "Vel Mag",
     color: "#06b6d4",
+    unit: "in/s",
     group: "Node Averages",
   },
   avgAccelerationX: {
@@ -107,6 +119,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Acceleration X",
     shortName: "Acc X",
     color: "#7c3aed",
+    unit: "in/s²",
     group: "Node Averages",
   },
   avgAccelerationY: {
@@ -114,6 +127,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Acceleration Y",
     shortName: "Acc Y",
     color: "#6d28d9",
+    unit: "in/s²",
     group: "Node Averages",
   },
   avgAccelerationZ: {
@@ -121,6 +135,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Acceleration Z",
     shortName: "Acc Z",
     color: "#5b21b6",
+    unit: "in/s²",
     group: "Node Averages",
   },
   avgAccelerationMag: {
@@ -128,6 +143,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Acceleration",
     shortName: "Acc Mag",
     color: "#8b5cf6",
+    unit: "in/s²",
     group: "Node Averages",
   },
   avgRotationX: {
@@ -135,6 +151,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Rotation X",
     shortName: "Rot X",
     color: "#ea580c",
+    unit: "rad",
     group: "Node Averages",
   },
   avgRotationY: {
@@ -142,6 +159,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Rotation Y",
     shortName: "Rot Y",
     color: "#fb923c",
+    unit: "rad",
     group: "Node Averages",
   },
   avgRotationZ: {
@@ -149,6 +167,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Rotation Z",
     shortName: "Rot Z",
     color: "#c2410c",
+    unit: "rad",
     group: "Node Averages",
   },
   avgRotationMag: {
@@ -156,6 +175,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     label: "Avg Rotation",
     shortName: "Rot Mag",
     color: "#f97316",
+    unit: "rad",
     group: "Node Averages",
   },
 } as const;
@@ -167,6 +187,7 @@ type ChannelOption = {
   label: string;
   shortName: string;
   color: string;
+  unit: string;
   group: "Ground Motion" | "Node Averages";
 };
 
@@ -200,7 +221,7 @@ function TooltipContent({
 }: {
   frame: number;
   time: number;
-  values: Array<{ name: string; color: string; value: number }>;
+  values: Array<{ name: string; color: string; value: number; unit: string }>;
 }) {
   return (
     <div style={{ minWidth: "180px" }}>
@@ -219,7 +240,10 @@ function TooltipContent({
         <div key={item.name} style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color }} />
           <span style={{ color: "#6b7280", fontSize: "10px" }}>{item.name}:</span>
-          <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>{item.value.toFixed(4)}</span>
+          <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>
+            {item.value.toFixed(4)}
+            {item.unit ? ` ${item.unit}` : ""}
+          </span>
         </div>
       ))}
     </div>
@@ -694,7 +718,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
           const dt = animationData.metadata.dt;
           const frame = Math.round(time / dt);
 
-          const values: Array<{ name: string; color: string; value: number }> = [];
+          const values: Array<{ name: string; color: string; value: number; unit: string }> = [];
 
           params.forEach((p) => {
             if (!p || !p.seriesName || !p.data) return;
@@ -704,7 +728,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             const color = seriesMatch ? seriesMatch.config.color : (p.color as string);
             const value = (p.data as number[])[1];
 
-            values.push({ name: p.seriesName, color, value });
+            values.push({ name: p.seriesName, color, value, unit: seriesMatch?.config.unit ?? "" });
           });
 
           return renderToString(<TooltipContent frame={frame} time={time} values={values} />);
@@ -853,10 +877,14 @@ export function Timeline({ api }: IDockviewPanelProps) {
           <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)}s</span>
           <div className="flex items-center gap-2 flex-wrap">
             {chartData.seriesData.map((item) => (
-              <div key={item.key} className="flex items-center gap-1 text-xs">
-                <div className="w-2 h-2 rounded-full" style={{ background: item.config.color }} />
+              <div
+                key={item.key}
+                className="flex items-center gap-1 text-xs pl-1.5 border-l-2"
+                style={{ borderLeftColor: item.config.color }}>
                 <span className="font-medium text-neutral-500">{item.config.shortName}:</span>
-                <span className="font-mono">{formatFixed3(item.accessor(frameIndex) ?? 0)}</span>
+                <span className="font-mono">
+                  {formatFixed3(item.accessor(frameIndex) ?? 0)} {item.config.unit}
+                </span>
               </div>
             ))}
           </div>

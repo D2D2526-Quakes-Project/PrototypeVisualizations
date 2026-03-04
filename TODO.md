@@ -353,8 +353,8 @@ Every number with a unit should be hoverable with conversions.
 - [ ] Show warning / tooltip in header if some data isn't loaded with buttons to load it
 - [x] Add small colored bar (border-l-2) for the color of each metric
 - [ ] Add return to home camera position button
-- [ ] View menu north, east, south ... buttons should be 3 columns and full width
-- [ ] Ortho and smooth toggles should be in the same row
+- [x] View menu north, east, south ... buttons should be 3 columns and full width
+- [x] Ortho and smooth toggles should be in the same row
 - [ ] Quick buttons in the !isExpanded view menu should still be visible
 - [ ] SlicePanel should be renamed to floor panel & tab header is not consitent with other tabs
 - [ ] Hitting the back button in browser doesn't navigate back correctly (just changes the URL)

@@ -420,7 +420,7 @@ export function ViewControls({
                 </button>
               </div>
               <div className="overflow-y-auto min-h-0 pr-1">
-                <motion.div className="grid grid-cols-2 gap-1 mb-2" variants={childVariants}>
+                <motion.div className="mb-2 w-full" variants={childVariants}>
                   <ViewsPanel resetView={resetView} />
                 </motion.div>
                 {showNodeVisibilityMenu && (
@@ -451,19 +451,15 @@ export function ViewControls({
                     </button>
                   </div>
                 )}
-                <motion.div
-                  className="flex items-center gap-2 pt-1 border-t border-neutral-200"
-                  variants={childVariants}>
-                  <span className="text-xs font-medium text-neutral-700">Persp</span>
-                  <Switch size="sm" checked={isOrthographic} onCheckedChange={setIsOrthographic} />
-                  <span className="text-xs font-medium text-neutral-700">Ortho</span>
-                </motion.div>
-                <motion.div
-                  className="flex items-center gap-2 pt-1 border-t border-neutral-200 mt-1"
-                  variants={childVariants}>
-                  <span className="text-xs font-medium text-neutral-700">Sharp</span>
-                  <Switch size="sm" checked={enableSmoothing} onCheckedChange={setEnableSmoothing} />
-                  <span className="text-xs font-medium text-neutral-700">Smooth</span>
+                <motion.div className="flex items-center justify-between pt-1 border-t border-neutral-200" variants={childVariants}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-neutral-700">Ortho</span>
+                    <Switch size="sm" checked={isOrthographic} onCheckedChange={setIsOrthographic} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-neutral-700">Smooth</span>
+                    <Switch size="sm" checked={enableSmoothing} onCheckedChange={setEnableSmoothing} />
+                  </div>
                 </motion.div>
                 <motion.div className="pt-2 border-t border-neutral-200 mt-2" variants={childVariants}>
                   <div className="flex items-center gap-1 mb-1">

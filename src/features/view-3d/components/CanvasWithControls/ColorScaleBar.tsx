@@ -24,20 +24,9 @@ function getScaleStopsAndLabels(
   const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
 
   let stops: string[];
-  const labels: {
-    min: number;
-    max: number;
-    threshold?: number;
-  } = {
-    min: 0,
-    max: 0,
-    threshold: undefined,
-  };
-
-  if (positiveOnly) labels.min = 0;
+  const labels: Array<{ value: number; positionPct: number }> = [];
 
   if (thresholdHighlighting) {
-    labels.threshold = thresholdValue;
     if (positiveOnly) {
       const thresholdPos = thresholdRatio * 100;
 
@@ -47,8 +36,9 @@ function getScaleStopsAndLabels(
         `${positiveStops[2]} ${thresholdPos}%`,
         `${positiveStops[3]} 100%`,
       ];
-
-      labels.max = maxValue;
+      labels.push({ value: 0, positionPct: 0 });
+      labels.push({ value: thresholdValue, positionPct: thresholdPos });
+      labels.push({ value: maxValue, positionPct: 100 });
     } else {
       const posThresholdPos = thresholdRatio * 50 + 50;
       const negThresholdPos = (1 - thresholdRatio) * 50;
@@ -63,12 +53,16 @@ function getScaleStopsAndLabels(
         `${positiveStops[2]} ${posThresholdPos}%`,
         `${positiveStops[3]} 100%`,
       ];
-
-      labels.max = maxValue;
+      labels.push({ value: -maxValue, positionPct: 0 });
+      labels.push({ value: 0, positionPct: 50 });
+      labels.push({ value: thresholdValue, positionPct: 75 });
+      labels.push({ value: maxValue, positionPct: 100 });
     }
   } else {
     if (positiveOnly) {
       stops = [`${positiveStops[0]} 0%`, `${positiveStops[1]} 100%`];
+      labels.push({ value: 0, positionPct: 0 });
+      labels.push({ value: maxValue, positionPct: 100 });
     } else {
       stops = [
         `${negativeStops[1]} 0%`,
@@ -76,8 +70,10 @@ function getScaleStopsAndLabels(
         `${positiveStops[0]} 50%`,
         `${positiveStops[1]} 100%`,
       ];
+      labels.push({ value: -maxValue, positionPct: 0 });
+      labels.push({ value: 0, positionPct: 50 });
+      labels.push({ value: maxValue, positionPct: 100 });
     }
-    labels.max = maxValue;
   }
 
   return { stops, labels };
@@ -109,18 +105,21 @@ export function ColorScaleBar({
         className="relative h-3 rounded-sm flex-1 w-full"
         style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
       {!noLabel && (
-        <div className="flex justify-between text-[9px] text-neutral-400 mt-0.5 px-1">
-          <span>
-            {labels.min.toFixed(2)} {config.unit.abbr}
-          </span>
-          {labels.threshold && (
-            <span>
-              {labels.threshold.toFixed(2)} {config.unit.abbr}
+        <div className="relative h-3 mt-0.5">
+          {labels.map((label, index) => (
+            <span
+              key={`${label.positionPct}-${index}`}
+              className={`absolute text-[9px] text-neutral-400 ${
+                label.positionPct === 0
+                  ? "left-0 -translate-x-0"
+                  : label.positionPct === 100
+                    ? "left-full -translate-x-full"
+                    : "-translate-x-1/2"
+              }`}
+              style={{ left: `${label.positionPct}%` }}>
+              {label.value.toFixed(2)} {config.unit.abbr}
             </span>
-          )}
-          <span>
-            {labels.max.toFixed(2)} {config.unit.abbr}
-          </span>
+          ))}
         </div>
       )}
     </>

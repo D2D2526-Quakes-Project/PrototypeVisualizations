@@ -94,7 +94,19 @@ export function ViewControls({
   const positiveOnly = config.positiveOnly;
   const thresholdValue = thresholds[currentMetric] ?? 0;
 
-  const resetView = (viewType: "top" | "bottom" | "left" | "right" | "front" | "back") => {
+  const resetView = (
+    viewType:
+      | "top"
+      | "bottom"
+      | "left"
+      | "right"
+      | "front"
+      | "back"
+      | "frontRight"
+      | "frontLeft"
+      | "backRight"
+      | "backLeft",
+  ) => {
     if (orbitControlsRef?.current) {
       const controls = orbitControlsRef.current;
       const camera = controls.object;
@@ -108,6 +120,10 @@ export function ViewControls({
           right: [target.x + cameraDistance, target.y, target.z],
           front: [target.x, target.y + cameraDistance, target.z],
           back: [target.x, target.y - cameraDistance, target.z],
+          frontRight: [target.x + cameraDistance, target.y + cameraDistance, target.z],
+          frontLeft: [target.x - cameraDistance, target.y + cameraDistance, target.z],
+          backRight: [target.x + cameraDistance, target.y - cameraDistance, target.z],
+          backLeft: [target.x - cameraDistance, target.y - cameraDistance, target.z],
         };
 
         const position = viewPositions[viewType];
@@ -138,6 +154,10 @@ export function ViewControls({
     { view: "left" as const, label: "-X" },
     { view: "top" as const, label: "Top" },
     { view: "bottom" as const, label: "Bottom" },
+    { view: "frontRight" as const, label: "NE" },
+    { view: "frontLeft" as const, label: "NW" },
+    { view: "backRight" as const, label: "SE" },
+    { view: "backLeft" as const, label: "SW" },
   ];
 
   const childVariants = {

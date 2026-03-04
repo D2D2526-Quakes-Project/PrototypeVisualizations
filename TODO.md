@@ -408,7 +408,7 @@ _Last Updated: February 2026_
 
 - [ ] Add rotatable cube in top showing view orientation
 - [x] Change grid floor N, E, S, W labels to "+X", "+Y", "-X", "-Y"
-- [ ] Add more default view options for building (corners)
+- [x] Add more default view options for building (corners)
 - [ ] Add displacement scale option for pinning one corner to see rotation without displacement
 - [x] Remove "Smooth" view option
 - [x] Fix zoom level of 3D scene not saving

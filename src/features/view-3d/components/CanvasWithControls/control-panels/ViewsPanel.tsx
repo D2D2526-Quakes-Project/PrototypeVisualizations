@@ -1,14 +1,33 @@
 interface ViewsPanelProps {
-  resetView: (view: "top" | "bottom" | "left" | "right" | "front" | "back") => void;
+  resetView: (
+    view:
+      | "top"
+      | "bottom"
+      | "left"
+      | "right"
+      | "front"
+      | "back"
+      | "frontRight"
+      | "frontLeft"
+      | "backRight"
+      | "backLeft",
+  ) => void;
 }
 
-const viewButtons: { view: "top" | "bottom" | "left" | "right" | "front" | "back"; label: string }[] = [
+const viewButtons: {
+  view: "top" | "bottom" | "left" | "right" | "front" | "back" | "frontRight" | "frontLeft" | "backRight" | "backLeft";
+  label: string;
+}[] = [
   { view: "front", label: "+Y" },
   { view: "right", label: "+X" },
   { view: "back", label: "-Y" },
   { view: "left", label: "-X" },
   { view: "top", label: "Top" },
   { view: "bottom", label: "Bottom" },
+  { view: "frontRight", label: "NE" },
+  { view: "frontLeft", label: "NW" },
+  { view: "backRight", label: "SE" },
+  { view: "backLeft", label: "SW" },
 ];
 
 export function ViewsPanel({ resetView }: ViewsPanelProps) {

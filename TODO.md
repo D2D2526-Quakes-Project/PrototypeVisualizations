@@ -362,8 +362,8 @@ Every number with a unit should be hoverable with conversions.
 - [x] Playback controls should also be in the timeline panel
 - [x] Keyboard shortcuts bar is too wide and has too much text
 - [x] View menu is behind the keyboard shortcuts bar
-- [ ] Floors toggle should be a single vertical column with extra details per floor on the right
-- [ ] Floors toggle should allow you to click and drag to toggle all floors dragged over
+- [x] Floors toggle should be a single vertical column with extra details per floor on the right
+- [x] Floors toggle should allow you to click and drag to toggle all floors dragged over
 - [x] Keyboard shortcuts bar doesn't show mouse controls like panning with right click
 - [ ] The peak Values table is pointless and completely useless
 - [ ] Peak response time panel is awful and completely disgusting
@@ -391,8 +391,8 @@ _Last Updated: February 2026_
 
 ### 20.1 Main Menu
 
-- [ ] Panel picker: use opacity/border color for loadable vs not loadable, move details to tooltip
-- [ ] Panel picker: too large, goes off screen - needs redesign
+- [x] Panel picker: use opacity/border color for loadable vs not loadable, move details to tooltip
+- [x] Panel picker: too large, goes off screen - needs redesign
 
 ### 20.2 Header & Navigation
 
@@ -441,7 +441,7 @@ _Last Updated: February 2026_
 - [x] Rename "Damage Threshold" panel to "ISD Threshold"
 - [ ] Rename "Damage" to "ISD" across the app
 - [ ] Create panel for hinges called "Hinge Performance"
-- [ ] Change tab color to be more distinct for currently selected tab
+- [x] Change tab color to be more distinct for currently selected tab
 - [ ] Move panel/tab type dropdown picker from tab name to three dots menu
 
 ### 20.10 Tables & Sorting

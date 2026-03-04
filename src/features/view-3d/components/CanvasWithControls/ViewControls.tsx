@@ -76,7 +76,7 @@ export function ViewControls({
   const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
     useSliceSelection();
   const { thresholds, setThreshold } = useThresholds();
-  const { visibleFloors, toggleFloor, showAllFloors, hideAllFloors } = useFloorVisibility();
+  const { visibleFloors, toggleFloor, setFloorVisible, showAllFloors, hideAllFloors } = useFloorVisibility();
 
   const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
   const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
@@ -551,6 +551,7 @@ export function ViewControls({
                   <FloorsPanel
                     visibleFloors={visibleFloors}
                     toggleFloor={toggleFloor}
+                    setFloorVisible={setFloorVisible}
                     showAllFloors={showAllFloors}
                     hideAllFloors={hideAllFloors}
                     storyOrder={animationData.metadata.storyOrder}

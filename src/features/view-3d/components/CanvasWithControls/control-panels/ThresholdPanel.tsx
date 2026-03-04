@@ -2,6 +2,7 @@ import { useThresholds } from "@/features/view-3d/contexts/visualization";
 import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
 import { Layers, RotateCcw, Sliders } from "lucide-react";
+import { useEffect, useState } from "react";
 import { ThresholdSlider } from "../ThresholdSlider";
 
 interface ThresholdPanelProps {
@@ -296,6 +297,7 @@ export function ThresholdPanel({ animationData, setThreshold, currentMetric }: T
 interface FloorsPanelProps {
   visibleFloors: Set<string>;
   toggleFloor: (storyId: string) => void;
+  setFloorVisible: (storyId: string, visible: boolean) => void;
   showAllFloors: () => void;
   hideAllFloors: () => void;
   storyOrder: string[];
@@ -304,10 +306,31 @@ interface FloorsPanelProps {
 export function FloorsPanel({
   visibleFloors,
   toggleFloor,
+  setFloorVisible,
   showAllFloors,
   hideAllFloors,
   storyOrder,
 }: FloorsPanelProps) {
+  const [dragVisibility, setDragVisibility] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (dragVisibility === null) return;
+    const handleMouseUp = () => setDragVisibility(null);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => window.removeEventListener("mouseup", handleMouseUp);
+  }, [dragVisibility]);
+
+  const handleFloorMouseDown = (storyId: string) => {
+    const nextVisible = !visibleFloors.has(storyId);
+    setDragVisibility(nextVisible);
+    setFloorVisible(storyId, nextVisible);
+  };
+
+  const handleFloorMouseEnter = (storyId: string) => {
+    if (dragVisibility === null) return;
+    setFloorVisible(storyId, dragVisibility);
+  };
+
   return (
     <>
       <div className="flex items-center justify-between mb-1">
@@ -328,18 +351,24 @@ export function FloorsPanel({
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-0.5 max-h-32 overflow-y-auto">
+      <div className="grid grid-cols-[max-content_1fr] gap-x-2 gap-y-0.5 max-h-36 overflow-y-auto">
         {storyOrder.map((storyId) => (
-          <button
-            key={storyId}
-            onClick={() => toggleFloor(storyId)}
-            className={`text-[9px] px-1 py-0.5 rounded border transition-colors ${
-              visibleFloors.has(storyId)
-                ? "bg-blue-100 border-blue-300 text-blue-700"
-                : "bg-neutral-100 border-neutral-300 text-neutral-400"
-            }`}>
-            {storyId}
-          </button>
+          <div key={storyId} className="contents">
+            <button
+              onMouseDown={() => handleFloorMouseDown(storyId)}
+              onMouseEnter={() => handleFloorMouseEnter(storyId)}
+              onClick={() => toggleFloor(storyId)}
+              className={`text-[9px] px-1 py-0.5 rounded border transition-colors select-none ${
+                visibleFloors.has(storyId)
+                  ? "bg-blue-100 border-blue-300 text-blue-700"
+                  : "bg-neutral-100 border-neutral-300 text-neutral-400"
+              }`}>
+              {storyId}
+            </button>
+            <div className={`text-[9px] py-0.5 truncate ${visibleFloors.has(storyId) ? "text-neutral-700" : "text-neutral-400"}`}>
+              {visibleFloors.has(storyId) ? "Visible" : "Hidden"}
+            </div>
+          </div>
         ))}
       </div>
     </>

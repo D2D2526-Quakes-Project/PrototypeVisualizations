@@ -60,6 +60,18 @@ export function CanvasWithControls({
     return getDefaultCanvasPanelState();
   }, [panelId, store]);
 
+  const persistCameraState = useCallback(() => {
+    // Avoid overwriting saved camera data with fallback defaults before controls are mounted.
+    if (!orbitControlsRef.current) return;
+    const cameraState = getCameraState();
+    const panelState = getCurrentPanelState();
+    setPanelState(panelId, "canvas", {
+      ...panelState,
+      camera: cameraState,
+    });
+    store.getState().setCameraState(cameraState);
+  }, [getCameraState, getCurrentPanelState, orbitControlsRef, panelId, setPanelState, store]);
+
   useEffect(() => {
     if (!hasHydratedPanelRef.current) {
       hasHydratedPanelRef.current = true;
@@ -122,24 +134,21 @@ export function CanvasWithControls({
   }, [orbitControlsRef, savedPanelState]);
 
   useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      persistCameraState();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [isOrthographic, persistCameraState]);
+
+  useEffect(() => {
     let saveTimeout: number | null = null;
     let rafId: number | null = null;
     let controls: OrbitControlsImpl | null = null;
     let cancelled = false;
 
-    const saveCameraState = () => {
-      const cameraState = getCameraState();
-      const panelState = getCurrentPanelState();
-      setPanelState(panelId, "canvas", {
-        ...panelState,
-        camera: cameraState,
-      });
-      store.getState().setCameraState(cameraState);
-    };
-
     const handleChange = () => {
       if (saveTimeout) clearTimeout(saveTimeout);
-      saveTimeout = window.setTimeout(saveCameraState, 200);
+      saveTimeout = window.setTimeout(persistCameraState, 200);
     };
 
     const handleInteractionEnd = () => {
@@ -147,7 +156,7 @@ export function CanvasWithControls({
         clearTimeout(saveTimeout);
         saveTimeout = null;
       }
-      saveCameraState();
+      persistCameraState();
     };
 
     const attach = () => {
@@ -173,9 +182,9 @@ export function CanvasWithControls({
         controls.removeEventListener("end", handleInteractionEnd);
       }
       if (saveTimeout) clearTimeout(saveTimeout);
-      saveCameraState();
+      persistCameraState();
     };
-  }, [orbitControlsRef, getCameraState, panelId, setPanelState, store, getCurrentPanelState]);
+  }, [orbitControlsRef, persistCameraState]);
 
   useEffect(() => {
     const element = containerRef.current;

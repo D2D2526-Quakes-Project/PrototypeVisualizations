@@ -411,8 +411,8 @@ _Last Updated: February 2026_
 - [ ] Add more default view options for building (corners)
 - [ ] Add displacement scale option for pinning one corner to see rotation without displacement
 - [ ] Remove "Smooth" view option
-- [ ] Fix zoom level of 3D scene not saving
-- [ ] Fix camera position and target not saving sometimes
+- [x] Fix zoom level of 3D scene not saving
+- [x] Fix camera position and target not saving sometimes
 
 ### 20.5 Color Bars & Labels
 

@@ -447,7 +447,7 @@ _Last Updated: February 2026_
 ### 20.10 Tables & Sorting
 
 - [ ] Add sort features to all panels with tables (sort by floor, peak, max current)
-- [ ] Fix sort functions sorting floor name strings (leads to "10" before "1")
+- [x] Fix sort functions sorting floor name strings (leads to "10" before "1")
 
 ### 20.11 Performance Level
 

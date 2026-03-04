@@ -146,7 +146,7 @@ export function PeakResponseTimePanel() {
     const cmp = (a: PeakRow, b: PeakRow) => {
       switch (sortKey) {
         case "story":
-          return a.story.localeCompare(b.story) * dir;
+          return a.story.localeCompare(b.story, undefined, { numeric: true, sensitivity: "base" }) * dir;
         case "elev":
           return (a.elevationFt - b.elevationFt) * dir;
         case "maxTime":

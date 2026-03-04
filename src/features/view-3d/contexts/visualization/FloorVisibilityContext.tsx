@@ -1,6 +1,6 @@
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useViewStore } from "@/state";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 interface FloorVisibilityContextType {
   visibleFloors: Set<string>;
@@ -22,16 +22,24 @@ export function useFloorVisibility(): FloorVisibilityContextType {
   const toggleFloorStore = useViewStore((s) => s.toggleFloor);
   const showAllFloorsStore = useViewStore((s) => s.showAllFloors);
   const hideAllFloorsStore = useViewStore((s) => s.hideAllFloors);
+  const initializedStoryOrderKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (animationData?.metadata?.storyOrder && visibleFloorsArray.length === 0) {
-      showAllFloorsStore(animationData.metadata.storyOrder);
+    const storyOrder = animationData?.metadata?.storyOrder ?? [];
+    if (storyOrder.length === 0) return;
+
+    const storyOrderKey = storyOrder.join("|");
+    if (initializedStoryOrderKeyRef.current === storyOrderKey) return;
+
+    if (visibleFloorsArray.length === 0) {
+      showAllFloorsStore(storyOrder);
     }
+    initializedStoryOrderKeyRef.current = storyOrderKey;
   }, [animationData?.metadata?.storyOrder, visibleFloorsArray.length, showAllFloorsStore]);
 
   const actualVisibleFloors = useMemo(() => {
-    return new Set(visibleFloorsArray.length > 0 ? visibleFloorsArray : animationData.metadata.storyOrder);
-  }, [visibleFloorsArray, animationData.metadata.storyOrder]);
+    return new Set(visibleFloorsArray);
+  }, [visibleFloorsArray]);
 
   const toggleFloor = useCallback(
     (storyId: string) => {

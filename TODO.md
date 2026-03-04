@@ -199,7 +199,7 @@
 - [x] Change the views menu popover to be a sidebar that takes up space next to the canvas
 
 - [x] Update the Damage Threshold panel to have a better layout and information. Remove the checkboxes and add a slider to set the threshold.
-- [ ] Fix `Hide All` floor visibility action being overridden by empty-visible-floors fallback in floor visibility context
+- [x] Fix `Hide All` floor visibility action being overridden by empty-visible-floors fallback in floor visibility context
 
 ### 9.2 Help & Documentation
 

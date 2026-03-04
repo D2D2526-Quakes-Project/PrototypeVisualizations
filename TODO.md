@@ -416,7 +416,7 @@ _Last Updated: February 2026_
 
 ### 20.5 Color Bars & Labels
 
-- [ ] Colorbar overlay: show metric name and min/threshold/max numbers
+- [x] Colorbar overlay: show metric name and min/threshold/max numbers
 - [x] Colorbar in view menu: fix incorrect min numbers when metric can be negative
 - [x] Colorbar: center number should show 0 when metric can be negative, show threshold midway between 0 and pos
 - [ ] Change green color bars to show red

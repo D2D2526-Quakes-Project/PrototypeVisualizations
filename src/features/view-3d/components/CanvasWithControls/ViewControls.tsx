@@ -319,12 +319,12 @@ export function ViewControls({
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.15 }}
                     className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 gap-0.5 w-full">
+                    <div className="text-[10px] font-medium text-neutral-700 mb-0.5">{config.label}</div>
                     <ColorScaleBar
                       currentMetric={currentMetric}
                       thresholdHighlighting={thresholdHighlighting}
                       thresholds={thresholds}
                       animationData={animationData}
-                      noLabel
                     />
                   </motion.div>
                 </TooltipTrigger>

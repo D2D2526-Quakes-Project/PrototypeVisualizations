@@ -382,7 +382,7 @@ export function HistogramChart({
         z: 2,
       },
     ];
-  }, [histogramData, positionAxis]);
+  }, [histogramData]);
 
   // Final option combining base and series
   const option: EChartsOption = useMemo(() => {

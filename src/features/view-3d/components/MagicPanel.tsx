@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-type PanelCategory = "Canvas" | "Time Series" | "Distributions" | "Threshold / Damage" | "Summaries" | "Tables / Data";
+type PanelCategory = "Canvas" | "Time Series" | "Distributions" | "Threshold / ISD" | "Summaries" | "Tables / Data";
 
 type PanelType = keyof typeof PANEL_DEFINITIONS;
 
@@ -172,7 +172,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   },
   "Hinge Hotspots": {
     component: HingeHotspotsPanel,
-    category: "Threshold / Damage",
+    category: "Threshold / ISD",
     icon: Flame,
     description: "Static hinge hotspot ranking",
     requiredOptionalData: ["hingeData"],
@@ -188,7 +188,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   },
   "Story Drift Heatmap": {
     component: StoryDriftHeatmap,
-    category: "Threshold / Damage",
+    category: "Threshold / ISD",
     icon: ShieldAlert,
     description: "Drift heatmap by story/time",
     requiredOptionalData: [],
@@ -196,7 +196,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   },
   "Peak Response Time": {
     component: PeakResponseTimePanel,
-    category: "Threshold / Damage",
+    category: "Threshold / ISD",
     icon: Gauge,
     description: "When peaks happen in response",
     requiredOptionalData: [],
@@ -204,7 +204,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   },
   "Damage Threshold": {
     component: DamageThresholdPanel,
-    category: "Threshold / Damage",
+    category: "Threshold / ISD",
     icon: ShieldAlert,
     description: "Threshold evaluation summary",
     requiredOptionalData: [],
@@ -227,7 +227,7 @@ const PANEL_CATEGORY_ORDER: PanelCategory[] = [
   "Tables / Data",
   "Time Series",
   "Distributions",
-  "Threshold / Damage",
+  "Threshold / ISD",
   "Summaries",
 ];
 

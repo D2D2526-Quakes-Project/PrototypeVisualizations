@@ -662,7 +662,7 @@ function getSystemDefaultProfiles(layout?: SerializedDockview | null): SaveProfi
     }),
     createProfile({
       id: SYSTEM_PROFILE_DAMAGE_SCREENING_ID,
-      name: "Damage Screening",
+      name: "ISD Screening",
       kind: "system",
       defaultState: damageScreeningState,
     }),

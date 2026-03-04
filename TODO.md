@@ -438,7 +438,7 @@ _Last Updated: February 2026_
 ### 20.9 Panels & Tabs
 
 - [ ] Remove header text at top of panels (redundant with tab names)
-- [ ] Rename "Damage Threshold" panel to "ISD Threshold"
+- [x] Rename "Damage Threshold" panel to "ISD Threshold"
 - [ ] Rename "Damage" to "ISD" across the app
 - [ ] Create panel for hinges called "Hinge Performance"
 - [ ] Change tab color to be more distinct for currently selected tab

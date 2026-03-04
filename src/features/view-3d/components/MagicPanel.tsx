@@ -251,6 +251,11 @@ function joinHumanList(items: string[]): string {
   return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
 
+function getPanelDisplayName(panelType: PanelType): string {
+  if (panelType === "Damage Threshold") return "ISD Threshold";
+  return panelType;
+}
+
 function getPanelRequirementDescriptorText(panelType: PanelType): string {
   const { requiredOptionalData, optionalEnhancementData } = PANEL_DEFINITIONS[panelType];
   const parts = ["Data: core simulation data"];
@@ -367,7 +372,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
             const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
             return <Icon className="size-3.5 text-neutral-500" />;
           })()}
-          {currentPanelType}
+          {getPanelDisplayName(currentPanelType)}
         </span>
       )}
     </div>
@@ -398,7 +403,7 @@ function PanelTypePicker({
           className="mx-2 h-6 max-w-76 min-w-0 px-2 text-sm font-medium text-neutral-700 cursor-pointer border-b border-neutral-400 hover:border-neutral-500 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 inline-flex items-center gap-1.5"
           title="Choose panel type">
           <SelectedIcon className="size-3.5 text-neutral-500 shrink-0" />
-          <span className="truncate">{value}</span>
+          <span className="truncate">{getPanelDisplayName(value)}</span>
           <ChevronDown
             className={`size-3.5 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
           />
@@ -448,7 +453,7 @@ function PanelTypePicker({
                         />
                         <div className="min-w-0">
                           <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
-                            {panelType}
+                            {getPanelDisplayName(panelType)}
                           </div>
                           <div className="text-[10px] text-neutral-500 truncate">{availability.descriptorText}</div>
                         </div>

@@ -171,7 +171,7 @@ export function DamageThresholdPanel() {
   return (
     <div className="h-full w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar">
       <div>
-        <h2 className="text-xl font-bold">Damage Thresholds</h2>
+        <h2 className="text-xl font-bold">ISD Thresholds</h2>
         <p className="text-sm text-neutral-600">Set Story drift ratio limits to see potential damage states.</p>
       </div>
 
@@ -254,7 +254,7 @@ export function DamageThresholdPanel() {
       </div>
 
       <div>
-        <h3 className="text-lg font-bold mt-4">Story Damage Summary</h3>
+        <h3 className="text-lg font-bold mt-4">Story ISD Summary</h3>
         <div
           className={`mt-2 rounded border border-neutral-300 bg-neutral-50 text-[11px] text-neutral-600 divide-x divide-neutral-300 ${SUMMARY_GRID_CLASS}`}>
           <span className="font-semibold px-2 py-1 min-w-0">Corner</span>

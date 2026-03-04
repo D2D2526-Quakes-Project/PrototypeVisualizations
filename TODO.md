@@ -457,8 +457,8 @@ _Last Updated: February 2026_
 ### 20.12 Precision & Display
 
 - [ ] Reduce precision on all numbers - keep at 1 or 2 decimal places instead of 4
-- [ ] Fix histograms not showing values that cross negative threshold
-- [ ] Histograms: use color to differentiate
+- [x] Fix histograms not showing values that cross negative threshold
+- [x] Histograms: use color to differentiate
 
 ### 20.13 Floor Settings
 

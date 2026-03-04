@@ -194,6 +194,7 @@ export function HistogramChart({
 
     const nodeStoryMap: number[] = [];
     const positionValues: number[] = [];
+    const filteredNodeIds: number[] = [];
 
     for (let i = 0; i < nodeCount; i++) {
       const nodeStory = storyOrder.find((sid) => stories[sid]?.includes(i));
@@ -202,6 +203,7 @@ export function HistogramChart({
       const pos = initialPositions.at(i);
       positionValues.push(pos[axisIdx]);
       nodeStoryMap.push(storyOrder.indexOf(nodeStory));
+      filteredNodeIds.push(i);
     }
 
     const minPos = positionValues.length > 0 ? Math.min(...positionValues) : 0;
@@ -218,6 +220,7 @@ export function HistogramChart({
     return {
       positionValues,
       nodeStoryMap,
+      filteredNodeIds,
       binEdges,
       bins,
       binWidth,
@@ -227,12 +230,13 @@ export function HistogramChart({
   }, [animationData, visibleFloors, positionAxis]);
 
   const histogramData = useMemo(() => {
-    const { binEdges, bins, binWidth, minPos, positionValues } = staticConfig;
+    const { binEdges, bins, binWidth, minPos, positionValues, filteredNodeIds } = staticConfig;
     const config = METRIC_CONFIGS[valueType];
     const threshold = thresholds[valueType];
+    const thresholdMagnitude = config.positiveOnly ? threshold : Math.abs(threshold);
 
-    const getNodeValue = (nodeIdx: number): number | null => {
-      const value = config.getValue(animationData, frameIndex, nodeIdx);
+    const getNodeValue = (nodeId: number): number | null => {
+      const value = config.getValue(animationData, frameIndex, nodeId);
       if (value === undefined) return null;
       return value;
     };
@@ -241,13 +245,14 @@ export function HistogramChart({
     const exceedingCounts = new Array(bins).fill(0);
 
     for (let i = 0; i < positionValues.length; i++) {
-      const nodeValue = getNodeValue(i);
+      const nodeValue = getNodeValue(filteredNodeIds[i]);
       if (nodeValue === null) continue;
 
       const binIndex = Math.min(Math.max(Math.floor((positionValues[i] - minPos) / binWidth), 0), bins - 1);
       totalCounts[binIndex]++;
 
-      if (nodeValue >= threshold) {
+      const exceedsThreshold = config.positiveOnly ? nodeValue >= thresholdMagnitude : Math.abs(nodeValue) >= thresholdMagnitude;
+      if (exceedsThreshold) {
         exceedingCounts[binIndex]++;
       }
     }
@@ -313,6 +318,12 @@ export function HistogramChart({
         top: 5,
         textStyle: { fontSize: 12, fontWeight: "bold", color: "#374151" },
       },
+      legend: {
+        right: 20,
+        top: 8,
+        data: ["Total Nodes", "Exceeding Threshold"],
+        textStyle: { fontSize: 10, color: "#4b5563" },
+      },
       xAxis: {
         type: "value",
         name: `${posLabel} (in)`,
@@ -366,8 +377,8 @@ export function HistogramChart({
         name: "Exceeding Threshold",
         type: "bar" as const,
         data: barData.map((d) => [d.value[0], d.value[1]]),
-        itemStyle: { color: POSITION_AXIS_CONFIG[positionAxis].color, opacity: 0.9 },
-        emphasis: { itemStyle: { color: POSITION_AXIS_CONFIG[positionAxis].color, opacity: 1 } },
+        itemStyle: { color: "#dc2626", opacity: 0.9 },
+        emphasis: { itemStyle: { color: "#b91c1c", opacity: 1 } },
         z: 2,
       },
     ];

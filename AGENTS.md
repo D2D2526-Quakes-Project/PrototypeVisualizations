@@ -25,3 +25,5 @@ SAVING_STATE.md describes the state format and usage
 Check existing code and look at similar files for patterns before writing new code
 Keep todos updated and update TODO.md with new tasks discovered
 Data formats are documented in DATA_DOCUMENTATION.md. Read this to understand how data is structured.
+
+This project is under heavy development and doesn't need backwards compatibility.

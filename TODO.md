@@ -289,7 +289,7 @@ Every number with a unit should be hoverable with conversions.
 
 ### 17.2 Floor Tab Highlighting
 
-- [x] Add floor highlighting when a floor tab is opened in the sidebar
+- [ ] Add floor highlighting when a floor tab is opened in the sidebar
   - When user clicks on a floor tab (e.g., in the slice panel), the corresponding floor slab in the 3D view should highlight
   - Should mirror the existing node highlighting behavior when nodes are selected
   - Add floor-to-slab mapping and highlight state management
@@ -355,7 +355,7 @@ Every number with a unit should be hoverable with conversions.
 - [x] Add return to home camera position button
 - [x] View menu north, east, south ... buttons should be 3 columns and full width
 - [x] Ortho and smooth toggles should be in the same row
-- [x] Quick buttons in the !isExpanded view menu should still be visible
+- [ ] Quick buttons in the !isExpanded view menu should still be visible
 - [x] SlicePanel should be renamed to floor panel & tab header is not consitent with other tabs
 - [x] Hitting the back button in browser doesn't navigate back correctly (just changes the URL)
 - [x] Node hover effects should be more visible
@@ -495,3 +495,78 @@ _Last Updated: February 2026_
 ## 22. Station/Simulation Information
 
 - [ ] Add more data about each "station"/"simulation" including where groundmotion is from
+
+---
+
+## 23. UI & Rendering Fixes
+
+### 23.1 View Controls & Camera
+
+- [ ] Home view should be facing +X +Y, currently opposite
+- [ ] Buttons should make you face the direction you clicked
+- [ ] Grid layout of view presets has gaps
+- [ ] Ortho is saved as opposite of what it should be
+
+### 23.2 Timeline & Playback
+
+- [ ] Units in Timeline.tsx should be unit objects
+- [ ] Small playback controls on the timeline shouldn't have container styling (border, padding, etc)
+
+### 23.3 Colorbar & Overlays
+
+- [ ] Colorbar overlay is quite chonky, find a way to reduce its size
+- [ ] ViewMenu colorbar threshold number labels can overlap the end ones. Should also have an underline
+
+### 23.4 View Menu
+
+- [ ] Shortcuts bar Mouse tips doesn't update when making a selection, should show drag for selection and release for select
+- [ ] ViewMenu small icons have duplicate labels and shouldn't all be shown
+- [ ] Text in the Minimized view menu should not be selectable
+- [ ] In ViewControls the showNodeVisibilityMenu && for node-visibility-menu should be hidden when !showNodeVisibilityMenu
+
+### 23.5 Floor Visibility
+
+- [ ] FloorVisibility toggles are reverse order
+- [ ] Clicking a single button in the FloorVisibility toggles it twice (mouse down, mouse up)
+- [ ] FloorVisibility toggles should show floor heights not just "visible"
+- [ ] Show warning message when all floors are hidden
+- [ ] Don't show the groundfloor on the ISD chart
+- [ ] BUG: You can no longer click / select nodes or floor after toggling the floor visibility
+
+### 23.6 MagicPanel & Panels
+
+- [ ] In MagicPanel.tsx, change the "Damage Threshold" type to "ISD Threshold" and remove the getPanelDisplayName function
+- [ ] Remove "slicePanel" from the MagicPanelTab component
+- [ ] PeakResponseTimePanel story sorting should use the storyOrder array instead of literally sorting by story name
+- [ ] Panel Picker doesn't have borders / background changes for ones that are missing optional data or cannot be loaded
+- [ ] In MagicPanel the bg-amber-100 should be bg-amber-50/90
+- [ ] New Histogram panels should open with the currently selected metric
+- [ ] Delete the duplicate Hinge Performance Panel
+- [ ] All Displacement Thresholds should be merged into one "Displacement Threshold" value instead of separate per MagXYZ
+
+### 23.7 View Modes
+
+- [ ] ISD Threshold view mode has a really time building not scaled or position correctly. Also has a grid plane for some reason.
+- [ ] FloorSlab view mode has incorrect colors. They appear darker than they should (namely the hovered floor slab color)
+- [ ] The FloorSlab renderer shouldn't have a "selectedSlice" check. It should just color by hover
+
+### 23.8 Data & Parser
+
+- [ ] Multiple places define an order for the optional data (NavigationBar, Main Menu, optionalLoads query param). This should be centralized and made consistent.
+- [ ] In parser.ts remove the "normalizeStoryName" function and just rename the floor in the data.
+
+---
+
+## 24. Quick Wins & Cleanup
+
+- [ ] Quick buttons in the !isExpanded view menu should still be visible
+- [ ] The peak Values table is pointless and completely useless
+- [ ] Peak response time panel is awful and completely disgusting
+
+---
+
+## 25. Known Issues
+
+- [ ] When the view menu is docked, the ctrl+drag selection box is visually offset
+
+_Last Updated: March 2026_

@@ -23,7 +23,7 @@ export type AnimationDataContextType = {
   loadSelection: (
     building: BinaryBuilding,
     simulation: BinarySimulation,
-    options?: Partial<OptionalDataLoadOptions>,
+    options?: Partial<OptionalDataLoadOptions>
   ) => void;
   clearSelection: () => void;
 };
@@ -51,7 +51,7 @@ function normalizeOptionalDataLoadOptions(options?: Partial<OptionalDataLoadOpti
 
 function getAvailableOptionalDataLoadOptions(
   building: BinaryBuilding,
-  simulation: BinarySimulation,
+  simulation: BinarySimulation
 ): OptionalDataLoadOptions {
   return {
     beamData: Boolean(building.beamData),
@@ -67,7 +67,7 @@ function getAvailableOptionalDataLoadOptions(
 function getEffectiveOptionalDataLoadOptions(
   building: BinaryBuilding,
   simulation: BinarySimulation,
-  requested?: Partial<OptionalDataLoadOptions>,
+  requested?: Partial<OptionalDataLoadOptions>
 ): OptionalDataLoadOptions {
   const normalized = normalizeOptionalDataLoadOptions(requested);
   const available = getAvailableOptionalDataLoadOptions(building, simulation);
@@ -108,7 +108,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const [error, setError] = useState<unknown>(null);
   const [needsSelection, setNeedsSelection] = useState(false);
   const [optionalLoadOptions, setOptionalLoadOptions] = useState<OptionalDataLoadOptions>(
-    DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS,
+    DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS
   );
   const initializedRef = useRef(false);
   const viewStore = useViewStoreRaw();
@@ -116,7 +116,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const updateUrl = (
     building: BinaryBuilding | null,
     simulation: BinarySimulation | null,
-    options?: Partial<OptionalDataLoadOptions>,
+    options?: Partial<OptionalDataLoadOptions>
   ) => {
     const url = new URL(window.location.href);
 
@@ -126,7 +126,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
       const optionalLoads = normalizeOptionalDataLoadOptions(options);
       const optionalLoadsEncoded = OPTIONAL_DATA_LOAD_OPTION_KEYS.map((key) => (optionalLoads[key] ? "1" : "0")).join(
-        "",
+        ""
       );
       url.searchParams.set("optionalLoads", optionalLoadsEncoded);
     } else {
@@ -142,7 +142,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     async (
       building: BinaryBuilding,
       simulation: BinarySimulation,
-      requestedOptionalLoads?: Partial<OptionalDataLoadOptions>,
+      requestedOptionalLoads?: Partial<OptionalDataLoadOptions>
     ) => {
       const effectiveOptionalLoads = getEffectiveOptionalDataLoadOptions(building, simulation, requestedOptionalLoads);
       const initialProgress: Record<string, number> = {
@@ -214,7 +214,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
               progressRef.current.building = p;
               setFileProgress((prev) => ({ ...prev, building: p * 100 }));
             },
-            abortController.signal,
+            abortController.signal
           ),
           fetchWithProgressAndCache(
             resolveUrl(simulation.displacementLin, `${building.folder}/${simulation.folder}`),
@@ -222,7 +222,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
               progressRef.current.displacementLin = p;
               setFileProgress((prev) => ({ ...prev, displacementLin: p * 100 }));
             },
-            abortController.signal,
+            abortController.signal
           ),
           effectiveOptionalLoads.displacementRot && simulation.displacementRot
             ? fetchWithProgressAndCache(
@@ -231,7 +231,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
                   progressRef.current.displacementRot = p;
                   setFileProgress((prev) => ({ ...prev, displacementRot: p * 100 }));
                 },
-                abortController.signal,
+                abortController.signal
               )
             : Promise.resolve(undefined),
           effectiveOptionalLoads.velocityLin && simulation.velocityLin
@@ -241,7 +241,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
                   progressRef.current.velocityLin = p;
                   setFileProgress((prev) => ({ ...prev, velocityLin: p * 100 }));
                 },
-                abortController.signal,
+                abortController.signal
               )
             : Promise.resolve(undefined),
           effectiveOptionalLoads.velocityRot && simulation.velocityRot
@@ -251,7 +251,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
                   progressRef.current.velocityRot = p;
                   setFileProgress((prev) => ({ ...prev, velocityRot: p * 100 }));
                 },
-                abortController.signal,
+                abortController.signal
               )
             : Promise.resolve(undefined),
           effectiveOptionalLoads.accelerationLin && simulation.accelerationLin
@@ -261,7 +261,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
                   progressRef.current.accelerationLin = p;
                   setFileProgress((prev) => ({ ...prev, accelerationLin: p * 100 }));
                 },
-                abortController.signal,
+                abortController.signal
               )
             : Promise.resolve(undefined),
           effectiveOptionalLoads.accelerationRot && simulation.accelerationRot
@@ -271,7 +271,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
                   progressRef.current.accelerationRot = p;
                   setFileProgress((prev) => ({ ...prev, accelerationRot: p * 100 }));
                 },
-                abortController.signal,
+                abortController.signal
               )
             : Promise.resolve(undefined),
           fetchWithProgressAndCache(
@@ -280,7 +280,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
               progressRef.current.groundMotion = p;
               setFileProgress((prev) => ({ ...prev, groundMotion: p * 100 }));
             },
-            abortController.signal,
+            abortController.signal
           ),
           effectiveOptionalLoads.beamData && building.beamData
             ? fetchWithProgressAndCache(
@@ -289,7 +289,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
                   progressRef.current.beamData = p;
                   setFileProgress((prev) => ({ ...prev, beamData: p * 100 }));
                 },
-                abortController.signal,
+                abortController.signal
               )
             : Promise.resolve(undefined),
           effectiveOptionalLoads.hingeData && simulation.hingeData
@@ -299,7 +299,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
                   progressRef.current.hingeData = p;
                   setFileProgress((prev) => ({ ...prev, hingeData: p * 100 }));
                 },
-                abortController.signal,
+                abortController.signal
               )
             : Promise.resolve(undefined),
         ]);
@@ -353,7 +353,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
       return () => abortController.abort();
     },
-    [viewStore],
+    [viewStore]
   );
 
   const loadSelection = useCallback(
@@ -368,7 +368,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       const cleanup = loadBinaryData(building, simulation as BinarySimulation, nextOptionalLoads);
       return cleanup;
     },
-    [loadBinaryData, optionalLoadOptions],
+    [loadBinaryData, optionalLoadOptions]
   );
 
   const clearSelection = useCallback(() => {
@@ -477,12 +477,12 @@ function LoadingOverlay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 bg-neutral-200 flex flex-col items-center justify-center z-9999">
+      className="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-neutral-200">
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="text-6xl font-bold text-neutral-800 mb-6 cursor-pointer select-none"
+        className="mb-6 cursor-pointer text-6xl font-bold text-neutral-800 select-none"
         onClick={() => {
           const letters = document.querySelectorAll("[data-loader-letter]");
           letters.forEach((el, i) => {
@@ -495,7 +495,7 @@ function LoadingOverlay({
           <span
             key={i}
             data-loader-letter
-            className="inline-block animate-wiggle"
+            className="animate-wiggle inline-block"
             style={{ animationDelay: `${i * 50}ms` }}>
             {letter}
           </span>
@@ -505,37 +505,37 @@ function LoadingOverlay({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.15 }}
-        className="text-neutral-400 mb-5">
+        className="mb-5 text-neutral-400">
         {progressMessage || "Loading..."}
       </motion.div>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.15 }}
-        className="w-96 flex flex-col gap-1.5">
+        className="flex w-96 flex-col gap-1.5">
         {Object.entries(fileProgress).map(([name, p]) => (
           <div key={name} className="flex items-center gap-2">
-            <span className="capitalize text text-neutral-400 w-32 truncate shrink-0">{name}</span>
-            <div className="flex-1 h-2 bg-neutral-300 rounded-full overflow-hidden">
+            <span className="text w-32 shrink-0 truncate text-neutral-400 capitalize">{name}</span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-300">
               <div
                 style={{ width: `${p}%` }}
-                className="bg-amber-400 h-full rounded-full transition-all duration-100 ease-out"
+                className="h-full rounded-full bg-amber-400 transition-all duration-100 ease-out"
               />
             </div>
-            <span className="text-sm text-neutral-400 w-7 text-right shrink-0">{Math.round(p)}%</span>
+            <span className="w-7 shrink-0 text-right text-sm text-neutral-400">{Math.round(p)}%</span>
           </div>
         ))}
         {memory && (
-          <div className="flex items-center gap-2 mt-1 pt-1 border-t border-neutral-300">
-            <span className="text-[10px] text-neutral-400 w-28 shrink-0">
+          <div className="mt-1 flex items-center gap-2 border-t border-neutral-300 pt-1">
+            <span className="w-28 shrink-0 text-[10px] text-neutral-400">
               Memory — {Math.round(memory.used / 1024 / 1024)}MB
             </span>
-            <div className="flex-1 h-1 bg-neutral-300/50 rounded-full overflow-hidden">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-300/50">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${(memory.used / memory.limit) * 100}%` }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="bg-indigo-300 h-full rounded-full"
+                className="h-full rounded-full bg-indigo-300"
               />
             </div>
           </div>
@@ -545,7 +545,7 @@ function LoadingOverlay({
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 mt-4 text-xs px-3 py-1.5 bg-red-50 border border-red-200 rounded">
+          className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-500">
           Failed to load: {String(error)}
         </motion.div>
       ) : null}
@@ -560,26 +560,26 @@ function SimulationPickerOverlay({
   onSelect: (
     building: BinaryBuilding,
     simulation: BinarySimulation,
-    options?: Partial<OptionalDataLoadOptions>,
+    options?: Partial<OptionalDataLoadOptions>
   ) => void;
   initialOptionalLoadOptions: OptionalDataLoadOptions;
 }) {
   const [expandedBuildings, setExpandedBuildings] = useState<string[]>(() =>
-    DataSources.buildings.map((b) => b.folder),
+    DataSources.buildings.map((b) => b.folder)
   );
   const [pendingSelection, setPendingSelection] = useState<{
     building: BinaryBuilding;
     simulation: BinarySimulation;
   } | null>(null);
   const [optionalLoads, setOptionalLoads] = useState<OptionalDataLoadOptions>(() =>
-    normalizeOptionalDataLoadOptions(initialOptionalLoadOptions),
+    normalizeOptionalDataLoadOptions(initialOptionalLoadOptions)
   );
 
   const toggleBuilding = (buildingFolder: string) => {
     setExpandedBuildings((current) =>
       current.includes(buildingFolder)
         ? current.filter((folder) => folder !== buildingFolder)
-        : [...current, buildingFolder],
+        : [...current, buildingFolder]
     );
   };
 
@@ -599,14 +599,14 @@ function SimulationPickerOverlay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 bg-neutral-200 z-9999 overflow-y-auto">
+      className="fixed inset-0 z-9999 overflow-y-auto bg-neutral-200">
       <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col items-center justify-center px-4 py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="text-6xl font-bold text-neutral-800 mb-6 cursor-pointer select-none"
+          className="mb-6 cursor-pointer text-6xl font-bold text-neutral-800 select-none"
           onClick={() => {
             const letters = document.querySelectorAll("[data-picker-letter]");
             letters.forEach((el, i) => {
@@ -619,16 +619,16 @@ function SimulationPickerOverlay({
             <span
               key={i}
               data-picker-letter
-              className="inline-block animate-wiggle"
+              className="animate-wiggle inline-block"
               style={{ animationDelay: `${i * 50}ms` }}>
               {letter}
             </span>
           ))}
         </motion.div>
-        <div className="text-neutral-400 mb-5">Select a building and simulation</div>
+        <div className="mb-5 text-neutral-400">Select a building and simulation</div>
 
         {/* Building + simulation list */}
-        <div className="w-full flex flex-col gap-2">
+        <div className="flex w-full flex-col gap-2">
           {DataSources.buildings.map((b) => {
             const buildingIsExpanded = expandedBuildings.includes(b.folder);
             const incompleteWarning = isCatalogPathIncomplete(b.building_data);
@@ -642,11 +642,11 @@ function SimulationPickerOverlay({
                 {/* Building row */}
                 <button
                   onClick={() => toggleBuilding(b.folder)}
-                  className={`w-full px-3 py-2 flex items-center justify-between gap-3 cursor-pointer rounded bg-neutral-100/60 hover:bg-neutral-100 transition-colors text-left ${incompleteWarning ? "incomplete-warning" : ""}`}>
-                  <div className="min-w-0 flex items-baseline gap-3">
-                    <span className="font-medium text-lg text-neutral-800">{b.name}</span>
+                  className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded bg-neutral-100/60 px-3 py-2 text-left transition-colors hover:bg-neutral-100 ${incompleteWarning ? "incomplete-warning" : ""}`}>
+                  <div className="flex min-w-0 items-baseline gap-3">
+                    <span className="text-lg font-medium text-neutral-800">{b.name}</span>
                     {/* <span className="text-[10px] tracking-widest uppercase text-neutral-400">{b.folder}</span> */}
-                    <span className="text-neutral-400 text-sm">
+                    <span className="text-sm text-neutral-400">
                       {b.simulations.length} sims · {formatBytes(totalSimulationBytes)}
                     </span>
                   </div>
@@ -662,7 +662,7 @@ function SimulationPickerOverlay({
                 <AnimatePresence>
                   {buildingIsExpanded && (
                     <motion.div
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 origin-top p-2"
+                      className="grid origin-top grid-cols-1 gap-2 p-2 sm:grid-cols-2 lg:grid-cols-3"
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -694,27 +694,27 @@ function SimulationPickerOverlay({
                             } ${incompleteWarning ? "incomplete-warning" : ""}`}>
                             {/* Name + size row */}
                             <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
+                              <div className="flex min-w-0 items-center gap-1.5">
                                 <span
                                   className={`inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border ${isSelected ? "border-amber-500 bg-amber-400" : "border-neutral-300 bg-white"}`}>
                                   {isSelected ? <CheckIcon className="size-2.5" /> : null}
                                 </span>
-                                <span className="font-medium text-neutral-800 truncate">{s.name}</span>
+                                <span className="truncate font-medium text-neutral-800">{s.name}</span>
                               </div>
-                              <span className="text-xs text-neutral-400 shrink-0">{formatBytes(s.size)}</span>
+                              <span className="shrink-0 text-xs text-neutral-400">{formatBytes(s.size)}</span>
                             </div>
                             {/* Capability chips */}
-                            <div className="mt-1.5 gap-1 grid grid-cols-2">
+                            <div className="mt-1.5 grid grid-cols-2 gap-1">
                               {Object.entries(availableDomains).map(([cap, available]) => (
                                 <span
                                   key={cap}
-                                  className="rounded-sm flex gap-1 items-center bg-neutral-200/50 px-1.5 py-px text-xs text-neutral-500 border border-neutral-200 w-fit">
+                                  className="flex w-fit items-center gap-1 rounded-sm border border-neutral-200 bg-neutral-200/50 px-1.5 py-px text-xs text-neutral-500">
                                   {available ? (
                                     <CheckIcon className="size-2.5 text-green-500" />
                                   ) : (
                                     <XIcon className="size-2.5 text-red-500" />
                                   )}
-                                  <span className="font-medium text-neutral-800 whitespace-nowrap">{cap}</span>
+                                  <span className="font-medium whitespace-nowrap text-neutral-800">{cap}</span>
                                 </span>
                               ))}
                             </div>
@@ -734,17 +734,17 @@ function SimulationPickerOverlay({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="w-full mt-4 rounded border border-neutral-300 bg-neutral-100/80 px-3 py-2.5">
+          className="mt-4 w-full rounded border border-neutral-300 bg-neutral-100/80 px-3 py-2.5">
           <div className="flex flex-col gap-2.5">
             {/* Selection summary + open button */}
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
                 {pendingSelection ? (
                   <div className="flex items-baseline gap-2">
-                    <span className="text font-medium text-neutral-800 truncate">
+                    <span className="text truncate font-medium text-neutral-800">
                       {pendingSelection.building.name} / {pendingSelection.simulation.name}
                     </span>
-                    <span className="text-sm text-neutral-400 shrink-0">
+                    <span className="shrink-0 text-sm text-neutral-400">
                       {formatBytes(pendingSelection.simulation.size)} ·{" "}
                       {countSimulationFiles(pendingSelection.simulation)} files
                     </span>
@@ -753,9 +753,9 @@ function SimulationPickerOverlay({
                   <span className="text-neutral-400">Select a simulation above</span>
                 )}
               </div>
-              <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
                 <button
-                  className="shrink-0 px-3 py-1.5 rounded bg-neutral-800 text-neutral-100 font-medium disabled:cursor-not-allowed disabled:opacity-35 hover:bg-neutral-700 transition-colors"
+                  className="shrink-0 rounded bg-neutral-800 px-3 py-1.5 font-medium text-neutral-100 transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-35"
                   onClick={() => clearCache()}>
                   Clear Cache
                 </button>
@@ -763,7 +763,7 @@ function SimulationPickerOverlay({
                   type="button"
                   disabled={!pendingSelection}
                   onClick={openSelectedSimulation}
-                  className="shrink-0 px-3 py-1.5 rounded bg-neutral-800 text-neutral-100 font-medium disabled:cursor-not-allowed disabled:opacity-35 hover:bg-neutral-700 transition-colors">
+                  className="shrink-0 rounded bg-neutral-800 px-3 py-1.5 font-medium text-neutral-100 transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-35">
                   Open
                 </button>
               </div>
@@ -771,8 +771,8 @@ function SimulationPickerOverlay({
 
             {/* Optional toggles */}
             <div>
-              <div className="flex gap-2 items-baseline mb-1.5 text-xs">
-                <div className=" uppercase tracking-widest text-neutral-400">Optional data · </div>
+              <div className="mb-1.5 flex items-baseline gap-2 text-xs">
+                <div className="tracking-widest text-neutral-400 uppercase">Optional data · </div>
                 {/* All toggle */}
                 <button
                   type="button"
@@ -785,12 +785,12 @@ function SimulationPickerOverlay({
                           acc[key as keyof OptionalDataLoadOptions] = true;
                           return acc;
                         },
-                        {} as Record<keyof typeof current, boolean>,
+                        {} as Record<keyof typeof current, boolean>
                       );
                       return all;
                     })
                   }
-                  className="shrink-0 cursor-pointer text-neutral-600 disabled:cursor-not-allowed disabled:opacity-35 hover:text-neutral-700 underline transition-colors">
+                  className="shrink-0 cursor-pointer text-neutral-600 underline transition-colors hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-35">
                   All
                 </button>
                 {/* None toggle */}
@@ -805,12 +805,12 @@ function SimulationPickerOverlay({
                           acc[key as keyof OptionalDataLoadOptions] = false;
                           return acc;
                         },
-                        {} as Record<keyof typeof current, boolean>,
+                        {} as Record<keyof typeof current, boolean>
                       );
                       return all;
                     })
                   }
-                  className="shrink-0 cursor-pointer text-neutral-600 disabled:cursor-not-allowed disabled:opacity-35 hover:text-neutral-700 underline transition-colors">
+                  className="shrink-0 cursor-pointer text-neutral-600 underline transition-colors hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-35">
                   None
                 </button>
               </div>
@@ -825,11 +825,11 @@ function SimulationPickerOverlay({
                       title={control.description}
                       className={`rounded border px-2 py-0.5 transition-colors select-none ${
                         !pendingSelection || !isAvailable
-                          ? "border-neutral-200 text-neutral-300 cursor-not-allowed"
+                          ? "cursor-not-allowed border-neutral-200 text-neutral-300"
                           : active
                             ? "border-amber-400 bg-amber-50 text-amber-800"
                             : "border-neutral-300 text-neutral-500 hover:border-neutral-400 hover:text-neutral-700"
-                      } flex items-center gap-1.5 w-fit`}>
+                      } flex w-fit items-center gap-1.5`}>
                       <Checkbox
                         id={`${control.key}-checkbox`}
                         disabled={!pendingSelection || !isAvailable}
@@ -837,7 +837,7 @@ function SimulationPickerOverlay({
                         onCheckedChange={() =>
                           setOptionalLoads((current) => ({ ...current, [control.key]: !current[control.key] }))
                         }
-                        className="data-[state=checked]:bg-amber-400 dark:data-[state=checked]:bg-amber-400 data-[state=checked]:border-amber-400"
+                        className="data-[state=checked]:border-amber-400 data-[state=checked]:bg-amber-400 dark:data-[state=checked]:bg-amber-400"
                       />
                       <Label className="text-sm" htmlFor={`${control.key}-checkbox`}>
                         {control.label}

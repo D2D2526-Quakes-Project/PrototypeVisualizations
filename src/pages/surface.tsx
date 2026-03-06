@@ -132,21 +132,21 @@ export function ViewSurface() {
   const [metric, setMetric] = useState<"displacement" | "drift">("displacement");
 
   return (
-    <div className="grow flex flex-col relative min-h-0">
-      <div className="absolute top-2 left-2 z-10 bg-white/80 p-2 rounded">
+    <div className="relative flex min-h-0 grow flex-col">
+      <div className="absolute top-2 left-2 z-10 rounded bg-white/80 p-2">
         <label className="flex items-center gap-2">
           <span className="font-bold">Metric:</span>
           <select
             value={metric}
             onChange={(e) => setMetric(e.target.value as "displacement" | "drift")}
-            className="p-1 border rounded">
+            className="rounded border p-1">
             <option value="displacement">Average Displacement</option>
             <option value="drift">Story Drift Ratio</option>
           </select>
         </label>
       </div>
 
-      <div className="absolute bottom-2 left-2 right-2 h-8 z-10">
+      <div className="absolute right-2 bottom-2 left-2 z-10 h-8">
         <SmallTimeline />
       </div>
 

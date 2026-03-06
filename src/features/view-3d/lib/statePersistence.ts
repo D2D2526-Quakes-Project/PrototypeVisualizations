@@ -791,7 +791,7 @@ function migrateLegacyData(layout?: SerializedDockview | null): SaveProfile[] {
         currentState: preset.state,
         createdAt: preset.createdAt,
         updatedAt: preset.state.timestamp,
-      }),
+      })
     );
   }
 
@@ -924,7 +924,7 @@ function getEphemeralShareProfileName(selection?: DataSelection): string {
 export function activateEphemeralShareProfile(state: AppState): void {
   try {
     const profiles = loadSaveProfiles(state.layout ?? undefined).filter(
-      (profile) => profile.id !== EPHEMERAL_SHARE_PROFILE_ID,
+      (profile) => profile.id !== EPHEMERAL_SHARE_PROFILE_ID
     );
 
     const sessionProfile = createProfile({
@@ -988,7 +988,7 @@ export function renameUserProfile(profileId: string, nextName: string): boolean 
   if (!profile || profile.kind !== "user") return false;
 
   const duplicate = profiles.find(
-    (item) => item.id !== profileId && item.name.toLowerCase() === trimmedName.toLowerCase(),
+    (item) => item.id !== profileId && item.name.toLowerCase() === trimmedName.toLowerCase()
   );
   if (duplicate) return false;
 
@@ -1000,8 +1000,8 @@ export function renameUserProfile(profileId: string, nextName: string): boolean 
             name: trimmedName,
             updatedAt: Date.now(),
           }
-        : item,
-    ),
+        : item
+    )
   );
 
   return true;
@@ -1035,8 +1035,8 @@ export function resetProfileToDefault(profileId: string): boolean {
             currentState: normalizeState(cloneAppState(item.defaultState)),
             updatedAt: Date.now(),
           }
-        : item,
-    ),
+        : item
+    )
   );
 
   return true;
@@ -1189,7 +1189,10 @@ function applyDataSelectionToUrlParams(url: URL, selection?: DataSelection): voi
   url.searchParams.delete(OPTIONAL_LOADS_URL_PARAM);
 }
 
-function mergeDataSelections(primary: DataSelection | null | undefined, override: DataSelection | null | undefined): DataSelection | null {
+function mergeDataSelections(
+  primary: DataSelection | null | undefined,
+  override: DataSelection | null | undefined
+): DataSelection | null {
   if (!primary && !override) return null;
   if (!primary) return override ?? null;
   if (!override) return primary;
@@ -1362,7 +1365,7 @@ export async function copyShareableUrlToClipboard(state: AppState): Promise<bool
 export function getStateForUrlWithDefaults(
   state: Partial<AppState>,
   defaults: AppState,
-  includePanelStates: boolean = false,
+  includePanelStates: boolean = false
 ): AppState {
   const stateWithLegacy = state as Partial<AppState> & { explodedView?: unknown };
   const { explodedView: _legacyExplodedView, ...stateWithoutLegacy } = stateWithLegacy;

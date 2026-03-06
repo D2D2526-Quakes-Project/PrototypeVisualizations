@@ -82,9 +82,9 @@ function SimpleSelect<T extends string>({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="xs" className="min-w-20">
-          <span className="truncate flex-1">{labelFn(value)}</span>
+          <span className="flex-1 truncate">{labelFn(value)}</span>
           <ChevronDown
-            className={`w-3 h-3 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
           />
         </Button>
       </PopoverTrigger>
@@ -93,7 +93,7 @@ function SimpleSelect<T extends string>({
           {options.map((opt) => (
             <Label
               key={opt}
-              className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent ${
+              className={`hover:bg-accent flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
                 value === opt ? "bg-blue-50 text-blue-700" : ""
               }`}
               onClick={() => {
@@ -158,7 +158,7 @@ export function HistogramChart({
   const [positionAxis, setPositionAxis] = useState<PositionAxis>(() =>
     savedState.positionAxis === "x" || savedState.positionAxis === "y" || savedState.positionAxis === "z"
       ? savedState.positionAxis
-      : "x",
+      : "x"
   );
   const filteredMetrics = useMemo(() => {
     const allowed = metricOptions
@@ -251,7 +251,9 @@ export function HistogramChart({
       const binIndex = Math.min(Math.max(Math.floor((positionValues[i] - minPos) / binWidth), 0), bins - 1);
       totalCounts[binIndex]++;
 
-      const exceedsThreshold = config.positiveOnly ? nodeValue >= thresholdMagnitude : Math.abs(nodeValue) >= thresholdMagnitude;
+      const exceedsThreshold = config.positiveOnly
+        ? nodeValue >= thresholdMagnitude
+        : Math.abs(nodeValue) >= thresholdMagnitude;
       if (exceedsThreshold) {
         exceedingCounts[binIndex]++;
       }
@@ -302,7 +304,7 @@ export function HistogramChart({
               exceeding={exceeding}
               total={total}
               exceedingPercentage={pct}
-            />,
+            />
           );
         },
       },
@@ -395,13 +397,13 @@ export function HistogramChart({
   const config = METRIC_CONFIGS[valueType];
 
   return (
-    <div className="h-full w-full flex flex-col bg-white">
-      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0">
-        <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex h-full w-full flex-col bg-white">
+      <div className="z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="text-sm text-neutral-700">
             <span className="font-medium">{title}</span>
           </div>
-          <div className="flex items-center gap-1 ml-auto">
+          <div className="ml-auto flex items-center gap-1">
             <span className="text-xs text-neutral-500">Position:</span>
             <SimpleSelect
               options={["x", "y", "z"] as const}
@@ -420,7 +422,7 @@ export function HistogramChart({
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-1 text-xs text-neutral-600">
+        <div className="mt-1 flex items-center gap-2 text-xs text-neutral-600">
           <span>
             Threshold: <UnitTooltip value={thresholds[valueType]} unit={config.unit.abbr} decimals={3} />
           </span>
@@ -430,7 +432,7 @@ export function HistogramChart({
           </span>
         </div>
       </div>
-      <div className="flex-1 min-h-0 w-full">
+      <div className="min-h-0 w-full flex-1">
         <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
       </div>
     </div>

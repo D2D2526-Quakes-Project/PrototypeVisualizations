@@ -120,8 +120,8 @@ THREE.ColorManagement.enabled = true;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <div className="h-screen flex flex-col bg-neutral-200">
+    <div className="flex h-screen flex-col bg-neutral-200">
       <RouterProvider router={router} />
     </div>
-  </StrictMode>,
+  </StrictMode>
 );

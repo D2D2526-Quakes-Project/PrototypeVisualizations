@@ -120,7 +120,7 @@ export function buildHingeEnrichedRows(hingeData?: HingeDataAccessor, beamData?:
     endMask: number,
     side: "I" | "J",
     maxValues: { m3: number; r3: number; pos: number; neg: number },
-    minValues: { m3: number; r3: number; pos: number; neg: number },
+    minValues: { m3: number; r3: number; pos: number; neg: number }
   ) => {
     const sideBit = side === "I" ? 0b01 : 0b10;
     if ((endMask & sideBit) === 0) return;
@@ -162,14 +162,14 @@ export function buildHingeEnrichedRows(hingeData?: HingeDataAccessor, beamData?:
       row.endMask,
       "I",
       { m3: row.iM3Max, r3: row.iR3Max, pos: row.iMaxPosDcrMax, neg: row.iMaxNegDcrMax },
-      { m3: row.iM3Min, r3: row.iR3Min, pos: row.iMaxPosDcrMin, neg: row.iMaxNegDcrMin },
+      { m3: row.iM3Min, r3: row.iR3Min, pos: row.iMaxPosDcrMin, neg: row.iMaxNegDcrMin }
     );
     pushEndpointRows(
       row.beamIndex,
       row.endMask,
       "J",
       { m3: row.jM3Max, r3: row.jR3Max, pos: row.jMaxPosDcrMax, neg: row.jMaxNegDcrMax },
-      { m3: row.jM3Min, r3: row.jR3Min, pos: row.jMaxPosDcrMin, neg: row.jMaxNegDcrMin },
+      { m3: row.jM3Min, r3: row.jR3Min, pos: row.jMaxPosDcrMin, neg: row.jMaxNegDcrMin }
     );
   }
 
@@ -180,7 +180,7 @@ export function computeHingeHistogram(
   rows: HingeEnrichedRow[],
   metric: HingeMetricKey,
   filters: HingeFilters,
-  binCount = 24,
+  binCount = 24
 ): HingeHistogramResult | null {
   const values: number[] = [];
 
@@ -245,11 +245,7 @@ export function computeHingeHistogram(
   };
 }
 
-export function getTopHingeHotspots(
-  rows: HingeEnrichedRow[],
-  filters: HingeFilters,
-  limit = 12,
-): HingeEnrichedRow[] {
+export function getTopHingeHotspots(rows: HingeEnrichedRow[], filters: HingeFilters, limit = 12): HingeEnrichedRow[] {
   return rows
     .filter((row) => matchesHingeFilters(row, filters))
     .slice()
@@ -259,7 +255,7 @@ export function getTopHingeHotspots(
 
 export function getHingePerformanceBreakdown(
   rows: HingeEnrichedRow[],
-  filters: Omit<HingeFilters, "performanceLevel">,
+  filters: Omit<HingeFilters, "performanceLevel">
 ): {
   levels: number[];
   totals: number[];

@@ -23,7 +23,7 @@ const colorMap = interpolate(
     [red600, 0.51],
     [red900, 1],
   ],
-  "oklab",
+  "oklab"
 );
 
 const DISPLAY_CORNERS = ["NE", "NW", "SW", "SE"] as const;
@@ -40,13 +40,7 @@ const SUMMARY_GRID_CLASS =
   "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)] items-center";
 const DAMAGE_RATIO_LEGEND_GRADIENT = `linear-gradient(90deg, ${blue900} 0%, ${blue600} 24.5%, ${blue400} 25%, ${white} 50%, ${red400} 75%, ${red600} 75.5%, ${red900} 100%)`;
 
-function ThresholdStatusPill({
-  currentExceeded,
-  everExceeded,
-}: {
-  currentExceeded: boolean;
-  everExceeded: boolean;
-}) {
+function ThresholdStatusPill({ currentExceeded, everExceeded }: { currentExceeded: boolean; everExceeded: boolean }) {
   if (currentExceeded) {
     return (
       <span className="rounded border border-red-300 bg-red-100 px-1.5 py-0.5 text-[10px] text-red-900">
@@ -78,11 +72,11 @@ export function DamageThresholdPanel() {
   const { storyDrift, peakStoryDrift } = animationData.precomputed;
   const maxDriftThreshold = Math.max(
     1,
-    Math.ceil(((animationData.precomputed.maxStoryDrift ?? thresholds.interstoryDrift ?? 0.5) * 1.2) / 0.05) * 0.05,
+    Math.ceil(((animationData.precomputed.maxStoryDrift ?? thresholds.interstoryDrift ?? 0.5) * 1.2) / 0.05) * 0.05
   );
   const reversedStories = useMemo(
     () => storyOrder.map((storyId, storyIndex) => ({ storyId, storyIndex })).toReversed(),
-    [storyOrder],
+    [storyOrder]
   );
 
   const storyThresholdFrame = useMemo(() => {
@@ -169,7 +163,7 @@ export function DamageThresholdPanel() {
     visibleCornerCapacity > 0 ? (visibleDamageSummary.everExceededCorners / visibleCornerCapacity) * 100 : 0;
 
   return (
-    <div className="h-full w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar">
+    <div className="skinny-scrollbar flex h-full w-full flex-col gap-4 overflow-y-auto p-4">
       <div>
         <h2 className="text-xl font-bold">ISD Thresholds</h2>
         <p className="text-sm text-neutral-600">Set Story drift ratio limits to see potential damage states.</p>
@@ -206,7 +200,9 @@ export function DamageThresholdPanel() {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-600">
           <span className="whitespace-nowrap">
             Visible Stories:{" "}
-            <span className="font-mono text-neutral-800">{visibleDamageSummary.visibleStoryCount.toLocaleString()}</span>
+            <span className="font-mono text-neutral-800">
+              {visibleDamageSummary.visibleStoryCount.toLocaleString()}
+            </span>
           </span>
           <span className="text-neutral-300">•</span>
           <span className="whitespace-nowrap">
@@ -223,7 +219,9 @@ export function DamageThresholdPanel() {
           <span className="text-neutral-300">•</span>
           <span className="whitespace-nowrap">
             Ever Crossed:{" "}
-            <span className="font-mono text-neutral-800">{visibleDamageSummary.everExceededCorners.toLocaleString()}</span>{" "}
+            <span className="font-mono text-neutral-800">
+              {visibleDamageSummary.everExceededCorners.toLocaleString()}
+            </span>{" "}
             <span className="text-neutral-500">({everExceededPct.toFixed(1)}%)</span>
           </span>
         </div>
@@ -231,7 +229,8 @@ export function DamageThresholdPanel() {
         <div className="pt-0.5">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-600">
             <span className="whitespace-nowrap">
-              Warning Threshold: <span className="font-mono text-neutral-800">{thresholds.interstoryDrift.toFixed(3)}%</span>
+              Warning Threshold:{" "}
+              <span className="font-mono text-neutral-800">{thresholds.interstoryDrift.toFixed(3)}%</span>
             </span>
             <span className="text-neutral-300">•</span>
             <span className="whitespace-nowrap">Corner Color = Current Drift / Peak Drift (ratio)</span>
@@ -243,7 +242,7 @@ export function DamageThresholdPanel() {
             style={{ background: DAMAGE_RATIO_LEGEND_GRADIENT }}
             title="Corner tile color is normalized by current drift divided by peak drift for that corner"
           />
-          <div className="mt-1 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+          <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-neutral-500">
             <span>-1.0</span>
             <span>-0.5</span>
             <span>0.0</span>
@@ -254,14 +253,16 @@ export function DamageThresholdPanel() {
       </div>
 
       <div>
-        <h3 className="text-lg font-bold mt-4">Story ISD Summary</h3>
+        <h3 className="mt-4 text-lg font-bold">Story ISD Summary</h3>
         <div
-          className={`mt-2 rounded border border-neutral-300 bg-neutral-50 text-[11px] text-neutral-600 divide-x divide-neutral-300 ${SUMMARY_GRID_CLASS}`}>
-          <span className="font-semibold px-2 py-1 min-w-0">Corner</span>
-          <span className="text-right font-semibold px-2 py-1 min-w-0">Current (%)</span>
-          <span className="text-right font-semibold px-2 py-1 min-w-0">Peak (%)</span>
-          <span className="text-center font-semibold px-2 py-1 min-w-0">Status</span>
-          <span className="text-center font-semibold px-2 py-1 min-w-0 leading-tight" title="First crossing time in seconds">
+          className={`mt-2 divide-x divide-neutral-300 rounded border border-neutral-300 bg-neutral-50 text-[11px] text-neutral-600 ${SUMMARY_GRID_CLASS}`}>
+          <span className="min-w-0 px-2 py-1 font-semibold">Corner</span>
+          <span className="min-w-0 px-2 py-1 text-right font-semibold">Current (%)</span>
+          <span className="min-w-0 px-2 py-1 text-right font-semibold">Peak (%)</span>
+          <span className="min-w-0 px-2 py-1 text-center font-semibold">Status</span>
+          <span
+            className="min-w-0 px-2 py-1 text-center leading-tight font-semibold"
+            title="First crossing time in seconds">
             First Cross (s)
           </span>
         </div>
@@ -286,8 +287,8 @@ export function DamageThresholdPanel() {
             }
 
             return (
-              <section key={storyId} className="rounded border border-neutral-300 bg-white overflow-hidden">
-                <div className="flex items-center justify-between gap-3 bg-neutral-50 px-2 py-1.5 border-b border-neutral-200">
+              <section key={storyId} className="overflow-hidden rounded border border-neutral-300 bg-white">
+                <div className="flex items-center justify-between gap-3 border-b border-neutral-200 bg-neutral-50 px-2 py-1.5">
                   <div className="font-mono text-sm font-semibold text-neutral-900">{storyId}</div>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] leading-tight text-neutral-600">
                     <span>Current Exceeded</span>
@@ -298,7 +299,7 @@ export function DamageThresholdPanel() {
                   </div>
                 </div>
 
-                <div className="w-full text-xs text-neutral-700 px-2 py-1">
+                <div className="w-full px-2 py-1 text-xs text-neutral-700">
                   {DISPLAY_CORNERS.map((corner) => {
                     const thresholdFrame = thresholdFrames[corner];
                     const peak = peaks[corner];
@@ -311,7 +312,7 @@ export function DamageThresholdPanel() {
                       <div
                         key={corner}
                         className={`${SUMMARY_GRID_CLASS} divide-x divide-neutral-200 ${corner === DISPLAY_CORNERS.at(-1) ? "" : "border-b border-neutral-100"}`}>
-                        <div className="flex items-center gap-2 font-mono min-w-0 px-2 py-1">
+                        <div className="flex min-w-0 items-center gap-2 px-2 py-1 font-mono">
                           <div
                             className="h-4 w-4 shrink-0 rotate-45 border border-neutral-300"
                             style={{
@@ -320,18 +321,21 @@ export function DamageThresholdPanel() {
                           />
                           <span>{corner}</span>
                         </div>
-                        <span className="font-mono text-right whitespace-nowrap px-2 py-1 min-w-0">
+                        <span className="min-w-0 px-2 py-1 text-right font-mono whitespace-nowrap">
                           <UnitTooltip interactive={!playing} value={current} unit="%" decimals={4} />
                         </span>
-                        <span className="font-mono text-right whitespace-nowrap px-2 py-1 min-w-0">
+                        <span className="min-w-0 px-2 py-1 text-right font-mono whitespace-nowrap">
                           <UnitTooltip interactive={!playing} value={peak || 0} unit="%" decimals={4} />
                         </span>
-                        <div className="flex justify-center px-2 py-1 min-w-0">
-                          <ThresholdStatusPill currentExceeded={currentExceeded} everExceeded={thresholdFrame !== null} />
+                        <div className="flex min-w-0 justify-center px-2 py-1">
+                          <ThresholdStatusPill
+                            currentExceeded={currentExceeded}
+                            everExceeded={thresholdFrame !== null}
+                          />
                         </div>
-                        <div className="font-mono text-center px-2 py-1 min-w-0">
+                        <div className="min-w-0 px-2 py-1 text-center font-mono">
                           {thresholdFrame !== null ? (
-                            <span className="inline-flex items-center justify-center rounded border border-yellow-300 bg-yellow-100 px-1.5 py-0.5 min-w-0">
+                            <span className="inline-flex min-w-0 items-center justify-center rounded border border-yellow-300 bg-yellow-100 px-1.5 py-0.5">
                               <UnitTooltip
                                 interactive={!playing}
                                 value={thresholdFrame * dt}
@@ -341,7 +345,7 @@ export function DamageThresholdPanel() {
                               />
                             </span>
                           ) : (
-                            <span className="inline-flex items-center justify-center rounded border border-neutral-300 bg-white px-1.5 py-0.5 min-w-0 text-neutral-500">
+                            <span className="inline-flex min-w-0 items-center justify-center rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-neutral-500">
                               -
                             </span>
                           )}

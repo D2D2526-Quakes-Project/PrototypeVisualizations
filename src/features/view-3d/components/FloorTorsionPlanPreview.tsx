@@ -20,7 +20,7 @@ function FloorTorsionPlanStaticLayer({ snapshot }: { snapshot: FloorTorsionSnaps
   const axisLen = Math.max(bounds.width, bounds.height) * 0.22 || 1;
   const referencePointString = useMemo(
     () => snapshot.referencePolygon.map(([x, y]) => `${x},${y}`).join(" "),
-    [snapshot.referencePolygon],
+    [snapshot.referencePolygon]
   );
   const labelFontSize = Math.max(viewWidth, viewHeight) * 0.075;
   const labelInset = Math.max(pad * 0.35, Math.max(viewWidth, viewHeight) * 0.05);
@@ -70,7 +70,8 @@ function FloorTorsionPlanStaticLayer({ snapshot }: { snapshot: FloorTorsionSnaps
 
 const MemoFloorTorsionPlanStaticLayer = memo(
   FloorTorsionPlanStaticLayer,
-  (prev, next) => prev.snapshot.bounds === next.snapshot.bounds && prev.snapshot.referencePolygon === next.snapshot.referencePolygon,
+  (prev, next) =>
+    prev.snapshot.bounds === next.snapshot.bounds && prev.snapshot.referencePolygon === next.snapshot.referencePolygon
 );
 
 function FloorTorsionPlanPreviewComponent({ snapshot, fill, className, label }: FloorTorsionPlanPreviewProps) {
@@ -91,9 +92,7 @@ function FloorTorsionPlanPreviewComponent({ snapshot, fill, className, label }: 
       preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label={label ?? `Story ${storyId} floor plan rotation preview`}>
-      <title>
-        {`Story ${storyId}: top-down floor rotation ${rotationRad.toFixed(6)} rad (X-Y plan)`}
-      </title>
+      <title>{`Story ${storyId}: top-down floor rotation ${rotationRad.toFixed(6)} rad (X-Y plan)`}</title>
       <MemoFloorTorsionPlanStaticLayer snapshot={snapshot} />
       <polygon
         points={pointString}

@@ -16,13 +16,7 @@ import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useState } from "react";
 
-const HINGE_METRICS: HingeMetricKey[] = [
-  "criticalDcr",
-  "maxPosDeformDCRatio",
-  "maxNegDeformDCRatio",
-  "r3Abs",
-  "m3Abs",
-];
+const HINGE_METRICS: HingeMetricKey[] = ["criticalDcr", "maxPosDeformDCRatio", "maxNegDeformDCRatio", "r3Abs", "m3Abs"];
 
 export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
@@ -34,20 +28,25 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   const savedState = savedPanelState?.type === "hingeDistribution" ? savedPanelState.state : defaultState;
 
   const [metric, setMetric] = useState<HingeMetricKey>(() =>
-    HINGE_METRICS.includes(savedState.metric as HingeMetricKey) ? (savedState.metric as HingeMetricKey) : "criticalDcr",
+    HINGE_METRICS.includes(savedState.metric as HingeMetricKey) ? (savedState.metric as HingeMetricKey) : "criticalDcr"
   );
-  const [stepType, setStepType] = useState<string>(() => (typeof savedState.stepType === "string" ? savedState.stepType : "All"));
+  const [stepType, setStepType] = useState<string>(() =>
+    typeof savedState.stepType === "string" ? savedState.stepType : "All"
+  );
   const [performanceLevel, setPerformanceLevel] = useState<number | "All">(() =>
     savedState.performanceLevel === "All" || typeof savedState.performanceLevel === "number"
       ? savedState.performanceLevel
-      : "All",
+      : "All"
   );
 
-  const rows = useMemo(() => buildHingeEnrichedRows(hingeData, animationData.beamData), [hingeData, animationData.beamData]);
+  const rows = useMemo(
+    () => buildHingeEnrichedRows(hingeData, animationData.beamData),
+    [hingeData, animationData.beamData]
+  );
   const stepTypes = useMemo(() => ["All", ...getAvailableHingeStepTypes(hingeData)], [hingeData]);
   const performanceLevels = useMemo(
     () => ["All" as const, ...getAvailableHingePerformanceLevels(hingeData)],
-    [hingeData],
+    [hingeData]
   );
 
   const effectiveStepType = stepTypes.includes(stepType) ? stepType : "All";
@@ -63,8 +62,14 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   }, [effectivePerformanceLevel, effectiveStepType, metric, panelId, setPanelState]);
 
   const histogram = useMemo(
-    () => computeHingeHistogram(rows, metric, { stepType: effectiveStepType, performanceLevel: effectivePerformanceLevel }, 26),
-    [rows, metric, effectiveStepType, effectivePerformanceLevel],
+    () =>
+      computeHingeHistogram(
+        rows,
+        metric,
+        { stepType: effectiveStepType, performanceLevel: effectivePerformanceLevel },
+        26
+      ),
+    [rows, metric, effectiveStepType, effectivePerformanceLevel]
   );
 
   const filteredSummary = useMemo(() => {
@@ -167,21 +172,21 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
 
   if (!hingeData) {
     return (
-      <div className="h-full w-full bg-white p-4 flex items-center justify-center text-sm text-neutral-500">
+      <div className="flex h-full w-full items-center justify-center bg-white p-4 text-sm text-neutral-500">
         Hinge data not loaded for this simulation.
       </div>
     );
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-white">
-      <div className="px-3 py-2 border-b border-neutral-100 flex items-center justify-between gap-2">
+    <div className="flex h-full w-full flex-col bg-white">
+      <div className="flex items-center justify-between gap-2 border-b border-neutral-100 px-3 py-2">
         <div className="text-sm font-medium text-neutral-800">Hinge Distribution</div>
         <div className="text-[10px] text-neutral-500">Static (non-time-series)</div>
       </div>
 
-      <div className="px-3 py-2 border-b border-neutral-100 grid grid-cols-1 md:grid-cols-3 gap-2">
-        <label className="text-xs text-neutral-600 flex flex-col gap-1">
+      <div className="grid grid-cols-1 gap-2 border-b border-neutral-100 px-3 py-2 md:grid-cols-3">
+        <label className="flex flex-col gap-1 text-xs text-neutral-600">
           Metric
           <select
             className="h-8 rounded border border-neutral-200 bg-white px-2 text-xs"
@@ -195,7 +200,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
           </select>
         </label>
 
-        <label className="text-xs text-neutral-600 flex flex-col gap-1">
+        <label className="flex flex-col gap-1 text-xs text-neutral-600">
           Step Type
           <select
             className="h-8 rounded border border-neutral-200 bg-white px-2 text-xs"
@@ -209,7 +214,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
           </select>
         </label>
 
-        <label className="text-xs text-neutral-600 flex flex-col gap-1">
+        <label className="flex flex-col gap-1 text-xs text-neutral-600">
           Performance Level
           <select
             className="h-8 rounded border border-neutral-200 bg-white px-2 text-xs"
@@ -227,7 +232,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         </label>
       </div>
 
-      <div className="px-3 py-2 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-neutral-100">
+      <div className="grid grid-cols-2 gap-2 border-b border-neutral-100 px-3 py-2 md:grid-cols-4">
         <SummaryCard label="Filtered Rows" value={filteredSummary.count.toLocaleString()} />
         <SummaryCard label="D/C >= 1" value={filteredSummary.ge1.toLocaleString()} />
         <SummaryCard label="D/C >= 2" value={filteredSummary.ge2.toLocaleString()} />
@@ -238,7 +243,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         {histogram && <SummaryCard label="Max" value={histogram.max.toFixed(3)} />}
       </div>
 
-      <div className="px-3 pt-2 pb-1 border-b border-neutral-100 bg-neutral-50/70">
+      <div className="border-b border-neutral-100 bg-neutral-50/70 px-3 pt-2 pb-1">
         <div className="text-xs font-medium text-neutral-700">
           Histogram: {HINGE_METRIC_LABELS[metric]}
           {HINGE_METRIC_UNITS[metric] ? ` (${HINGE_METRIC_UNITS[metric]})` : ""}
@@ -253,11 +258,11 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         )}
       </div>
 
-      <div className="flex-1 min-h-0">
+      <div className="min-h-0 flex-1">
         {histogram ? (
           <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
         ) : (
-          <div className="h-full flex items-center justify-center text-sm text-neutral-500">
+          <div className="flex h-full items-center justify-center text-sm text-neutral-500">
             No hinge rows match the selected filters.
           </div>
         )}
@@ -269,7 +274,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded border border-neutral-200 bg-neutral-50 px-2 py-1.5">
-      <div className="text-[10px] uppercase tracking-wide text-neutral-500">{label}</div>
+      <div className="text-[10px] tracking-wide text-neutral-500 uppercase">{label}</div>
       <div className="font-mono text-xs text-neutral-800">{value}</div>
     </div>
   );

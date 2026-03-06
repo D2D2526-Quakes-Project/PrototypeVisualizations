@@ -52,21 +52,24 @@ export function useAutoSave() {
     }
   }, [getCurrentState]);
 
-  const scheduleSave = useCallback((immediate = false) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+  const scheduleSave = useCallback(
+    (immediate = false) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
 
-    if (immediate) {
-      performSave();
-      return;
-    }
+      if (immediate) {
+        performSave();
+        return;
+      }
 
-    const debounceMs = isPlayingRef.current ? PLAYBACK_SAVE_DEBOUNCE_MS : AUTO_SAVE_DEBOUNCE_MS;
-    debounceTimerRef.current = window.setTimeout(() => {
-      performSave();
-    }, debounceMs);
-  }, [performSave]);
+      const debounceMs = isPlayingRef.current ? PLAYBACK_SAVE_DEBOUNCE_MS : AUTO_SAVE_DEBOUNCE_MS;
+      debounceTimerRef.current = window.setTimeout(() => {
+        performSave();
+      }, debounceMs);
+    },
+    [performSave]
+  );
 
   useEffect(() => {
     const unsubscribers: (() => void)[] = [];

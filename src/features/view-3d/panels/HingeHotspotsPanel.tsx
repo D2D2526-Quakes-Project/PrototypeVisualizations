@@ -34,20 +34,12 @@ function getSeverityBadgeClasses(value: number) {
   return "bg-blue-50 text-blue-700 border-blue-200";
 }
 
-function SummaryCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
+function SummaryCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded border border-neutral-200 bg-white p-2">
-      <div className="text-[10px] uppercase tracking-wide text-neutral-500">{label}</div>
+      <div className="text-[10px] tracking-wide text-neutral-500 uppercase">{label}</div>
       <div className="font-mono text-sm text-neutral-900">{value}</div>
-      {hint ? <div className="text-[10px] text-neutral-500 mt-0.5">{hint}</div> : null}
+      {hint ? <div className="mt-0.5 text-[10px] text-neutral-500">{hint}</div> : null}
     </div>
   );
 }
@@ -60,11 +52,13 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const defaultState = getDefaultHingeHotspotsPanelState();
   const savedState = savedPanelState?.type === "hingeHotspots" ? savedPanelState.state : defaultState;
-  const [stepType, setStepType] = useState<string>(() => (typeof savedState.stepType === "string" ? savedState.stepType : "Max"));
+  const [stepType, setStepType] = useState<string>(() =>
+    typeof savedState.stepType === "string" ? savedState.stepType : "Max"
+  );
 
   const rows = useMemo(
     () => buildHingeEnrichedRows(hingeData, animationData.beamData),
-    [hingeData, animationData.beamData],
+    [hingeData, animationData.beamData]
   );
 
   const stepTypes = useMemo(() => {
@@ -74,7 +68,11 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
     return ["All", "Max", ...unique.filter((value) => value !== "All" && value !== "Max")];
   }, [hingeData]);
 
-  const effectiveStepType = stepTypes.includes(stepType) ? stepType : (stepTypes.includes("Max") ? "Max" : (stepTypes[0] ?? "All"));
+  const effectiveStepType = stepTypes.includes(stepType)
+    ? stepType
+    : stepTypes.includes("Max")
+      ? "Max"
+      : (stepTypes[0] ?? "All");
 
   useEffect(() => {
     setPanelState(panelId, "hingeHotspots", { stepType: effectiveStepType });
@@ -82,11 +80,17 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
 
   const filteredRows = useMemo(
     () => rows.filter((row) => effectiveStepType === "All" || row.stepType === effectiveStepType),
-    [rows, effectiveStepType],
+    [rows, effectiveStepType]
   );
 
-  const topRows = useMemo(() => getTopHingeHotspots(rows, { stepType: effectiveStepType }, 12), [rows, effectiveStepType]);
-  const breakdown = useMemo(() => getHingePerformanceBreakdown(rows, { stepType: effectiveStepType }), [rows, effectiveStepType]);
+  const topRows = useMemo(
+    () => getTopHingeHotspots(rows, { stepType: effectiveStepType }, 12),
+    [rows, effectiveStepType]
+  );
+  const breakdown = useMemo(
+    () => getHingePerformanceBreakdown(rows, { stepType: effectiveStepType }),
+    [rows, effectiveStepType]
+  );
 
   const summary = useMemo(() => {
     let total = 0;
@@ -250,7 +254,7 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
         axisPointer: { type: "shadow" },
         formatter: (params: unknown) => {
           if (!Array.isArray(params) || params.length === 0) return "";
-          const idx = ((params[0] as { dataIndex?: number }).dataIndex ?? 0);
+          const idx = (params[0] as { dataIndex?: number }).dataIndex ?? 0;
           const level = breakdown.levels[idx];
           const lines = [`<div style="font-weight:600;margin-bottom:4px">Performance Breakdown (PL${level})</div>`];
           for (const item of params as Array<{ seriesName?: string; value?: number }>) {
@@ -293,16 +297,16 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
 
   if (!hingeData) {
     return (
-      <div className="h-full w-full bg-white p-4 flex items-center justify-center text-sm text-neutral-500">
+      <div className="flex h-full w-full items-center justify-center bg-white p-4 text-sm text-neutral-500">
         Hinge data not loaded for this simulation.
       </div>
     );
   }
 
   return (
-    <div className="h-full w-full bg-white overflow-y-auto skinny-scrollbar">
-      <div className="min-h-full flex flex-col">
-        <div className="sticky top-0 z-10 px-3 py-2 border-b border-neutral-200 bg-white/95 backdrop-blur-sm">
+    <div className="skinny-scrollbar h-full w-full overflow-y-auto bg-white">
+      <div className="flex min-h-full flex-col">
+        <div className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 px-3 py-2 backdrop-blur-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm font-medium text-neutral-800">Hinge Hotspots</div>
@@ -310,7 +314,7 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
                 Ranked beam-end hinge demand outliers (static hinge data, non-time-series)
               </div>
             </div>
-            <label className="text-xs text-neutral-600 flex items-center gap-2 shrink-0">
+            <label className="flex shrink-0 items-center gap-2 text-xs text-neutral-600">
               Step
               <select
                 className="h-7 rounded border border-neutral-200 bg-white px-2 text-xs"
@@ -326,31 +330,35 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
           </div>
         </div>
 
-        <div className="p-3 space-y-3">
+        <div className="space-y-3 p-3">
           <section className="rounded border border-neutral-200 bg-neutral-50 p-3">
             <div className="text-xs font-medium text-neutral-800">How to Read This Panel</div>
-            <div className="mt-1 text-xs text-neutral-600 leading-relaxed">
+            <div className="mt-1 text-xs leading-relaxed text-neutral-600">
               This panel ranks beam-end hinges by <span className="font-medium">Critical D/C ratio</span> and shows how
               many hinges exceed key thresholds (`1`, `2`, `4`). Use the step filter to compare `Max` vs `Min`
               envelopes. `R3` is reported in radians (`rad`); `M3` is shown in source-export model moment units.
             </div>
           </section>
 
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <SummaryCard label="Filtered Hinges" value={summary.total.toLocaleString()} hint={`Step: ${effectiveStepType}`} />
+          <section className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            <SummaryCard
+              label="Filtered Hinges"
+              value={summary.total.toLocaleString()}
+              hint={`Step: ${effectiveStepType}`}
+            />
             <SummaryCard
               label="Top Critical D/C"
               value={summary.maxCritical.toFixed(3)}
               hint={summary.top ? `E${summary.top.elementId} ${summary.top.end}` : "No hotspots"}
             />
-            <SummaryCard label="Mean Critical D/C" value={summary.meanCritical.toFixed(3)} hint="Across filtered hinges" />
+            <SummaryCard
+              label="Mean Critical D/C"
+              value={summary.meanCritical.toFixed(3)}
+              hint="Across filtered hinges"
+            />
             <SummaryCard
               label="Max |R3|"
-              value={
-                summary.total > 0
-                  ? `${summary.maxAbsR3.toFixed(5)} rad`
-                  : "0.00000 rad"
-              }
+              value={summary.total > 0 ? `${summary.maxAbsR3.toFixed(5)} rad` : "0.00000 rad"}
               hint="Rotation demand envelope"
             />
             <SummaryCard label="D/C ≥ 1" value={`${summary.ge1.toLocaleString()} (${exceedancePct.ge1.toFixed(1)}%)`} />
@@ -364,12 +372,10 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
           </section>
 
           <section className="rounded border border-neutral-200 bg-white p-3">
-            <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="mb-2 flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-medium text-neutral-800">Severity Mix (Critical D/C Bands)</div>
-                <div className="text-[10px] text-neutral-500">
-                  Visual distribution of filtered hinges by risk band
-                </div>
+                <div className="text-[10px] text-neutral-500">Visual distribution of filtered hinges by risk band</div>
               </div>
               <div className="text-[10px] text-neutral-500">
                 Total: <span className="font-mono">{summary.total.toLocaleString()}</span>
@@ -377,7 +383,7 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
             </div>
 
             <div
-              className="h-4 w-full rounded border border-neutral-200 overflow-hidden flex bg-neutral-50"
+              className="flex h-4 w-full overflow-hidden rounded border border-neutral-200 bg-neutral-50"
               title="Stacked severity band bar for filtered hinge rows">
               {severityBandSegments.map((segment) => (
                 <div
@@ -389,12 +395,12 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
               ))}
             </div>
 
-            <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
               {severityBandSegments.map((segment) => (
                 <div key={segment.key} className="flex items-center gap-2 text-[10px] text-neutral-600">
                   <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: segment.color }} />
                   <span>{segment.label}</span>
-                  <span className="font-mono ml-auto">
+                  <span className="ml-auto font-mono">
                     {segment.count.toLocaleString()} ({segment.pct.toFixed(1)}%)
                   </span>
                 </div>
@@ -402,21 +408,27 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
             </div>
           </section>
 
-          <section className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+          <section className="grid grid-cols-1 gap-3 xl:grid-cols-2">
             <div className="rounded border border-neutral-200 bg-white p-3">
-              <div className="text-xs font-medium text-neutral-700 mb-1">Top Beam-End Hotspots (Critical D/C)</div>
-              <div className="text-[10px] text-neutral-500 mb-2">
+              <div className="mb-1 text-xs font-medium text-neutral-700">Top Beam-End Hotspots (Critical D/C)</div>
+              <div className="mb-2 text-[10px] text-neutral-500">
                 Title: Ranked hotspot bar chart · X-axis: Critical D/C ratio · Y-axis: beam end (`E# I/J`) · Dashed
                 lines mark D/C thresholds `1`, `2`, `4`
               </div>
               <div className="h-56 rounded border border-neutral-100">
-                <ReactECharts option={topChartOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                <ReactECharts
+                  option={topChartOption}
+                  style={{ height: "100%", width: "100%" }}
+                  opts={{ renderer: "svg" }}
+                />
               </div>
             </div>
 
             <div className="rounded border border-neutral-200 bg-white p-3">
-              <div className="text-xs font-medium text-neutral-700 mb-1">Threshold Exceedance Counts by Performance Level</div>
-              <div className="text-[10px] text-neutral-500 mb-2">
+              <div className="mb-1 text-xs font-medium text-neutral-700">
+                Threshold Exceedance Counts by Performance Level
+              </div>
+              <div className="mb-2 text-[10px] text-neutral-500">
                 Title: Performance-level exceedance chart · X-axis: performance level · Y-axis: hinge count · Source is
                 currently PL1-only for this dataset
               </div>
@@ -431,41 +443,48 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
           </section>
 
           <section className="rounded border border-neutral-200 bg-white p-3">
-            <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="mb-2 flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-medium text-neutral-800">Hotspot Spotlights</div>
                 <div className="text-[10px] text-neutral-500">
                   Quick interpretation cards for the top-ranked beam-end hinges
                 </div>
               </div>
-              <div className="text-[10px] text-neutral-500">Showing top {Math.min(topRows.length, 3)} of {topRows.length}</div>
+              <div className="text-[10px] text-neutral-500">
+                Showing top {Math.min(topRows.length, 3)} of {topRows.length}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
               {topRows.slice(0, 3).map((row, index) => (
-                <div key={`${row.beamIndex}-${row.end}-${row.stepType}-spotlight`} className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div
+                  key={`${row.beamIndex}-${row.end}-${row.stepType}-spotlight`}
+                  className="rounded border border-neutral-200 bg-neutral-50 p-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="font-mono text-xs text-neutral-800">
                       #{index + 1} · E{row.elementId} {row.end}
                     </div>
-                    <span className={`rounded border px-1.5 py-0.5 text-[10px] ${getSeverityBadgeClasses(row.criticalDcr)}`}>
+                    <span
+                      className={`rounded border px-1.5 py-0.5 text-[10px] ${getSeverityBadgeClasses(row.criticalDcr)}`}>
                       {getSeverityLabel(row.criticalDcr)}
                     </span>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
                     <div className="text-neutral-500">Critical D/C</div>
-                    <div className="font-mono text-right text-neutral-800">{row.criticalDcr.toFixed(3)}</div>
+                    <div className="text-right font-mono text-neutral-800">{row.criticalDcr.toFixed(3)}</div>
                     <div className="text-neutral-500">Step</div>
                     <div className="text-right text-neutral-700">{row.stepType}</div>
                     <div className="text-neutral-500">Node</div>
-                    <div className="font-mono text-right text-neutral-700">{row.nodeIndex >= 0 ? row.nodeIndex : "—"}</div>
+                    <div className="text-right font-mono text-neutral-700">
+                      {row.nodeIndex >= 0 ? row.nodeIndex : "—"}
+                    </div>
                     <div className="text-neutral-500">R3</div>
-                    <div className="font-mono text-right text-neutral-700">
+                    <div className="text-right font-mono text-neutral-700">
                       <UnitTooltip value={row.r3} unit="rad" decimals={5} showConversions={false} />
                     </div>
                     <div className="text-neutral-500">M3</div>
                     <div
-                      className="font-mono text-right text-neutral-700"
+                      className="text-right font-mono text-neutral-700"
                       title="Model output moment units from source export (dataset-dependent)">
                       {row.m3.toFixed(3)}
                     </div>
@@ -473,7 +492,7 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
                 </div>
               ))}
               {topRows.length === 0 && (
-                <div className="col-span-full rounded border border-neutral-200 bg-neutral-50 p-4 text-xs text-center text-neutral-500">
+                <div className="col-span-full rounded border border-neutral-200 bg-neutral-50 p-4 text-center text-xs text-neutral-500">
                   No hinge rows match the selected step filter.
                 </div>
               )}
@@ -481,13 +500,14 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
           </section>
 
           <section className="rounded border border-neutral-200 bg-white p-3">
-            <div className="text-xs font-medium text-neutral-800 mb-2">Detailed Ranked Hotspots</div>
-            <div className="text-[10px] text-neutral-500 mb-2">
-              Scroll this panel normally to review all sections. This table remains in-page and supports horizontal overflow if needed.
+            <div className="mb-2 text-xs font-medium text-neutral-800">Detailed Ranked Hotspots</div>
+            <div className="mb-2 text-[10px] text-neutral-500">
+              Scroll this panel normally to review all sections. This table remains in-page and supports horizontal
+              overflow if needed.
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs min-w-[760px]">
-                <thead className="sticky top-0 bg-neutral-50 border-b border-neutral-200">
+              <table className="w-full min-w-[760px] text-xs">
+                <thead className="sticky top-0 border-b border-neutral-200 bg-neutral-50">
                   <tr className="text-left text-neutral-600">
                     <th className="px-2 py-1.5">Rank</th>
                     <th className="px-2 py-1.5">Element</th>
@@ -512,17 +532,18 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
                       <td className="px-2 py-1 font-mono">{row.end}</td>
                       <td className="px-2 py-1">{row.stepType}</td>
                       <td className="px-2 py-1">
-                        <span className={`rounded border px-1.5 py-0.5 text-[10px] ${getSeverityBadgeClasses(row.criticalDcr)}`}>
+                        <span
+                          className={`rounded border px-1.5 py-0.5 text-[10px] ${getSeverityBadgeClasses(row.criticalDcr)}`}>
                           {getSeverityLabel(row.criticalDcr)}
                         </span>
                       </td>
-                      <td className="px-2 py-1 font-mono text-right">{row.nodeIndex >= 0 ? row.nodeIndex : "—"}</td>
-                      <td className="px-2 py-1 font-mono text-right">{row.criticalDcr.toFixed(3)}</td>
-                      <td className="px-2 py-1 font-mono text-right">
+                      <td className="px-2 py-1 text-right font-mono">{row.nodeIndex >= 0 ? row.nodeIndex : "—"}</td>
+                      <td className="px-2 py-1 text-right font-mono">{row.criticalDcr.toFixed(3)}</td>
+                      <td className="px-2 py-1 text-right font-mono">
                         <UnitTooltip value={row.r3} unit="rad" decimals={5} showConversions={false} />
                       </td>
                       <td
-                        className="px-2 py-1 font-mono text-right"
+                        className="px-2 py-1 text-right font-mono"
                         title="Model output moment units from source export (dataset-dependent)">
                         {row.m3.toFixed(3)}
                       </td>

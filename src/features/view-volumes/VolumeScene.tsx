@@ -45,11 +45,11 @@ export function VolumeScene({ scale, displacementScale }: { scale: number; displ
 
     // Get corner node indices for each story
     const currentCornerIndices = currentNodeIndices.filter(
-      (idx) => cornerSets.NW.has(idx) || cornerSets.NE.has(idx) || cornerSets.SW.has(idx) || cornerSets.SE.has(idx),
+      (idx) => cornerSets.NW.has(idx) || cornerSets.NE.has(idx) || cornerSets.SW.has(idx) || cornerSets.SE.has(idx)
     );
 
     const nextCornerIndices = nextNodeIndices.filter(
-      (idx) => cornerSets.NW.has(idx) || cornerSets.NE.has(idx) || cornerSets.SW.has(idx) || cornerSets.SE.has(idx),
+      (idx) => cornerSets.NW.has(idx) || cornerSets.NE.has(idx) || cornerSets.SW.has(idx) || cornerSets.SE.has(idx)
     );
 
     // Get node positions for current floor (bottom corners)

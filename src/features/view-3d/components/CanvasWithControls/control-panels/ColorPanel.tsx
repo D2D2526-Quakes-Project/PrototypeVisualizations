@@ -29,14 +29,14 @@ export function ColorPanel({
 }: ColorPanelProps) {
   return (
     <>
-      <div className="flex items-center gap-1 mb-1">
+      <div className="mb-1 flex items-center gap-1">
         <Palette size={12} className="text-neutral-500" />
         <span className="text-xs font-medium text-neutral-700">Color By</span>
       </div>
       <select
         value={currentMetric}
         onChange={(e) => setColorMetric(e.target.value as Metric)}
-        className="w-full text-xs px-2 py-1 bg-neutral-100 border border-neutral-300 rounded hover:bg-neutral-200 transition-colors cursor-pointer">
+        className="w-full cursor-pointer rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs transition-colors hover:bg-neutral-200">
         {availableMetrics.map((metric) => (
           <option key={metric} value={metric}>
             {METRIC_CONFIGS[metric].label}
@@ -45,7 +45,7 @@ export function ColorPanel({
       </select>
 
       <div className="mt-2">
-        <div className="flex items-center gap-2 justify-between mb-1">
+        <div className="mb-1 flex items-center justify-between gap-2">
           <div className="text-[10px] text-neutral-500">Color Scale</div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-neutral-500">Show Threshold</span>

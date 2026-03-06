@@ -7,25 +7,25 @@ export function PlaybackControls() {
   return (
     <div className="flex items-center gap-2">
       <button
-        className="p-2 hover:-translate-y-1 transition-transform cursor-pointer"
+        className="cursor-pointer p-2 transition-transform hover:-translate-y-1"
         onClick={skipToStart}
         title="Skip to Start">
         <SkipBackIcon />
       </button>
 
-      <div className="w-px h-6 bg-neutral-300" />
+      <div className="h-6 w-px bg-neutral-300" />
 
       <button
-        className="p-2 hover:-translate-y-1 transition-transform cursor-pointer"
+        className="cursor-pointer p-2 transition-transform hover:-translate-y-1"
         onClick={handlePlayPause}
         title={playing ? "Pause" : "Play"}>
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
 
-      <div className="w-px h-6 bg-neutral-300" />
+      <div className="h-6 w-px bg-neutral-300" />
 
       <button
-        className="p-2 hover:-translate-y-1 transition-transform cursor-pointer"
+        className="cursor-pointer p-2 transition-transform hover:-translate-y-1"
         onClick={skipToEnd}
         title="Skip to End">
         <SkipForwardIcon />
@@ -42,28 +42,28 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
       className={
         inline
           ? "flex items-center gap-0.5"
-          : "bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5 origin-right"
+          : "flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm"
       }>
       <button
         onClick={skipToStart}
-        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 text-[10px] font-medium w-5 h-5 flex items-center justify-center"
+        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
         title="Skip to Start">
         <SkipBackIcon />
       </button>
       <button
         onClick={handlePlayPause}
-        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 text-[10px] font-medium w-5 h-5 flex items-center justify-center"
+        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
         title={playing ? "Pause" : "Play"}>
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
       <button
         onClick={skipToEnd}
-        className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 text-[10px] font-medium w-5 h-5 flex items-center justify-center"
+        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
         title="Skip to End">
         <SkipForwardIcon />
       </button>
       {playing && (
-        <div className="flex items-center gap-1 pl-1 border-l border-neutral-300">
+        <div className="flex items-center gap-1 border-l border-neutral-300 pl-1">
           <span className="text-[10px] font-medium text-neutral-700" title="Frames per second">
             {fps} fps
           </span>

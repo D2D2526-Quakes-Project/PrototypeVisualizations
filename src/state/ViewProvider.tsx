@@ -5,7 +5,7 @@ const ViewStoreContext = createContext<ViewStore | null>(null);
 
 export function ViewProvider({ children }: { children: ReactNode }) {
   const store = useMemo(() => createViewStore(), []);
-  
+
   return <ViewStoreContext.Provider value={store}>{children}</ViewStoreContext.Provider>;
 }
 

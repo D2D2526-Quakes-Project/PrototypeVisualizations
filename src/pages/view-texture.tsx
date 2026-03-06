@@ -64,7 +64,7 @@ export function ViewTexture() {
   }, [animationData, frameIndex]);
 
   return (
-    <div className="h-full flex flex-col min-h-0 gap-2">
+    <div className="flex h-full min-h-0 flex-col gap-2">
       <div>
         <span>
           Frame: {frameIndex + 1} / {frameCount} | Time: {(frameIndex * dt).toFixed(3)}s | Avg Displacement:{" "}
@@ -76,7 +76,7 @@ export function ViewTexture() {
           total displacement for the frame.
         </span>
       </div>
-      <div className="flex gap-2 items-center">
+      <div className="flex items-center gap-2">
         <label className="flex gap-2 whitespace-nowrap">
           <input
             type="range"
@@ -93,7 +93,7 @@ export function ViewTexture() {
       <div className="h-8 shrink-0">
         <SmallTimeline />
       </div>
-      <div className="flex flex-col items-center h-full gap-1">
+      <div className="flex h-full flex-col items-center gap-1">
         {storyData.map((story, i) => {
           const color = formatHex(colorMap(story.avgDispMag / maxDisplacement));
 
@@ -108,7 +108,7 @@ export function ViewTexture() {
             .join(" ");
 
           return (
-            <div key={i} className="w-xl h-full">
+            <div key={i} className="h-full w-xl">
               <svg width="100%" height="100%" viewBox="0 -20 200 40" preserveAspectRatio="none" color={color}>
                 <polyline points={points} strokeWidth="1" stroke="currentColor" fill="none" />
               </svg>

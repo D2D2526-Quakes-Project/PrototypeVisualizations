@@ -29,8 +29,8 @@ export function BoxSelectionOverlay({ panelId }: BoxSelectionOverlayProps) {
   }
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute border-2 border-blue-500 border-dashed bg-blue-500/20" style={boxStyle} />
+    <div className="pointer-events-none absolute inset-0">
+      <div className="absolute border-2 border-dashed border-blue-500 bg-blue-500/20" style={boxStyle} />
     </div>
   );
 }

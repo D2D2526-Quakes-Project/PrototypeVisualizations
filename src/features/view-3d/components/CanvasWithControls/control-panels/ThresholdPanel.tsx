@@ -30,7 +30,7 @@ export function ThresholdPanel({ animationData, setThreshold, currentMetric }: T
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between gap-2 mb-1">
+      <div className="mb-1 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <Sliders size={12} className="text-neutral-500" />
           <span className="text-xs font-medium text-neutral-700">Thresholds</span>
@@ -333,7 +333,7 @@ export function FloorsPanel({
 
   return (
     <>
-      <div className="flex items-center justify-between mb-1">
+      <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <Layers size={12} className="text-neutral-500" />
           <span className="text-xs font-medium text-neutral-700">Floors</span>
@@ -341,31 +341,32 @@ export function FloorsPanel({
         <div className="flex gap-1">
           <button
             onClick={showAllFloors}
-            className="text-[10px] px-1 py-0.5 bg-neutral-100 hover:bg-neutral-200 rounded border border-neutral-300">
+            className="rounded border border-neutral-300 bg-neutral-100 px-1 py-0.5 text-[10px] hover:bg-neutral-200">
             All
           </button>
           <button
             onClick={hideAllFloors}
-            className="text-[10px] px-1 py-0.5 bg-neutral-100 hover:bg-neutral-200 rounded border border-neutral-300">
+            className="rounded border border-neutral-300 bg-neutral-100 px-1 py-0.5 text-[10px] hover:bg-neutral-200">
             None
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-[max-content_1fr] gap-x-2 gap-y-0.5 max-h-36 overflow-y-auto">
+      <div className="grid max-h-36 grid-cols-[max-content_1fr] gap-x-2 gap-y-0.5 overflow-y-auto">
         {storyOrder.map((storyId) => (
           <div key={storyId} className="contents">
             <button
               onMouseDown={() => handleFloorMouseDown(storyId)}
               onMouseEnter={() => handleFloorMouseEnter(storyId)}
               onClick={() => toggleFloor(storyId)}
-              className={`text-[9px] px-1 py-0.5 rounded border transition-colors select-none ${
+              className={`rounded border px-1 py-0.5 text-[9px] transition-colors select-none ${
                 visibleFloors.has(storyId)
-                  ? "bg-blue-100 border-blue-300 text-blue-700"
-                  : "bg-neutral-100 border-neutral-300 text-neutral-400"
+                  ? "border-blue-300 bg-blue-100 text-blue-700"
+                  : "border-neutral-300 bg-neutral-100 text-neutral-400"
               }`}>
               {storyId}
             </button>
-            <div className={`text-[9px] py-0.5 truncate ${visibleFloors.has(storyId) ? "text-neutral-700" : "text-neutral-400"}`}>
+            <div
+              className={`truncate py-0.5 text-[9px] ${visibleFloors.has(storyId) ? "text-neutral-700" : "text-neutral-400"}`}>
               {visibleFloors.has(storyId) ? "Visible" : "Hidden"}
             </div>
           </div>

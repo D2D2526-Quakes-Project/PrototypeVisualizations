@@ -63,7 +63,7 @@ export function ViewDataExplorer() {
   }, [sortedStories, animationData, frameIndex]);
 
   return (
-    <div className="p-4 flex flex-col gap-4 h-full overflow-hidden">
+    <div className="flex h-full flex-col gap-4 overflow-hidden p-4">
       <div className="flex items-center gap-4">
         <div className="text-sm text-neutral-600">
           <span>
@@ -75,25 +75,25 @@ export function ViewDataExplorer() {
       <div className="h-8 shrink-0">
         <SmallTimeline />
       </div>
-      <div className="grow overflow-auto border-2 border-neutral-300 rounded-lg">
-        <table className="w-full text-left table-auto border-collapse">
+      <div className="grow overflow-auto rounded-lg border-2 border-neutral-300">
+        <table className="w-full table-auto border-collapse text-left">
           <thead className="sticky top-0 bg-neutral-200">
             <tr>
-              <th className="p-2 border-b-2 border-neutral-300">Story ID</th>
-              <th className="p-2 border-b-2 border-neutral-300">Avg Disp X (in)</th>
-              <th className="p-2 border-b-2 border-neutral-300">Avg Disp Y (in)</th>
-              <th className="p-2 border-b-2 border-neutral-300">Avg Disp Z (in)</th>
-              <th className="p-2 border-b-2 border-neutral-300">Total Magnitude (in)</th>
+              <th className="border-b-2 border-neutral-300 p-2">Story ID</th>
+              <th className="border-b-2 border-neutral-300 p-2">Avg Disp X (in)</th>
+              <th className="border-b-2 border-neutral-300 p-2">Avg Disp Y (in)</th>
+              <th className="border-b-2 border-neutral-300 p-2">Avg Disp Z (in)</th>
+              <th className="border-b-2 border-neutral-300 p-2">Total Magnitude (in)</th>
             </tr>
           </thead>
           <tbody>
             {storyData.map(({ storyId, avgDisp, dispMag }) => (
               <tr key={storyId} className="odd:bg-white even:bg-neutral-50">
-                <td className="p-2 border-b border-neutral-200">{storyId}</td>
-                <td className="p-2 border-b border-neutral-200">{avgDisp[0].toFixed(4)}</td>
-                <td className="p-2 border-b border-neutral-200">{avgDisp[1].toFixed(4)}</td>
-                <td className="p-2 border-b border-neutral-200">{avgDisp[2].toFixed(4)}</td>
-                <td className="p-2 border-b border-neutral-200 font-bold">{dispMag.toFixed(4)}</td>
+                <td className="border-b border-neutral-200 p-2">{storyId}</td>
+                <td className="border-b border-neutral-200 p-2">{avgDisp[0].toFixed(4)}</td>
+                <td className="border-b border-neutral-200 p-2">{avgDisp[1].toFixed(4)}</td>
+                <td className="border-b border-neutral-200 p-2">{avgDisp[2].toFixed(4)}</td>
+                <td className="border-b border-neutral-200 p-2 font-bold">{dispMag.toFixed(4)}</td>
               </tr>
             ))}
           </tbody>

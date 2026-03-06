@@ -21,7 +21,7 @@ export function FloorSlabsRenderer({ nodeIds }: FloorSlabsRendererProps) {
       -animationData.precomputed.boundingBox.center[1],
       -animationData.precomputed.boundingBox.min[2],
     ],
-    [animationData.precomputed.boundingBox],
+    [animationData.precomputed.boundingBox]
   );
 
   const stories = useMemo(() => {
@@ -88,7 +88,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset }
         [pos[0], pos[1], pos[2]],
         [disp[0], disp[1], disp[2]],
         offset,
-        animationData.metadata,
+        animationData.metadata
       );
       return new THREE.Vector3(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
     });
@@ -117,7 +117,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset }
     const avgColor = new THREE.Color(
       colors.reduce((s, c) => s + c.r, 0) / colors.length,
       colors.reduce((s, c) => s + c.g, 0) / colors.length,
-      colors.reduce((s, c) => s + c.b, 0) / colors.length,
+      colors.reduce((s, c) => s + c.b, 0) / colors.length
     );
 
     return { geometry: geom, color: avgColor };

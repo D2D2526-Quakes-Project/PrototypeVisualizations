@@ -41,7 +41,7 @@ export function useNodeSelection(): NodeSelectionContextType {
 
       disposePanelSubscription = () => disposable.dispose();
     },
-    [store],
+    [store]
   );
 
   const selectNode = useCallback(
@@ -69,7 +69,7 @@ export function useNodeSelection(): NodeSelectionContextType {
       });
       store.getState().addOpenedNodePanel(nodeId);
     },
-    [store],
+    [store]
   );
 
   const deselectNode = useCallback(
@@ -86,7 +86,7 @@ export function useNodeSelection(): NodeSelectionContextType {
         panel.api.close();
       }
     },
-    [store],
+    [store]
   );
 
   return {

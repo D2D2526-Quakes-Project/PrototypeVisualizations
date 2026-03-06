@@ -21,7 +21,7 @@ const colorMap = interpolate(
     [red600, 0.51],
     [red900, 1],
   ],
-  "oklab",
+  "oklab"
 );
 const rgbConverter = converter("rgb");
 

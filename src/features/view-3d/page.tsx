@@ -73,7 +73,7 @@ export function View3d() {
   }, []);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex min-h-0 flex-1 flex-col">
       <NodeSelectionProvider>
         {isReady && initialState && <DockviewContainer initialState={initialState} />}
       </NodeSelectionProvider>
@@ -153,14 +153,14 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       setDockviewApi(event.api);
       setSliceDockviewApi(event.api);
     },
-    [setDockviewApi, setSliceDockviewApi],
+    [setDockviewApi, setSliceDockviewApi]
   );
 
   const handleLayoutChange = useCallback(
     (layout: SerializedDockview) => {
       store.getState().setDockviewLayout(layout);
     },
-    [store],
+    [store]
   );
 
   const createDefaultLayout = useCallback((api: DockviewApi) => {

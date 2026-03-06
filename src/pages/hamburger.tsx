@@ -67,7 +67,7 @@ export function ViewHamburger() {
   }, [animationData, frameIndex]);
 
   return (
-    <div className="h-full flex flex-col gap-2">
+    <div className="flex h-full flex-col gap-2">
       <div>
         <span>
           Frame: {frameIndex + 1} / {frameCount} | Time: {(frameIndex * dt).toFixed(1)}s | Avg Displacement:{" "}
@@ -103,7 +103,7 @@ export function ViewHamburger() {
           return <div key={i} className="h-96 rounded" style={{ backgroundColor: color, width: `${widthPercent}%` }} />;
         })}
       </div>
-      <div className="flex flex-col h-full gap-1">
+      <div className="flex h-full flex-col gap-1">
         {storyData.map((story, i) => {
           const color = formatHex(colorMap(story.avgDispMag / maxDisplacement));
           const heightPercent =

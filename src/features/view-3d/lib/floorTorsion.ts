@@ -84,13 +84,11 @@ function getStoryCornerNodeIds(animationData: BuildingAnimationData, storyId: st
   cy /= ids.length;
 
   // Order by rest-state angle so polygon winding is consistent across frames.
-  return ids
-    .slice()
-    .sort((a, b) => {
-      const [ax, ay] = getInitialXY(animationData, a);
-      const [bx, by] = getInitialXY(animationData, b);
-      return Math.atan2(ay - cy, ax - cx) - Math.atan2(by - cy, bx - cx);
-    });
+  return ids.slice().sort((a, b) => {
+    const [ax, ay] = getInitialXY(animationData, a);
+    const [bx, by] = getInitialXY(animationData, b);
+    return Math.atan2(ay - cy, ax - cx) - Math.atan2(by - cy, bx - cx);
+  });
 }
 
 function boundsToRectPolygon(bounds: FloorPlanBounds): Point2[] {
@@ -212,7 +210,7 @@ function getFrameBaseOffset(animationData: BuildingAnimationData, frameIndex: nu
 function computeStoryPlanRotationRadFromStatic(
   animationData: BuildingAnimationData,
   storyStatic: StoryPlanStatic,
-  frameIndex: number,
+  frameIndex: number
 ): number {
   if (storyStatic.nodeCount < 2) return 0;
 
@@ -249,7 +247,11 @@ function computeStoryPlanRotationRadFromStatic(
   return Math.atan2(cross, dot);
 }
 
-function buildCurrentPolygon(animationData: BuildingAnimationData, storyStatic: StoryPlanStatic, frameIndex: number): Point2[] {
+function buildCurrentPolygon(
+  animationData: BuildingAnimationData,
+  storyStatic: StoryPlanStatic,
+  frameIndex: number
+): Point2[] {
   const initialData = animationData.initialPositions.data;
   const initialStride = animationData.initialPositions.stride;
   const dispData = animationData.displacementLin.data;
@@ -308,7 +310,7 @@ function buildCurrentPolygon(animationData: BuildingAnimationData, storyStatic: 
 export function computeStoryPlanRotationRad(
   animationData: BuildingAnimationData,
   storyId: string,
-  frameIndex: number,
+  frameIndex: number
 ): number {
   const storyStatic = getStoryPlanStatic(animationData, storyId);
   if (!storyStatic) return 0;
@@ -318,7 +320,7 @@ export function computeStoryPlanRotationRad(
 export function buildFloorTorsionSnapshot(
   animationData: BuildingAnimationData,
   storyId: string,
-  frameIndex: number,
+  frameIndex: number
 ): FloorTorsionSnapshot | null {
   const storyStatic = getStoryPlanStatic(animationData, storyId);
   if (!storyStatic) return null;
@@ -335,7 +337,7 @@ export function buildFloorTorsionSnapshot(
 
 export function computeStoryPlanRotationPeak(
   animationData: BuildingAnimationData,
-  storyId: string,
+  storyId: string
 ): { peakAbsRad: number; peakSignedRad: number; peakFrameIndex: number } {
   const storyStatic = getStoryPlanStatic(animationData, storyId);
   if (!storyStatic) return { peakAbsRad: 0, peakSignedRad: 0, peakFrameIndex: 0 };

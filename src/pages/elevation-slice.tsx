@@ -56,7 +56,7 @@ export function ElevationSlice() {
     <div className="flex h-full min-h-0">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={30} minSize={5} maxSize={40} className="flex">
-          <div className="w-full p-4 flex flex-col gap-4 overflow-y-auto border-r-2 border-neutral-300">
+          <div className="flex w-full flex-col gap-4 overflow-y-auto border-r-2 border-neutral-300 p-4">
             <h2 className="text-xl font-bold">Elevation Slice Analyzer</h2>
             <p className="text-sm text-neutral-600">
               Make a vertical cut through the building to analyze a single structural plane. Arrows represent
@@ -68,12 +68,12 @@ export function ElevationSlice() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSliceAxis("X")}
-                  className={`flex-1 p-2 rounded ${sliceAxis === "X" ? "bg-blue-500 text-white" : "bg-neutral-200"}`}>
+                  className={`flex-1 rounded p-2 ${sliceAxis === "X" ? "bg-blue-500 text-white" : "bg-neutral-200"}`}>
                   X
                 </button>
                 <button
                   onClick={() => setSliceAxis("Z")}
-                  className={`flex-1 p-2 rounded ${sliceAxis === "Z" ? "bg-blue-500 text-white" : "bg-neutral-200"}`}>
+                  className={`flex-1 rounded p-2 ${sliceAxis === "Z" ? "bg-blue-500 text-white" : "bg-neutral-200"}`}>
                   Z
                 </button>
               </div>
@@ -85,7 +85,7 @@ export function ElevationSlice() {
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={70} className="min-h-0 flex h-full">
+        <ResizablePanel defaultSize={70} className="flex h-full min-h-0">
           <div className="relative w-full">
             <Canvas>
               <OrthographicCamera

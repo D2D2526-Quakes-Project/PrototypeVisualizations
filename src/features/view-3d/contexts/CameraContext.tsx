@@ -30,13 +30,13 @@ export function CameraProvider({ children }: { children: ReactNode }) {
 
     const camera = controls.object;
     const currentTarget = controls.target;
-    
+
     const offset = new THREE.Vector3(
       position[0] - currentTarget.x,
       position[1] - currentTarget.y,
       position[2] - currentTarget.z
     );
-    
+
     camera.position.add(offset);
     controls.target.set(position[0], position[1], position[2]);
     controls.update();
@@ -70,11 +70,7 @@ export function CameraProvider({ children }: { children: ReactNode }) {
 
     const camera = controls.object;
     camera.position.set(state.position[0], state.position[1], state.position[2]);
-    if (
-      "isOrthographicCamera" in camera &&
-      camera.isOrthographicCamera === true &&
-      typeof state.zoom === "number"
-    ) {
+    if ("isOrthographicCamera" in camera && camera.isOrthographicCamera === true && typeof state.zoom === "number") {
       (camera as THREE.OrthographicCamera).zoom = state.zoom;
       (camera as THREE.OrthographicCamera).updateProjectionMatrix();
     }
@@ -83,7 +79,8 @@ export function CameraProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <CameraContext.Provider value={{ orbitControlsRef, focusOnPosition, setEnablePan, getCameraState, setCameraFromState }}>
+    <CameraContext.Provider
+      value={{ orbitControlsRef, focusOnPosition, setEnablePan, getCameraState, setCameraFromState }}>
       {children}
     </CameraContext.Provider>
   );

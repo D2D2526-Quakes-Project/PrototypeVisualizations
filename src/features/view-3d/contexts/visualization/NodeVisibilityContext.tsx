@@ -62,35 +62,35 @@ export function useNodeVisibility(): NodeVisibilityContextType {
     (nodes: number[]) => {
       setSelectedNodesStore(nodes);
     },
-    [setSelectedNodesStore],
+    [setSelectedNodesStore]
   );
 
   const addSelectedNodes = useCallback(
     (nodes: number[]) => {
       addSelectedNodesStore(nodes);
     },
-    [addSelectedNodesStore],
+    [addSelectedNodesStore]
   );
 
   const setHiddenNodeIds = useCallback(
     (nodes: number[]) => {
       setHiddenNodeIdsStore(nodes);
     },
-    [setHiddenNodeIdsStore],
+    [setHiddenNodeIdsStore]
   );
 
   const hideNodes = useCallback(
     (nodes: number[]) => {
       hideNodesStore(nodes);
     },
-    [hideNodesStore],
+    [hideNodesStore]
   );
 
   const showNodes = useCallback(
     (nodes: number[]) => {
       showNodesStore(nodes);
     },
-    [showNodesStore],
+    [showNodesStore]
   );
 
   const showAllNodes = useCallback(() => {
@@ -101,14 +101,14 @@ export function useNodeVisibility(): NodeVisibilityContextType {
     (nodeId: number) => {
       removeSelectedNodeStore(nodeId);
     },
-    [removeSelectedNodeStore],
+    [removeSelectedNodeStore]
   );
 
   const setHideSelectedNodes = useCallback(
     (hide: boolean) => {
       setHideSelectedNodesStore(hide);
     },
-    [setHideSelectedNodesStore],
+    [setHideSelectedNodesStore]
   );
 
   const toggleHideSelectedNodes = useCallback(() => {
@@ -123,19 +123,22 @@ export function useNodeVisibility(): NodeVisibilityContextType {
     (start: { x: number; y: number }, panelId?: string) => {
       startBoxSelectionStore(start, panelId);
     },
-    [startBoxSelectionStore],
+    [startBoxSelectionStore]
   );
 
   const updateBoxSelection = useCallback(
     (end: { x: number; y: number }, panelId?: string) => {
       updateBoxSelectionStore(end, panelId);
     },
-    [updateBoxSelectionStore],
+    [updateBoxSelectionStore]
   );
 
-  const endBoxSelection = useCallback((panelId?: string) => {
-    endBoxSelectionStore(panelId);
-  }, [endBoxSelectionStore]);
+  const endBoxSelection = useCallback(
+    (panelId?: string) => {
+      endBoxSelectionStore(panelId);
+    },
+    [endBoxSelectionStore]
+  );
 
   const cancelBoxSelection = useCallback(() => {
     endBoxSelectionStore();
@@ -145,7 +148,7 @@ export function useNodeVisibility(): NodeVisibilityContextType {
     (nodeId: number | null) => {
       setHoveredNodeIdStore(nodeId);
     },
-    [setHoveredNodeIdStore],
+    [setHoveredNodeIdStore]
   );
 
   return {
@@ -178,7 +181,7 @@ export function performBoxSelection(
   camera: THREE.Camera,
   meshRef: RefObject<THREE.InstancedMesh | null>,
   box: StoreBoxSelection,
-  visibleNodes: number[],
+  visibleNodes: number[]
 ): number[] {
   const minX = Math.min(box.start.x, box.end.x);
   const maxX = Math.max(box.start.x, box.end.x);

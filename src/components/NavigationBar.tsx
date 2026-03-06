@@ -84,7 +84,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
 
   const activeProfile = useMemo(
     () => profiles.find((profile) => profile.id === activeProfileId) ?? null,
-    [profiles, activeProfileId],
+    [profiles, activeProfileId]
   );
 
   const refreshProfiles = () => {
@@ -238,7 +238,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
         | "velocityLin"
         | "velocityRot"
         | "accelerationLin"
-        | "accelerationRot",
+        | "accelerationRot"
     ) => {
       if (!currentBuilding || !currentSimulation) return;
       loadSelection(currentBuilding, currentSimulation, {
@@ -251,12 +251,12 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
         accelerationRot: Boolean(animationData?.accelerationRot) || key === "accelerationRot",
       });
     },
-    [animationData, currentBuilding, currentSimulation, loadSelection],
+    [animationData, currentBuilding, currentSimulation, loadSelection]
   );
 
   return (
-    <div className="px-2 py-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
-      <div className="flex items-center gap-3 justify-start min-w-0">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-300 bg-neutral-100 px-2 py-1">
+      <div className="flex min-w-0 items-center justify-start gap-3">
         <Menubar className="h-8 bg-neutral-50/80" value={activeMenu} onValueChange={setActiveMenu}>
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
@@ -288,11 +288,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
                       {profile.id === activeProfileId ? <Check /> : <span className="w-4" />}
                       <span>{profile.name}</span>
                       <span className="ml-auto text-xs text-neutral-500">
-                        {profile.kind === "system"
-                          ? "Default"
-                          : profile.kind === "ephemeral"
-                            ? "Session"
-                            : "User"}
+                        {profile.kind === "system" ? "Default" : profile.kind === "ephemeral" ? "Session" : "User"}
                       </span>
                     </MenubarItem>
                   ))}
@@ -360,13 +356,9 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
           </MenubarMenu>
         </Menubar>
 
-        <div className="text-sm font-medium text-neutral-700 truncate">
+        <div className="truncate text-sm font-medium text-neutral-700">
           Profile: {activeProfile ? activeProfile.name : "Default View"}
-          {activeProfile ? (
-            <span className="ml-2 text-xs text-neutral-500">
-              ({profileKindLabel})
-            </span>
-          ) : null}
+          {activeProfile ? <span className="ml-2 text-xs text-neutral-500">({profileKindLabel})</span> : null}
         </div>
       </div>
 
@@ -374,7 +366,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
         <AnimatedTitle />
       </div>
 
-      <div className="flex items-center justify-end min-w-0">
+      <div className="flex min-w-0 items-center justify-end">
         <div className="flex items-center gap-3 text-xs text-neutral-500">
           <div className="truncate">
             {currentBuilding?.name} / {currentSimulation?.name}
@@ -392,7 +384,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
                 <div className="space-y-1">
                   <div className="font-medium">Optional data available but not loaded</div>
                   {optionalDataWarnings.map((warning) => (
-                    <div key={warning.key} className="flex items-center gap-2 justify-between">
+                    <div key={warning.key} className="flex items-center justify-between gap-2">
                       <span>{warning.label}</span>
                       <button
                         onClick={() => loadOptionalDataKey(warning.key)}
@@ -428,7 +420,7 @@ function AnimatedTitle() {
         <span
           key={index}
           data-letter
-          className="inline-block text-2xl font-bold text-neutral-800 animate-wiggle"
+          className="animate-wiggle inline-block text-2xl font-bold text-neutral-800"
           style={{ animationDelay: `${index * 50}ms` }}>
           {letter}
         </span>

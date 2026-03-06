@@ -330,9 +330,9 @@ function CheckSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button title={labelText} variant={"outline"} size="xs" className="min-w-16">
-          <span className="truncate flex-1">{labelText}</span>
+          <span className="flex-1 truncate">{labelText}</span>
           <ChevronDown
-            className={`w-3 h-3 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
           />
         </Button>
       </PopoverTrigger>
@@ -340,7 +340,7 @@ function CheckSelect({
         <div className="flex flex-col gap-0.5">
           {groupedOptions.map((group) => (
             <div key={group.title} className="flex flex-col gap-0.5">
-              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+              <div className="px-2 py-1 text-[10px] font-semibold tracking-wide text-neutral-500 uppercase">
                 {group.title}
               </div>
               {group.options.map((option) => {
@@ -349,16 +349,16 @@ function CheckSelect({
                   <Label
                     key={option.id}
                     htmlFor={`channel-${option.id}`}
-                    className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+                    className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
                     <Checkbox
                       id={`channel-${option.id}`}
                       checked={isChecked}
                       onCheckedChange={() => toggleOption(option.id)}
-                      className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                      className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
                     />
                     <span className="flex-1">{option.label}</span>
                     <span
-                      className="w-3 h-3 rounded-full border border-black/10"
+                      className="h-3 w-3 rounded-full border border-black/10"
                       style={{ backgroundColor: option.color }}
                     />
                   </Label>
@@ -904,13 +904,13 @@ export function Timeline({ api }: IDockviewPanelProps) {
   }, [frameIndex, chartData, animationData.metadata.dt, chartReadyVersion]);
 
   return (
-    <div className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full bg-white">
+    <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
       {/* Top Bar Row 1: Controls & Time */}
-      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0 relative">
-        <div className="float-right ml-2 mt-0.5">
+      <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
+        <div className="float-right mt-0.5 ml-2">
           <CheckSelect options={availableChannelOptions} selected={effectiveSelectedKeys} onChange={setSelectedKeys} />
         </div>
-        <div className="text-sm text-neutral-700 flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700">
           <SmallPlaybackControls inline />
           <span className="text-neutral-300">|</span>
           <span className="font-medium">Frame:</span>
@@ -918,11 +918,11 @@ export function Timeline({ api }: IDockviewPanelProps) {
           <span className="text-neutral-300">|</span>
           <span className="font-medium">Time:</span>
           <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)}s</span>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             {chartData.seriesData.map((item) => (
               <div
                 key={item.key}
-                className="flex items-center gap-1 text-xs pl-1.5 border-l-2"
+                className="flex items-center gap-1 border-l-2 pl-1.5 text-xs"
                 style={{ borderLeftColor: item.config.color }}>
                 <span className="font-medium text-neutral-500">{item.config.shortName}:</span>
                 <span className="font-mono">
@@ -935,7 +935,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       </div>
 
       {/* Chart Area */}
-      <div className="flex-1 min-h-0 w-full relative" style={{ cursor: isDragging ? "grabbing" : "default" }}>
+      <div className="relative min-h-0 w-full flex-1" style={{ cursor: isDragging ? "grabbing" : "default" }}>
         {effectiveSelectedKeys.length > 0 ? (
           <ReactECharts
             ref={chartRef}
@@ -946,7 +946,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             onChartReady={() => setChartReadyVersion((v) => v + 1)}
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-neutral-400 text-sm">
+          <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
             Select a data channel to view
           </div>
         )}

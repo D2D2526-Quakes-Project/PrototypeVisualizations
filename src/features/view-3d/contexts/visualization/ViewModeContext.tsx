@@ -20,7 +20,7 @@ interface ViewModeContextType {
     xRange?: [number, number],
     yRange?: [number, number],
     zRange?: [number, number],
-    sliceEnabled?: boolean,
+    sliceEnabled?: boolean
   ) => number[];
 }
 
@@ -44,7 +44,7 @@ export function useViewMode(): ViewModeContextType {
       _xRange?: [number, number],
       _yRange?: [number, number],
       _zRange?: [number, number],
-      _sliceEnabled?: boolean,
+      _sliceEnabled?: boolean
     ): number[] => {
       let nodes: number[];
 
@@ -89,7 +89,7 @@ export function useViewMode(): ViewModeContextType {
 
       return nodes;
     },
-    [mode, sliceEnabled, xRange, yRange, zRange],
+    [mode, sliceEnabled, xRange, yRange, zRange]
   );
 
   return {

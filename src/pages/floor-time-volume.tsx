@@ -153,10 +153,7 @@ function FloorVolumeScene({
       const cornerNodes = nodeIndices
         .filter(
           (idx) =>
-            corners.NW.includes(idx) ||
-            corners.NE.includes(idx) ||
-            corners.SW.includes(idx) ||
-            corners.SE.includes(idx),
+            corners.NW.includes(idx) || corners.NE.includes(idx) || corners.SW.includes(idx) || corners.SE.includes(idx)
         )
         .map((nodeIdx) => {
           const initialPos = animationData.initialPositions.at(nodeIdx);
@@ -253,7 +250,7 @@ function FloorSelector({
       <select
         value={selectedStory}
         onChange={(e) => onStoryChange(e.target.value)}
-        className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
         {storyOrder.map((story) => (
           <option key={story} value={story}>
             Floor {story}
@@ -280,9 +277,9 @@ function VolumeControls({
   onMaxHeightChange: (value: number) => void;
 }) {
   return (
-    <div className="absolute top-16 left-4 z-10 bg-white bg-opacity-90 rounded-md p-3 text-sm space-y-3">
+    <div className="bg-opacity-90 absolute top-16 left-4 z-10 space-y-3 rounded-md bg-white p-3 text-sm">
       <div>
-        <label className="block font-medium mb-2">Time Resolution</label>
+        <label className="mb-2 block font-medium">Time Resolution</label>
         <input
           type="range"
           min="10"
@@ -292,11 +289,11 @@ function VolumeControls({
           onChange={(e) => onMaxFramesChange(Number(e.target.value))}
           className="w-32"
         />
-        <div className="text-xs text-gray-600 mt-1">{maxFrames} frames</div>
+        <div className="mt-1 text-xs text-gray-600">{maxFrames} frames</div>
       </div>
 
       <div>
-        <label className="block font-medium mb-2">Max Height</label>
+        <label className="mb-2 block font-medium">Max Height</label>
         <input
           type="range"
           min="50"
@@ -306,11 +303,11 @@ function VolumeControls({
           onChange={(e) => onMaxHeightChange(Number(e.target.value))}
           className="w-32"
         />
-        <div className="text-xs text-gray-600 mt-1">{maxHeight.toFixed(1)} units</div>
+        <div className="mt-1 text-xs text-gray-600">{maxHeight.toFixed(1)} units</div>
       </div>
 
       <div>
-        <label className="block font-medium mb-2">Displacement Scale</label>
+        <label className="mb-2 block font-medium">Displacement Scale</label>
         <input
           type="range"
           min="0.1"
@@ -320,7 +317,7 @@ function VolumeControls({
           onChange={(e) => onDisplacementScaleChange(Number(e.target.value))}
           className="w-32"
         />
-        <div className="text-xs text-gray-600 mt-1">{displacementScale.toFixed(1)}x</div>
+        <div className="mt-1 text-xs text-gray-600">{displacementScale.toFixed(1)}x</div>
       </div>
     </div>
   );
@@ -337,7 +334,7 @@ export default function FloorTimeVolumePage() {
   const [maxHeight, setMaxHeight] = useState(100);
 
   return (
-    <div className="w-full h-screen relative">
+    <div className="relative h-screen w-full">
       <FloorSelector selectedStory={selectedStory} onStoryChange={setSelectedStory} />
 
       <VolumeControls
@@ -349,7 +346,7 @@ export default function FloorTimeVolumePage() {
         onMaxHeightChange={setMaxHeight}
       />
 
-      <div className="absolute bottom-4 right-4 left-4 h-8 z-10">
+      <div className="absolute right-4 bottom-4 left-4 z-10 h-8">
         <SmallTimeline />
       </div>
 
@@ -365,7 +362,7 @@ export default function FloorTimeVolumePage() {
         />
       </CanvasWithControls>
 
-      <div className="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-50 p-2 rounded">
+      <div className="bg-opacity-50 absolute bottom-4 left-4 rounded bg-black p-2 text-sm text-white">
         <div>Floor: {selectedStory}</div>
         <div>Y-axis represents time progression</div>
         <div>Rendering: {maxFrames} time samples</div>

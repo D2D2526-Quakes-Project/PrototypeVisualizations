@@ -18,7 +18,7 @@ export function ViewModeSelect({ mode, setMode }: ViewModeSelectProps) {
     <select
       value={mode}
       onChange={(e) => setMode(e.target.value as ViewMode)}
-      className="w-full text-xs px-2 py-1 bg-neutral-100 border border-neutral-300 rounded hover:bg-neutral-200 transition-colors cursor-pointer">
+      className="w-full cursor-pointer rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs transition-colors hover:bg-neutral-200">
       {viewModes.map(({ value, label }) => (
         <option key={value} value={value}>
           {label}

@@ -24,11 +24,11 @@ const TooltipBody = memo(function TooltipBody({ value, unit, decimals, showConve
   const fullName = unitInfo?.fullName || unit;
   const conversions = useMemo(
     () => (showConversions ? getConversions(value, unit) : []),
-    [showConversions, value, unit],
+    [showConversions, value, unit]
   );
 
   return (
-    <div className="flex flex-col gap-1 min-w-25">
+    <div className="flex min-w-25 flex-col gap-1">
       <div
         className={`flex items-center justify-between gap-4 border-white/20 pb-1 ${conversions.length > 0 ? "border-b" : ""}`}>
         <span className="font-medium">{formatValue(value, decimals)}</span>
@@ -39,7 +39,7 @@ const TooltipBody = memo(function TooltipBody({ value, unit, decimals, showConve
           {conversions.map((conv) => (
             <div key={conv.unit} className="flex items-center justify-between gap-1 text-white/80">
               <span>{formatValue(conv.value, decimals)}</span>
-              <span className="text-white/60 text-xs flex justify-between flex-1 gap-2">
+              <span className="flex flex-1 justify-between gap-2 text-xs text-white/60">
                 <span>{conv.unit}</span>
                 <span>({conv.fullName})</span>
               </span>

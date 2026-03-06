@@ -83,7 +83,9 @@ type Resolution = (typeof RESOLUTION_OPTIONS)[number];
 function sanitizeSelectedCorners(value: unknown): Corner[] {
   if (!Array.isArray(value)) return ["Max"];
 
-  const valid = value.filter((v): v is Corner => typeof v === "string" && (CORNER_OPTIONS as readonly string[]).includes(v));
+  const valid = value.filter(
+    (v): v is Corner => typeof v === "string" && (CORNER_OPTIONS as readonly string[]).includes(v)
+  );
   if (valid.length === 0) return ["Max"];
 
   if (valid.includes("Max")) return ["Max"];
@@ -108,7 +110,9 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const savedState = savedPanelState?.type === "storyDriftHeatmap" ? savedPanelState.state : defaultState;
 
-  const [selectedCorners, setSelectedCorner] = useState<Corner[]>(() => sanitizeSelectedCorners(savedState.selectedCorners));
+  const [selectedCorners, setSelectedCorner] = useState<Corner[]>(() =>
+    sanitizeSelectedCorners(savedState.selectedCorners)
+  );
   const [resolution, setResolution] = useState<Resolution>(() => sanitizeResolution(savedState.resolution));
   const panelIdRef = useRef(panelId);
 
@@ -160,14 +164,14 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
         ...visibleStories.map((storyId) => {
           const peaks = peakStoryDrift[storyId];
           return peaks ? Math.max(peaks.NW, peaks.NE, peaks.SW, peaks.SE) : 0;
-        }),
+        })
       );
     } else {
       maxValue = Math.max(
         ...visibleStories.flatMap((storyId) => {
           const peaks = peakStoryDrift[storyId];
           return peaks ? selectedCorners.map((corner) => (corner == "Max" ? 0 : peaks[corner])) : [];
-        }),
+        })
       );
     }
 
@@ -219,7 +223,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
       xAxis: {
         type: "category" as const,
         data: Array.from({ length: frameCount }, (_, i) =>
-          (i * heatmapData.timeStep * animationData.metadata.dt).toFixed(1),
+          (i * heatmapData.timeStep * animationData.metadata.dt).toFixed(1)
         ),
         axisLabel: {
           color: "#6b7280",
@@ -304,11 +308,11 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   }, [frameIndex, heatmapData.timeStep]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-white">
-      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0 flex items-center justify-between">
+    <div className="flex h-full w-full flex-col bg-white">
+      <div className="z-20 flex shrink-0 items-center justify-between border-b border-neutral-100 bg-white px-3 py-1.5">
         <div className="text-sm text-neutral-700">
           <span className="font-medium">Story Drift Heatmap</span>
-          <span className="text-neutral-400 ml-2">- {selectedCorners.join(", ")} drift over time</span>
+          <span className="ml-2 text-neutral-400">- {selectedCorners.join(", ")} drift over time</span>
         </div>
         <div className="flex items-center gap-1">
           <ToggleGroup
@@ -327,7 +331,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
-          <span className="text-xs text-neutral-400 ml-2">Res:</span>
+          <span className="ml-2 text-xs text-neutral-400">Res:</span>
           <NativeSelect
             size="sm"
             value={resolution}
@@ -341,7 +345,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
           </NativeSelect>
         </div>
       </div>
-      <div ref={containerRef} className="flex-1 min-h-0 w-full relative">
+      <div ref={containerRef} className="relative min-h-0 w-full flex-1">
         <ReactECharts
           ref={chartRef}
           option={baseOption}
@@ -349,13 +353,13 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
           opts={{ renderer: "canvas" }}
         />
         {!heatmapData.hasVisibleStories && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 text-sm text-neutral-600 pointer-events-none">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/80 text-sm text-neutral-600">
             No visible stories above ground. Show at least one non-ground floor to render the heatmap.
           </div>
         )}
         <div
           ref={playheadRef}
-          className="absolute top-0 bottom-8 w-0.5 bg-red-500 pointer-events-none"
+          className="pointer-events-none absolute top-0 bottom-8 w-0.5 bg-red-500"
           style={{
             left: "50%",
             transform: "translateX(-50%)",

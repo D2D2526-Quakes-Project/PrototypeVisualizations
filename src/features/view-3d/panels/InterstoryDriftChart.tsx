@@ -249,7 +249,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
               corners={corners}
               currentDrifts={currentDrifts}
               peakDrift={peakStoryDrift}
-            />,
+            />
           );
         },
       },

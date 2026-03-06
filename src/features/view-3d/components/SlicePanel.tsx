@@ -23,7 +23,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
 
   const nodeIds = useMemo(
     () => animationData.metadata.stories[storyId] || [],
-    [storyId, animationData.metadata.stories],
+    [storyId, animationData.metadata.stories]
   );
 
   // LOCATION INFO
@@ -38,7 +38,10 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
     };
   }, [storyId, animationData]);
 
-  const floorTorsionPeak = useMemo(() => computeStoryPlanRotationPeak(animationData, storyId), [animationData, storyId]);
+  const floorTorsionPeak = useMemo(
+    () => computeStoryPlanRotationPeak(animationData, storyId),
+    [animationData, storyId]
+  );
 
   const floorTorsion = useMemo(() => {
     const snapshot = buildFloorTorsionSnapshot(animationData, storyId, frameIndex);
@@ -89,7 +92,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
       dcrSummaryMax?.p95 ?? 0,
       dcrSummaryMin?.p95 ?? 0,
       negDcrSummaryMax?.p95 ?? 0,
-      negDcrSummaryMin?.p95 ?? 0,
+      negDcrSummaryMin?.p95 ?? 0
     );
 
     return {
@@ -342,15 +345,15 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
   }, [animationData.velocityLin, nodeIds, animationData.metadata.frameCount, animationData.metadata.dt]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl overflow-hidden">
-      <div className="p-3 space-y-3 text-xs flex-1 overflow-y-auto">
+    <div className="flex h-full w-full flex-col overflow-hidden border border-neutral-200 bg-white/95 shadow-xl backdrop-blur-sm">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs">
         {/* LOCATION INFO */}
-        <div className="border-t pt-2 animate-fade-in">
-          <h3 className="font-bold text-sm mb-2">Location</h3>
+        <div className="animate-fade-in border-t pt-2">
+          <h3 className="mb-2 text-sm font-bold">Location</h3>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="font-medium text-neutral-700">Story:</span>
-              <div className="text-neutral-600 font-mono">{storyInfo.story}</div>
+              <div className="font-mono text-neutral-600">{storyInfo.story}</div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Nodes:</span>
@@ -372,25 +375,30 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
         </div>
 
         {floorTorsion && (
-          <div className="border-t pt-2 animate-fade-in">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h3 className="font-bold text-sm">Floor Torsion (Top-Down)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h3 className="text-sm font-bold">Floor Torsion (Top-Down)</h3>
               <span className="text-[10px] text-neutral-500">X-Y plan (Z vertical)</span>
             </div>
             <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
               <div className="h-32 w-full rounded border border-neutral-100 bg-white">
-                  <FloorTorsionPlanPreview
-                    snapshot={floorTorsion.snapshot}
-                    fill={floorTorsion.color}
-                    className="h-full w-full"
-                    label={`Story ${storyId} floor torsion preview`}
-                  />
+                <FloorTorsionPlanPreview
+                  snapshot={floorTorsion.snapshot}
+                  fill={floorTorsion.color}
+                  className="h-full w-full"
+                  label={`Story ${storyId} floor torsion preview`}
+                />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
                 <div>
                   <div className="text-neutral-500">Current Rotation</div>
                   <div className="font-mono text-neutral-800">
-                    <UnitTooltip interactive={!playing} value={floorTorsion.snapshot.rotationRad} unit="rad" decimals={6} />
+                    <UnitTooltip
+                      interactive={!playing}
+                      value={floorTorsion.snapshot.rotationRad}
+                      unit="rad"
+                      decimals={6}
+                    />
                   </div>
                 </div>
                 <div>
@@ -398,7 +406,9 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                   <div className="font-mono text-neutral-800">
                     <UnitTooltip interactive={!playing} value={floorTorsionPeak.peakAbsRad} unit="rad" decimals={6} />
                   </div>
-                  <div className="text-neutral-400">@ {(floorTorsionPeak.peakFrameIndex * animationData.metadata.dt).toFixed(2)}s</div>
+                  <div className="text-neutral-400">
+                    @ {(floorTorsionPeak.peakFrameIndex * animationData.metadata.dt).toFixed(2)}s
+                  </div>
                 </div>
                 <div>
                   <div className="text-neutral-500">Peak Signed Rotation</div>
@@ -414,14 +424,13 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                 <div>
                   <div className="text-neutral-500">Color Scale (rad)</div>
                   <div
-                    className="h-2 mt-1 rounded border border-neutral-200"
+                    className="mt-1 h-2 rounded border border-neutral-200"
                     style={{
-                      background:
-                        "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)",
+                      background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)",
                     }}
                     title={`Rotation color scale ±${floorTorsion.colorScaleAbsMax.toFixed(6)} rad`}
                   />
-                  <div className="font-mono text-[9px] text-neutral-500 mt-1">
+                  <div className="mt-1 font-mono text-[9px] text-neutral-500">
                     ±{floorTorsion.colorScaleAbsMax.toFixed(6)} rad
                   </div>
                 </div>
@@ -432,39 +441,39 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
 
         {/* DISPLACEMENT */}
         {hingeSliceSummary && (
-          <div className="border-t pt-2 animate-fade-in">
-            <div className="flex items-center justify-between mb-2 gap-2">
-              <h3 className="font-bold text-sm">Hinge Analysis (Static)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h3 className="text-sm font-bold">Hinge Analysis (Static)</h3>
               <span className="text-[10px] text-neutral-500">Global; not frame-linked</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="text-neutral-500 uppercase tracking-wide">Rows (Max)</div>
+                <div className="tracking-wide text-neutral-500 uppercase">Rows (Max)</div>
                 <div className="font-mono text-neutral-800">{hingeSliceSummary.maxOnlyCount.toLocaleString()}</div>
               </div>
               <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="text-neutral-500 uppercase tracking-wide">Max Crit D/C</div>
+                <div className="tracking-wide text-neutral-500 uppercase">Max Crit D/C</div>
                 <div className="font-mono text-neutral-800">{hingeSliceSummary.maxCritical.toFixed(3)}</div>
               </div>
               <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="text-neutral-500 uppercase tracking-wide">D/C {">="} 1 / 2 / 4</div>
+                <div className="tracking-wide text-neutral-500 uppercase">D/C {">="} 1 / 2 / 4</div>
                 <div className="font-mono text-neutral-800">
                   {hingeSliceSummary.ge1} / {hingeSliceSummary.ge2} / {hingeSliceSummary.ge4}
                 </div>
               </div>
               <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="text-neutral-500 uppercase tracking-wide">P95 (approx)</div>
+                <div className="tracking-wide text-neutral-500 uppercase">P95 (approx)</div>
                 <div className="font-mono text-neutral-800">{hingeSliceSummary.p95Approx.toFixed(3)}</div>
               </div>
             </div>
 
             <div className="mt-2">
-              <div className="font-medium text-neutral-700 mb-1">Top Hinges (Max Step)</div>
+              <div className="mb-1 font-medium text-neutral-700">Top Hinges (Max Step)</div>
               <div className="space-y-1">
                 {hingeSliceSummary.topRows.map((row) => (
                   <div
                     key={`${row.beamIndex}-${row.end}-${row.stepType}`}
-                    className="grid grid-cols-[auto_auto_1fr_auto] gap-2 items-center text-[10px] border-b border-neutral-100 pb-1">
+                    className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-2 border-b border-neutral-100 pb-1 text-[10px]">
                     <span className="font-mono text-neutral-600">E{row.elementId}</span>
                     <span className="font-mono text-neutral-600">{row.end}</span>
                     <span className="truncate text-neutral-500">
@@ -483,21 +492,21 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
 
         {/* DISPLACEMENT */}
         {displacementData && (
-          <div className="border-t pt-2 animate-fade-in">
-            <h3 className="font-bold text-sm mb-2">Displacement (in)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <h3 className="mb-2 text-sm font-bold">Displacement (in)</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current Avg:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={displacementData.current.magnitude} unit="in" />
                 </div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Peak Avg:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={displacementData.peak.magnitude} unit="in" />
                 </div>
-                <span className="text-neutral-500 text-[9px]">
+                <span className="text-[9px] text-neutral-500">
                   {" "}
                   @ {displacementData.peak.magnitudeTime.toFixed(2)}s
                 </span>
@@ -514,7 +523,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="font-mono text-neutral-800">
                   <UnitTooltip interactive={!playing} value={displacementData.peak.x} unit="in" />
-                  <span className="text-neutral-500 text-[9px]"> @ {displacementData.peak.xTime.toFixed(2)}s</span>
+                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.xTime.toFixed(2)}s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
@@ -527,7 +536,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="font-mono text-neutral-800">
                   <UnitTooltip interactive={!playing} value={displacementData.peak.y} unit="in" />
-                  <span className="text-neutral-500 text-[9px]"> @ {displacementData.peak.yTime.toFixed(2)}s</span>
+                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.yTime.toFixed(2)}s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
@@ -540,7 +549,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="font-mono text-neutral-800">
                   <UnitTooltip interactive={!playing} value={displacementData.peak.z} unit="in" />
-                  <span className="text-neutral-500 text-[9px]"> @ {displacementData.peak.zTime.toFixed(2)}s</span>
+                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.zTime.toFixed(2)}s</span>
                 </span>
               </div>
             </div>
@@ -583,12 +592,12 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
 
         {/* VELOCITY */}
         {velocityData && (
-          <div className="border-t pt-2 animate-fade-in">
-            <h3 className="font-bold text-sm mb-2">Velocity (in/s)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <h3 className="mb-2 text-sm font-bold">Velocity (in/s)</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current Avg:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={velocityData.current.magnitude} unit="in/s" />
                 </div>
               </div>
@@ -654,12 +663,12 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
 
         {/* ACCELERATION */}
         {accelerationData && (
-          <div className="border-t pt-2 animate-fade-in">
-            <h3 className="font-bold text-sm mb-2">Acceleration (in/s²)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <h3 className="mb-2 text-sm font-bold">Acceleration (in/s²)</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current Avg:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={accelerationData.current.magnitude} unit="in/s²" />
                 </div>
               </div>
@@ -689,14 +698,14 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
 
         {/* CORNER DRIFTS */}
         {cornerDrifts && (
-          <div className="border-t pt-2 animate-fade-in">
-            <h3 className="font-bold text-sm mb-2">Corner Drifts (%)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <h3 className="mb-2 text-sm font-bold">Corner Drifts (%)</h3>
             <div className="space-y-1">
               {Object.entries(cornerDrifts).map(([corner, data]) => (
                 <div key={corner} className="flex items-center gap-2">
-                  <span className="font-medium text-neutral-700 w-8">{corner}:</span>
+                  <span className="w-8 font-medium text-neutral-700">{corner}:</span>
                   {data ? (
-                    <div className="text-neutral-600 font-mono text-[10px]">
+                    <div className="font-mono text-[10px] text-neutral-600">
                       <span className="mr-1">Current:</span>
                       <UnitTooltip interactive={!playing} value={data.current} unit="%" decimals={4} />
                       <span className="mx-2 text-neutral-300">|</span>
@@ -704,7 +713,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                       <UnitTooltip interactive={!playing} value={data.peak} unit="%" decimals={4} />
                     </div>
                   ) : (
-                    <div className="text-neutral-400 text-[10px]">N/A</div>
+                    <div className="text-[10px] text-neutral-400">N/A</div>
                   )}
                 </div>
               ))}
@@ -712,9 +721,9 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
           </div>
         )}
 
-        {!animationData.velocityLin && <div className="text-neutral-400 text-[10px] italic">Velocities not loaded</div>}
+        {!animationData.velocityLin && <div className="text-[10px] text-neutral-400 italic">Velocities not loaded</div>}
         {!animationData.accelerationLin && (
-          <div className="text-neutral-400 text-[10px] italic">Accelerations not loaded</div>
+          <div className="text-[10px] text-neutral-400 italic">Accelerations not loaded</div>
         )}
       </div>
     </div>
@@ -725,7 +734,7 @@ export const SlicePanel = FloorPanel;
 
 export function SliceTab(props: { sliceId: string; storyId: string }) {
   return (
-    <div className="flex z-10 h-full w-full items-center bg-neutral-200/80">
+    <div className="z-10 flex h-full w-full items-center bg-neutral-200/80">
       <span className="px-4 py-0 text-sm font-medium text-neutral-700">Floor {props.storyId}</span>
     </div>
   );

@@ -15,7 +15,7 @@ interface ExpandedScaleContextType {
     initialPosition: [number, number, number],
     displacement: [number, number, number],
     offset: [number, number, number],
-    metadata: AnimationMetadata,
+    metadata: AnimationMetadata
   ) => [number, number, number];
 }
 
@@ -37,7 +37,7 @@ export function useExpandedScale(): ExpandedScaleContextType {
       initialPosition: [number, number, number],
       displacement: [number, number, number],
       offset: [number, number, number],
-      _metadata: AnimationMetadata,
+      _metadata: AnimationMetadata
     ): [number, number, number] => {
       const [initX, initY, initZ] = initialPosition;
       const [dispX, dispY, dispZ] = displacement;
@@ -58,7 +58,7 @@ export function useExpandedScale(): ExpandedScaleContextType {
         (initZ + offsetZ) * (1 + expandedScale.zExpansion) + scaledDispZ - offsetZ,
       ] as [number, number, number];
     },
-    [expandedScale],
+    [expandedScale]
   );
 
   return {

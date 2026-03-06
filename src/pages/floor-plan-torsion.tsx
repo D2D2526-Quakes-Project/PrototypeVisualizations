@@ -46,7 +46,7 @@ function PlaneShapes({
       SW: new Set(corners.SW),
       SE: new Set(corners.SE),
     }),
-    [corners],
+    [corners]
   );
 
   // Get building dimensions
@@ -71,7 +71,7 @@ function PlaneShapes({
           const nodeIndices = stories[storyId];
           const cornerNodes = nodeIndices.filter(
             (idx) =>
-              cornerSets.NW.has(idx) || cornerSets.NE.has(idx) || cornerSets.SW.has(idx) || cornerSets.SE.has(idx),
+              cornerSets.NW.has(idx) || cornerSets.NE.has(idx) || cornerSets.SW.has(idx) || cornerSets.SE.has(idx)
           );
 
           if (cornerNodes.length !== 4) return null;
@@ -151,7 +151,7 @@ function PlaneShapes({
                 transform
                 scale={[50, 50, 1]}
                 rotation={[-Math.PI / 2, 0, 0]}>
-                <div className="text-center text-xs text-black select-none translate-x-1/2 -translate-y-1/2">
+                <div className="translate-x-1/2 -translate-y-1/2 text-center text-xs text-black select-none">
                   {storyId}
                 </div>
               </Html>
@@ -176,7 +176,7 @@ export function FloorPlanTorsion() {
       animationData.metadata.storyOrder
         .map((storyId) => buildFloorTorsionSnapshot(animationData, storyId, frameIndex))
         .filter((row): row is NonNullable<typeof row> => row !== null),
-    [animationData, frameIndex],
+    [animationData, frameIndex]
   );
 
   const maxAbsRotation = useMemo(() => {
@@ -187,13 +187,16 @@ export function FloorPlanTorsion() {
     return Math.max(maxAbs, 1e-6);
   }, [torsionRows]);
 
-  const storyRotationById = useMemo(() => new Map(torsionRows.map((row) => [row.storyId, row.rotationRad])), [torsionRows]);
+  const storyRotationById = useMemo(
+    () => new Map(torsionRows.map((row) => [row.storyId, row.rotationRad])),
+    [torsionRows]
+  );
 
   return (
     <div className="flex h-full min-h-0">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={30} minSize={5} maxSize={40} className="flex">
-          <div className="w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar border-r-2 border-neutral-300">
+          <div className="skinny-scrollbar flex w-full flex-col gap-4 overflow-y-auto border-r-2 border-neutral-300 p-4">
             <div>
               <h2 className="text-xl font-bold">Floor Torsion</h2>
               <p className="text-sm text-neutral-600">
@@ -214,7 +217,8 @@ export function FloorPlanTorsion() {
                 />
               </label>
               <p className="text-xs text-neutral-500">
-                Visual exaggeration only. Torsion coloring uses computed plan rotation (`rad`), not displacement magnitude.
+                Visual exaggeration only. Torsion coloring uses computed plan rotation (`rad`), not displacement
+                magnitude.
               </p>
               <label className="flex gap-4">
                 <span className="font-semibold">Anchor Corner</span>
@@ -240,9 +244,9 @@ export function FloorPlanTorsion() {
             </div>
 
             <div>
-              <h3 className="text-lg font-bold mt-2">Torsion Color Scale</h3>
+              <h3 className="mt-2 text-lg font-bold">Torsion Color Scale</h3>
               <div className="mt-2 rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="flex items-center justify-between text-[10px] text-neutral-600 mb-1">
+                <div className="mb-1 flex items-center justify-between text-[10px] text-neutral-600">
                   <span>Rotation (rad)</span>
                   <span>Frame {frameIndex}</span>
                 </div>
@@ -251,7 +255,7 @@ export function FloorPlanTorsion() {
                   style={{ background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)" }}
                   title={`Torsion rotation color scale from -${maxAbsRotation.toFixed(6)} rad to +${maxAbsRotation.toFixed(6)} rad`}
                 />
-                <div className="mt-1 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+                <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-neutral-500">
                   <span>{(-maxAbsRotation).toFixed(6)}</span>
                   <span>0.000000</span>
                   <span>{maxAbsRotation.toFixed(6)}</span>
@@ -263,8 +267,8 @@ export function FloorPlanTorsion() {
             </div>
 
             <div>
-              <h3 className="text-lg font-bold mt-4">Stories</h3>
-              <div className="w-full text-xs text-neutral-600 flex flex-col p-2 gap-2">
+              <h3 className="mt-4 text-lg font-bold">Stories</h3>
+              <div className="flex w-full flex-col gap-2 p-2 text-xs text-neutral-600">
                 {torsionRows.toReversed().map((row) => {
                   const normalized = Math.max(-1, Math.min(1, row.rotationRad / maxAbsRotation));
                   const fill = formatHex(torsionColorScale((normalized + 1) / 2)) ?? "#f8fafc";
@@ -275,13 +279,17 @@ export function FloorPlanTorsion() {
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="text-[10px] text-neutral-500">Story</div>
-                          <div className="font-mono text-xs text-neutral-800 truncate">{row.storyId}</div>
+                          <div className="truncate font-mono text-xs text-neutral-800">{row.storyId}</div>
                         </div>
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] shrink-0">
+                        <div className="grid shrink-0 grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
                           <span className="text-neutral-500">Rotation (rad)</span>
-                          <span className="font-mono text-right text-neutral-800">{formatSigned(row.rotationRad, 6)}</span>
+                          <span className="text-right font-mono text-neutral-800">
+                            {formatSigned(row.rotationRad, 6)}
+                          </span>
                           <span className="text-neutral-500">|Rotation|</span>
-                          <span className="font-mono text-right text-neutral-700">{Math.abs(row.rotationRad).toFixed(6)}</span>
+                          <span className="text-right font-mono text-neutral-700">
+                            {Math.abs(row.rotationRad).toFixed(6)}
+                          </span>
                         </div>
                       </div>
                       <div className="h-28 rounded border border-neutral-100 bg-neutral-50">
@@ -295,10 +303,10 @@ export function FloorPlanTorsion() {
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={70} className="min-h-0 flex h-full">
-          <div className="relative w-full grid grid-cols-2 grid-rows-2">
+        <ResizablePanel defaultSize={70} className="flex h-full min-h-0">
+          <div className="relative grid w-full grid-cols-2 grid-rows-2">
             <div className="relative size-full border-r-2 border-b-2 border-neutral-300">
-              <div className="absolute top-2 left-2 font-mono text-xl z-10">Perspective</div>
+              <div className="absolute top-2 left-2 z-10 font-mono text-xl">Perspective</div>
               <Canvas>
                 <PlaneShapes
                   verticalSpacing={verticalSpacing}

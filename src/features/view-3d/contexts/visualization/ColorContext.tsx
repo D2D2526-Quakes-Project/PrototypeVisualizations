@@ -38,11 +38,11 @@ export function useColor(): ColorContextType {
       return {
         positiveInterpolator: interpolate(
           [metricConfig.positiveColorStops[0], metricConfig.positiveColorStops[1]],
-          "oklab",
+          "oklab"
         ),
         positiveThresholdInterpolator: interpolate(
           [metricConfig.positiveColorStops[2], metricConfig.positiveColorStops[3]],
-          "oklab",
+          "oklab"
         ),
         negativeInterpolator: metricConfig.positiveOnly
           ? interpolate(["magenta"], "oklab")
@@ -108,12 +108,12 @@ export function useColor(): ColorContextType {
       thresholdHighlighting,
       negativeThresholdInterpolator,
       positiveThresholdInterpolator,
-    ],
+    ]
   );
 
   const availableMetrics = useMemo((): Metric[] => {
     return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) =>
-      METRIC_CONFIGS[metric].isAvailable(animationData),
+      METRIC_CONFIGS[metric].isAvailable(animationData)
     );
   }, [animationData]);
 

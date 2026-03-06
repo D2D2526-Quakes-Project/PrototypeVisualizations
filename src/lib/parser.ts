@@ -146,7 +146,7 @@ export async function buildAnimationDataFromBinary({
   // 4. Verification
   if (dispLinData.metadata.count_nodes !== bData.metadata.count_nodes) {
     throw new Error(
-      `Mismatch: Building has ${bData.metadata.count_nodes} nodes, but Displacement Linear file has ${dispLinData.metadata.count_nodes}`,
+      `Mismatch: Building has ${bData.metadata.count_nodes} nodes, but Displacement Linear file has ${dispLinData.metadata.count_nodes}`
     );
   }
 
@@ -160,7 +160,7 @@ export async function buildAnimationDataFromBinary({
     const expectedLength = beamData.metadata.count_rows * beamData.metadata.stride;
     if (beamData.bodyView.length < expectedLength) {
       throw new Error(
-        `Invalid beam payload length: expected at least ${expectedLength} float values, got ${beamData.bodyView.length}`,
+        `Invalid beam payload length: expected at least ${expectedLength} float values, got ${beamData.bodyView.length}`
       );
     }
   }
@@ -175,7 +175,7 @@ export async function buildAnimationDataFromBinary({
     const expectedLength = hingeData.metadata.count_rows * hingeData.metadata.stride;
     if (hingeData.bodyView.length < expectedLength) {
       throw new Error(
-        `Invalid hinge payload length: expected at least ${expectedLength} float values, got ${hingeData.bodyView.length}`,
+        `Invalid hinge payload length: expected at least ${expectedLength} float values, got ${hingeData.bodyView.length}`
       );
     }
   }
@@ -188,13 +188,13 @@ export async function buildAnimationDataFromBinary({
 
   const normalizedStoryOrder = bData.metadata.story_order.map(normalizeStoryName);
   const normalizedStories = Object.fromEntries(
-    Object.entries(bData.metadata.stories).map(([storyId, nodeIds]) => [normalizeStoryName(storyId), nodeIds]),
+    Object.entries(bData.metadata.stories).map(([storyId, nodeIds]) => [normalizeStoryName(storyId), nodeIds])
   );
   const normalizedCorners = Object.fromEntries(
-    Object.entries(bData.metadata.corners).map(([storyId, corners]) => [normalizeStoryName(storyId), corners]),
+    Object.entries(bData.metadata.corners).map(([storyId, corners]) => [normalizeStoryName(storyId), corners])
   );
   const normalizedStoryHeights = Object.fromEntries(
-    Object.entries(bData.metadata.story_heights).map(([storyId, height]) => [normalizeStoryName(storyId), height]),
+    Object.entries(bData.metadata.story_heights).map(([storyId, height]) => [normalizeStoryName(storyId), height])
   );
 
   const metadata: AnimationMetadata = {
@@ -217,7 +217,7 @@ export async function buildAnimationDataFromBinary({
     velRotData?.bodyView,
     accelLinData?.bodyView,
     accelRotData?.bodyView,
-    hingeData?.metadata.summary,
+    hingeData?.metadata.summary
   );
 
   function makeAccessor(data: Float32Array, stride: number): IndexAccessor {
@@ -349,7 +349,7 @@ function calculateStats(
   velRot?: Float32Array,
   accelLin?: Float32Array,
   accelRot?: Float32Array,
-  hingeSummary?: HingeSummary,
+  hingeSummary?: HingeSummary
 ): ComputedStats {
   // --- 1. GEOMETRY BOUNDS ---
   let minX = Infinity,
@@ -509,7 +509,7 @@ function calculateStats(
         const belowMag = Math.hypot(
           dispLin[belowNodeOffset],
           dispLin[belowNodeOffset + 1],
-          dispLin[belowNodeOffset + 2],
+          dispLin[belowNodeOffset + 2]
         );
 
         // Use absolute value to ensure positive drift (interstory drift is always a magnitude)
@@ -697,7 +697,7 @@ function calculateStats(
     avgDispPerFrameY[frameIdx] = sumDispY / nodeCount;
     avgDispPerFrameZ[frameIdx] = sumDispZ / nodeCount;
     avgDispPerFrameMag[frameIdx] = Math.sqrt(
-      avgDispPerFrameX[frameIdx] ** 2 + avgDispPerFrameY[frameIdx] ** 2 + avgDispPerFrameZ[frameIdx] ** 2,
+      avgDispPerFrameX[frameIdx] ** 2 + avgDispPerFrameY[frameIdx] ** 2 + avgDispPerFrameZ[frameIdx] ** 2
     );
 
     if (velLin && avgVelPerFrameX && avgVelPerFrameY && avgVelPerFrameZ && avgVelPerFrameMag) {
@@ -705,7 +705,7 @@ function calculateStats(
       avgVelPerFrameY[frameIdx] = sumVelY / nodeCount;
       avgVelPerFrameZ[frameIdx] = sumVelZ / nodeCount;
       avgVelPerFrameMag[frameIdx] = Math.sqrt(
-        avgVelPerFrameX[frameIdx] ** 2 + avgVelPerFrameY[frameIdx] ** 2 + avgVelPerFrameZ[frameIdx] ** 2,
+        avgVelPerFrameX[frameIdx] ** 2 + avgVelPerFrameY[frameIdx] ** 2 + avgVelPerFrameZ[frameIdx] ** 2
       );
     }
 
@@ -714,7 +714,7 @@ function calculateStats(
       avgAccelPerFrameY[frameIdx] = sumAccelY / nodeCount;
       avgAccelPerFrameZ[frameIdx] = sumAccelZ / nodeCount;
       avgAccelPerFrameMag[frameIdx] = Math.sqrt(
-        avgAccelPerFrameX[frameIdx] ** 2 + avgAccelPerFrameY[frameIdx] ** 2 + avgAccelPerFrameZ[frameIdx] ** 2,
+        avgAccelPerFrameX[frameIdx] ** 2 + avgAccelPerFrameY[frameIdx] ** 2 + avgAccelPerFrameZ[frameIdx] ** 2
       );
     }
   }
@@ -776,7 +776,7 @@ function calculateStats(
 
       if (accelLin && avgAccelPerStory) {
         avgAccelPerStory[idx] = Math.sqrt(
-          (sumAccelX / count) ** 2 + (sumAccelY / count) ** 2 + (sumAccelZ / count) ** 2,
+          (sumAccelX / count) ** 2 + (sumAccelY / count) ** 2 + (sumAccelZ / count) ** 2
         );
       }
     }

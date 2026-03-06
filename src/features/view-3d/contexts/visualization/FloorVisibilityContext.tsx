@@ -45,7 +45,7 @@ export function useFloorVisibility(): FloorVisibilityContextType {
     (storyId: string) => {
       toggleFloorStore(storyId);
     },
-    [toggleFloorStore],
+    [toggleFloorStore]
   );
 
   const setFloorVisible = useCallback(
@@ -55,7 +55,7 @@ export function useFloorVisibility(): FloorVisibilityContextType {
         toggleFloorStore(storyId);
       }
     },
-    [actualVisibleFloors, toggleFloorStore],
+    [actualVisibleFloors, toggleFloorStore]
   );
 
   const showAllFloors = useCallback(() => {
@@ -70,7 +70,7 @@ export function useFloorVisibility(): FloorVisibilityContextType {
     (storyId: string) => {
       return actualVisibleFloors.has(storyId);
     },
-    [actualVisibleFloors],
+    [actualVisibleFloors]
   );
 
   const getVisibleStoryOrder = useCallback(() => {

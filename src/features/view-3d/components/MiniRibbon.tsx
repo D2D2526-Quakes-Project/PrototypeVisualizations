@@ -115,7 +115,10 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
     return result;
   }, [path]);
 
-  const downsampleStep = useMemo(() => (path.length <= MAX_POINTS ? 1 : Math.ceil(path.length / MAX_POINTS)), [path.length]);
+  const downsampleStep = useMemo(
+    () => (path.length <= MAX_POINTS ? 1 : Math.ceil(path.length / MAX_POINTS)),
+    [path.length]
+  );
 
   // Step 2: Calculate bounds - only when downsampledPath changes
   const bounds = useMemo(() => {
@@ -206,8 +209,8 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
   const viewBoxHeight = aspectRatio * 100;
 
   return (
-    <div ref={containerRef} className="w-full h-20">
-      <svg className="w-full h-full border border-neutral-200 rounded" viewBox={`0 0 100 ${viewBoxHeight}`}>
+    <div ref={containerRef} className="h-20 w-full">
+      <svg className="h-full w-full rounded border border-neutral-200" viewBox={`0 0 100 ${viewBoxHeight}`}>
         <StaticRibbonSegments segments={segments} />
         <CurrentPositionMarker point={currentPos} />
       </svg>

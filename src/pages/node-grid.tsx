@@ -27,7 +27,7 @@ export function ViewNodeGrid() {
       SW: new Set(corners.SW),
       SE: new Set(corners.SE),
     }),
-    [corners],
+    [corners]
   );
 
   // Structure nodes by story for rendering
@@ -117,9 +117,9 @@ export function ViewNodeGrid() {
   }, [stories, storyOrder, animationData, frameIndex]);
 
   return (
-    <div className="p-4 flex flex-col gap-4 h-full overflow-hidden">
+    <div className="flex h-full flex-col gap-4 overflow-hidden p-4">
       <div className="shrink-0">
-        <div className="text-sm text-neutral-600 mt-2">
+        <div className="mt-2 text-sm text-neutral-600">
           <span>
             Frame: {frameIndex + 1} / {frameCount} | Time: {(frameIndex * dt).toFixed(3)}s
           </span>
@@ -137,7 +137,7 @@ export function ViewNodeGrid() {
         <div className="flex flex-col">
           {structuredNodes.map(({ storyId, nodes }) => (
             <div key={storyId}>
-              <div className="grid grid-cols-4 w-full max-w-sm mx-auto gap-4 pt-2">
+              <div className="mx-auto grid w-full max-w-sm grid-cols-4 gap-4 pt-2">
                 {nodes.map(({ nodeIdx, corner }) => {
                   const displacement = nodeDisplacements.get(nodeIdx) || 0;
                   const sizeRatio = Math.min(displacement / maxDisplacement, 1.0);
@@ -148,7 +148,7 @@ export function ViewNodeGrid() {
                   const color = formatHex(colorMap(colorRatio));
 
                   return (
-                    <div key={nodeIdx} className="flex flex-col items-center justify-center gap-1 aspect-square">
+                    <div key={nodeIdx} className="flex aspect-square flex-col items-center justify-center gap-1">
                       <div
                         className="rounded-full transition-all duration-[50] ease-linear"
                         style={{

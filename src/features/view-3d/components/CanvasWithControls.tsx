@@ -104,7 +104,7 @@ export function CanvasWithControls({
       camera.position.set(
         savedPanelState.state.camera.position[0],
         savedPanelState.state.camera.position[1],
-        savedPanelState.state.camera.position[2],
+        savedPanelState.state.camera.position[2]
       );
       if (
         "isOrthographicCamera" in camera &&
@@ -117,7 +117,7 @@ export function CanvasWithControls({
       controls.target.set(
         savedPanelState.state.camera.target[0],
         savedPanelState.state.camera.target[1],
-        savedPanelState.state.camera.target[2],
+        savedPanelState.state.camera.target[2]
       );
       controls.update();
     };
@@ -208,12 +208,12 @@ export function CanvasWithControls({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full"
+      className="relative h-full w-full"
       style={rightPadding > 0 ? { paddingRight: `${rightPadding}px` } : undefined}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}>
-      <div className="relative w-full h-full">
+      <div className="relative h-full w-full">
         <Canvas
           linear
           flat

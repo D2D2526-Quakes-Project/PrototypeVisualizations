@@ -99,7 +99,7 @@ export function ShortcutsBar(ctx: ShortcutContext) {
   const activeMode = MODES.find((m) => m.active(ctx))!;
 
   return (
-    <div className="absolute bottom-2 left-2 z-40 pointer-events-none">
+    <div className="pointer-events-none absolute bottom-2 left-2 z-40">
       <AnimatePresence mode="wait">
         <motion.div
           key={activeMode.id}
@@ -107,28 +107,28 @@ export function ShortcutsBar(ctx: ShortcutContext) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.15 }}
-          className="flex flex-col gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-neutral-200">
+          className="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-white/90 px-2 py-1.5 backdrop-blur-sm">
           <div className="flex items-center gap-0.5">
-            <Keyboard size={10} className="shrink-0 mr-0.5 text-neutral-500" />
+            <Keyboard size={10} className="mr-0.5 shrink-0 text-neutral-500" />
             {activeMode.shortcuts.map((s, i) => (
               <span key={`${activeMode.id}-${i}`} className="flex items-center gap-0.5">
-                {i > 0 && <span className="w-px h-3 bg-neutral-200 mx-0.5" />}
+                {i > 0 && <span className="mx-0.5 h-3 w-px bg-neutral-200" />}
                 <span>{s.icon}</span>
-                <span className="text-[9px] text-neutral-500 leading-none">{s.label}</span>
-                <kbd className="text-[8px] leading-none bg-neutral-200 rounded px-1 py-0.5 font-mono border border-neutral-300">
+                <span className="text-[9px] leading-none text-neutral-500">{s.label}</span>
+                <kbd className="rounded border border-neutral-300 bg-neutral-200 px-1 py-0.5 font-mono text-[8px] leading-none">
                   {s.key}
                 </kbd>
               </span>
             ))}
           </div>
           <div className="flex items-center gap-0.5">
-            <Mouse size={10} className="shrink-0 mr-0.5 text-neutral-500" />
+            <Mouse size={10} className="mr-0.5 shrink-0 text-neutral-500" />
             {MOUSE_SHORTCUTS.map((s, i) => (
               <span key={`mouse-${i}`} className="flex items-center gap-0.5">
-                {i > 0 && <span className="w-px h-3 bg-neutral-200 mx-0.5" />}
+                {i > 0 && <span className="mx-0.5 h-3 w-px bg-neutral-200" />}
                 <span>{s.icon}</span>
-                <span className="text-[9px] text-neutral-500 leading-none">{s.label}</span>
-                <kbd className="text-[8px] leading-none bg-neutral-200 rounded px-1 py-0.5 font-mono border border-neutral-300">
+                <span className="text-[9px] leading-none text-neutral-500">{s.label}</span>
+                <kbd className="rounded border border-neutral-300 bg-neutral-200 px-1 py-0.5 font-mono text-[8px] leading-none">
                   {s.key}
                 </kbd>
               </span>

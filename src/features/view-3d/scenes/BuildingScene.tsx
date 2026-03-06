@@ -84,7 +84,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       y: -animationData.precomputed.boundingBox.center[1],
       z: -animationData.precomputed.boundingBox.min[2],
     }),
-    [animationData.precomputed.boundingBox],
+    [animationData.precomputed.boundingBox]
   );
 
   const nodeCount = animationData.metadata.nodeCount;
@@ -98,7 +98,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       xRange,
       yRange,
       zRange,
-      sliceEnabled,
+      sliceEnabled
     );
   }, [
     getVisibleNodes,
@@ -131,12 +131,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       // But for nodes not in any story (like corner nodes), show them
       return false;
     });
-  }, [
-    visibleNodesBasedOnMode,
-    getVisibleStoryOrder,
-    animationData.metadata.stories,
-    hiddenNodeIdSet,
-  ]);
+  }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories, hiddenNodeIdSet]);
 
   // Keyboard handler for ctrl/cmd to control pan and enable box select mode
   useEffect(() => {
@@ -230,7 +225,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
             cameraRef.current,
             meshRef,
             boxSelectionRef.current,
-            visibleNodesRef.current,
+            visibleNodesRef.current
           );
           if (shiftHeldRef.current) {
             addSelectedNodesRef.current(selected);
@@ -356,7 +351,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
       selectNode(nodeId);
     },
-    [selectNode, visibleNodes, nodeInteractionEnabled],
+    [selectNode, visibleNodes, nodeInteractionEnabled]
   );
 
   const handleNodeContextMenu = useCallback(
@@ -379,7 +374,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         }
       }
     },
-    [visibleNodes, animationData, openSlicePanel, nodeInteractionEnabled],
+    [visibleNodes, animationData, openSlicePanel, nodeInteractionEnabled]
   );
 
   const handlePointerDown = useCallback(
@@ -388,7 +383,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       event.stopPropagation();
       pointerDownNodeId.current = event.instanceId;
     },
-    [nodeInteractionEnabled],
+    [nodeInteractionEnabled]
   );
 
   const handlePointerMove = useCallback(
@@ -402,7 +397,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       const nodeId = visibleNodes[event.instanceId];
       setHoveredNodeId(nodeId ?? null);
     },
-    [nodeInteractionEnabled, setHoveredNodeId, visibleNodes],
+    [nodeInteractionEnabled, setHoveredNodeId, visibleNodes]
   );
 
   const handlePointerOut = useCallback(
@@ -410,7 +405,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       event.stopPropagation();
       setHoveredNodeId(null);
     },
-    [setHoveredNodeId],
+    [setHoveredNodeId]
   );
 
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -447,7 +442,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         [initX, initY, initZ],
         [displacement[0], displacement[1], displacement[2]],
         [offsets.x, offsets.y, offsets.z],
-        animationData.metadata,
+        animationData.metadata
       );
 
       tempObject.position.set(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
@@ -484,7 +479,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         [pos[0], pos[1], pos[2]],
         [displacement[0], displacement[1], displacement[2]],
         [offsets.x, offsets.y, offsets.z],
-        animationData.metadata,
+        animationData.metadata
       );
       return {
         nodeId,

@@ -27,31 +27,31 @@ export function ErrorPage() {
   const { code, message } = getErrorInfo();
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center gap-6 bg-background px-4">
-      <div className="text-6xl font-bold text-neutral-800 mb-8">Quakes</div>
+    <div className="bg-background flex h-screen w-full flex-col items-center justify-center gap-6 px-4">
+      <div className="mb-8 text-6xl font-bold text-neutral-800">Quakes</div>
       <div className="flex flex-col items-center gap-2 text-center">
         {code && (
-          <span className="text-[8rem] leading-none font-bold text-muted-foreground opacity-20 select-none">
+          <span className="text-muted-foreground text-[8rem] leading-none font-bold opacity-20 select-none">
             {code}
           </span>
         )}
         <h1 className="text-3xl font-semibold tracking-tight">{code ? `Error ${code}` : "Something went wrong"}</h1>
-        <p className="max-w-md text-muted-foreground">{message}</p>
+        <p className="text-muted-foreground max-w-md">{message}</p>
       </div>
 
-      <div className="flex gap-3 mt-4">
+      <div className="mt-4 flex gap-3">
         <Link
           to="/"
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
+          className="focus-visible:ring-ring bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap shadow transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
           Go back home
         </Link>
         <button
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 cursor-pointer"
+          className="focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 cursor-pointer items-center justify-center rounded-md border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           onClick={() => window.location.reload()}>
           Reload
         </button>
         <button
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 cursor-pointer"
+          className="focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 cursor-pointer items-center justify-center rounded-md border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           onClick={() => clearCache()}>
           Clear Cache
         </button>

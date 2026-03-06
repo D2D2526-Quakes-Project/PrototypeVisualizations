@@ -31,8 +31,8 @@ export function ExpandedScalePanel({
 }: ExpandedScalePanelProps) {
   return (
     <>
-      <div className="flex items-center justify-between mb-1">
-        <Label className="flex items-center gap-1 text-xs font-medium text-neutral-700 cursor-pointer">
+      <div className="mb-1 flex items-center justify-between">
+        <Label className="flex cursor-pointer items-center gap-1 text-xs font-medium text-neutral-700">
           <LayoutGrid size={12} className="text-neutral-500" />
           Expanded Scale
         </Label>
@@ -42,7 +42,7 @@ export function ExpandedScalePanel({
       {expansionEnabled && (
         <div className="space-y-1">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-neutral-500 w-4">X</span>
+            <span className="w-4 text-[10px] text-neutral-500">X</span>
             <input
               type="range"
               min="0"
@@ -50,14 +50,12 @@ export function ExpandedScalePanel({
               step="0.1"
               value={xExpansion}
               onChange={(e) => setExpansion("x", parseFloat(e.target.value))}
-              className="flex-1 h-1"
+              className="h-1 flex-1"
             />
-            <span className="text-[10px] text-neutral-500 w-8 text-right">
-              {xExpansion.toFixed(1)}
-            </span>
+            <span className="w-8 text-right text-[10px] text-neutral-500">{xExpansion.toFixed(1)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-neutral-500 w-4">Y</span>
+            <span className="w-4 text-[10px] text-neutral-500">Y</span>
             <input
               type="range"
               min="0"
@@ -65,14 +63,12 @@ export function ExpandedScalePanel({
               step="0.1"
               value={yExpansion}
               onChange={(e) => setExpansion("y", parseFloat(e.target.value))}
-              className="flex-1 h-1"
+              className="h-1 flex-1"
             />
-            <span className="text-[10px] text-neutral-500 w-8 text-right">
-              {yExpansion.toFixed(1)}
-            </span>
+            <span className="w-8 text-right text-[10px] text-neutral-500">{yExpansion.toFixed(1)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-neutral-500 w-4">Z</span>
+            <span className="w-4 text-[10px] text-neutral-500">Z</span>
             <input
               type="range"
               min="0"
@@ -80,17 +76,15 @@ export function ExpandedScalePanel({
               step="0.1"
               value={zExpansion}
               onChange={(e) => setExpansion("z", parseFloat(e.target.value))}
-              className="flex-1 h-1"
+              className="h-1 flex-1"
             />
-            <span className="text-[10px] text-neutral-500 w-8 text-right">
-              {zExpansion.toFixed(1)}
-            </span>
+            <span className="w-8 text-right text-[10px] text-neutral-500">{zExpansion.toFixed(1)}</span>
           </div>
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-1 mt-2">
-        <Label className="flex items-center gap-1 text-xs font-medium text-neutral-700 cursor-pointer">
+      <div className="mt-2 mb-1 flex items-center justify-between">
+        <Label className="flex cursor-pointer items-center gap-1 text-xs font-medium text-neutral-700">
           <LayoutGrid size={12} className="text-neutral-500" />
           Displacement Scale
         </Label>
@@ -100,7 +94,7 @@ export function ExpandedScalePanel({
       {displacementEnabled && (
         <div className="space-y-1">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-neutral-500 w-6">XY</span>
+            <span className="w-6 text-[10px] text-neutral-500">XY</span>
             <input
               type="range"
               min="0"
@@ -108,14 +102,12 @@ export function ExpandedScalePanel({
               step="0.1"
               value={xzDisplacementScale}
               onChange={(e) => setDisplacementScale("xz", parseFloat(e.target.value))}
-              className="flex-1 h-1"
+              className="h-1 flex-1"
             />
-            <span className="text-[10px] text-neutral-500 w-8 text-right">
-              {xzDisplacementScale.toFixed(1)}
-            </span>
+            <span className="w-8 text-right text-[10px] text-neutral-500">{xzDisplacementScale.toFixed(1)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-neutral-500 w-6">Z</span>
+            <span className="w-6 text-[10px] text-neutral-500">Z</span>
             <input
               type="range"
               min="0"
@@ -123,11 +115,9 @@ export function ExpandedScalePanel({
               step="0.1"
               value={zDisplacementScale}
               onChange={(e) => setDisplacementScale("z", parseFloat(e.target.value))}
-              className="flex-1 h-1"
+              className="h-1 flex-1"
             />
-            <span className="text-[10px] text-neutral-500 w-8 text-right">
-              {zDisplacementScale.toFixed(1)}
-            </span>
+            <span className="w-8 text-right text-[10px] text-neutral-500">{zDisplacementScale.toFixed(1)}</span>
           </div>
         </div>
       )}

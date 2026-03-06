@@ -119,9 +119,9 @@ function MiniRibbon({ ribbon, storyId, frameIndex }: { ribbon: Ribbon; storyId: 
   const normalizeZ = (z: number) => ((z - zMin) / zRangePadded) * viewBoxHeight;
 
   return (
-    <div ref={containerRef} className="w-full h-20 mb-3">
-      <div className="text-sm font-medium mb-1">{storyId}</div>
-      <svg className="w-full h-full border border-neutral-200 rounded" viewBox={`0 0 100 ${viewBoxHeight}`}>
+    <div ref={containerRef} className="mb-3 h-20 w-full">
+      <div className="mb-1 text-sm font-medium">{storyId}</div>
+      <svg className="h-full w-full rounded border border-neutral-200" viewBox={`0 0 100 ${viewBoxHeight}`}>
         {/* Draw ribbon segments with velocity colors */}
         {ribbon.path.slice(1).map((point, i) => {
           const prevPoint = ribbon.path[i];
@@ -174,7 +174,7 @@ export function ViewTemporalRibbons() {
   const offsetZ = -animationData.precomputed.boundingBox.min[2];
 
   const [visibleStories, setVisibleStories] = useState<Record<string, boolean>>(() =>
-    storyOrder.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
+    storyOrder.reduce((acc, id) => ({ ...acc, [id]: true }), {})
   );
   const [viewMode, setViewMode] = useState<ViewMode>("storyCenters");
   const [xzScale, setXzScale] = useState(1);
@@ -210,8 +210,8 @@ export function ViewTemporalRibbons() {
                   new Vector3(
                     initialPos[0] + displacement[0] + offsetX,
                     initialPos[1] + displacement[1] + offsetY,
-                    initialPos[2] + displacement[2] + offsetZ,
-                  ),
+                    initialPos[2] + displacement[2] + offsetZ
+                  )
                 );
               }
               center.divideScalar(nodeIndices.length);
@@ -290,28 +290,28 @@ export function ViewTemporalRibbons() {
 
   return (
     <div className="flex h-full min-h-0">
-      <div className="w-64 p-4 flex flex-col gap-4 overflow-y-auto border-r-2 border-neutral-300">
+      <div className="flex w-64 flex-col gap-4 overflow-y-auto border-r-2 border-neutral-300 p-4">
         <div>
           <h2 className="text-xl font-bold">Temporal Ribbons</h2>
           <p className="text-sm text-neutral-600">Traces motion over time. Color indicates velocity.</p>
         </div>
 
-        <div className="mb-4 p-3 bg-neutral-50 rounded border border-neutral-200">
-          <h4 className="text-sm font-medium mb-2">Velocity Scale</h4>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: "blue" }}></div>
+        <div className="mb-4 rounded border border-neutral-200 bg-neutral-50 p-3">
+          <h4 className="mb-2 text-sm font-medium">Velocity Scale</h4>
+          <div className="mb-1 flex items-center gap-2">
+            <div className="h-4 w-4 rounded" style={{ backgroundColor: "blue" }}></div>
             <span className="text-xs">Start</span>
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: "aquamarine" }}></div>
+          <div className="mb-1 flex items-center gap-2">
+            <div className="h-4 w-4 rounded" style={{ backgroundColor: "aquamarine" }}></div>
             <span className="text-xs">Slow</span>
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: "lime" }}></div>
+          <div className="mb-1 flex items-center gap-2">
+            <div className="h-4 w-4 rounded" style={{ backgroundColor: "lime" }}></div>
             <span className="text-xs">Medium</span>
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: "red" }}></div>
+          <div className="mb-1 flex items-center gap-2">
+            <div className="h-4 w-4 rounded" style={{ backgroundColor: "red" }}></div>
             <span className="text-xs">Fast</span>
           </div>
         </div>
@@ -321,7 +321,7 @@ export function ViewTemporalRibbons() {
           <select
             value={viewMode}
             onChange={(e) => setViewMode(e.target.value as ViewMode)}
-            className="w-full p-2 border border-neutral-300 rounded bg-white mt-1">
+            className="mt-1 w-full rounded border border-neutral-300 bg-white p-2">
             <option value="storyCenters">Story Centers</option>
             <option value="allNodes">All Nodes</option>
           </select>
@@ -336,28 +336,28 @@ export function ViewTemporalRibbons() {
             step="0.1"
             value={xzScale}
             onChange={(e) => setXzScale(parseFloat(e.target.value))}
-            className="w-full mt-1"
+            className="mt-1 w-full"
           />
         </div>
 
         {viewMode === "storyCenters" && (
           <div>
             <h3 className="font-bold">Visible Floors</h3>
-            <div className="flex flex-col mt-2">
+            <div className="mt-2 flex flex-col">
               <div className="flex gap-2">
                 <button
-                  className="flex items-center gap-2 p-1 hover:bg-neutral-100 cursor-pointer"
+                  className="flex cursor-pointer items-center gap-2 p-1 hover:bg-neutral-100"
                   onClick={() => handleToggleAllStories(false)}>
                   All off
                 </button>
                 <button
-                  className="flex items-center gap-2 p-1 hover:bg-neutral-100 cursor-pointer"
+                  className="flex cursor-pointer items-center gap-2 p-1 hover:bg-neutral-100"
                   onClick={() => handleToggleAllStories(true)}>
                   All on
                 </button>
               </div>
               {storyOrder.map((id) => (
-                <label key={id} className="flex items-center gap-2 p-1 hover:bg-neutral-100 rounded">
+                <label key={id} className="flex items-center gap-2 rounded p-1 hover:bg-neutral-100">
                   <input type="checkbox" checked={visibleStories[id] ?? true} onChange={() => handleToggleStory(id)} />
                   {id}
                 </label>
@@ -367,7 +367,7 @@ export function ViewTemporalRibbons() {
         )}
       </div>
 
-      <div className="grow min-w-0 relative flex flex-col">
+      <div className="relative flex min-w-0 grow flex-col">
         <div className="h-8 shrink-0">
           <SmallTimeline />
         </div>
@@ -388,8 +388,8 @@ export function ViewTemporalRibbons() {
 
       {/* Right sidebar with mini ribbons */}
       {viewMode === "storyCenters" && computedRibbons && (
-        <div className="w-64 p-4 border-l-2 border-neutral-300 overflow-y-auto">
-          <h3 className="font-bold mb-4">Floor Ribbons</h3>
+        <div className="w-64 overflow-y-auto border-l-2 border-neutral-300 p-4">
+          <h3 className="mb-4 font-bold">Floor Ribbons</h3>
 
           <div className="flex flex-col">
             {storyOrder.map((storyId) => {

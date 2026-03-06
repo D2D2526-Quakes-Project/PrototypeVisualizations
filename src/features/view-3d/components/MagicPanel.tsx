@@ -243,7 +243,7 @@ function getPanelsByCategory(): Array<{ category: PanelCategory; items: PanelTyp
   return PANEL_CATEGORY_ORDER.map((category) => ({
     category,
     items: (Object.keys(PANEL_DEFINITIONS) as PanelType[]).filter(
-      (panelType) => PANEL_DEFINITIONS[panelType].category === category,
+      (panelType) => PANEL_DEFINITIONS[panelType].category === category
     ),
   })).filter((group) => group.items.length > 0);
 }
@@ -329,7 +329,7 @@ export const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>)
   const CurrentComponent = PANEL_DEFINITIONS[currentPanelType].component;
 
   return (
-    <div className="h-full w-full relative">
+    <div className="relative h-full w-full">
       <div className="h-full w-full">
         {/* Dynamically render the selected component and pass dock props */}
         <CurrentComponent {...props} />
@@ -368,7 +368,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
 
   return (
     <div
-      className={`flex z-10 h-full w-full items-center transition-colors ${
+      className={`z-10 flex h-full w-full items-center transition-colors ${
         isActive ? "bg-amber-100 text-amber-900" : "bg-neutral-200/80"
       }`}>
       {showPanelPicker ? (
@@ -379,7 +379,8 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
           onChange={handlePanelChange}
         />
       ) : (
-        <span className={`px-4 py-0 text-sm font-medium flex items-center gap-1.5 ${isActive ? "text-amber-900" : "text-neutral-700"}`}>
+        <span
+          className={`flex items-center gap-1.5 px-4 py-0 text-sm font-medium ${isActive ? "text-amber-900" : "text-neutral-700"}`}>
           {(() => {
             const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
             return <Icon className={`size-3.5 ${isActive ? "text-amber-700" : "text-neutral-500"}`} />;
@@ -412,16 +413,16 @@ function PanelTypePicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="mx-2 h-6 max-w-72 min-w-0 px-2 text-sm font-medium text-neutral-700 cursor-pointer border-b border-neutral-400 hover:border-neutral-500 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 inline-flex items-center gap-1.5"
+          className="mx-2 inline-flex h-6 max-w-72 min-w-0 cursor-pointer items-center gap-1.5 border-b border-neutral-400 px-2 text-sm font-medium text-neutral-700 transition-colors outline-none hover:border-neutral-500 focus-visible:ring-1 focus-visible:ring-neutral-400"
           title="Choose panel type">
-          <SelectedIcon className="size-3.5 text-neutral-500 shrink-0" />
+          <SelectedIcon className="size-3.5 shrink-0 text-neutral-500" />
           <span className="truncate">{getPanelDisplayName(value)}</span>
           <ChevronDown
-            className={`size-3.5 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`size-3.5 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[min(30rem,92vw)] max-h-[70vh] overflow-y-auto p-2">
+      <PopoverContent align="start" className="max-h-[70vh] w-[min(30rem,92vw)] overflow-y-auto p-2">
         <div className="mb-2 px-1">
           <div className="text-xs font-semibold text-neutral-700">Panel Picker</div>
           <div className="text-[10px] text-neutral-500">Compact grouped browser</div>
@@ -431,7 +432,7 @@ function PanelTypePicker({
           {groupedPanels.map((group) => (
             <div key={group.category} className="rounded-md border border-neutral-200/80 bg-white p-1.5">
               {group.items.length > 1 && (
-                <div className="px-1 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 font-semibold">
+                <div className="px-1 py-0.5 text-[10px] font-semibold tracking-wide text-neutral-500 uppercase">
                   {group.category}
                 </div>
               )}
@@ -454,11 +455,11 @@ function PanelTypePicker({
                       }}
                       disabled={!availability.isAvailable}
                       title={availability.isAvailable ? buttonTitle : undefined}
-                      className={`w-full rounded-md px-2 py-1.5 text-left transition-colors border ${
+                      className={`w-full rounded-md border px-2 py-1.5 text-left transition-colors ${
                         isActive
-                          ? "bg-white border-amber-300 shadow-sm"
-                          : "bg-white/80 border-transparent hover:bg-white hover:border-neutral-200"
-                      } ${availability.isAvailable ? "opacity-100" : "opacity-45 border-dashed border-neutral-300 cursor-not-allowed pointer-events-none"}`}>
+                          ? "border-amber-300 bg-white shadow-sm"
+                          : "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white"
+                      } ${availability.isAvailable ? "opacity-100" : "pointer-events-none cursor-not-allowed border-dashed border-neutral-300 opacity-45"}`}>
                       <div className="flex items-start gap-2">
                         <Icon
                           className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`}

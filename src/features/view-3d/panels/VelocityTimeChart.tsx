@@ -122,9 +122,9 @@ function CheckSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="xs" className="min-w-16">
-          <span className="truncate flex-1">{labelText}</span>
+          <span className="flex-1 truncate">{labelText}</span>
           <ChevronDown
-            className={`w-3 h-3 text-neutral-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
           />
         </Button>
       </PopoverTrigger>
@@ -136,14 +136,14 @@ function CheckSelect({
             return (
               <Label
                 key={opt.id}
-                className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+                className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
                 <Checkbox
                   checked={isChecked}
                   onCheckedChange={() => toggleOption(key)}
-                  className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                  className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
                 />
                 <span className="flex-1">{opt.label}</span>
-                <span className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: opt.color }} />
+                <span className="h-3 w-3 rounded-full border border-black/10" style={{ backgroundColor: opt.color }} />
               </Label>
             );
           })}
@@ -199,7 +199,7 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
           return { data: precomputed.avgVelocityPerFrame.mag, config: CHANNEL_CONFIG.magnitude };
       }
     },
-    [animationData],
+    [animationData]
   );
 
   const option: EChartsOption = useMemo((): EChartsOption => {
@@ -395,12 +395,12 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
   }, [isDragging, animationData.metadata.dt, maxFrame, setFrameIndex]);
 
   return (
-    <div className="flex flex-col border-t-2 border-neutral-300 relative h-full w-full bg-white">
-      <div className="px-3 py-1.5 border-b border-neutral-100 bg-white z-20 shrink-0 relative">
-        <div className="float-right ml-2 mt-0.5">
+    <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
+      <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
+        <div className="float-right mt-0.5 ml-2">
           <CheckSelect options={CHANNEL_CONFIG} selected={selectedKeys} onChange={setSelectedKeys} />
         </div>
-        <div className="text-sm text-neutral-700 flex items-center gap-2">
+        <div className="flex items-center gap-2 text-sm text-neutral-700">
           <span className="font-medium">Avg. Velocity</span>
           <span className="text-neutral-400">|</span>
           <span className="font-mono">Frame {frameIndex + 1}</span>
@@ -419,7 +419,7 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
           </span>
         </div>
       </div>
-      <div className="flex-1 min-h-0 w-full relative" style={{ cursor: isDragging ? "grabbing" : "default" }}>
+      <div className="relative min-h-0 w-full flex-1" style={{ cursor: isDragging ? "grabbing" : "default" }}>
         {selectedKeys.length > 0 ? (
           <ReactECharts
             ref={chartRef}
@@ -428,7 +428,7 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
             opts={{ renderer: "canvas" }}
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-neutral-400 text-sm">
+          <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
             Select a channel to view
           </div>
         )}

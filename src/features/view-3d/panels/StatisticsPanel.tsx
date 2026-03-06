@@ -56,8 +56,8 @@ function StatRow({
   if (isNumeric && unit) {
     const numVal = typeof value === "number" ? value : numericValue;
     return (
-      <div className="flex justify-between py-1 border-b border-neutral-100">
-        <span className="text-neutral-500 text-xs">{label}</span>
+      <div className="flex justify-between border-b border-neutral-100 py-1">
+        <span className="text-xs text-neutral-500">{label}</span>
         <span className="font-mono text-xs">
           <UnitTooltip
             value={numVal}
@@ -72,11 +72,11 @@ function StatRow({
   }
 
   return (
-    <div className="flex justify-between py-1 border-b border-neutral-100">
-      <span className="text-neutral-500 text-xs">{label}</span>
+    <div className="flex justify-between border-b border-neutral-100 py-1">
+      <span className="text-xs text-neutral-500">{label}</span>
       <span className="font-mono text-xs">
         {value}
-        {unit && <span className="text-neutral-400 ml-1">{unit}</span>}
+        {unit && <span className="ml-1 text-neutral-400">{unit}</span>}
       </span>
     </div>
   );
@@ -85,8 +85,8 @@ function StatRow({
 function StatGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-3">
-      <div className="text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wide">{title}</div>
-      <div className="bg-neutral-50 rounded px-2 py-1">{children}</div>
+      <div className="mb-1 text-xs font-semibold tracking-wide text-neutral-700 uppercase">{title}</div>
+      <div className="rounded bg-neutral-50 px-2 py-1">{children}</div>
     </div>
   );
 }
@@ -155,7 +155,7 @@ export function StatisticsPanel() {
   }, [animationData, frameIndex]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-white overflow-auto">
+    <div className="flex h-full w-full flex-col overflow-auto bg-white">
       <PanelHeader
         title="Statistics"
         subtitle={`- Frame ${frameIndex + 1}`}
@@ -171,7 +171,7 @@ export function StatisticsPanel() {
           </div>
         }
       />
-      <div className="flex-1 min-h-0 overflow-auto p-3">
+      <div className="min-h-0 flex-1 overflow-auto p-3">
         <StatGroup title="Simulation">
           <StatRow label="Nodes" value={stats.nodeCount} />
           <StatRow label="Frames" value={stats.frameCount} />

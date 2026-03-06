@@ -5,10 +5,10 @@ import type { IDockviewPanelProps } from "dockview";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps) => {
   const panelId = props.api?.id ?? "main-canvas";
-  
+
   return (
     <CameraProvider>
-      <div className="relative w-full h-full">
+      <div className="relative h-full w-full">
         <CanvasWithControls showPlaybackControls panelId={panelId}>
           <BuildingScene panelId={panelId} />
         </CanvasWithControls>

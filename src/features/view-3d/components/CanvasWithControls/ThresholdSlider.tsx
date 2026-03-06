@@ -26,7 +26,7 @@ export function ThresholdSlider({
     <div className={`flex items-center gap-1 ${currentlyUsed ? "" : "opacity-50"}`}>
       <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
-          <span className="text-[10px] text-neutral-500 w-8 shrink-0">{label}</span>
+          <span className="w-8 shrink-0 text-[10px] text-neutral-500">{label}</span>
         </TooltipTrigger>
         <TooltipContent side="left" className="max-w-xs">
           {tooltip}
@@ -36,7 +36,7 @@ export function ThresholdSlider({
       </Tooltip>
 
       <Slider value={[value]} onValueChange={(val) => onChange(val[0])} max={max} step={0.01} className="flex-1" />
-      <span className="text-[10px] text-neutral-500 w-12 text-right shrink-0">
+      <span className="w-12 shrink-0 text-right text-[10px] text-neutral-500">
         <UnitTooltip value={value} unit={unit.abbr} decimals={2} />
       </span>
     </div>

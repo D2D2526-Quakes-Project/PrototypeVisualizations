@@ -98,16 +98,16 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
   }, [animationData, frameIndex, safePage, nodeCount, stories]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-white">
+    <div className="flex h-full w-full flex-col bg-white">
       <PanelHeader
         title="Data Table"
         subtitle={`- Nodes ${safePage * PAGE_SIZE + 1}-${Math.min((safePage + 1) * PAGE_SIZE, nodeCount)} of ${nodeCount}`}
         actions={
           <div className="flex items-center gap-1">
             <Button variant="outline" size="xs" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>
-              <ChevronLeft className="w-3 h-3" />
+              <ChevronLeft className="h-3 w-3" />
             </Button>
-            <span className="text-xs text-neutral-500 px-1">
+            <span className="px-1 text-xs text-neutral-500">
               {safePage + 1}/{totalPages}
             </span>
             <Button
@@ -115,7 +115,7 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
               size="xs"
               disabled={safePage >= totalPages - 1}
               onClick={() => setPage(safePage + 1)}>
-              <ChevronRight className="w-3 h-3" />
+              <ChevronRight className="h-3 w-3" />
             </Button>
           </div>
         }
@@ -131,9 +131,9 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
           </div>
         }
       />
-      <div className="flex-1 min-h-0 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full text-xs">
-          <thead className="sticky top-0 bg-neutral-50 border-b border-neutral-200">
+          <thead className="sticky top-0 border-b border-neutral-200 bg-neutral-50">
             <tr className="font-medium text-neutral-600">
               <th className="px-2 py-1.5 text-left">Node</th>
               <th className="px-2 py-1.5 text-left">Story</th>
@@ -148,16 +148,16 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
               <tr key={row.node} className="border-b border-neutral-100 hover:bg-neutral-50">
                 <td className="px-2 py-1 font-mono text-neutral-500">{row.node}</td>
                 <td className="px-2 py-1">{row.story}</td>
-                <td className="px-2 py-1 font-mono text-right" style={{ color: "#ef4444" }}>
+                <td className="px-2 py-1 text-right font-mono" style={{ color: "#ef4444" }}>
                   <UnitTooltip value={row.x} unit="in" decimals={4} interactive={!playing} />
                 </td>
-                <td className="px-2 py-1 font-mono text-right" style={{ color: "#22c55e" }}>
+                <td className="px-2 py-1 text-right font-mono" style={{ color: "#22c55e" }}>
                   <UnitTooltip value={row.y} unit="in" decimals={4} interactive={!playing} />
                 </td>
-                <td className="px-2 py-1 font-mono text-right" style={{ color: "#3b82f6" }}>
+                <td className="px-2 py-1 text-right font-mono" style={{ color: "#3b82f6" }}>
                   <UnitTooltip value={row.z} unit="in" decimals={4} interactive={!playing} />
                 </td>
-                <td className="px-2 py-1 font-mono text-right font-medium">
+                <td className="px-2 py-1 text-right font-mono font-medium">
                   <UnitTooltip value={row.magnitude} unit="in" decimals={4} interactive={!playing} />
                 </td>
               </tr>

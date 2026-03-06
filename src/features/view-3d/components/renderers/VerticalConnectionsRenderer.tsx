@@ -19,7 +19,7 @@ export function VerticalConnectionsRenderer({ nodeIds }: VerticalConnectionsRend
       -animationData.precomputed.boundingBox.center[1],
       -animationData.precomputed.boundingBox.min[2],
     ],
-    [animationData.precomputed.boundingBox],
+    [animationData.precomputed.boundingBox]
   );
 
   const connections = useMemo(() => {
@@ -61,7 +61,7 @@ export function VerticalConnectionsRenderer({ nodeIds }: VerticalConnectionsRend
           [posA[0], posA[1], posA[2]],
           [dispA[0], dispA[1], dispA[2]],
           offset,
-          animationData.metadata,
+          animationData.metadata
         );
 
         const posB = animationData.initialPositions.at(conn.nodeB);
@@ -71,7 +71,7 @@ export function VerticalConnectionsRenderer({ nodeIds }: VerticalConnectionsRend
           [posB[0], posB[1], posB[2]],
           [dispB[0], dispB[1], dispB[2]],
           offset,
-          animationData.metadata,
+          animationData.metadata
         );
 
         const start = new THREE.Vector3(expandedA[0], expandedA[1], expandedA[2]);

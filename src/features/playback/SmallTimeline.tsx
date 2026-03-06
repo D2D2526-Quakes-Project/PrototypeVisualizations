@@ -112,7 +112,7 @@ export function SmallTimeline() {
 
   return (
     <div ref={panelRef} className="h-full w-full">
-      <svg ref={svgRef} className="select-none cursor-crosshair" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`}>
+      <svg ref={svgRef} className="cursor-crosshair select-none" width="100%" viewBox={`0 0 100 ${viewBoxHeight}`}>
         <line
           transform={playheadTransform}
           x1={0}

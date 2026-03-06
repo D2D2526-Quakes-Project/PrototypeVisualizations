@@ -105,7 +105,7 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
 
       disposePanelSubscription = () => disposable.dispose();
     },
-    [store],
+    [store]
   );
 
   const openSlicePanel = useCallback((sliceId: string, storyId: string) => {
@@ -136,7 +136,7 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
         openSlicePanel(slice.id, slice.storyId);
       }
     },
-    [openSlicePanel, selectSliceStore],
+    [openSlicePanel, selectSliceStore]
   );
 
   const deselectSlice = useCallback(() => {
@@ -147,7 +147,7 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
     (slice: Slice | null) => {
       setHoveredSliceStore(slice);
     },
-    [setHoveredSliceStore],
+    [setHoveredSliceStore]
   );
 
   const toggleSliceEnabled = useCallback(() => {
@@ -188,7 +188,7 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
       setZRange,
       setDockviewApi,
       openSlicePanel,
-    ],
+    ]
   );
 
   useEffect(() => {

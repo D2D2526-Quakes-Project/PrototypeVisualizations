@@ -28,7 +28,7 @@ export const usePlayback = (): PlaybackControlParams => {
       const clamped = Math.max(0, Math.min(totalFrames - 1, resolvedIndex));
       setStoreFrameIndex(clamped);
     },
-    [frameIndex, totalFrames, setStoreFrameIndex],
+    [frameIndex, totalFrames, setStoreFrameIndex]
   );
 
   const handlePlayPause = useCallback(() => {

@@ -82,7 +82,7 @@ export const clearCache = async () => {
 export async function fetchWithProgressAndCache(
   url: string,
   onProgress?: (percent: number) => void,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<ArrayBuffer | undefined> {
   // A. Check Cache First
   const cached = await getFromCache(url);

@@ -44,12 +44,12 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         initialPosRaw[1] + currentDispRaw[1],
         initialPosRaw[2] + currentDispRaw[2],
       ] as const,
-    [initialPosRaw, currentDispRaw],
+    [initialPosRaw, currentDispRaw]
   );
 
   const displacementMag = useMemo(
     () => Math.hypot(currentDispRaw[0], currentDispRaw[1], currentDispRaw[2]),
-    [currentDispRaw],
+    [currentDispRaw]
   );
 
   // RIBBONS AND PATHS
@@ -425,15 +425,15 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
   }, [animationData.displacementRot, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-white/95 backdrop-blur-sm border border-neutral-200 shadow-xl overflow-hidden">
-      <div className="p-3 space-y-3 text-xs flex-1 overflow-y-auto">
+    <div className="flex h-full w-full flex-col overflow-hidden border border-neutral-200 bg-white/95 shadow-xl backdrop-blur-sm">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs">
         {/* LOCATION INFO */}
-        <div className="border-t pt-2 animate-fade-in">
-          <h3 className="font-bold text-sm mb-2 flex items-center gap-1">Location</h3>
+        <div className="animate-fade-in border-t pt-2">
+          <h3 className="mb-2 flex items-center gap-1 text-sm font-bold">Location</h3>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="font-medium text-neutral-700">Story ID:</span>
-              <div className="text-neutral-600 font-mono">{storyInfo.story}</div>
+              <div className="font-mono text-neutral-600">{storyInfo.story}</div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Corner:</span>
@@ -455,24 +455,24 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         </div>
 
         {/* POSITION */}
-        <div className="border-t pt-2 animate-fade-in">
-          <h3 className="font-bold text-sm mb-2">Position (in)</h3>
+        <div className="animate-fade-in border-t pt-2">
+          <h3 className="mb-2 text-sm font-bold">Position (in)</h3>
           <div className="grid grid-cols-3 gap-2">
             <div>
               <span className="font-medium text-neutral-700">X:</span>
-              <div className="text-neutral-600 font-mono">
+              <div className="font-mono text-neutral-600">
                 <UnitTooltip interactive={!playing} value={currentPos[0]} unit="in" />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Y:</span>
-              <div className="text-neutral-600 font-mono">
+              <div className="font-mono text-neutral-600">
                 <UnitTooltip interactive={!playing} value={currentPos[1]} unit="in" />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Z:</span>
-              <div className="text-neutral-600 font-mono">
+              <div className="font-mono text-neutral-600">
                 <UnitTooltip interactive={!playing} value={currentPos[2]} unit="in" />
               </div>
             </div>
@@ -480,20 +480,20 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         </div>
 
         {/* DISPLACEMENT */}
-        <div className="border-t pt-2 animate-fade-in">
-          <h3 className="font-bold text-sm mb-2">Displacement (in)</h3>
+        <div className="animate-fade-in border-t pt-2">
+          <h3 className="mb-2 text-sm font-bold">Displacement (in)</h3>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="font-medium text-neutral-700">Current Total:</span>
-              <div className="text-neutral-600 font-mono">
+              <div className="font-mono text-neutral-600">
                 <UnitTooltip interactive={!playing} value={displacementMag} unit="in" />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Peak Total:</span>
-              <div className="text-neutral-600 font-mono">
+              <div className="font-mono text-neutral-600">
                 <UnitTooltip interactive={!playing} value={peakDisplacement.magnitude} unit="in" />
-                <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.time.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.time.toFixed(2)}s</span>
               </div>
             </div>
           </div>
@@ -508,7 +508,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="text-neutral-600">Peak X:</span>
               <span className="font-mono text-neutral-800">
                 <UnitTooltip interactive={!playing} value={peakDisplacement.x} unit="in" />
-                <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.xTime.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.xTime.toFixed(2)}s</span>
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1">
@@ -521,7 +521,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="text-neutral-600">Peak Y:</span>
               <span className="font-mono text-neutral-800">
                 <UnitTooltip interactive={!playing} value={peakDisplacement.y} unit="in" />
-                <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.yTime.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.yTime.toFixed(2)}s</span>
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1">
@@ -534,7 +534,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="text-neutral-600">Peak Z:</span>
               <span className="font-mono text-neutral-800">
                 <UnitTooltip interactive={!playing} value={peakDisplacement.z} unit="in" />
-                <span className="text-neutral-500 text-[9px]"> @ {peakDisplacement.zTime.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.zTime.toFixed(2)}s</span>
               </span>
             </div>
             <div className="mt-3 space-y-2">
@@ -576,22 +576,22 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
 
         {/* ROTATION */}
         {animationData.displacementRot && (
-          <div className="border-t pt-2 animate-fade-in">
-            <h3 className="font-bold text-sm mb-2">Rotation (rad)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <h3 className="mb-2 text-sm font-bold">Rotation (rad)</h3>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current Total:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={currentRotation.magnitude} unit="rad" decimals={4} />
                 </div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Peak Total:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={peakRotation.magnitude} unit="rad" decimals={4} />
                 </div>
-                <div className="text-neutral-500 text-[9px]"> @ {peakRotation.time.toFixed(2)}s</div>
+                <div className="text-[9px] text-neutral-500"> @ {peakRotation.time.toFixed(2)}s</div>
               </div>
             </div>
             <div className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
@@ -602,7 +602,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 </div>
                 <div className="font-mono text-neutral-500">
                   (<UnitTooltip interactive={!playing} value={peakRotation.rx} unit="rad" decimals={4} />
-                  <span className="text-neutral-500 text-[9px]"> @ {peakRotation.rxTime.toFixed(2)}s)</span>
+                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.rxTime.toFixed(2)}s)</span>
                 </div>
               </div>
               <div>
@@ -612,7 +612,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 </div>
                 <div className="font-mono text-neutral-500">
                   (<UnitTooltip interactive={!playing} value={peakRotation.ry} unit="rad" decimals={4} />
-                  <span className="text-neutral-500 text-[9px]"> @ {peakRotation.ryTime.toFixed(2)}s)</span>
+                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.ryTime.toFixed(2)}s)</span>
                 </div>
               </div>
               <div>
@@ -622,7 +622,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 </div>
                 <div className="font-mono text-neutral-500">
                   (<UnitTooltip interactive={!playing} value={peakRotation.rz} unit="rad" decimals={4} />
-                  <span className="text-neutral-500 text-[9px]"> @ {peakRotation.rzTime.toFixed(2)}s)</span>
+                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.rzTime.toFixed(2)}s)</span>
                 </div>
               </div>
             </div>
@@ -631,23 +631,23 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
 
         {/* VELOCITY */}
         {animationData.velocityLin && (
-          <div className="border-t pt-2 animate-fade-in">
-            <h3 className="font-bold text-sm mb-2">Velocity (in/s)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <h3 className="mb-2 text-sm font-bold">Velocity (in/s)</h3>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={currentVelocity!.magnitude} unit="in/s" />
                 </div>
               </div>
               {peakVelocity && (
                 <div>
                   <span className="font-medium text-neutral-700">Peak:</span>
-                  <div className="text-neutral-600 font-mono">
+                  <div className="font-mono text-neutral-600">
                     <UnitTooltip interactive={!playing} value={peakVelocity.magnitude} unit="in/s" />
                   </div>
-                  <div className="text-neutral-500 text-[9px]"> @ {peakVelocity.time.toFixed(2)}s</div>
+                  <div className="text-[9px] text-neutral-500"> @ {peakVelocity.time.toFixed(2)}s</div>
                 </div>
               )}
             </div>
@@ -673,12 +673,14 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             </div>
             {peakVelocity && (
               <div className="mt-1 text-[9px] text-neutral-500">
-                Peak: X: <UnitTooltip interactive={!playing} value={peakVelocity.x} unit="in/s" showConversions={false} />
-                <span className="text-neutral-500 text-[9px]"> @ {peakVelocity.xTime.toFixed(2)}s, Y: </span>
+                Peak: X:{" "}
+                <UnitTooltip interactive={!playing} value={peakVelocity.x} unit="in/s" showConversions={false} />
+                <span className="text-[9px] text-neutral-500"> @ {peakVelocity.xTime.toFixed(2)}s, Y: </span>
                 <UnitTooltip interactive={!playing} value={peakVelocity.y} unit="in/s" showConversions={false} />
-                <span className="text-neutral-500 text-[9px]">
+                <span className="text-[9px] text-neutral-500">
                   @ {peakVelocity.yTime.toFixed(2)}s, Z:{" "}
-                  <UnitTooltip interactive={!playing} value={peakVelocity.z} unit="in/s" showConversions={false} /> @{" "}
+                  <UnitTooltip interactive={!playing} value={peakVelocity.z} unit="in/s" showConversions={false} />{" "}
+                  @{" "}
                 </span>
                 {peakVelocity.zTime.toFixed(2)}s
               </div>
@@ -700,23 +702,23 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
 
         {/* ACCELERATION */}
         {animationData.accelerationLin && (
-          <div className="border-t pt-2 animate-fade-in">
-            <h3 className="font-bold text-sm mb-2">Acceleration (in/s²)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <h3 className="mb-2 text-sm font-bold">Acceleration (in/s²)</h3>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={currentAcceleration!.magnitude} unit="in/s²" />
                 </div>
               </div>
               {peakAcceleration && (
                 <div>
                   <span className="font-medium text-neutral-700">Peak:</span>
-                  <div className="text-neutral-600 font-mono">
+                  <div className="font-mono text-neutral-600">
                     <UnitTooltip interactive={!playing} value={peakAcceleration.magnitude} unit="in/s²" />
                   </div>
-                  <div className="text-neutral-500 text-[9px]"> @ {peakAcceleration.time.toFixed(2)}s</div>
+                  <div className="text-[9px] text-neutral-500"> @ {peakAcceleration.time.toFixed(2)}s</div>
                 </div>
               )}
             </div>
@@ -742,12 +744,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             </div>
             {peakAcceleration && (
               <div className="mt-1 text-[9px] text-neutral-500">
-                Peak: X: <UnitTooltip interactive={!playing} value={peakAcceleration.x} unit="in/s²" showConversions={false} />
-                <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.xTime.toFixed(2)}s, Y: </span>
+                Peak: X:{" "}
+                <UnitTooltip interactive={!playing} value={peakAcceleration.x} unit="in/s²" showConversions={false} />
+                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.xTime.toFixed(2)}s, Y: </span>
                 <UnitTooltip interactive={!playing} value={peakAcceleration.y} unit="in/s²" showConversions={false} />
-                <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.yTime.toFixed(2)}s, Z: </span>
+                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.yTime.toFixed(2)}s, Z: </span>
                 <UnitTooltip interactive={!playing} value={peakAcceleration.z} unit="in/s²" showConversions={false} />
-                <span className="text-neutral-500 text-[9px]"> @ {peakAcceleration.zTime.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.zTime.toFixed(2)}s</span>
               </div>
             )}
             {accelerationTimeSeries && (
@@ -767,18 +770,18 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
 
         {/* STORY DRIFT */}
         {storyDrift && (
-          <div className="border-t pt-2 animate-fade-in">
-            <h3 className="font-bold text-sm mb-2">Story Drift Ratio (%)</h3>
+          <div className="animate-fade-in border-t pt-2">
+            <h3 className="mb-2 text-sm font-bold">Story Drift Ratio (%)</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium text-neutral-700">Current:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={storyDrift.current} unit="%" decimals={4} />
                 </div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Peak:</span>
-                <div className="text-neutral-600 font-mono">
+                <div className="font-mono text-neutral-600">
                   <UnitTooltip interactive={!playing} value={storyDrift.peak} unit="%" decimals={4} />
                 </div>
               </div>
@@ -787,31 +790,31 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         )}
 
         {/* CUMULATIVE STATS */}
-        <div className="border-t pt-2 animate-fade-in">
-          <h3 className="font-bold text-sm mb-2">Total Distance Traveled</h3>
-          <div className="text-neutral-600 font-mono">
+        <div className="animate-fade-in border-t pt-2">
+          <h3 className="mb-2 text-sm font-bold">Total Distance Traveled</h3>
+          <div className="font-mono text-neutral-600">
             <UnitTooltip interactive={!playing} value={totalDistanceTraveled} unit="in" />
           </div>
         </div>
 
         {/* RIBBONS */}
-        <div className="border-t pt-2 animate-fade-in">
-          <h3 className="font-bold text-sm mb-2">Displacement Path (Top View)</h3>
+        <div className="animate-fade-in border-t pt-2">
+          <h3 className="mb-2 text-sm font-bold">Displacement Path (Top View)</h3>
           <MiniRibbon path={ribbonPath} dt={animationData.metadata.dt} frameIndex={frameIndex} />
-          <div className="text-neutral-400 text-[10px] italic flex gap-1">
+          <div className="flex gap-1 text-[10px] text-neutral-400 italic">
             <InfoIcon className="size-3" /> Number of points reduced for performance
           </div>
         </div>
 
         <div>
           {!animationData.displacementRot && (
-            <div className="text-neutral-400 text-[10px] italic">Rotations not loaded</div>
+            <div className="text-[10px] text-neutral-400 italic">Rotations not loaded</div>
           )}
           {!animationData.velocityLin && (
-            <div className="text-neutral-400 text-[10px] italic">Velocities not loaded</div>
+            <div className="text-[10px] text-neutral-400 italic">Velocities not loaded</div>
           )}
           {!animationData.accelerationLin && (
-            <div className="text-neutral-400 text-[10px] italic">Accelerations not loaded</div>
+            <div className="text-[10px] text-neutral-400 italic">Accelerations not loaded</div>
           )}
         </div>
       </div>
@@ -830,9 +833,9 @@ export function NodeTab(props: IDockviewPanelHeaderProps<{ nodeId: number }>) {
 
   return (
     <div
-      className="flex items-center justify-between px-3 py-2 border-b cursor-grab active:cursor-grabbing transition-colors"
+      className="flex cursor-grab items-center justify-between border-b px-3 py-2 transition-colors active:cursor-grabbing"
       style={{ backgroundColor: lightColor, borderColor: color }}>
-      <div className="flex items-center gap-2 pointer-events-none">
+      <div className="pointer-events-none flex items-center gap-2">
         <span className="text-sm font-semibold" style={{ color }}>
           Node {nodeId}
         </span>
@@ -841,7 +844,7 @@ export function NodeTab(props: IDockviewPanelHeaderProps<{ nodeId: number }>) {
       <div className="flex items-center gap-1">
         <button
           onClick={handleClose}
-          className="p-1 rounded transition-colors hover:bg-white/50"
+          className="rounded p-1 transition-colors hover:bg-white/50"
           style={{ color }}
           title="Close">
           <XIcon className="size-3" />

@@ -17,7 +17,7 @@ function getScaleStopsAndLabels(
   maxValue: number,
   positiveOnly: boolean,
   thresholdHighlighting: boolean,
-  thresholdValue: number,
+  thresholdValue: number
 ) {
   const positiveStops = config.positiveColorStops;
   const negativeStops = (config as { negativeColorStops: [string, string, string, string] }).negativeColorStops;
@@ -96,16 +96,16 @@ export function ColorScaleBar({
     maxValue,
     positiveOnly,
     thresholdHighlighting,
-    thresholdValue,
+    thresholdValue
   );
 
   return (
     <>
       <div
-        className="relative h-3 rounded-sm flex-1 w-full"
+        className="relative h-3 w-full flex-1 rounded-sm"
         style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
       {!noLabel && (
-        <div className="relative h-3 mt-0.5">
+        <div className="relative mt-0.5 h-3">
           {labels.map((label, index) => (
             <span
               key={`${label.positionPct}-${index}`}

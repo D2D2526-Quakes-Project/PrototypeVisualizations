@@ -26,7 +26,7 @@ const colorMap = interpolate(
     [red600, 0.51],
     [red900, 1],
   ],
-  "oklab",
+  "oklab"
 );
 
 const _STORY_DRIFT_CORNER_ORDER = ["NW", "NE", "SW", "SE"] as const;
@@ -126,7 +126,7 @@ export function ViewDamageThreshold() {
     <div className="flex h-full min-h-0">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={30} minSize={5} maxSize={40} className="flex">
-          <div className="w-full p-4 flex flex-col gap-4 overflow-y-auto skinny-scrollbar border-r-2 border-neutral-300">
+          <div className="skinny-scrollbar flex w-full flex-col gap-4 overflow-y-auto border-r-2 border-neutral-300 p-4">
             <div>
               <h2 className="text-xl font-bold">Damage Thresholds</h2>
               <p className="text-sm text-neutral-600">Set Story drift ratio limits to see potential damage states.</p>
@@ -149,11 +149,11 @@ export function ViewDamageThreshold() {
             </div>
 
             <div className="border-t pt-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-lg font-bold">Floor Visibility</h3>
                 <button
                   onClick={toggleAllFloors}
-                  className="text-xs px-2 py-1 bg-neutral-200 hover:bg-neutral-300 rounded">
+                  className="rounded bg-neutral-200 px-2 py-1 text-xs hover:bg-neutral-300">
                   {visibleFloors.size === storyOrder.length ? "Hide All" : "Show All"}
                 </button>
               </div>
@@ -161,7 +161,7 @@ export function ViewDamageThreshold() {
                 {storyOrder.toReversed().map((storyId) => (
                   <label
                     key={storyId}
-                    className="flex items-center gap-2 cursor-pointer hover:bg-neutral-100 p-1 rounded">
+                    className="flex cursor-pointer items-center gap-2 rounded p-1 hover:bg-neutral-100">
                     <input
                       type="checkbox"
                       checked={visibleFloors.has(storyId)}
@@ -175,13 +175,13 @@ export function ViewDamageThreshold() {
             </div>
 
             <div>
-              <h3 className="text-lg font-bold mt-4">Story Damage Summary</h3>
-              <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] p-2 gap-1">
+              <h3 className="mt-4 text-lg font-bold">Story Damage Summary</h3>
+              <div className="grid w-full grid-cols-[auto_1fr_auto_auto_auto] gap-1 p-2 text-xs text-neutral-600">
                 <span className="whitespace-nowrap">Corner</span>
-                <span className="whitespace-nowrap text-center">Current Drift</span>
-                <span className="whitespace-nowrap text-center">Peak Drift</span>
+                <span className="text-center whitespace-nowrap">Current Drift</span>
+                <span className="text-center whitespace-nowrap">Peak Drift</span>
                 <span
-                  className="whitespace-nowrap text-center"
+                  className="text-center whitespace-nowrap"
                   title="Time in seconds the corner crossed warning threshold">
                   Warning (s)
                 </span>
@@ -205,7 +205,7 @@ export function ViewDamageThreshold() {
                 return (
                   <React.Fragment key={storyId}>
                     <div className="font-mono text-sm">{storyId}</div>
-                    <div className="w-full text-xs text-neutral-600 grid grid-cols-[auto_1fr_auto_auto_auto] items-center p-2 gap-2">
+                    <div className="grid w-full grid-cols-[auto_1fr_auto_auto_auto] items-center gap-2 p-2 text-xs text-neutral-600">
                       {SUMMARY_DISPLAY_CORNER_ORDER.map((corner) => {
                         const thresholdFrame = thresholds[corner];
                         const peak = peaks[corner];
@@ -216,20 +216,20 @@ export function ViewDamageThreshold() {
                         return (
                           <React.Fragment key={corner}>
                             <div
-                              className="h-4 aspect-square rotate-45"
+                              className="aspect-square h-4 rotate-45"
                               style={{
                                 background: formatHex(colorMap(ratio)),
                               }}
                             />
                             <div className="font-mono">{corner}</div>
-                            <span className="w-12 font-mono text-right shrink-0">
+                            <span className="w-12 shrink-0 text-right font-mono">
                               <UnitTooltip value={current} unit="%" decimals={4} />
                             </span>
-                            <span className="w-12 font-mono text-right shrink-0">
+                            <span className="w-12 shrink-0 text-right font-mono">
                               <UnitTooltip value={peak} unit="%" decimals={4} />
                             </span>
                             <div
-                              className={`w-14 font-mono text-center p-1 rounded ${thresholdFrame !== null ? "bg-yellow-200" : ""}`}>
+                              className={`w-14 rounded p-1 text-center font-mono ${thresholdFrame !== null ? "bg-yellow-200" : ""}`}>
                               {thresholdFrame !== null ? (
                                 <UnitTooltip
                                   value={thresholdFrame * animationData.metadata.dt}
@@ -252,7 +252,7 @@ export function ViewDamageThreshold() {
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={70} className="min-h-0 flex h-full">
+        <ResizablePanel defaultSize={70} className="flex h-full min-h-0">
           <div className="relative w-full">
             <CanvasWithControls>
               <ThresholdBuilding
@@ -262,7 +262,7 @@ export function ViewDamageThreshold() {
               />
             </CanvasWithControls>
 
-            <div className="absolute bottom-2 inset-x-2 bg-white/80 backdrop-blur-sm rounded p-2 flex items-center gap-4 h-16">
+            <div className="absolute inset-x-2 bottom-2 flex h-16 items-center gap-4 rounded bg-white/80 p-2 backdrop-blur-sm">
               <PlaybackControls />
               <SmallTimeline />
             </div>

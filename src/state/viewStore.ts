@@ -198,7 +198,7 @@ export interface ViewState {
   setPanelState: <T extends PanelState["type"]>(
     panelId: string,
     panelType: T,
-    panelState: Extract<PanelState, { type: T }>["state"],
+    panelState: Extract<PanelState, { type: T }>["state"]
   ) => void;
   removePanelState: (panelId: string) => void;
   setPanelStates: (panelStates: Record<string, PanelState>) => void;
@@ -460,7 +460,7 @@ export const createViewStore = () =>
       selectSlice: (selectedSlice) => set({ selectedSlice }),
       deselectSlice: () => set({ selectedSlice: null }),
       setHoveredSlice: (hoveredSlice) => set({ hoveredSlice }),
-    })),
+    }))
   );
 
 export type ViewStore = ReturnType<typeof createViewStore>;

@@ -6,7 +6,6 @@ import { SmallTimeline } from "@/features/playback/SmallTimeline";
 import { VolumeScene } from "./VolumeScene";
 
 export function ViewVolumes() {
-
   /**
    * Displacement scales
    */
@@ -21,15 +20,15 @@ export function ViewVolumes() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex min-h-0 flex-1 flex-col">
       <ResizablePanelGroup direction="vertical">
-        <ResizablePanel className="flex flex-col flex-1 min-h-0">
-          <div className="relative w-full h-full">
+        <ResizablePanel className="flex min-h-0 flex-1 flex-col">
+          <div className="relative h-full w-full">
             <CanvasWithControls>
               <VolumeScene scale={scale} displacementScale={displacementScale} />
             </CanvasWithControls>
 
-            <div className="absolute bottom-0 left-0 right-0 flex justify-between w-full border-t-2 border-neutral-300 bg-neutral-200/80 backdrop-blur-sm p-2">
+            <div className="absolute right-0 bottom-0 left-0 flex w-full justify-between border-t-2 border-neutral-300 bg-neutral-200/80 p-2 backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <label className="flex gap-2 whitespace-nowrap">
                   <input

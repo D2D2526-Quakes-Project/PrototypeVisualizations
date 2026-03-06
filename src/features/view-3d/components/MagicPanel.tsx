@@ -210,7 +210,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },
-  "Damage Threshold": {
+  "ISD Threshold": {
     component: DamageThresholdPanel,
     category: "Threshold / ISD",
     icon: ShieldAlert,
@@ -257,11 +257,6 @@ function joinHumanList(items: string[]): string {
   if (items.length === 1) return items[0];
   if (items.length === 2) return `${items[0]} and ${items[1]}`;
   return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
-}
-
-function getPanelDisplayName(panelType: PanelType): string {
-  if (panelType === "Damage Threshold") return "ISD Threshold";
-  return panelType;
 }
 
 function getPanelRequirementDescriptorText(panelType: PanelType): string {
@@ -385,7 +380,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
             const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
             return <Icon className={`size-3.5 ${isActive ? "text-amber-700" : "text-neutral-500"}`} />;
           })()}
-          {getPanelDisplayName(currentPanelType)}
+          {currentPanelType}
         </span>
       )}
     </div>
@@ -416,7 +411,7 @@ function PanelTypePicker({
           className="mx-2 inline-flex h-6 max-w-72 min-w-0 cursor-pointer items-center gap-1.5 border-b border-neutral-400 px-2 text-sm font-medium text-neutral-700 transition-colors outline-none hover:border-neutral-500 focus-visible:ring-1 focus-visible:ring-neutral-400"
           title="Choose panel type">
           <SelectedIcon className="size-3.5 shrink-0 text-neutral-500" />
-          <span className="truncate">{getPanelDisplayName(value)}</span>
+          <span className="truncate">{value}</span>
           <ChevronDown
             className={`size-3.5 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
           />
@@ -466,7 +461,7 @@ function PanelTypePicker({
                         />
                         <div className="min-w-0">
                           <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
-                            {getPanelDisplayName(panelType)}
+                            {panelType}
                           </div>
                         </div>
                       </div>
@@ -485,7 +480,7 @@ function PanelTypePicker({
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
-                        <div className="font-medium">{getPanelDisplayName(panelType)}</div>
+                        <div className="font-medium">{panelType}</div>
                         {availability.disabledReason ? (
                           <div className="mt-0.5">{availability.disabledReason}</div>
                         ) : null}

@@ -220,7 +220,7 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       tabComponent: "magicPanelTab",
       title: "ISD Threshold",
       position: { referencePanel: "story-drift-heatmap", direction: "below" },
-      params: { panelType: "Damage Threshold" },
+      params: { panelType: "ISD Threshold" },
       initialHeight: 260,
     });
 

@@ -543,7 +543,7 @@ _Last Updated: February 2026_
 - [x] Panel Picker doesn't have borders / background changes for ones that are missing optional data or cannot be loaded
 - [x] In MagicPanel the bg-amber-100 should be bg-amber-50/90
 - [x] New Histogram panels should open with the currently selected metric
-- [ ] Delete the duplicate Hinge Performance Panel
+- [x] Delete the duplicate Hinge Performance Panel
 - [ ] All Displacement Thresholds should be merged into one "Displacement Threshold" value instead of separate per MagXYZ
 
 ### 23.7 View Modes

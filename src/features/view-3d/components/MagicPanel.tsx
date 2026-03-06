@@ -181,14 +181,6 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
     requiredOptionalData: ["hingeData"],
     optionalEnhancementData: ["beamData"],
   },
-  "Hinge Performance": {
-    component: HingeHotspotsPanel,
-    category: "Threshold / ISD",
-    icon: Flame,
-    description: "Hinge performance overview",
-    requiredOptionalData: ["hingeData"],
-    optionalEnhancementData: ["beamData"],
-  },
   "Floor Torsion Map": {
     component: FloorTorsionMapPanel,
     category: "Summaries",

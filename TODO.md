@@ -502,15 +502,15 @@ _Last Updated: February 2026_
 
 ### 23.1 View Controls & Camera
 
-- [ ] Home view should be facing +X +Y, currently opposite
+- [x] Home view should be facing +X +Y, currently opposite
 - [ ] Buttons should make you face the direction you clicked
-- [ ] Grid layout of view presets has gaps
-- [ ] Ortho is saved as opposite of what it should be
+- [x] Grid layout of view presets has gaps
+- [x] Ortho is saved as opposite of what it should be
 
 ### 23.2 Timeline & Playback
 
-- [ ] Units in Timeline.tsx should be unit objects
-- [ ] Small playback controls on the timeline shouldn't have container styling (border, padding, etc)
+- [x] Units in Timeline.tsx should be unit objects
+- [x] Small playback controls on the timeline shouldn't have container styling (border, padding, etc)
 
 ### 23.3 Colorbar & Overlays
 

@@ -139,7 +139,7 @@ export function ViewControls({
     const controls = orbitControlsRef.current;
     const camera = controls.object;
     controls.target.set(0, 0, buildingVerticalCenter);
-    camera.position.set(cameraDistance, cameraDistance, buildingVerticalCenter + cameraDistance);
+    camera.position.set(-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance);
     controls.update();
   };
 
@@ -152,12 +152,12 @@ export function ViewControls({
     { view: "right" as const, label: "+X" },
     { view: "back" as const, label: "-Y" },
     { view: "left" as const, label: "-X" },
-    { view: "top" as const, label: "Top" },
-    { view: "bottom" as const, label: "Bottom" },
     { view: "frontRight" as const, label: "NE" },
     { view: "frontLeft" as const, label: "NW" },
     { view: "backRight" as const, label: "SE" },
     { view: "backLeft" as const, label: "SW" },
+    { view: "top" as const, label: "Top" },
+    { view: "bottom" as const, label: "Bottom" },
   ];
 
   const childVariants = {

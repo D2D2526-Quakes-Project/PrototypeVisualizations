@@ -12,17 +12,17 @@ const viewButtons: {
   { view: "right", label: "+X" },
   { view: "back", label: "-Y" },
   { view: "left", label: "-X" },
-  { view: "top", label: "Top" },
-  { view: "bottom", label: "Bottom" },
   { view: "frontRight", label: "NE" },
   { view: "frontLeft", label: "NW" },
   { view: "backRight", label: "SE" },
   { view: "backLeft", label: "SW" },
+  { view: "top", label: "Top" },
+  { view: "bottom", label: "Bottom" },
 ];
 
 export function ViewsPanel({ resetView }: ViewsPanelProps) {
   return (
-    <div className="mb-2 grid w-full grid-cols-3 gap-1">
+    <div className="mb-2 grid w-full grid-cols-4 gap-1">
       {viewButtons.map(({ view, label }) => (
         <button
           key={view}

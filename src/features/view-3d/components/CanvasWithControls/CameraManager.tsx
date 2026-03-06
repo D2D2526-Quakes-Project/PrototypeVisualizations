@@ -73,14 +73,14 @@ export function CameraManager({ isOrthographic, enableSmoothing, enablePan }: Ca
       <PerspectiveCamera
         ref={perspectiveCamRef}
         makeDefault={!isOrthographic}
-        position={[cameraDistance, cameraDistance, buildingVerticalCenter + cameraDistance]}
+        position={[-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance]}
         fov={75}
         up={[0, 0, 1]}
       />
       <OrthographicCamera
         ref={orthoCamRef}
         makeDefault={isOrthographic}
-        position={[cameraDistance, cameraDistance, buildingVerticalCenter + cameraDistance]}
+        position={[-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance]}
         zoom={50}
         up={[0, 0, 1]}
       />

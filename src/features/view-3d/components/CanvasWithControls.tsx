@@ -40,16 +40,18 @@ export function CanvasWithControls({
   const [containerWidth, setContainerWidth] = useState(0);
   const [controlsWidth, setControlsWidth] = useState(0);
   const [isViewControlsExpanded, setIsViewControlsExpanded] = useState(false);
-
-  const [isOrthographic, setIsOrthographic] = useState(() => {
-    if (savedPanelState?.type !== "canvas") {
-      return false;
-    }
-    return savedPanelState.state.camera.isOrthographic;
-  });
-  const hasHydratedPanelRef = useRef(false);
+  const [cameraModeOverride, setCameraModeOverride] = useState<{ panelId: string; value: boolean } | null>(null);
+  const hasWrittenCameraModeRef = useRef(false);
+  const hasPersistedCameraModeRef = useRef(false);
   const { orbitControlsRef, getCameraState } = useCamera();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
+
+  const isOrthographic =
+    cameraModeOverride?.panelId === panelId
+      ? cameraModeOverride.value
+      : savedPanelState?.type === "canvas"
+        ? savedPanelState.state.camera.isOrthographic
+        : false;
 
   const getCurrentPanelState = useCallback(() => {
     const panelState = store.getState().panelStates[panelId];
@@ -59,21 +61,44 @@ export function CanvasWithControls({
     return getDefaultCanvasPanelState();
   }, [panelId, store]);
 
-  const persistCameraState = useCallback(() => {
-    // Avoid overwriting saved camera data with fallback defaults before controls are mounted.
-    if (!orbitControlsRef.current) return;
-    const cameraState = getCameraState();
-    const panelState = getCurrentPanelState();
-    setPanelState(panelId, "canvas", {
-      ...panelState,
-      camera: cameraState,
-    });
-    store.getState().setCameraState(cameraState);
-  }, [getCameraState, getCurrentPanelState, orbitControlsRef, panelId, setPanelState, store]);
+  const persistCameraState = useCallback(
+    (expectedIsOrthographic?: boolean) => {
+      // Avoid overwriting saved camera data with fallback defaults before controls are mounted.
+      if (!orbitControlsRef.current) return false;
+      const cameraState = getCameraState();
+      if (typeof expectedIsOrthographic === "boolean" && cameraState.isOrthographic !== expectedIsOrthographic) {
+        return false;
+      }
+      const nextCameraState =
+        typeof expectedIsOrthographic === "boolean"
+          ? { ...cameraState, isOrthographic: expectedIsOrthographic }
+          : cameraState;
+      const panelState = getCurrentPanelState();
+      setPanelState(panelId, "canvas", {
+        ...panelState,
+        camera: nextCameraState,
+      });
+      store.getState().setCameraState(nextCameraState);
+      return true;
+    },
+    [getCameraState, getCurrentPanelState, orbitControlsRef, panelId, setPanelState, store]
+  );
+
+  const handleSetIsOrthographic = useCallback(
+    (value: boolean) => {
+      setCameraModeOverride({ panelId, value });
+    },
+    [panelId]
+  );
 
   useEffect(() => {
-    if (!hasHydratedPanelRef.current) {
-      hasHydratedPanelRef.current = true;
+    hasWrittenCameraModeRef.current = false;
+    hasPersistedCameraModeRef.current = false;
+  }, [panelId]);
+
+  useEffect(() => {
+    if (!hasWrittenCameraModeRef.current) {
+      hasWrittenCameraModeRef.current = true;
       return;
     }
     const panelState = getCurrentPanelState();
@@ -133,10 +158,28 @@ export function CanvasWithControls({
   }, [orbitControlsRef, savedPanelState]);
 
   useEffect(() => {
-    const rafId = requestAnimationFrame(() => {
-      persistCameraState();
-    });
-    return () => cancelAnimationFrame(rafId);
+    if (!hasPersistedCameraModeRef.current) {
+      hasPersistedCameraModeRef.current = true;
+      return;
+    }
+
+    let rafId: number | null = null;
+    let cancelled = false;
+
+    const persistWhenCameraMatchesMode = () => {
+      if (cancelled) return;
+      if (persistCameraState(isOrthographic)) return;
+      rafId = requestAnimationFrame(persistWhenCameraMatchesMode);
+    };
+
+    persistWhenCameraMatchesMode();
+
+    return () => {
+      cancelled = true;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+    };
   }, [isOrthographic, persistCameraState]);
 
   useEffect(() => {
@@ -229,7 +272,7 @@ export function CanvasWithControls({
       <ViewControls
         orbitControlsRef={orbitControlsRef}
         isOrthographic={isOrthographic}
-        setIsOrthographic={setIsOrthographic}
+        setIsOrthographic={handleSetIsOrthographic}
         isExpanded={isViewControlsExpanded}
         setIsExpanded={setIsViewControlsExpanded}
         onExpandedWidthChange={setControlsWidth}

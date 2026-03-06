@@ -364,7 +364,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
   return (
     <div
       className={`z-10 flex h-full w-full items-center transition-colors ${
-        isActive ? "bg-amber-100 text-amber-900" : "bg-neutral-200/80"
+        isActive ? "bg-amber-50/90 text-amber-900" : "bg-neutral-200/80"
       }`}>
       {showPanelPicker ? (
         <PanelTypePicker

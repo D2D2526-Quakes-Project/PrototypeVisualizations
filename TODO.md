@@ -549,7 +549,7 @@ _Last Updated: February 2026_
 
 ### 23.7 View Modes
 
-- [ ] ISD Threshold view mode has a really time building not scaled or position correctly. Also has a grid plane for some reason.
+- [x] ISD Threshold view mode has a really tiny building not scaled or position correctly. Also has a grid plane for some reason.
 - [ ] FloorSlab view mode has incorrect colors. They appear darker than they should (namely the hovered floor slab color)
 - [ ] The FloorSlab renderer shouldn't have a "selectedSlice" check. It should just color by hover
 

@@ -1,6 +1,5 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { UNIT_SCALE } from "@/lib/utils";
 import { converter, formatHex, interpolate } from "culori";
 import { DoubleSide } from "three";
 
@@ -31,10 +30,6 @@ export function ThresholdBuildingScene() {
   const { cornerNodes, storyDrift, peakStoryDrift } = animationData.precomputed;
   const { frameIndex } = usePlayback();
 
-  const offsetX = -animationData.precomputed.boundingBox.center[0];
-  const offsetY = -animationData.precomputed.boundingBox.center[1];
-  const offsetZ = -animationData.precomputed.boundingBox.min[2];
-
   const getNodePosition = (nodeIdx: number) => {
     const pos = animationData.initialPositions.at(nodeIdx);
     const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeIdx);
@@ -44,73 +39,64 @@ export function ThresholdBuildingScene() {
 
   return (
     <>
-      <ambientLight intensity={2} />
-      <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
+      {storyOrder.map((storyId, storyIndex) => {
+        const corners = cornerNodes[storyId];
+        if (!corners) return null;
 
-      <group scale={UNIT_SCALE}>
-        <group position={[offsetX, offsetY, offsetZ]}>
-          {storyOrder.map((storyId, storyIndex) => {
-            const corners = cornerNodes[storyId];
-            if (!corners) return null;
+        const drifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
+        const peaks = peakStoryDrift[storyId] ?? { NW: 0, NE: 0, SW: 0, SE: 0 };
 
-            const drifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
-            const peaks = peakStoryDrift[storyId] ?? { NW: 0, NE: 0, SW: 0, SE: 0 };
+        const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
+        const nodePositions = cornerOrder.map((corner) => {
+          const nodeId = corners[corner];
+          return {
+            pos: getNodePosition(nodeId),
+            drift: drifts[cornerOrder.indexOf(corner)],
+            peak: peaks[corner],
+          };
+        });
 
-            const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
-            const nodePositions = cornerOrder.map((corner) => {
-              const nodeId = corners[corner];
-              return {
-                pos: getNodePosition(nodeId),
-                drift: drifts[cornerOrder.indexOf(corner)],
-                peak: peaks[corner],
-              };
-            });
+        const positions = new Float32Array([
+          ...nodePositions[0].pos,
+          ...nodePositions[1].pos,
+          ...nodePositions[2].pos,
+          ...nodePositions[1].pos,
+          ...nodePositions[3].pos,
+          ...nodePositions[2].pos,
+        ]);
 
-            const positions = new Float32Array([
-              ...nodePositions[0].pos,
-              ...nodePositions[1].pos,
-              ...nodePositions[2].pos,
-              ...nodePositions[1].pos,
-              ...nodePositions[3].pos,
-              ...nodePositions[2].pos,
-            ]);
+        const colors = new Float32Array(18);
+        const vertexOrder = [0, 1, 2, 1, 3, 2];
 
-            const colors = new Float32Array(18);
-            const vertexOrder = [0, 1, 2, 1, 3, 2];
+        vertexOrder.forEach((cornerIdx, i) => {
+          const ratio = nodePositions[cornerIdx].drift / (nodePositions[cornerIdx].peak || 0.0001);
+          const colorHex = formatHex(colorMap(ratio));
+          const rgb = rgbConverter(colorHex);
 
-            vertexOrder.forEach((cornerIdx, i) => {
-              const ratio = nodePositions[cornerIdx].drift / (nodePositions[cornerIdx].peak || 0.0001);
-              const colorHex = formatHex(colorMap(ratio));
-              const rgb = rgbConverter(colorHex);
+          if (rgb) {
+            colors[i * 3] = rgb.r;
+            colors[i * 3 + 1] = rgb.g;
+            colors[i * 3 + 2] = rgb.b;
+          }
+        });
 
-              if (rgb) {
-                colors[i * 3] = rgb.r;
-                colors[i * 3 + 1] = rgb.g;
-                colors[i * 3 + 2] = rgb.b;
-              }
-            });
-
-            return (
-              <mesh key={storyId}>
-                <bufferGeometry>
-                  <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-                  <bufferAttribute attach="attributes-color" args={[colors, 3]} />
-                </bufferGeometry>
-                <meshBasicMaterial
-                  vertexColors
-                  opacity={0.6}
-                  transparent
-                  side={DoubleSide}
-                  fog={false}
-                  toneMapped={false}
-                />
-              </mesh>
-            );
-          })}
-        </group>
-      </group>
-
-      <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 20]} />
+        return (
+          <mesh key={storyId}>
+            <bufferGeometry>
+              <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+              <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+            </bufferGeometry>
+            <meshBasicMaterial
+              vertexColors
+              opacity={0.6}
+              transparent
+              side={DoubleSide}
+              fog={false}
+              toneMapped={false}
+            />
+          </mesh>
+        );
+      })}
     </>
   );
 }

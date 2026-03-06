@@ -66,6 +66,13 @@ const SortCaret = ({ active }: { active: boolean }) => (
 
 export function PeakResponseTimePanel() {
   const { animationData } = useAnimationData();
+  const storyOrderIndex = useMemo(
+    () =>
+      new Map(
+        animationData.metadata.storyOrder.map((storyId, index) => [storyId, index] as const)
+      ),
+    [animationData.metadata.storyOrder]
+  );
 
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<"story" | "elev" | "maxDrift" | "maxTime" | "corner">("maxDrift");
@@ -146,7 +153,9 @@ export function PeakResponseTimePanel() {
     const cmp = (a: PeakRow, b: PeakRow) => {
       switch (sortKey) {
         case "story":
-          return a.story.localeCompare(b.story, undefined, { numeric: true, sensitivity: "base" }) * dir;
+          return ((storyOrderIndex.get(a.story) ?? Number.MAX_SAFE_INTEGER) -
+            (storyOrderIndex.get(b.story) ?? Number.MAX_SAFE_INTEGER)) *
+            dir;
         case "elev":
           return (a.elevationFt - b.elevationFt) * dir;
         case "maxTime":
@@ -160,7 +169,7 @@ export function PeakResponseTimePanel() {
     };
 
     return [...filtered].sort(cmp);
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, storyOrderIndex]);
 
   const insights = useMemo(() => {
     const all = rows;

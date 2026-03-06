@@ -539,7 +539,7 @@ _Last Updated: February 2026_
 
 - [x] In MagicPanel.tsx, change the "Damage Threshold" type to "ISD Threshold" and remove the getPanelDisplayName function
 - [x] Remove "slicePanel" from the MagicPanelTab component and Dead Code from SlicePanel.tsx, then rename the SlicePanel.tsx to FloorPanel.tsx
-- [ ] PeakResponseTimePanel story sorting should use the storyOrder array instead of literally sorting by story name
+- [x] PeakResponseTimePanel story sorting should use the storyOrder array instead of literally sorting by story name
 - [ ] Panel Picker doesn't have borders / background changes for ones that are missing optional data or cannot be loaded
 - [ ] In MagicPanel the bg-amber-100 should be bg-amber-50/90
 - [ ] New Histogram panels should open with the currently selected metric

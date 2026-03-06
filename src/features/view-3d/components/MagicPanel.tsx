@@ -437,9 +437,15 @@ function PanelTypePicker({
                   const Icon = meta.icon;
                   const isActive = panelType === value;
                   const availability = getPanelAvailabilityInfo(panelType, loading ? null : animationData, loading);
+                  const hasMissingOptionalEnhancements = availability.isAvailable && Boolean(availability.optionalNotice);
                   const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
                     .filter(Boolean)
                     .join("\n");
+                  const availabilityClasses = !availability.isAvailable
+                    ? "border-dashed border-rose-300 bg-rose-50/70 text-neutral-500 opacity-70"
+                    : hasMissingOptionalEnhancements
+                      ? "border-amber-200 bg-amber-50/70"
+                      : "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white";
 
                   const button = (
                     <button
@@ -453,8 +459,8 @@ function PanelTypePicker({
                       className={`w-full rounded-md border px-2 py-1.5 text-left transition-colors ${
                         isActive
                           ? "border-amber-300 bg-white shadow-sm"
-                          : "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white"
-                      } ${availability.isAvailable ? "opacity-100" : "pointer-events-none cursor-not-allowed border-dashed border-neutral-300 opacity-45"}`}>
+                          : availabilityClasses
+                      } ${availability.isAvailable ? "opacity-100" : "pointer-events-none cursor-not-allowed"}`}>
                       <div className="flex items-start gap-2">
                         <Icon
                           className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`}

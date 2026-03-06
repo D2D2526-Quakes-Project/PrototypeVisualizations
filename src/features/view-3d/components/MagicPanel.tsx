@@ -19,7 +19,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAnimationData } from "@/lib/useAnimationData";
+import type { Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
+import { useViewStore } from "@/state";
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { Timeline } from "./Timeline";
 import type { LucideIcon } from "lucide-react";
@@ -46,6 +48,7 @@ import { useEffect, useState } from "react";
 type PanelCategory = "Canvas" | "Time Series" | "Distributions" | "Threshold / ISD" | "Summaries" | "Tables / Data";
 
 type PanelType = keyof typeof PANEL_DEFINITIONS;
+type MagicPanelParams = { panelType: PanelType; initialMetric?: Metric };
 
 type PanelDefinition = {
   component: React.ComponentType<IDockviewPanelProps>;
@@ -319,7 +322,7 @@ function getPanelAvailabilityInfo(panelType: PanelType, animationData: BuildingA
   };
 }
 
-export const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>) => {
+export const MagicPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
   const CurrentComponent = PANEL_DEFINITIONS[currentPanelType].component;
 
@@ -333,9 +336,14 @@ export const MagicPanel = (props: IDockviewPanelProps<{ panelType: PanelType }>)
   );
 };
 
-export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: PanelType }>) => {
+function getPanelParams(panelType: PanelType, currentMetric: Metric): MagicPanelParams {
+  return panelType === "Histogram Chart" ? { panelType, initialMetric: currentMetric } : { panelType };
+}
+
+export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
   const isActive = props.api.isActive;
+  const currentMetric = useViewStore((state) => state.currentMetric);
   const [, setRenderTick] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -357,7 +365,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<{ panelType: Pane
   const showPanelPicker = props.tabLocation === "header" && (props.api.isActive || props.api.group.panels.length === 1);
 
   const handlePanelChange = (newPanelType: PanelType) => {
-    props.api.updateParameters({ panelType: newPanelType });
+    props.api.updateParameters(getPanelParams(newPanelType, currentMetric));
     setPickerOpen(false);
   };
 
@@ -509,6 +517,7 @@ function PanelTypePicker({
 
 export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const currentMetric = useViewStore((state) => state.currentMetric);
   const activePanel = props.activePanel;
   const activePanelType = isPanelType(activePanel?.params?.panelType) ? activePanel.params.panelType : null;
   const isTabGroup = props.panels.length > 1;
@@ -524,7 +533,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
       tabComponent: activePanel.api.tabComponent,
       title: activePanel.title ?? "Panel",
       position: { referencePanel: activePanel.id },
-      params: activePanel.params,
+      params: getPanelParams(activePanelType, currentMetric),
     });
   };
 
@@ -535,7 +544,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
       tabComponent: "magicPanelTab",
       title: "Panel",
       position: { referencePanel: activePanel.id, direction: "right" },
-      params: { panelType: activePanelType },
+      params: getPanelParams(activePanelType, currentMetric),
     });
   };
 
@@ -546,7 +555,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
       tabComponent: "magicPanelTab",
       title: "Panel",
       position: { referencePanel: activePanel.id, direction: "below" },
-      params: { panelType: activePanelType },
+      params: getPanelParams(activePanelType, currentMetric),
     });
   };
 

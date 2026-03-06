@@ -154,6 +154,10 @@ export function HistogramChart({
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const defaultState = getDefaultHistogramChartPanelState();
   const savedState = savedPanelState?.type === "histogramChart" ? savedPanelState.state : defaultState;
+  const seededMetric =
+    api?.params && "initialMetric" in api.params && typeof api.params.initialMetric === "string"
+      ? api.params.initialMetric
+      : undefined;
 
   const [positionAxis, setPositionAxis] = useState<PositionAxis>(() =>
     savedState.positionAxis === "x" || savedState.positionAxis === "y" || savedState.positionAxis === "z"
@@ -168,7 +172,10 @@ export function HistogramChart({
   }, [availableMetrics, metricOptions]);
   const [valueType, setValueType] = useState<Metric>(() => {
     const candidate = savedState.valueType;
-    return typeof candidate === "string" && candidate in METRIC_CONFIGS ? (candidate as Metric) : initialMetric;
+    if (savedPanelState?.type === "histogramChart" && typeof candidate === "string" && candidate in METRIC_CONFIGS) {
+      return candidate as Metric;
+    }
+    return seededMetric && seededMetric in METRIC_CONFIGS ? (seededMetric as Metric) : initialMetric;
   });
 
   useEffect(() => {

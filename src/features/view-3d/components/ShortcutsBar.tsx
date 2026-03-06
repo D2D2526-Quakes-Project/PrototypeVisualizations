@@ -42,6 +42,7 @@ type Mode = {
   id: string;
   active: (ctx: ShortcutContext) => boolean;
   shortcuts: Shortcut[];
+  mouseShortcuts?: Shortcut[];
 };
 
 const MODES: Mode[] = [
@@ -51,6 +52,10 @@ const MODES: Mode[] = [
     shortcuts: [
       { icon: <BoxSelect size={10} />, label: "Finish", key: "release" },
       { icon: <X size={10} />, label: "Cancel", key: "Esc" },
+    ],
+    mouseShortcuts: [
+      { icon: <MousePointer2 size={10} />, label: "Select", key: "drag" },
+      { icon: <Mouse size={10} />, label: "Apply", key: "release" },
     ],
   },
   {
@@ -97,6 +102,7 @@ type ShortcutContext = {
 
 export function ShortcutsBar(ctx: ShortcutContext) {
   const activeMode = MODES.find((m) => m.active(ctx))!;
+  const mouseShortcuts = activeMode.mouseShortcuts ?? MOUSE_SHORTCUTS;
 
   return (
     <div className="pointer-events-none absolute bottom-2 left-2 z-40">
@@ -123,7 +129,7 @@ export function ShortcutsBar(ctx: ShortcutContext) {
           </div>
           <div className="flex items-center gap-0.5">
             <Mouse size={10} className="mr-0.5 shrink-0 text-neutral-500" />
-            {MOUSE_SHORTCUTS.map((s, i) => (
+            {mouseShortcuts.map((s, i) => (
               <span key={`mouse-${i}`} className="flex items-center gap-0.5">
                 {i > 0 && <span className="mx-0.5 h-3 w-px bg-neutral-200" />}
                 <span>{s.icon}</span>

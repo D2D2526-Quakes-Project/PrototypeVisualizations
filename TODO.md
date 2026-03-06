@@ -515,14 +515,14 @@ _Last Updated: February 2026_
 ### 23.3 Colorbar & Overlays
 
 - [ ] Colorbar overlay is quite chonky, find a way to reduce its size
-- [ ] ViewMenu colorbar threshold number labels can overlap the end ones. Should also have an underline
+- [x] ViewMenu colorbar threshold number labels can overlap the end ones. Should also have an underline
 
 ### 23.4 View Menu
 
-- [ ] Shortcuts bar Mouse tips doesn't update when making a selection, should show drag for selection and release for select
-- [ ] ViewMenu small icons have duplicate labels and shouldn't all be shown
-- [ ] Text in the Minimized view menu should not be selectable
-- [ ] In ViewControls the showNodeVisibilityMenu && for node-visibility-menu should be hidden when !showNodeVisibilityMenu
+- [x] Shortcuts bar Mouse tips doesn't update when making a selection, should show drag for selection and release for select
+- [x] ViewMenu small icons have duplicate labels and shouldn't all be shown
+- [x] Text in the Minimized view menu should not be selectable
+- [x] In ViewControls the showNodeVisibilityMenu && for node-visibility-menu should be hidden when !showNodeVisibilityMenu
 
 ### 23.5 Floor Visibility
 
@@ -567,6 +567,6 @@ _Last Updated: February 2026_
 
 ## 25. Known Issues
 
-- [ ] When the view menu is docked, the ctrl+drag selection box is visually offset
+- [x] When the view menu is docked, the ctrl+drag selection box is visually offset
 
 _Last Updated: March 2026_

@@ -155,7 +155,11 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
     const { storyElevations } = precomputed;
     const { peakStoryDrift } = precomputed;
     const visibleStoryOrder = getVisibleStoryOrder();
-    const storyOrderWithoutGround = visibleStoryOrder.filter((id) => id !== "G"); // Filter out ground
+    const fullStoryOrder = animationData.metadata.storyOrder;
+    const storyOrderWithoutGround = visibleStoryOrder.filter((storyId) => {
+      const storyIndex = fullStoryOrder.indexOf(storyId);
+      return storyIndex > 0 && peakStoryDrift[storyId] !== undefined;
+    });
 
     const yAxisData = storyOrderWithoutGround.map((storyId) => {
       const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;

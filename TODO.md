@@ -447,7 +447,7 @@ _Last Updated: February 2026_
 - [x] Rename "Damage" to "ISD" across the app
 - [x] Create panel for hinges called "Hinge Performance"
 - [x] Change tab color to be more distinct for currently selected tab
-- [ ] Move panel/tab type dropdown picker from tab name to three dots menu
+- [x] Move panel/tab type dropdown picker from tab name to three dots menu
 
 ### 20.10 Tables & Sorting
 

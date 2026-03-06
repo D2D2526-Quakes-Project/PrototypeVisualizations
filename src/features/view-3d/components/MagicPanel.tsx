@@ -30,7 +30,6 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
-  ChevronDown,
   Columns,
   Flame,
   Gauge,
@@ -45,7 +44,7 @@ import {
   Table,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 type PanelCategory = "Canvas" | "Time Series" | "Distributions" | "Threshold / ISD" | "Summaries" | "Tables / Data";
 
@@ -330,7 +329,12 @@ export const MagicPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
   const CurrentComponent = PANEL_DEFINITIONS[currentPanelType].component;
   const { animationData, loading, datasetStates, requestDatasetLoad, retryDatasetLoad } = useAnimationData();
-  const availability = getPanelAvailabilityInfo(currentPanelType, loading ? null : animationData, loading, datasetStates);
+  const availability = getPanelAvailabilityInfo(
+    currentPanelType,
+    loading ? null : animationData,
+    loading,
+    datasetStates
+  );
 
   return (
     <div className="relative h-full w-full">
@@ -358,9 +362,7 @@ function getPanelParams(panelType: PanelType, currentMetric: Metric): MagicPanel
 export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
   const isActive = props.api.isActive;
-  const currentMetric = useViewStore((state) => state.currentMetric);
   const [, setRenderTick] = useState(0);
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     const bump = () => setRenderTick((value) => value + 1);
@@ -377,159 +379,127 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
     };
   }, [props.api, props.containerApi]);
 
-  const showPanelPicker = props.tabLocation === "header" && (props.api.isActive || props.api.group.panels.length === 1);
-
-  const handlePanelChange = (newPanelType: PanelType) => {
-    props.api.updateParameters(getPanelParams(newPanelType, currentMetric));
-    setPickerOpen(false);
-  };
-
   return (
     <div
       className={`z-10 flex h-full w-full items-center transition-colors ${
         isActive ? "bg-amber-50/90 text-amber-900" : "bg-neutral-200/80"
       }`}>
-      {showPanelPicker ? (
-        <PanelTypePicker
-          open={pickerOpen}
-          onOpenChange={setPickerOpen}
-          value={currentPanelType}
-          onChange={handlePanelChange}
-        />
-      ) : (
-        <span
-          className={`flex items-center gap-1.5 px-4 py-0 text-sm font-medium ${isActive ? "text-amber-900" : "text-neutral-700"}`}>
-          {(() => {
-            const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
-            return <Icon className={`size-3.5 ${isActive ? "text-amber-700" : "text-neutral-500"}`} />;
-          })()}
-          {currentPanelType}
-        </span>
-      )}
+      <span
+        className={`flex items-center gap-1.5 px-4 py-0 text-sm font-medium ${isActive ? "text-amber-900" : "text-neutral-700"}`}>
+        {(() => {
+          const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
+          return <Icon className={`size-3.5 ${isActive ? "text-amber-700" : "text-neutral-500"}`} />;
+        })()}
+        {currentPanelType}
+      </span>
     </div>
   );
 };
 
-function PanelTypePicker({
-  open,
-  onOpenChange,
+function PanelTypePickerMenu({
   value,
   onChange,
+  onRequestClose,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   value: PanelType;
   onChange: (panelType: PanelType) => void;
+  onRequestClose?: () => void;
 }) {
-  const selected = PANEL_DEFINITIONS[value];
-  const SelectedIcon = selected.icon;
   const groupedPanels = getPanelsByCategory();
   const { animationData, loading, datasetStates } = useAnimationData();
+  const titleId = useId();
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="mx-2 inline-flex h-6 max-w-72 min-w-0 cursor-pointer items-center gap-1.5 border-b border-neutral-400 px-2 text-sm font-medium text-neutral-700 transition-colors outline-none hover:border-neutral-500 focus-visible:ring-1 focus-visible:ring-neutral-400"
-          title="Choose panel type">
-          <SelectedIcon className="size-3.5 shrink-0 text-neutral-500" />
-          <span className="truncate">{value}</span>
-          <ChevronDown
-            className={`size-3.5 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
-          />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="max-h-[70vh] w-[min(30rem,92vw)] overflow-y-auto p-2">
-        <div className="mb-2 px-1">
-          <div className="text-xs font-semibold text-neutral-700">Panel Picker</div>
-          <div className="text-[10px] text-neutral-500">Compact grouped browser</div>
+    <div className="max-h-[70vh] overflow-y-auto p-2" aria-labelledby={titleId}>
+      <div className="mb-2 px-1">
+        <div id={titleId} className="text-xs font-semibold text-neutral-700">
+          Change Panel Type
         </div>
+        <div className="text-[10px] text-neutral-500">Compact grouped browser</div>
+      </div>
 
-        <div className="grid grid-cols-1 gap-2 pr-1">
-          {groupedPanels.map((group) => (
-            <div key={group.category} className="rounded-md border border-neutral-200/80 bg-white p-1.5">
-              {group.items.length > 1 && (
-                <div className="px-1 py-0.5 text-[10px] font-semibold tracking-wide text-neutral-500 uppercase">
-                  {group.category}
-                </div>
-              )}
-              <div className="mt-1 space-y-0.5">
-                {group.items.map((panelType) => {
-                  const meta = PANEL_DEFINITIONS[panelType];
-                  const Icon = meta.icon;
-                  const isActive = panelType === value;
-                  const availability = getPanelAvailabilityInfo(panelType, loading ? null : animationData, loading, datasetStates);
-                  const hasMissingOptionalEnhancements = availability.isAvailable && Boolean(availability.optionalNotice);
-                  const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
-                    .filter(Boolean)
-                    .join("\n");
-                  const availabilityClasses = !availability.isAvailable
-                    ? "border-transparent bg-white/80 text-neutral-500 opacity-45"
-                    : hasMissingOptionalEnhancements
-                      ? "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white"
-                      : "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white";
-
-                  const button = (
-                    <button
-                      key={panelType}
-                      type="button"
-                      onClick={() => {
-                        if (availability.isAvailable) onChange(panelType);
-                      }}
-                      disabled={!availability.isAvailable}
-                      title={availability.isAvailable ? buttonTitle : undefined}
-                      className={`w-full rounded-md border px-2 py-1.5 text-left transition-colors ${
-                        isActive
-                          ? "border-amber-300 bg-white shadow-sm"
-                          : availabilityClasses
-                      } ${availability.isAvailable ? "opacity-100" : "pointer-events-none cursor-not-allowed"}`}>
-                      <div className="flex items-start gap-2">
-                        <Icon
-                          className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
-                            {panelType}
-                          </div>
-                        </div>
-                        {hasMissingOptionalEnhancements ? (
-                          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
-                        ) : null}
-                      </div>
-                    </button>
-                  );
-
-                  if (availability.isAvailable && !availability.optionalNotice) {
-                    return button;
-                  }
-
-                  return (
-                    <Tooltip key={`${panelType}-${availability.isAvailable ? "optional" : "disabled"}`}>
-                      <TooltipTrigger asChild>
-                        <span className="block" tabIndex={0}>
-                          {button}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-xs">
-                        <div className="font-medium">{panelType}</div>
-                        {availability.disabledReason ? (
-                          <div className="mt-0.5">{availability.disabledReason}</div>
-                        ) : null}
-                        {availability.optionalNotice ? (
-                          <div className="mt-0.5">{availability.optionalNotice}</div>
-                        ) : null}
-                        <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+      <div className="grid grid-cols-1 gap-2 pr-1">
+        {groupedPanels.map((group) => (
+          <div key={group.category} className="rounded-md border border-neutral-200/80 bg-white p-1.5">
+            {group.items.length > 1 && (
+              <div className="px-1 py-0.5 text-[10px] font-semibold tracking-wide text-neutral-500 uppercase">
+                {group.category}
               </div>
+            )}
+            <div className="mt-1 space-y-0.5">
+              {group.items.map((panelType) => {
+                const meta = PANEL_DEFINITIONS[panelType];
+                const Icon = meta.icon;
+                const isActive = panelType === value;
+                const availability = getPanelAvailabilityInfo(
+                  panelType,
+                  loading ? null : animationData,
+                  loading,
+                  datasetStates
+                );
+                const hasMissingOptionalEnhancements = availability.isAvailable && Boolean(availability.optionalNotice);
+                const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
+                  .filter(Boolean)
+                  .join("\n");
+                const availabilityClasses = !availability.isAvailable
+                  ? "border-transparent bg-white/80 text-neutral-500 opacity-45"
+                  : "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white";
+
+                const button = (
+                  <button
+                    key={panelType}
+                    type="button"
+                    onClick={() => {
+                      if (!availability.isAvailable) return;
+                      onChange(panelType);
+                      onRequestClose?.();
+                    }}
+                    disabled={!availability.isAvailable}
+                    title={availability.isAvailable ? buttonTitle : undefined}
+                    className={`w-full rounded-md border px-2 py-1.5 text-left transition-colors ${
+                      isActive ? "border-amber-300 bg-white shadow-sm" : availabilityClasses
+                    } ${availability.isAvailable ? "opacity-100" : "pointer-events-none cursor-not-allowed"}`}>
+                    <div className="flex items-start gap-2">
+                      <Icon
+                        className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
+                          {panelType}
+                        </div>
+                      </div>
+                      {hasMissingOptionalEnhancements ? (
+                        <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                      ) : null}
+                    </div>
+                  </button>
+                );
+
+                if (availability.isAvailable && !availability.optionalNotice) {
+                  return button;
+                }
+
+                return (
+                  <Tooltip key={`${panelType}-${availability.isAvailable ? "optional" : "disabled"}`}>
+                    <TooltipTrigger asChild>
+                      <span className="block" tabIndex={0}>
+                        {button}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <div className="font-medium">{panelType}</div>
+                      {availability.disabledReason ? <div className="mt-0.5">{availability.disabledReason}</div> : null}
+                      {availability.optionalNotice ? <div className="mt-0.5">{availability.optionalNotice}</div> : null}
+                      <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -582,6 +552,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   };
 
   const isMaximized = activePanel.api.isMaximized();
+  const showPanelPicker = activePanel.api.isActive || activePanel.api.group.panels.length === 1;
 
   const handleMaximize = () => {
     activePanel.api.maximize();
@@ -627,7 +598,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
               <MoreHorizontal />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-48 p-1" align="end">
+          <PopoverContent className={showPanelPicker ? "w-[min(30rem,92vw)] p-1" : "w-48 p-1"} align="end">
             <div className="flex flex-col gap-0.5">
               {!isTabGroup && (
                 <Button
@@ -675,6 +646,18 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
                 <Columns className="mr-2 h-4 w-4 rotate-90" />
                 Split Down
               </Button>
+              {showPanelPicker ? (
+                <>
+                  <div className="mx-1 my-1 h-px bg-neutral-200" />
+                  <PanelTypePickerMenu
+                    value={activePanelType}
+                    onChange={(newPanelType) => {
+                      activePanel.api.updateParameters(getPanelParams(newPanelType, currentMetric));
+                    }}
+                    onRequestClose={() => setIsMoreOpen(false)}
+                  />
+                </>
+              ) : null}
             </div>
           </PopoverContent>
         </Popover>
@@ -712,7 +695,10 @@ function PanelUnavailableState({
                 </div>
                 {isBusy ? (
                   <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-neutral-200">
-                    <div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${state.progress}%` }} />
+                    <div
+                      className="h-full rounded-full bg-amber-500 transition-all"
+                      style={{ width: `${state.progress}%` }}
+                    />
                   </div>
                 ) : null}
                 <div className="flex items-center justify-between gap-2 text-[10px] text-neutral-500">

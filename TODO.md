@@ -536,7 +536,7 @@ _Last Updated: February 2026_
 - [x] FloorVisibility toggles should show floor heights not just "visible"
 - [x] Show warning message when all floors are hidden
 - [x] Don't show the groundfloor on the ISD chart
-- [ ] BUG: You can no longer click / select nodes or floor after toggling the floor visibility
+- [x] BUG: You can no longer click / select nodes or floor after toggling the floor visibility
 
 ### 23.6 MagicPanel & Panels
 
@@ -559,13 +559,13 @@ _Last Updated: February 2026_
 ### 23.8 Data & Parser
 
 - [ ] Multiple places define an order for the optional data (NavigationBar, Main Menu, optionalLoads query param). This should be centralized and made consistent.
-- [ ] In parser.ts remove the "normalizeStoryName" function and just rename the floor in the data.
+- [x] In parser.ts remove the "normalizeStoryName" function and just rename the floor in the data.
 
 ---
 
 ## 24. Quick Wins & Cleanup
 
-- [ ] Quick buttons in the !isExpanded view menu should still be visible
+- [x] Quick buttons in the !isExpanded view menu should still be visible
 - [ ] The peak Values table is pointless and completely useless
 - [ ] Peak response time panel is awful and completely disgusting
 

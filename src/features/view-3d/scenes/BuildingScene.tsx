@@ -132,6 +132,11 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       return false;
     });
   }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories, hiddenNodeIdSet]);
+  const visibleStoriesKey = useMemo(() => getVisibleStoryOrder().join("|"), [getVisibleStoryOrder]);
+  const interactiveSceneKey = useMemo(
+    () => `${mode}:${visibleStoriesKey}:${visibleNodes.length}`,
+    [mode, visibleStoriesKey, visibleNodes.length]
+  );
 
   // Keyboard handler for ctrl/cmd to control pan and enable box select mode
   useEffect(() => {
@@ -322,6 +327,13 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
   const pointerDownNodeId = useRef<number | undefined>(undefined);
 
+  useEffect(() => {
+    pointerDownNodeId.current = undefined;
+    if (hoveredNodeId !== null && !visibleNodes.includes(hoveredNodeId)) {
+      setHoveredNodeId(null);
+    }
+  }, [visibleNodes, hoveredNodeId, setHoveredNodeId]);
+
   const basePositions = useMemo(() => {
     const positions = new Float32Array(visibleNodes.length * 3);
     for (let i = 0; i < visibleNodes.length; i++) {
@@ -498,11 +510,12 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       <group scale={UNIT_SCALE}>
         <group position={[offsets.x, offsets.y, offsets.z]}>
           {/* Render based on view mode */}
-          {mode === "floor-slabs" && <FloorSlabsRenderer nodeIds={visibleNodes} />}
+          {mode === "floor-slabs" && <FloorSlabsRenderer key={interactiveSceneKey} nodeIds={visibleNodes} />}
 
           {mode === "vertical-connections" && (
             <>
               <instancedMesh
+                key={interactiveSceneKey}
                 ref={meshRef}
                 onPointerDown={handlePointerDown}
                 onPointerMove={(e) => handlePointerMove(e)}
@@ -526,6 +539,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
           {(mode === "all-nodes" || mode === "corners-only" || mode === "exterior-only") && (
             <instancedMesh
+              key={interactiveSceneKey}
               ref={meshRef}
               onPointerDown={handlePointerDown}
               onPointerMove={(e) => handlePointerMove(e)}

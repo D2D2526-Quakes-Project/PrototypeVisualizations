@@ -34,11 +34,16 @@ export function PlaybackControls() {
   );
 }
 
-export function SmallPlaybackControls() {
+export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) {
   const { playing, handlePlayPause, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5 origin-right">
+    <div
+      className={
+        inline
+          ? "flex items-center gap-0.5"
+          : "bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 p-1 flex items-center gap-0.5 origin-right"
+      }>
       <button
         onClick={skipToStart}
         className="p-1 rounded hover:bg-neutral-200 transition-colors text-neutral-700 text-[10px] font-medium w-5 h-5 flex items-center justify-center"

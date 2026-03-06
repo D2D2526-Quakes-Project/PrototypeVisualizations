@@ -75,6 +75,7 @@ export type Unit =
   | "seconds"
   | "radians"
   | "percent"
+  | "g"
   | "inches/second"
   | "inches/second²"
   | "feet/second"
@@ -160,6 +161,11 @@ export const UNITS: Record<Unit, UnitConfig> = {
     label: "percent",
     singular: "percent",
     abbr: "%",
+  },
+  g: {
+    label: "g",
+    singular: "gravity (g)",
+    abbr: "g",
   },
 };
 

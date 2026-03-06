@@ -19,7 +19,7 @@ import {
   getDefaultAppState,
   getDataSelectionFromCurrentUrl,
 } from "@/features/view-3d/lib/statePersistence";
-import { useViewStoreRaw } from "@/state";
+import { useViewStore, useViewStoreRaw } from "@/state";
 import {
   Menubar,
   MenubarContent,
@@ -75,6 +75,8 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
   const location = useLocation();
   const navigate = useNavigate();
   const store = useViewStoreRaw();
+  const visibleFloorCount = useViewStore((state) => state.visibleFloors.length);
+  const showAllFloors = useViewStore((state) => state.showAllFloors);
   const { animationData, clearSelection, currentBuilding, currentSimulation, loadSelection } = useAnimationData();
 
   const [profiles, setProfiles] = useState<SaveProfile[]>(() => loadSaveProfiles());
@@ -229,6 +231,16 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
     return checks.filter((entry) => entry.available && !entry.loaded);
   }, [animationData, currentBuilding, currentSimulation]);
 
+  const allFloorsHiddenWarning = useMemo(() => {
+    const totalFloorCount = animationData?.metadata.storyOrder.length ?? 0;
+    if (totalFloorCount === 0) return null;
+    if (visibleFloorCount > 0) return null;
+    return {
+      totalFloorCount,
+      restore: () => showAllFloors(animationData.metadata.storyOrder),
+    };
+  }, [animationData, visibleFloorCount, showAllFloors]);
+
   const loadOptionalDataKey = useCallback(
     (
       key:
@@ -371,6 +383,18 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
           <div className="truncate">
             {currentBuilding?.name} / {currentSimulation?.name}
           </div>
+          {allFloorsHiddenWarning && (
+            <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] text-amber-800">
+              <AlertTriangle size={11} />
+              <span>All {allFloorsHiddenWarning.totalFloorCount} floors hidden</span>
+              <button
+                type="button"
+                onClick={allFloorsHiddenWarning.restore}
+                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-900 hover:bg-amber-100">
+                Show all floors
+              </button>
+            </div>
+          )}
           {optionalDataWarnings.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>

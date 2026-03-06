@@ -72,7 +72,7 @@ export function ViewControls({
   const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
     useSliceSelection();
   const { thresholds, setThreshold } = useThresholds();
-  const { visibleFloors, toggleFloor, setFloorVisible, showAllFloors, hideAllFloors } = useFloorVisibility();
+  const { visibleFloors, setFloorVisible, showAllFloors, hideAllFloors } = useFloorVisibility();
 
   const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
   const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
@@ -259,7 +259,7 @@ export function ViewControls({
 
   return (
     <div
-      className={`absolute z-[60] flex ${docked ? "top-0 right-0 bottom-0" : "top-2 right-2 max-h-[calc(100%-1rem)]"}`}>
+      className={`absolute z-60 flex ${docked ? "top-0 right-0 bottom-0" : "top-2 right-2 max-h-[calc(100%-1rem)]"}`}>
       <div className={`flex max-h-full flex-col overflow-hidden ${docked ? "items-stretch" : "items-end gap-0.5"}`}>
         <AnimatePresence mode="popLayout">
           {!isExpanded ? (
@@ -445,7 +445,7 @@ export function ViewControls({
               animate="animate"
               exit="exit"
               transition={{ duration: 0.15, delayChildren: stagger(0.05) }}
-              className={`flex max-h-full min-h-0 min-w-40 flex-col overflow-hidden p-2 ${
+              className={`flex max-h-full min-h-0 min-w-40 flex-col overflow-hidden p-2 pr-0 pb-0 ${
                 docked
                   ? "h-full origin-top-right border-l border-neutral-200 bg-white"
                   : "origin-top-right rounded-lg border border-neutral-200 bg-white/90 shadow-lg backdrop-blur-sm"
@@ -559,21 +559,11 @@ export function ViewControls({
                     setDisplacementScale={setDisplacementScale}
                   />
                 </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <FloorsPanel
-                    visibleFloors={visibleFloors}
-                    toggleFloor={toggleFloor}
-                    setFloorVisible={setFloorVisible}
-                    showAllFloors={showAllFloors}
-                    hideAllFloors={hideAllFloors}
-                    storyOrder={animationData.metadata.storyOrder}
-                  />
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                <motion.div className="mt-2 border-t border-neutral-200 px-0 pt-2" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
                     <span className="text-xs font-medium text-neutral-700">Background</span>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 px-1">
                     {[
                       { label: "Gray", value: "#dcdcdc" },
                       { label: "White", value: "#ffffff" },
@@ -593,6 +583,16 @@ export function ViewControls({
                       />
                     ))}
                   </div>
+                </motion.div>
+                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                  <FloorsPanel
+                    visibleFloors={visibleFloors}
+                    setFloorVisible={setFloorVisible}
+                    showAllFloors={showAllFloors}
+                    hideAllFloors={hideAllFloors}
+                    storyOrder={animationData.metadata.storyOrder}
+                    storyHeights={animationData.metadata.storyHeights}
+                  />
                 </motion.div>
               </div>
             </motion.div>

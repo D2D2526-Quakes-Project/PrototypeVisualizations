@@ -6,7 +6,9 @@ import * as THREE from "three";
 import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
 import { useCamera } from "@/features/view-3d/contexts/CameraContext";
 import { getDefaultCanvasPanelState } from "@/features/view-3d/lib/statePersistence";
+import { useAnimationData } from "@/lib/useAnimationData";
 import { useViewStore, useViewStoreRaw } from "@/state";
+import { AlertTriangle } from "lucide-react";
 
 import { BoxSelectionOverlay } from "./CanvasWithControls/BoxSelectionOverlay";
 import { CameraManager } from "./CanvasWithControls/CameraManager";
@@ -44,7 +46,10 @@ export function CanvasWithControls({
   const hasWrittenCameraModeRef = useRef(false);
   const hasPersistedCameraModeRef = useRef(false);
   const { orbitControlsRef, getCameraState } = useCamera();
+  const { animationData } = useAnimationData();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
+  const visibleFloorCount = useViewStore((s) => s.visibleFloors.length);
+  const showAllFloors = useViewStore((s) => s.showAllFloors);
 
   const isOrthographic =
     cameraModeOverride?.panelId === panelId
@@ -280,8 +285,18 @@ export function CanvasWithControls({
       />
       {showPlaybackControls && (
         <div className="absolute top-2 left-2 z-50">
-          <div className="flex items-start gap-0.5">
+          <div className="flex items-start gap-1">
             <SmallPlaybackControls />
+            {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
+              <button
+                type="button"
+                onClick={() => showAllFloors(animationData.metadata.storyOrder)}
+                className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1.5 py-1 text-[10px] font-medium text-amber-800 shadow-sm hover:bg-amber-100"
+                title="All floors are hidden. Show all floors.">
+                <AlertTriangle size={10} />
+                No floors
+              </button>
+            )}
           </div>
         </div>
       )}

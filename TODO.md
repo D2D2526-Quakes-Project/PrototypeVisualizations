@@ -526,10 +526,10 @@ _Last Updated: February 2026_
 
 ### 23.5 Floor Visibility
 
-- [ ] FloorVisibility toggles are reverse order
-- [ ] Clicking a single button in the FloorVisibility toggles it twice (mouse down, mouse up)
-- [ ] FloorVisibility toggles should show floor heights not just "visible"
-- [ ] Show warning message when all floors are hidden
+- [x] FloorVisibility toggles are reverse order
+- [x] Clicking a single button in the FloorVisibility toggles it twice (mouse down, mouse up)
+- [x] FloorVisibility toggles should show floor heights not just "visible"
+- [x] Show warning message when all floors are hidden
 - [ ] Don't show the groundfloor on the ISD chart
 - [ ] BUG: You can no longer click / select nodes or floor after toggling the floor visibility
 

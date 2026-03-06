@@ -61,6 +61,15 @@ export type Metric =
   | "rotationAccelerationMag"
   | "interstoryDrift";
 
+export type ThresholdKey =
+  | "displacement"
+  | "velocity"
+  | "acceleration"
+  | "rotation"
+  | "rotationVelocity"
+  | "rotationAcceleration"
+  | "interstoryDrift";
+
 export interface ColorScale {
   metric: Metric;
   colorStops: string[];
@@ -394,6 +403,7 @@ export function getUnitFullName(unit: string): string {
 
 export type MetricConfig = {
   metric: Metric;
+  thresholdKey: ThresholdKey;
   label: string;
   unit: UnitConfig;
   getPrecomputedMax: (stats: ComputedStats) => number;
@@ -418,9 +428,70 @@ function get<T extends NumericKeys<ComputedStats> & keyof ComputedStats>(stat: T
   return (stats) => stats[stat] ?? 0;
 }
 
+export interface ThresholdConfig {
+  key: ThresholdKey;
+  label: string;
+  unit: UnitConfig;
+  getPrecomputedMax: (stats: ComputedStats) => number;
+  isAvailable: (animationData: BuildingAnimationData) => boolean;
+}
+
+export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
+  displacement: {
+    key: "displacement",
+    label: "Displacement",
+    unit: UNITS["inches"],
+    getPrecomputedMax: get("maxDisplacement"),
+    isAvailable: (animationData) => !!animationData.displacementLin,
+  },
+  velocity: {
+    key: "velocity",
+    label: "Velocity",
+    unit: UNITS["inches/second"],
+    getPrecomputedMax: get("maxVelocity"),
+    isAvailable: (animationData) => !!animationData.velocityLin,
+  },
+  acceleration: {
+    key: "acceleration",
+    label: "Acceleration",
+    unit: UNITS["inches/second²"],
+    getPrecomputedMax: get("maxAcceleration"),
+    isAvailable: (animationData) => !!animationData.accelerationLin,
+  },
+  rotation: {
+    key: "rotation",
+    label: "Rotation",
+    unit: UNITS["radians"],
+    getPrecomputedMax: get("maxRotation"),
+    isAvailable: (animationData) => !!animationData.displacementRot,
+  },
+  rotationVelocity: {
+    key: "rotationVelocity",
+    label: "Rotation Velocity",
+    unit: UNITS["radians/second"],
+    getPrecomputedMax: get("maxRotationVelocity"),
+    isAvailable: (animationData) => !!animationData.velocityRot,
+  },
+  rotationAcceleration: {
+    key: "rotationAcceleration",
+    label: "Rotation Acceleration",
+    unit: UNITS["radians/second²"],
+    getPrecomputedMax: get("maxRotationAcceleration"),
+    isAvailable: (animationData) => !!animationData.accelerationRot,
+  },
+  interstoryDrift: {
+    key: "interstoryDrift",
+    label: "ISD",
+    unit: UNITS["percent"],
+    getPrecomputedMax: get("maxStoryDrift"),
+    isAvailable: (animationData) => !!animationData.displacementLin,
+  },
+};
+
 export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   displacementMag: {
     metric: "displacementMag",
+    thresholdKey: "displacement",
     label: "Displacement (Mag)",
     unit: UNITS["inches"],
     positiveOnly: true,
@@ -434,6 +505,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   displacementX: {
     metric: "displacementX",
+    thresholdKey: "displacement",
     label: "Displacement X",
     unit: UNITS["inches"],
     positiveOnly: false,
@@ -447,6 +519,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   displacementY: {
     metric: "displacementY",
+    thresholdKey: "displacement",
     label: "Displacement Y",
     unit: UNITS["inches"],
     positiveOnly: false,
@@ -460,6 +533,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   displacementZ: {
     metric: "displacementZ",
+    thresholdKey: "displacement",
     label: "Displacement Z",
     unit: UNITS["inches"],
     positiveOnly: false,
@@ -473,6 +547,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   velocityMag: {
     metric: "velocityMag",
+    thresholdKey: "velocity",
     label: "Velocity (Mag)",
     unit: UNITS["inches/second"],
     positiveOnly: true,
@@ -487,6 +562,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   velocityX: {
     metric: "velocityX",
+    thresholdKey: "velocity",
     label: "Velocity X",
     unit: UNITS["inches/second"],
     positiveOnly: false,
@@ -501,6 +577,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   velocityY: {
     metric: "velocityY",
+    thresholdKey: "velocity",
     label: "Velocity Y",
     unit: UNITS["inches/second"],
     positiveOnly: false,
@@ -515,6 +592,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   velocityZ: {
     metric: "velocityZ",
+    thresholdKey: "velocity",
     label: "Velocity Z",
     unit: UNITS["inches/second"],
     positiveOnly: false,
@@ -529,6 +607,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   accelerationMag: {
     metric: "accelerationMag",
+    thresholdKey: "acceleration",
     label: "Acceleration (Mag)",
     unit: UNITS["inches/second²"],
     positiveOnly: true,
@@ -543,6 +622,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   accelerationX: {
     metric: "accelerationX",
+    thresholdKey: "acceleration",
     label: "Acceleration X",
     unit: UNITS["inches/second²"],
     positiveOnly: false,
@@ -557,6 +637,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   accelerationY: {
     metric: "accelerationY",
+    thresholdKey: "acceleration",
     label: "Acceleration Y",
     unit: UNITS["inches/second²"],
     positiveOnly: false,
@@ -571,6 +652,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   accelerationZ: {
     metric: "accelerationZ",
+    thresholdKey: "acceleration",
     label: "Acceleration Z",
     unit: UNITS["inches/second²"],
     positiveOnly: false,
@@ -585,6 +667,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationMag: {
     metric: "rotationMag",
+    thresholdKey: "rotation",
     label: "Rotation (Mag)",
     unit: UNITS["radians"],
     positiveOnly: true,
@@ -599,6 +682,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationX: {
     metric: "rotationX",
+    thresholdKey: "rotation",
     label: "Rotation X",
     unit: UNITS["radians"],
     positiveOnly: false,
@@ -613,6 +697,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationY: {
     metric: "rotationY",
+    thresholdKey: "rotation",
     label: "Rotation Y",
     unit: UNITS["radians"],
     positiveOnly: false,
@@ -627,6 +712,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationZ: {
     metric: "rotationZ",
+    thresholdKey: "rotation",
     label: "Rotation Z",
     unit: UNITS["radians"],
     positiveOnly: false,
@@ -641,6 +727,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationVelocityMag: {
     metric: "rotationVelocityMag",
+    thresholdKey: "rotationVelocity",
     label: "Rotation Velocity (Mag)",
     unit: UNITS["radians/second"],
     positiveOnly: true,
@@ -655,6 +742,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationVelocityX: {
     metric: "rotationVelocityX",
+    thresholdKey: "rotationVelocity",
     label: "Rotation Velocity X",
     unit: UNITS["radians/second"],
     positiveOnly: false,
@@ -669,6 +757,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationVelocityY: {
     metric: "rotationVelocityY",
+    thresholdKey: "rotationVelocity",
     label: "Rotation Velocity Y",
     unit: UNITS["radians/second"],
     positiveOnly: false,
@@ -683,6 +772,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationVelocityZ: {
     metric: "rotationVelocityZ",
+    thresholdKey: "rotationVelocity",
     label: "Rotation Velocity Z",
     unit: UNITS["radians/second"],
     positiveOnly: false,
@@ -697,6 +787,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationAccelerationMag: {
     metric: "rotationAccelerationMag",
+    thresholdKey: "rotationAcceleration",
     label: "Rotation Acceleration (Mag)",
     unit: UNITS["radians/second²"],
     positiveOnly: true,
@@ -711,6 +802,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationAccelerationX: {
     metric: "rotationAccelerationX",
+    thresholdKey: "rotationAcceleration",
     label: "Rotation Acceleration X",
     unit: UNITS["radians/second²"],
     positiveOnly: false,
@@ -725,6 +817,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationAccelerationY: {
     metric: "rotationAccelerationY",
+    thresholdKey: "rotationAcceleration",
     label: "Rotation Acceleration Y",
     unit: UNITS["radians/second²"],
     positiveOnly: false,
@@ -739,6 +832,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   rotationAccelerationZ: {
     metric: "rotationAccelerationZ",
+    thresholdKey: "rotationAcceleration",
     label: "Rotation Acceleration Z",
     unit: UNITS["radians/second²"],
     positiveOnly: false,
@@ -753,6 +847,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
   },
   interstoryDrift: {
     metric: "interstoryDrift",
+    thresholdKey: "interstoryDrift",
     label: "Story Drift",
     unit: UNITS["percent"],
     positiveOnly: false,
@@ -796,6 +891,29 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     negativeColorStops: [blue50, blue400, blue600, blue900],
   },
 };
+
+export const THRESHOLD_KEY_ORDER: ThresholdKey[] = [
+  "displacement",
+  "rotation",
+  "velocity",
+  "rotationVelocity",
+  "acceleration",
+  "rotationAcceleration",
+  "interstoryDrift",
+];
+
+export function getThresholdConfig(thresholdKey: ThresholdKey): ThresholdConfig {
+  return THRESHOLD_CONFIGS[thresholdKey];
+}
+
+export function getThresholdKey(metric: Metric): ThresholdKey {
+  return METRIC_CONFIGS[metric].thresholdKey;
+}
+
+export function getMetricsForThreshold(thresholdKey: ThresholdKey): Metric[] {
+  return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) => METRIC_CONFIGS[metric].thresholdKey === thresholdKey);
+}
+
 export function getMetricConfig(metric: Metric): MetricConfig {
   return METRIC_CONFIGS[metric];
 }

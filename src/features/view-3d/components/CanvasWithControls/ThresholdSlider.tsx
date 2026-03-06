@@ -26,7 +26,7 @@ export function ThresholdSlider({
     <div className={`flex items-center gap-1 ${currentlyUsed ? "" : "opacity-50"}`}>
       <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
-          <span className="w-8 shrink-0 text-[10px] text-neutral-500">{label}</span>
+          <span className="w-24 shrink-0 text-[10px] text-neutral-500">{label}</span>
         </TooltipTrigger>
         <TooltipContent side="left" className="max-w-xs">
           {tooltip}

@@ -240,7 +240,7 @@ export function HistogramChart({
   const histogramData = useMemo(() => {
     const { binEdges, bins, binWidth, minPos, positionValues, filteredNodeIds } = staticConfig;
     const config = METRIC_CONFIGS[valueType];
-    const threshold = thresholds[valueType];
+    const threshold = thresholds[config.thresholdKey];
     const thresholdMagnitude = config.positiveOnly ? threshold : Math.abs(threshold);
 
     const getNodeValue = (nodeId: number): number | null => {
@@ -432,7 +432,7 @@ export function HistogramChart({
         </div>
         <div className="mt-1 flex items-center gap-2 text-xs text-neutral-600">
           <span>
-            Threshold: <UnitTooltip value={thresholds[valueType]} unit={config.unit.abbr} decimals={3} />
+            Threshold: <UnitTooltip value={thresholds[config.thresholdKey]} unit={config.unit.abbr} decimals={3} />
           </span>
           {/* TODO: Input for threshold */}
           <span className="ml-auto">

@@ -27,6 +27,7 @@ import { Timeline } from "./Timeline";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
+  AlertTriangle,
   BarChart3,
   ChevronDown,
   Columns,
@@ -442,9 +443,9 @@ function PanelTypePicker({
                     .filter(Boolean)
                     .join("\n");
                   const availabilityClasses = !availability.isAvailable
-                    ? "border-dashed border-rose-300 bg-rose-50/70 text-neutral-500 opacity-70"
+                    ? "border-transparent bg-white/80 text-neutral-500 opacity-45"
                     : hasMissingOptionalEnhancements
-                      ? "border-amber-200 bg-amber-50/70"
+                      ? "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white"
                       : "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white";
 
                   const button = (
@@ -465,11 +466,14 @@ function PanelTypePicker({
                         <Icon
                           className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`}
                         />
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
                             {panelType}
                           </div>
                         </div>
+                        {hasMissingOptionalEnhancements ? (
+                          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                        ) : null}
                       </div>
                     </button>
                   );

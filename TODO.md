@@ -545,6 +545,7 @@ _Last Updated: February 2026_
 - [x] New Histogram panels should open with the currently selected metric
 - [x] Delete the duplicate Hinge Performance Panel
 - [x] All Displacement Thresholds should be merged into one "Displacement Threshold" value instead of separate per MagXYZ
+- [x] Generalize threshold sharing so metric families use config-driven shared thresholds and the threshold panel renders unique threshold controls
 
 ### 23.7 View Modes
 

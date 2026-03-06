@@ -16,10 +16,17 @@ import type { IDockviewPanelProps } from "dockview";
 import { useViewStore } from "@/state";
 
 const CHANNEL_CONFIG = {
-  rx: { id: "rx", label: "RX Angular Velocity", shortName: "RX", color: "#f87171", unit: "rad/s" },
-  ry: { id: "ry", label: "RY Angular Velocity", shortName: "RY", color: "#4ade80", unit: "rad/s" },
-  rz: { id: "rz", label: "RZ Angular Velocity", shortName: "RZ", color: "#60a5fa", unit: "rad/s" },
-  magnitude: { id: "magnitude", label: "Angular Speed", shortName: "Mag", color: "#fbbf24", unit: "rad/s" },
+  rx: { id: "rx", label: "RX Angular Velocity", shortName: "RX", color: "#f87171", unit: "rad/s", thresholdKey: "rotationVelocity" },
+  ry: { id: "ry", label: "RY Angular Velocity", shortName: "RY", color: "#4ade80", unit: "rad/s", thresholdKey: "rotationVelocity" },
+  rz: { id: "rz", label: "RZ Angular Velocity", shortName: "RZ", color: "#60a5fa", unit: "rad/s", thresholdKey: "rotationVelocity" },
+  magnitude: {
+    id: "magnitude",
+    label: "Angular Speed",
+    shortName: "Mag",
+    color: "#fbbf24",
+    unit: "rad/s",
+    thresholdKey: "rotationVelocity",
+  },
 } as const;
 
 type ChannelKey = keyof typeof CHANNEL_CONFIG;
@@ -259,14 +266,7 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
         splitLine: { lineStyle: { color: "#f3f4f6" } },
       });
 
-      const thresholdValue =
-        key === "magnitude"
-          ? thresholds.rotationVelocityMag
-          : key === "rx"
-            ? thresholds.rotationVelocityX
-            : key === "ry"
-              ? thresholds.rotationVelocityY
-              : thresholds.rotationVelocityZ;
+      const thresholdValue = thresholds[config.thresholdKey] ?? 0;
 
       const markLineData: Array<{ xAxis?: number; yAxis?: number; name?: string }> = [
         { xAxis: frameIndex * animationData.metadata.dt },

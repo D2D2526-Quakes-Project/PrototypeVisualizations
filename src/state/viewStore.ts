@@ -1,5 +1,5 @@
 import type { ViewMode } from "@/features/view-3d/contexts/visualization/ViewModeContext";
-import type { Metric } from "@/lib/metrics";
+import type { Metric, ThresholdKey } from "@/lib/metrics";
 import type { ComputedStats } from "@/lib/types";
 import type { PanelState } from "@/features/view-3d/lib/statePersistence";
 import type { SerializedDockview } from "dockview";
@@ -12,33 +12,15 @@ function isStateDebugEnabled(): boolean {
   return new URLSearchParams(window.location.search).get("debugState") === "1";
 }
 
-export type ThresholdState = Record<Metric, number>;
+export type ThresholdState = Record<ThresholdKey, number>;
 
 export const DEFAULT_THRESHOLDS: ThresholdState = {
-  displacementX: 0.1,
-  displacementY: 0.1,
-  displacementZ: 0.1,
-  displacementMag: 0.1,
-  velocityX: 1,
-  velocityY: 1,
-  velocityZ: 1,
-  velocityMag: 1,
-  accelerationX: 2,
-  accelerationY: 2,
-  accelerationZ: 2,
-  accelerationMag: 2,
-  rotationX: 0.005,
-  rotationY: 0.01,
-  rotationZ: 0.01,
-  rotationMag: 0.01,
-  rotationVelocityX: 0.1,
-  rotationVelocityY: 0.1,
-  rotationVelocityZ: 0.1,
-  rotationVelocityMag: 0.1,
-  rotationAccelerationX: 0.5,
-  rotationAccelerationY: 0.5,
-  rotationAccelerationZ: 0.5,
-  rotationAccelerationMag: 0.5,
+  displacement: 0.1,
+  velocity: 1,
+  acceleration: 2,
+  rotation: 0.01,
+  rotationVelocity: 0.1,
+  rotationAcceleration: 0.5,
   interstoryDrift: 0.5,
 };
 
@@ -116,7 +98,7 @@ export interface ViewState {
   // Thresholds
   thresholds: ThresholdState;
   defaultThresholds: ThresholdState;
-  setThreshold: (type: Metric, value: number) => void;
+  setThreshold: (type: ThresholdKey, value: number) => void;
   resetThresholds: () => void;
   setThresholdsFromPrecomputed: (precomputed: ComputedStats) => void;
 
@@ -211,18 +193,6 @@ export interface ViewState {
   setHoveredSlice: (slice: SliceSelectionState | null) => void;
 }
 
-function getSharedDisplacementThresholds(value: number): Pick<
-  ThresholdState,
-  "displacementX" | "displacementY" | "displacementZ" | "displacementMag"
-> {
-  return {
-    displacementX: value,
-    displacementY: value,
-    displacementZ: value,
-    displacementMag: value,
-  };
-}
-
 export const createViewStore = () =>
   createStore<ViewState>()(
     subscribeWithSelector((set) => ({
@@ -262,13 +232,7 @@ export const createViewStore = () =>
       defaultThresholds: { ...DEFAULT_THRESHOLDS },
       setThreshold: (type, value) =>
         set((state) => ({
-          thresholds:
-            type === "displacementMag" ||
-            type === "displacementX" ||
-            type === "displacementY" ||
-            type === "displacementZ"
-              ? { ...state.thresholds, ...getSharedDisplacementThresholds(value) }
-              : { ...state.thresholds, [type]: value },
+          thresholds: { ...state.thresholds, [type]: value },
         })),
       resetThresholds: () =>
         set((state) => ({
@@ -276,30 +240,14 @@ export const createViewStore = () =>
         })),
       setThresholdsFromPrecomputed: (precomputed) =>
         set((state) => {
-          const displacementThreshold = precomputed.maxDisplacement / 4;
           const nextDefaults: ThresholdState = {
             ...state.defaultThresholds,
-            ...getSharedDisplacementThresholds(displacementThreshold),
-            velocityX: (precomputed.maxVelocityX ?? 10) / 4,
-            velocityY: (precomputed.maxVelocityY ?? 10) / 4,
-            velocityZ: (precomputed.maxVelocityZ ?? 10) / 4,
-            velocityMag: (precomputed.maxVelocity ?? 10) / 4,
-            accelerationX: (precomputed.maxAccelerationX ?? 20) / 4,
-            accelerationY: (precomputed.maxAccelerationY ?? 20) / 4,
-            accelerationZ: (precomputed.maxAccelerationZ ?? 20) / 4,
-            accelerationMag: (precomputed.maxAcceleration ?? 20) / 4,
-            rotationX: (precomputed.maxRotationX ?? 0.05) / 4,
-            rotationY: (precomputed.maxRotationY ?? 0.05) / 4,
-            rotationZ: (precomputed.maxRotationZ ?? 0.05) / 4,
-            rotationMag: (precomputed.maxRotation ?? 0.05) / 4,
-            rotationVelocityX: (precomputed.maxRotationVelocityX ?? 0.5) / 4,
-            rotationVelocityY: (precomputed.maxRotationVelocityY ?? 0.5) / 4,
-            rotationVelocityZ: (precomputed.maxRotationVelocityZ ?? 0.5) / 4,
-            rotationVelocityMag: (precomputed.maxRotationVelocity ?? 0.5) / 4,
-            rotationAccelerationX: (precomputed.maxRotationAccelerationX ?? 2) / 4,
-            rotationAccelerationY: (precomputed.maxRotationAccelerationY ?? 2) / 4,
-            rotationAccelerationZ: (precomputed.maxRotationAccelerationZ ?? 2) / 4,
-            rotationAccelerationMag: (precomputed.maxRotationAcceleration ?? 2) / 4,
+            displacement: precomputed.maxDisplacement / 4,
+            velocity: (precomputed.maxVelocity ?? 10) / 4,
+            acceleration: (precomputed.maxAcceleration ?? 20) / 4,
+            rotation: (precomputed.maxRotation ?? 0.05) / 4,
+            rotationVelocity: (precomputed.maxRotationVelocity ?? 0.5) / 4,
+            rotationAcceleration: (precomputed.maxRotationAcceleration ?? 2) / 4,
             interstoryDrift: precomputed.maxStoryDrift / 4,
           };
 

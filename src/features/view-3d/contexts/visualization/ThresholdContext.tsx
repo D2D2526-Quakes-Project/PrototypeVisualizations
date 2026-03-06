@@ -1,12 +1,12 @@
 import { useViewStore } from "@/state";
 import type { ThresholdState as TS } from "@/state/viewStore";
-import type { Metric } from "@/lib/metrics";
+import { getThresholdKey, THRESHOLD_CONFIGS, type Metric, type ThresholdKey } from "@/lib/metrics";
 
 interface ThresholdContextType {
   thresholds: TS;
-  setThreshold: (type: Metric, value: number) => void;
+  setThreshold: (type: ThresholdKey, value: number) => void;
   resetThresholds: () => void;
-  getThreshold: (type: Metric) => number;
+  getThreshold: (type: Metric | ThresholdKey) => number;
 }
 
 export function ThresholdProvider({ children }: { children: React.ReactNode }) {
@@ -18,7 +18,10 @@ export function useThresholds(): ThresholdContextType {
   const setThreshold = useViewStore((s) => s.setThreshold);
   const resetThresholds = useViewStore((s) => s.resetThresholds);
 
-  const getThreshold = (type: Metric) => thresholds[type];
+  const getThreshold = (type: Metric | ThresholdKey) => {
+    const thresholdKey = type in THRESHOLD_CONFIGS ? (type as ThresholdKey) : getThresholdKey(type as Metric);
+    return thresholds[thresholdKey];
+  };
 
   return {
     thresholds,

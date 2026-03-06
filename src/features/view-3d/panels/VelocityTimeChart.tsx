@@ -46,10 +46,17 @@ import type { IDockviewPanelProps } from "dockview";
 import { useViewStore } from "@/state";
 
 const CHANNEL_CONFIG = {
-  x: { id: "x", label: "X Velocity", shortName: "X", color: "#f87171", unit: "in/s" },
-  y: { id: "y", label: "Y Velocity", shortName: "Y", color: "#4ade80", unit: "in/s" },
-  z: { id: "z", label: "Z Velocity", shortName: "Z", color: "#60a5fa", unit: "in/s" },
-  magnitude: { id: "magnitude", label: "Speed", shortName: "Spd", color: "#fbbf24", unit: "in/s" },
+  x: { id: "x", label: "X Velocity", shortName: "X", color: "#f87171", unit: "in/s", thresholdKey: "velocity" },
+  y: { id: "y", label: "Y Velocity", shortName: "Y", color: "#4ade80", unit: "in/s", thresholdKey: "velocity" },
+  z: { id: "z", label: "Z Velocity", shortName: "Z", color: "#60a5fa", unit: "in/s", thresholdKey: "velocity" },
+  magnitude: {
+    id: "magnitude",
+    label: "Speed",
+    shortName: "Spd",
+    color: "#fbbf24",
+    unit: "in/s",
+    thresholdKey: "velocity",
+  },
 } as const;
 
 type ChannelKey = keyof typeof CHANNEL_CONFIG;
@@ -267,16 +274,7 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
         splitLine: { lineStyle: { color: "#f3f4f6" } },
       });
 
-      const thresholdValue =
-        key === "magnitude"
-          ? thresholds.velocityMag
-          : key === "x"
-            ? thresholds.velocityX
-            : key === "y"
-              ? thresholds.velocityY
-              : key === "z"
-                ? thresholds.velocityZ
-                : 0;
+      const thresholdValue = thresholds[config.thresholdKey] ?? 0;
 
       const markLineData: Array<{ xAxis?: number; yAxis?: number; name?: string }> = [
         { xAxis: frameIndex * animationData.metadata.dt },

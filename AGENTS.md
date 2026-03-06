@@ -17,6 +17,8 @@ src/
 └── App.tsx          # Root component
 ```
 
+The `.ottotime` file is used to track time. Unrelated to the project. You may commit it during git commits.
+
 All plots and visualizations must include: Titles, Axis Labels, Legends, Color Bars, Tooltips
 Consistent units: inches (in), radians (rad), seconds (s).
 

@@ -426,10 +426,7 @@ function getAccelerationReviewDefaultState(layout?: SerializedDockview | null): 
     thresholdHighlighting: true,
     thresholds: {
       ...base.thresholds,
-      accelerationMag: 1.5,
-      accelerationX: 1.5,
-      accelerationY: 1.5,
-      accelerationZ: 1.5,
+      acceleration: 1.5,
     },
     panelStates,
   };
@@ -491,8 +488,7 @@ function getDamageScreeningDefaultState(layout?: SerializedDockview | null): App
     thresholdHighlighting: true,
     thresholds: {
       ...base.thresholds,
-      rotationZ: 0.006,
-      rotationMag: 0.008,
+      rotation: 0.008,
       interstoryDrift: 0.35,
     },
     expandedScale: {

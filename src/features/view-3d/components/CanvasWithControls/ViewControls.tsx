@@ -93,7 +93,7 @@ export function ViewControls({
   const maxValue = config.getPrecomputedMax(animationData.precomputed);
   const unit = config.unit;
   const positiveOnly = config.positiveOnly;
-  const thresholdValue = thresholds[currentMetric] ?? 0;
+  const thresholdValue = thresholds[config.thresholdKey] ?? 0;
 
   const resetView = (viewType: ViewPresetMode) => {
     if (orbitControlsRef?.current) {
@@ -234,9 +234,10 @@ export function ViewControls({
   }, [isExpanded, onExpandedWidthChange]);
 
   return (
-    <div className={`absolute z-60 ${docked ? "top-0 right-0 bottom-0" : "top-2 right-2 bottom-2"}`}>
+    <div
+      className={`pointer-events-none absolute z-60 ${docked ? "top-0 right-0 bottom-0" : "top-2 right-2 bottom-2"}`}>
       <div className="flex h-full max-h-full min-h-0 items-start gap-2">
-        <div className={`relative flex flex-col items-end gap-2 ${docked ? "top-2" : ""}`}>
+        <div className={`pointer-events-auto relative flex flex-col items-end gap-2 ${docked ? "top-2" : ""}`}>
           <motion.div
             key="collapsed"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -429,7 +430,7 @@ export function ViewControls({
               animate="animate"
               exit="exit"
               transition={{ duration: 0.15, delayChildren: stagger(0.05) }}
-              className={`flex max-h-full min-h-0 min-w-40 flex-col overflow-hidden p-2 pr-0 pb-0 ${
+              className={`pointer-events-auto flex max-h-full min-h-0 min-w-40 flex-col overflow-hidden p-2 pr-0 pb-0 ${
                 docked
                   ? "h-full origin-top-right border-l border-neutral-200 bg-white"
                   : "origin-top-right rounded-lg border border-neutral-200 bg-white/90 shadow-lg backdrop-blur-sm"

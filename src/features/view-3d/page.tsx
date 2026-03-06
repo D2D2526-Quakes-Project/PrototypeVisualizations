@@ -12,7 +12,7 @@ import {
   getDefaultAppState,
   type AppState,
 } from "@/features/view-3d/lib/statePersistence";
-import type { Metric } from "@/lib/metrics";
+import { THRESHOLD_CONFIGS, type ThresholdKey } from "@/lib/metrics";
 import { useViewStoreRaw } from "@/state";
 import { type DockviewApi, type DockviewReadyEvent, type SerializedDockview } from "dockview";
 import { useCallback, useEffect, useState, useRef } from "react";
@@ -97,8 +97,10 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
     s.setColorMetric(initialState.currentMetric);
     s.setThresholdHighlighting(initialState.thresholdHighlighting);
 
-    (Object.entries(initialState.thresholds) as Array<[Metric, number]>).forEach(([key, value]) => {
-      s.setThreshold(key, value);
+    (Object.entries(initialState.thresholds) as Array<[ThresholdKey, number]>).forEach(([key, value]) => {
+      if (key in THRESHOLD_CONFIGS) {
+        s.setThreshold(key, value);
+      }
     });
 
     s.setVisibleFloors(initialState.visibleFloors);

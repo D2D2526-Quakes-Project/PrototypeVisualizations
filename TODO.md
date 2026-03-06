@@ -195,6 +195,7 @@
 - [ ] Add undo/redo for selections
 - [x] Add "reset to defaults" button
 - [x] Improve panel drag/resize handles
+- [x] Consolidate 3D view preset definitions into shared canvas-controls config
 
 - [x] Change the views menu popover to be a sidebar that takes up space next to the canvas
 

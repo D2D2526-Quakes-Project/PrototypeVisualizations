@@ -36,6 +36,7 @@ import { SliceViewPanel } from "./control-panels/SliceViewPanel";
 import { FloorsPanel, ThresholdPanel } from "./control-panels/ThresholdPanel";
 import { ViewModeSelect } from "./control-panels/ViewModeSelect";
 import { ViewsPanel } from "./control-panels/ViewsPanel";
+import { COLLAPSED_VIEW_PRESET_OPTIONS, type ViewPresetMode } from "./viewPresets";
 
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
@@ -94,19 +95,7 @@ export function ViewControls({
   const positiveOnly = config.positiveOnly;
   const thresholdValue = thresholds[currentMetric] ?? 0;
 
-  const resetView = (
-    viewType:
-      | "top"
-      | "bottom"
-      | "left"
-      | "right"
-      | "front"
-      | "back"
-      | "frontRight"
-      | "frontLeft"
-      | "backRight"
-      | "backLeft"
-  ) => {
+  const resetView = (viewType: ViewPresetMode) => {
     if (orbitControlsRef?.current) {
       const controls = orbitControlsRef.current;
       const camera = controls.object;
@@ -146,13 +135,6 @@ export function ViewControls({
   const toggleCameraType = useCallback(() => {
     setIsOrthographic(!isOrthographic);
   }, [isOrthographic, setIsOrthographic]);
-
-  const collapsedViewButtons = [
-    { view: "front" as const, label: "+Y" },
-    { view: "right" as const, label: "+X" },
-    { view: "frontRight" as const, label: "NE" },
-    { view: "top" as const, label: "Top" },
-  ];
 
   const childVariants = {
     initial: { opacity: 0 },
@@ -265,13 +247,13 @@ export function ViewControls({
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.15 }}
                 className="flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
-                {collapsedViewButtons.map(({ view, label }) => (
+                {COLLAPSED_VIEW_PRESET_OPTIONS.map(({ view, label }) => (
                   <Tooltip key={view} disableHoverableContent>
                     <TooltipTrigger asChild>
                       <button
                         type="button"
                         onClick={() => resetView(view)}
-                        className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 select-none">
+                        className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none hover:bg-neutral-200">
                         {label}
                       </button>
                     </TooltipTrigger>
@@ -465,15 +447,7 @@ export function ViewControls({
               </div>
               <div className="min-h-0 overflow-y-auto pr-1">
                 <motion.div className="mb-2 w-full" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} />
-                </motion.div>
-                <motion.div className="mb-2 w-full" variants={childVariants}>
-                  <button
-                    onClick={resetHomeView}
-                    className="inline-flex w-full items-center justify-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-200">
-                    <Home size={12} />
-                    Home View
-                  </button>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
                 </motion.div>
                 {showNodeVisibilityMenu && (
                   <div className="border-t border-neutral-200 pt-1">

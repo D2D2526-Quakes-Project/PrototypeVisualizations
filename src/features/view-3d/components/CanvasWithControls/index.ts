@@ -6,3 +6,4 @@ export { ExpandedScalePanel } from "./control-panels/ExpandedScalePanel";
 export { SliceViewPanel } from "./control-panels/SliceViewPanel";
 export { ThresholdPanel, FloorsPanel } from "./control-panels/ThresholdPanel";
 export { ThresholdSlider } from "./ThresholdSlider";
+export { COLLAPSED_VIEW_PRESET_OPTIONS, VIEW_PRESET_OPTIONS, type ViewPresetMode } from "./viewPresets";

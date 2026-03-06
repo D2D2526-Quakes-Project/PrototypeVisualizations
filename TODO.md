@@ -544,7 +544,7 @@ _Last Updated: February 2026_
 - [x] In MagicPanel the bg-amber-100 should be bg-amber-50/90
 - [x] New Histogram panels should open with the currently selected metric
 - [x] Delete the duplicate Hinge Performance Panel
-- [ ] All Displacement Thresholds should be merged into one "Displacement Threshold" value instead of separate per MagXYZ
+- [x] All Displacement Thresholds should be merged into one "Displacement Threshold" value instead of separate per MagXYZ
 
 ### 23.7 View Modes
 

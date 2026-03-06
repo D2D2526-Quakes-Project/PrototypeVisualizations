@@ -13,6 +13,14 @@ interface ThresholdPanelProps {
 }
 
 function isThresholdUsed(thresholdKey: Metric, currentMetric: Metric): boolean {
+  if (thresholdKey === "displacementMag") {
+    return (
+      currentMetric === "displacementMag" ||
+      currentMetric === "displacementX" ||
+      currentMetric === "displacementY" ||
+      currentMetric === "displacementZ"
+    );
+  }
   return currentMetric === thresholdKey;
 }
 
@@ -46,40 +54,13 @@ export function ThresholdPanel({ animationData, setThreshold, currentMetric }: T
       </div>
 
       <ThresholdSlider
-        label="Disp"
+        label="Displacement"
         value={thresholds.displacementMag}
         unit={METRIC_CONFIGS.displacementMag.unit}
         onChange={(v) => setThreshold("displacementMag", v)}
         max={maxDisp}
-        tooltip="Displacement magnitude threshold - nodes above this value will be highlighted"
+        tooltip="Shared displacement threshold for magnitude and X/Y/Z displacement metrics"
         currentlyUsed={isThresholdUsed("displacementMag", currentMetric)}
-      />
-      <ThresholdSlider
-        label="Disp X"
-        value={thresholds.displacementX}
-        unit={METRIC_CONFIGS.displacementX.unit}
-        onChange={(v) => setThreshold("displacementX", v)}
-        max={maxDisp}
-        tooltip="Displacement threshold in X direction (horizontal)"
-        currentlyUsed={isThresholdUsed("displacementX", currentMetric)}
-      />
-      <ThresholdSlider
-        label="Disp Y"
-        value={thresholds.displacementY}
-        unit={METRIC_CONFIGS.displacementY.unit}
-        onChange={(v) => setThreshold("displacementY", v)}
-        max={maxDisp}
-        tooltip="Displacement threshold in Y direction (horizontal)"
-        currentlyUsed={isThresholdUsed("displacementY", currentMetric)}
-      />
-      <ThresholdSlider
-        label="Disp Z"
-        value={thresholds.displacementZ}
-        unit={METRIC_CONFIGS.displacementZ.unit}
-        onChange={(v) => setThreshold("displacementZ", v)}
-        max={maxDisp}
-        tooltip="Displacement threshold in Z direction (vertical)"
-        currentlyUsed={isThresholdUsed("displacementZ", currentMetric)}
       />
 
       {animationData.displacementRot && (

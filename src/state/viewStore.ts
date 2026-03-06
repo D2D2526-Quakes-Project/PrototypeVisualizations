@@ -211,6 +211,18 @@ export interface ViewState {
   setHoveredSlice: (slice: SliceSelectionState | null) => void;
 }
 
+function getSharedDisplacementThresholds(value: number): Pick<
+  ThresholdState,
+  "displacementX" | "displacementY" | "displacementZ" | "displacementMag"
+> {
+  return {
+    displacementX: value,
+    displacementY: value,
+    displacementZ: value,
+    displacementMag: value,
+  };
+}
+
 export const createViewStore = () =>
   createStore<ViewState>()(
     subscribeWithSelector((set) => ({
@@ -250,7 +262,13 @@ export const createViewStore = () =>
       defaultThresholds: { ...DEFAULT_THRESHOLDS },
       setThreshold: (type, value) =>
         set((state) => ({
-          thresholds: { ...state.thresholds, [type]: value },
+          thresholds:
+            type === "displacementMag" ||
+            type === "displacementX" ||
+            type === "displacementY" ||
+            type === "displacementZ"
+              ? { ...state.thresholds, ...getSharedDisplacementThresholds(value) }
+              : { ...state.thresholds, [type]: value },
         })),
       resetThresholds: () =>
         set((state) => ({
@@ -258,12 +276,10 @@ export const createViewStore = () =>
         })),
       setThresholdsFromPrecomputed: (precomputed) =>
         set((state) => {
+          const displacementThreshold = precomputed.maxDisplacement / 4;
           const nextDefaults: ThresholdState = {
             ...state.defaultThresholds,
-            displacementX: precomputed.maxDisplacementX / 4,
-            displacementY: precomputed.maxDisplacementY / 4,
-            displacementZ: precomputed.maxDisplacementZ / 4,
-            displacementMag: precomputed.maxDisplacement / 4,
+            ...getSharedDisplacementThresholds(displacementThreshold),
             velocityX: (precomputed.maxVelocityX ?? 10) / 4,
             velocityY: (precomputed.maxVelocityY ?? 10) / 4,
             velocityZ: (precomputed.maxVelocityZ ?? 10) / 4,

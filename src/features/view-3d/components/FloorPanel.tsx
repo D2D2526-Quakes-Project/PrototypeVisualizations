@@ -730,7 +730,6 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
   );
 }
 
-export const SlicePanel = FloorPanel;
 
 export function SliceTab(props: { sliceId: string; storyId: string }) {
   return (

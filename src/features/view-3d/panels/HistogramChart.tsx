@@ -63,6 +63,9 @@ interface HistogramChartProps {
   metricOptions?: Metric[];
   title?: string;
   api?: IDockviewPanelProps["api"];
+  params?: {
+    initialMetric?: Metric;
+  };
 }
 
 function SimpleSelect<T extends string>({
@@ -142,6 +145,7 @@ export function HistogramChart({
   metricOptions,
   title = "Threshold Histogram",
   api,
+  params,
 }: HistogramChartProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
@@ -154,10 +158,7 @@ export function HistogramChart({
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const defaultState = getDefaultHistogramChartPanelState();
   const savedState = savedPanelState?.type === "histogramChart" ? savedPanelState.state : defaultState;
-  const seededMetric =
-    api?.params && "initialMetric" in api.params && typeof api.params.initialMetric === "string"
-      ? api.params.initialMetric
-      : undefined;
+  const seededMetric = typeof params?.initialMetric === "string" ? params.initialMetric : undefined;
 
   const [positionAxis, setPositionAxis] = useState<PositionAxis>(() =>
     savedState.positionAxis === "x" || savedState.positionAxis === "y" || savedState.positionAxis === "z"

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAnimationData } from "@/lib/useAnimationData";
+import type { DatasetLoadState } from "@/lib/loadingTypes";
 import type { Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
 import { useViewStore } from "@/state";
@@ -278,7 +279,12 @@ function getMissingOptionalEnhancementData(panelType: PanelType, animationData: 
   return PANEL_DEFINITIONS[panelType].optionalEnhancementData.filter((key) => !animationData[key]);
 }
 
-function getPanelAvailabilityInfo(panelType: PanelType, animationData: BuildingAnimationData | null, loading: boolean) {
+function getPanelAvailabilityInfo(
+  panelType: PanelType,
+  animationData: BuildingAnimationData | null,
+  loading: boolean,
+  datasetStates?: Partial<Record<PanelDataKey, DatasetLoadState>>
+) {
   const descriptorText = getPanelRequirementDescriptorText(panelType);
   const optionalEnhancementData = PANEL_DEFINITIONS[panelType].optionalEnhancementData;
 
@@ -307,24 +313,40 @@ function getPanelAvailabilityInfo(panelType: PanelType, animationData: BuildingA
   }
 
   const missingLabels = missing.map((key) => PANEL_DATA_LABELS[key]);
+  const missingStates = missing
+    .map((key) => datasetStates?.[key])
+    .filter((state): state is DatasetLoadState => Boolean(state));
+
   return {
     isAvailable: false,
     descriptorText,
     disabledReason: `This panel is not available because it requires ${joinHumanList(missingLabels)}, but ${missing.length === 1 ? "it is" : "they are"} not loaded.`,
     optionalNotice: null as string | null,
+    missingStates,
   };
 }
 
 export const MagicPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
   const CurrentComponent = PANEL_DEFINITIONS[currentPanelType].component;
+  const { animationData, loading, datasetStates, requestDatasetLoad, retryDatasetLoad } = useAnimationData();
+  const availability = getPanelAvailabilityInfo(currentPanelType, loading ? null : animationData, loading, datasetStates);
 
   return (
     <div className="relative h-full w-full">
-      <div className="h-full w-full">
-        {/* Dynamically render the selected component and pass dock props */}
-        <CurrentComponent {...props} />
-      </div>
+      {availability.isAvailable ? (
+        <div className="h-full w-full">
+          <CurrentComponent {...props} />
+        </div>
+      ) : (
+        <PanelUnavailableState
+          panelType={currentPanelType}
+          disabledReason={availability.disabledReason}
+          missingStates={availability.missingStates ?? []}
+          onLoad={requestDatasetLoad}
+          onRetry={retryDatasetLoad}
+        />
+      )}
     </div>
   );
 };
@@ -402,7 +424,7 @@ function PanelTypePicker({
   const selected = PANEL_DEFINITIONS[value];
   const SelectedIcon = selected.icon;
   const groupedPanels = getPanelsByCategory();
-  const { animationData, loading } = useAnimationData();
+  const { animationData, loading, datasetStates } = useAnimationData();
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -437,7 +459,7 @@ function PanelTypePicker({
                   const meta = PANEL_DEFINITIONS[panelType];
                   const Icon = meta.icon;
                   const isActive = panelType === value;
-                  const availability = getPanelAvailabilityInfo(panelType, loading ? null : animationData, loading);
+                  const availability = getPanelAvailabilityInfo(panelType, loading ? null : animationData, loading, datasetStates);
                   const hasMissingOptionalEnhancements = availability.isAvailable && Boolean(availability.optionalNotice);
                   const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
                     .filter(Boolean)
@@ -660,3 +682,58 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
     </div>
   );
 };
+
+function PanelUnavailableState({
+  panelType,
+  disabledReason,
+  missingStates,
+  onLoad,
+  onRetry,
+}: {
+  panelType: PanelType;
+  disabledReason: string | null;
+  missingStates: DatasetLoadState[];
+  onLoad: (key: PanelDataKey) => void;
+  onRetry: (key: PanelDataKey) => void;
+}) {
+  return (
+    <div className="flex h-full w-full items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        <div className="mb-2 text-center text-base font-semibold text-neutral-900">{panelType}</div>
+        <div className="mb-5 text-center text-sm text-neutral-600">{disabledReason}</div>
+        <div className="space-y-4">
+          {missingStates.map((state) => {
+            const isBusy = state.stage === "queued" || state.stage === "fetching" || state.stage === "parsing";
+            return (
+              <div key={state.key}>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-neutral-800">{state.label}</span>
+                  <span className="text-[10px] text-neutral-500">{state.message}</span>
+                </div>
+                {isBusy ? (
+                  <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-neutral-200">
+                    <div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${state.progress}%` }} />
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between gap-2 text-[10px] text-neutral-500">
+                  <span>{state.error ?? (state.selected ? "Background load active" : "Dataset not selected yet")}</span>
+                  {state.stage === "error" ? (
+                    <Button size="xs" variant="outline" onClick={() => onRetry(state.key as PanelDataKey)}>
+                      Retry
+                    </Button>
+                  ) : isBusy ? (
+                    <span>Loading…</span>
+                  ) : (
+                    <Button size="xs" variant="outline" onClick={() => onLoad(state.key as PanelDataKey)}>
+                      Load In Background
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

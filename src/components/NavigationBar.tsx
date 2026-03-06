@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { AlertTriangle, Check, LogOutIcon, Plus, RotateCcw, Share2, Trash2, type LucideIcon } from "lucide-react";
 
@@ -34,7 +34,8 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
 } from "@/components/ui/menubar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
 
 const VERSION = "0.1.0";
 
@@ -77,7 +78,15 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
   const store = useViewStoreRaw();
   const visibleFloorCount = useViewStore((state) => state.visibleFloors.length);
   const showAllFloors = useViewStore((state) => state.showAllFloors);
-  const { animationData, clearSelection, currentBuilding, currentSimulation, loadSelection } = useAnimationData();
+  const {
+    animationData,
+    clearSelection,
+    currentBuilding,
+    currentSimulation,
+    datasetStates,
+    requestDatasetLoad,
+    retryDatasetLoad,
+  } = useAnimationData();
 
   const [profiles, setProfiles] = useState<SaveProfile[]>(() => loadSaveProfiles());
   const [activeProfileId, setActiveProfileId] = useState<string>(() => getActiveProfileId());
@@ -170,66 +179,42 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
   const profileKindLabel =
     activeProfile?.kind === "system" ? "default" : activeProfile?.kind === "ephemeral" ? "session" : "user";
 
-  const optionalDataWarnings = useMemo(() => {
-    const checks: Array<{
-      key:
-        | "beamData"
-        | "hingeData"
-        | "displacementRot"
-        | "velocityLin"
-        | "velocityRot"
-        | "accelerationLin"
-        | "accelerationRot";
-      label: string;
-      available: boolean;
-      loaded: boolean;
-    }> = [
-      {
-        key: "beamData",
-        label: "Beam Data",
-        available: Boolean(currentBuilding?.beamData),
-        loaded: Boolean(animationData?.beamData),
-      },
-      {
-        key: "hingeData",
-        label: "Hinge Data",
-        available: Boolean(currentSimulation?.hingeData),
-        loaded: Boolean(animationData?.hingeData),
-      },
-      {
-        key: "displacementRot",
-        label: "Rotation Displacement",
-        available: Boolean(currentSimulation?.displacementRot),
-        loaded: Boolean(animationData?.displacementRot),
-      },
-      {
-        key: "velocityLin",
-        label: "Linear Velocity",
-        available: Boolean(currentSimulation?.velocityLin),
-        loaded: Boolean(animationData?.velocityLin),
-      },
-      {
-        key: "velocityRot",
-        label: "Rotation Velocity",
-        available: Boolean(currentSimulation?.velocityRot),
-        loaded: Boolean(animationData?.velocityRot),
-      },
-      {
-        key: "accelerationLin",
-        label: "Linear Acceleration",
-        available: Boolean(currentSimulation?.accelerationLin),
-        loaded: Boolean(animationData?.accelerationLin),
-      },
-      {
-        key: "accelerationRot",
-        label: "Rotation Acceleration",
-        available: Boolean(currentSimulation?.accelerationRot),
-        loaded: Boolean(animationData?.accelerationRot),
-      },
-    ];
-
-    return checks.filter((entry) => entry.available && !entry.loaded);
-  }, [animationData, currentBuilding, currentSimulation]);
+  const optionalDatasetStates = useMemo(
+    () => OPTIONAL_DATASET_KEYS.map((key) => datasetStates[key]).filter((state) => state.available),
+    [datasetStates]
+  );
+  const backgroundLoadingCount = useMemo(
+    () => optionalDatasetStates.filter((state) => state.stage === "fetching" || state.stage === "parsing").length,
+    [optionalDatasetStates]
+  );
+  const loadedOptionalCount = useMemo(
+    () => optionalDatasetStates.filter((state) => state.stage === "ready").length,
+    [optionalDatasetStates]
+  );
+  const availableOptionalCount = optionalDatasetStates.length;
+  const unselectedAvailableCount = useMemo(
+    () => optionalDatasetStates.filter((state) => !state.selected && state.stage !== "ready").length,
+    [optionalDatasetStates]
+  );
+  const optionalSummaryProgress = useMemo(() => {
+    const activeStates = optionalDatasetStates.filter(
+      (state) => state.stage === "fetching" || state.stage === "parsing"
+    );
+    if (activeStates.length === 0) return 100;
+    return activeStates.reduce((sum, state) => sum + state.progress, 0) / activeStates.length;
+  }, [optionalDatasetStates]);
+  const loadingSummaryLabel = useMemo(() => {
+    if (backgroundLoadingCount > 0) {
+      return `${backgroundLoadingCount} dataset${backgroundLoadingCount === 1 ? "" : "s"} loading`;
+    }
+    if (loadedOptionalCount === availableOptionalCount && availableOptionalCount > 0) {
+      return `${loadedOptionalCount} datasets loaded`;
+    }
+    if (loadedOptionalCount > 0 && unselectedAvailableCount > 0) {
+      return `${loadedOptionalCount} loaded, ${unselectedAvailableCount} available`;
+    }
+    return `${unselectedAvailableCount} dataset${unselectedAvailableCount === 1 ? "" : "s"} available`;
+  }, [availableOptionalCount, backgroundLoadingCount, loadedOptionalCount, unselectedAvailableCount]);
 
   const allFloorsHiddenWarning = useMemo(() => {
     const totalFloorCount = animationData?.metadata.storyOrder.length ?? 0;
@@ -241,35 +226,13 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
     };
   }, [animationData, visibleFloorCount, showAllFloors]);
 
-  const loadOptionalDataKey = useCallback(
-    (
-      key:
-        | "beamData"
-        | "hingeData"
-        | "displacementRot"
-        | "velocityLin"
-        | "velocityRot"
-        | "accelerationLin"
-        | "accelerationRot"
-    ) => {
-      if (!currentBuilding || !currentSimulation) return;
-      loadSelection(currentBuilding, currentSimulation, {
-        beamData: Boolean(animationData?.beamData) || key === "beamData",
-        hingeData: Boolean(animationData?.hingeData) || key === "hingeData",
-        displacementRot: Boolean(animationData?.displacementRot) || key === "displacementRot",
-        velocityLin: Boolean(animationData?.velocityLin) || key === "velocityLin",
-        velocityRot: Boolean(animationData?.velocityRot) || key === "velocityRot",
-        accelerationLin: Boolean(animationData?.accelerationLin) || key === "accelerationLin",
-        accelerationRot: Boolean(animationData?.accelerationRot) || key === "accelerationRot",
-      });
-    },
-    [animationData, currentBuilding, currentSimulation, loadSelection]
-  );
-
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-300 bg-neutral-100 px-2 py-1">
-      <div className="flex min-w-0 items-center justify-start gap-3">
-        <Menubar className="h-8 bg-neutral-50/80" value={activeMenu} onValueChange={setActiveMenu}>
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
+      <div className="flex h-full min-w-0 items-center justify-start gap-3">
+        <Menubar
+          className="h-full rounded-none border-none bg-neutral-50/80 pl-2"
+          value={activeMenu}
+          onValueChange={setActiveMenu}>
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
@@ -328,12 +291,16 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
             </MenubarContent>
           </MenubarMenu>
 
+          <div className="h-6 w-px shrink-0 rounded-full bg-neutral-300" />
+
           <MenubarMenu>
             <MenubarTrigger>Edit</MenubarTrigger>
             <MenubarContent>
               <MenubarItem onClick={clearCurrentSelection}>Clear Selection</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
+
+          <div className="h-6 w-px shrink-0 rounded-full bg-neutral-300" />
 
           <MenubarMenu>
             <MenubarTrigger>View</MenubarTrigger>
@@ -351,6 +318,8 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
               })}
             </MenubarContent>
           </MenubarMenu>
+
+          <div className="h-6 w-px shrink-0 rounded-full bg-neutral-300" />
 
           <MenubarMenu value="share">
             <MenubarTrigger>Share</MenubarTrigger>
@@ -374,11 +343,11 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
         </div>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center py-1">
         <AnimatedTitle />
       </div>
 
-      <div className="flex min-w-0 items-center justify-end">
+      <div className="flex min-w-0 items-center justify-end py-1 pr-2">
         <div className="flex items-center gap-3 text-xs text-neutral-500">
           <div className="truncate">
             {currentBuilding?.name} / {currentSimulation?.name}
@@ -395,32 +364,84 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
               </button>
             </div>
           )}
-          {optionalDataWarnings.length > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700">
-                  <AlertTriangle size={11} />
-                  {optionalDataWarnings.length} optional dataset
-                  {optionalDataWarnings.length === 1 ? "" : "s"} not loaded
+          {optionalDatasetStates.length > 0 ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className={`inline-flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-[10px] ${
+                    backgroundLoadingCount > 0
+                      ? "border-amber-300 bg-amber-50 text-amber-800"
+                      : "border-neutral-300 bg-white text-neutral-700"
+                  }`}>
+                  {backgroundLoadingCount > 0 ? <AlertTriangle size={11} /> : <Check size={11} />}
+                  <span>{loadingSummaryLabel}</span>
+                  {backgroundLoadingCount > 0 ? (
+                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-amber-100">
+                      <div
+                        className="h-full rounded-full bg-amber-500 transition-all"
+                        style={{ width: `${optionalSummaryProgress}%` }}
+                      />
+                    </div>
+                  ) : null}
                 </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="end" className="max-w-sm">
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="end" className="w-sm space-y-2 p-3">
                 <div className="space-y-1">
-                  <div className="font-medium">Optional data available but not loaded</div>
-                  {optionalDataWarnings.map((warning) => (
-                    <div key={warning.key} className="flex items-center justify-between gap-2">
-                      <span>{warning.label}</span>
-                      <button
-                        onClick={() => loadOptionalDataKey(warning.key)}
-                        className="rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-[10px] text-neutral-700 hover:bg-neutral-100">
-                        Load
-                      </button>
+                  <div className="text-sm font-medium text-neutral-800">Optional dataset loading</div>
+                  <div className="text-xs text-neutral-500">
+                    Selected datasets continue loading in the background. Unselected datasets can be queued on demand.
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  {optionalDatasetStates.map((state) => (
+                    <div key={state.key} className="rounded border border-neutral-200 bg-white px-2 py-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-neutral-800">{state.label}</span>
+                        <span className="flex items-center gap-2 text-[10px] text-neutral-500">
+                          {state.stage === "ready" ? (
+                            <>
+                              <Check size={11} /> Loaded
+                            </>
+                          ) : state.stage === "error" ? (
+                            "Failed"
+                          ) : state.selected ? (
+                            state.message
+                          ) : (
+                            "Available"
+                          )}
+                          <div className="inline-block items-center justify-between gap-2 text-[10px]">
+                            {state.stage === "error" ? (
+                              <button
+                                type="button"
+                                onClick={() => retryDatasetLoad(state.key as OptionalDatasetKey)}
+                                className="rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-neutral-700 hover:bg-neutral-100">
+                                Retry
+                              </button>
+                            ) : state.stage === "idle" || !state.selected ? (
+                              <button
+                                type="button"
+                                onClick={() => requestDatasetLoad(state.key as OptionalDatasetKey)}
+                                className="rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-neutral-700 hover:bg-neutral-100">
+                                Load
+                              </button>
+                            ) : null}
+                          </div>
+                        </span>
+                      </div>
+                      {state.stage === "fetching" || state.stage === "parsing" || state.stage === "queued" ? (
+                        <div className="mt-1 mb-1 h-1.5 overflow-hidden rounded-full bg-neutral-200">
+                          <div
+                            className="h-full rounded-full bg-amber-500 transition-all"
+                            style={{ width: `${state.progress}%` }}
+                          />
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>
-              </TooltipContent>
-            </Tooltip>
-          )}
+              </PopoverContent>
+            </Popover>
+          ) : null}
           <div>Quakes v{VERSION}</div>
         </div>
       </div>
@@ -454,7 +475,7 @@ function AnimatedTitle() {
 }
 
 function DataPicker() {
-  const { currentBuilding, currentSimulation, loadSelection } = useAnimationData();
+  const { currentBuilding, currentSimulation, loadSelection, optionalLoadOptions } = useAnimationData();
   const currentValue =
     currentBuilding && currentSimulation ? `${currentBuilding.folder}::${currentSimulation.folder}` : "";
 
@@ -470,7 +491,7 @@ function DataPicker() {
           const selectedSimulation = selectedBuilding.simulations.find((item) => item.folder === simulationFolder);
           if (!selectedSimulation) return;
 
-          loadSelection(selectedBuilding, selectedSimulation);
+          loadSelection(selectedBuilding, selectedSimulation, optionalLoadOptions);
         }}>
         {DataSources.buildings.map((building, buildingIndex) => (
           <div key={building.folder}>

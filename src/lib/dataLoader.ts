@@ -1,8 +1,9 @@
 // lib/DataLoader.ts
 
 const DB_NAME = "QuakesCache";
-const STORE_NAME = "files";
-const DB_VERSION = 1;
+const RAW_STORE_NAME = "files";
+const PROCESSED_STORE_NAME = "processed";
+const DB_VERSION = 2;
 
 /**
  * 1. Initialize IndexedDB
@@ -13,8 +14,11 @@ const openDB = (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+      if (!db.objectStoreNames.contains(RAW_STORE_NAME)) {
+        db.createObjectStore(RAW_STORE_NAME);
+      }
+      if (!db.objectStoreNames.contains(PROCESSED_STORE_NAME)) {
+        db.createObjectStore(PROCESSED_STORE_NAME);
       }
     };
 
@@ -30,8 +34,8 @@ const getFromCache = async (url: string): Promise<ArrayBuffer | undefined> => {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readonly");
-      const store = tx.objectStore(STORE_NAME);
+      const tx = db.transaction(RAW_STORE_NAME, "readonly");
+      const store = tx.objectStore(RAW_STORE_NAME);
       const request = store.get(url);
 
       request.onsuccess = () => resolve(request.result);
@@ -46,8 +50,8 @@ const getFromCache = async (url: string): Promise<ArrayBuffer | undefined> => {
 const saveToCache = async (url: string, data: ArrayBuffer) => {
   try {
     const db = await openDB();
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(RAW_STORE_NAME, "readwrite");
+    const store = tx.objectStore(RAW_STORE_NAME);
     store.put(data, url);
   } catch (e) {
     console.warn("Cache write failed (likely quota exceeded)", e);
@@ -57,8 +61,8 @@ const saveToCache = async (url: string, data: ArrayBuffer) => {
 export const removeFromCache = async (url: string) => {
   try {
     const db = await openDB();
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(RAW_STORE_NAME, "readwrite");
+    const store = tx.objectStore(RAW_STORE_NAME);
     store.delete(url);
   } catch (e) {
     console.warn("Cache write failed (likely quota exceeded)", e);
@@ -68,13 +72,43 @@ export const removeFromCache = async (url: string) => {
 export const clearCache = async () => {
   try {
     const db = await openDB();
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    store.clear();
+    const tx = db.transaction([RAW_STORE_NAME, PROCESSED_STORE_NAME], "readwrite");
+    const rawStore = tx.objectStore(RAW_STORE_NAME);
+    rawStore.clear();
+    const processedStore = tx.objectStore(PROCESSED_STORE_NAME);
+    processedStore.clear();
   } catch (e) {
     console.warn("Cache write failed (likely quota exceeded)", e);
   }
 };
+
+export async function getProcessedFromCache<T>(cacheKey: string): Promise<T | undefined> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PROCESSED_STORE_NAME, "readonly");
+      const store = tx.objectStore(PROCESSED_STORE_NAME);
+      const request = store.get(cacheKey);
+
+      request.onsuccess = () => resolve(request.result as T | undefined);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.warn("Processed cache read failed", e);
+    return undefined;
+  }
+}
+
+export async function saveProcessedToCache<T>(cacheKey: string, value: T) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(PROCESSED_STORE_NAME, "readwrite");
+    const store = tx.objectStore(PROCESSED_STORE_NAME);
+    store.put(value, cacheKey);
+  } catch (e) {
+    console.warn("Processed cache write failed (likely quota exceeded)", e);
+  }
+}
 
 /**
  * 3. The Smart Fetcher

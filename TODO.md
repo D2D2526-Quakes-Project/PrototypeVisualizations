@@ -384,9 +384,10 @@ _Last Updated: February 2026_
 - [ ] Data generation: rename "Lin" to "Translational"
 - [ ] Remove magnitude metrics (hide by default, add "Show Magnitude Metrics" setting)
 - [x] In header show name of building and simulation currently loaded
-- [ ] Loading: load until mandatory data (building, ground, simulation, displacementTranslational) is ready before opening app
-- [ ] Loading: show loading progress in header with popover containing all progress bars
-- [ ] Loading: load and parse data in background, add to animation data when ready
+- [x] Loading: load until mandatory data (building, ground, simulation, displacementTranslational) is ready before opening app
+- [x] Loading: show loading progress in header with popover containing all progress bars
+- [x] Loading: load and parse data in background, add to animation data when ready
+- [ ] Loading: consider moving required startup parsing onto the worker too if required-data datasets start blocking UI again
 
 ---
 
@@ -400,7 +401,7 @@ _Last Updated: February 2026_
 ### 20.2 Header & Navigation
 
 - [x] Header: show name of building and simulation currently loaded
-- [ ] Header: show loading progress with popover containing progress bars
+- [x] Header: show loading progress with popover containing progress bars
 
 ### 20.3 Keyboard Shortcuts & Help
 
@@ -410,7 +411,7 @@ _Last Updated: February 2026_
 
 ### 20.4 Visualization
 
-- [ ] Add rotatable cube in top showing view orientation
+- [x] Add rotatable cube in top showing view orientation
 - [x] Change grid floor N, E, S, W labels to "+X", "+Y", "-X", "-Y"
 - [x] Add more default view options for building (corners)
 - [ ] Add displacement scale option for pinning one corner to see rotation without displacement

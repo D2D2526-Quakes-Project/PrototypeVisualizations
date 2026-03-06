@@ -196,6 +196,7 @@
 - [x] Add "reset to defaults" button
 - [x] Improve panel drag/resize handles
 - [x] Consolidate 3D view preset definitions into shared canvas-controls config
+- [x] Keep compact view controls visible while the expanded sidebar is open
 
 - [x] Change the views menu popover to be a sidebar that takes up space next to the canvas
 
@@ -531,7 +532,7 @@ _Last Updated: February 2026_
 - [x] Clicking a single button in the FloorVisibility toggles it twice (mouse down, mouse up)
 - [x] FloorVisibility toggles should show floor heights not just "visible"
 - [x] Show warning message when all floors are hidden
-- [ ] Don't show the groundfloor on the ISD chart
+- [x] Don't show the groundfloor on the ISD chart
 - [ ] BUG: You can no longer click / select nodes or floor after toggling the floor visibility
 
 ### 23.6 MagicPanel & Panels

@@ -87,7 +87,7 @@ export function ViewControls({
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
   const buildingVerticalCenter =
     (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
-  const expandedPanelRef = useRef<HTMLDivElement>(null);
+  const expandedLayoutRef = useRef<HTMLDivElement>(null);
 
   const config = getMetricConfig(currentMetric);
   const maxValue = config.getPrecomputedMax(animationData.precomputed);
@@ -217,7 +217,7 @@ export function ViewControls({
       return;
     }
 
-    const element = expandedPanelRef.current;
+    const element = expandedLayoutRef.current;
     if (!element) return;
 
     onExpandedWidthChange(element.offsetWidth);
@@ -234,48 +234,165 @@ export function ViewControls({
   }, [isExpanded, onExpandedWidthChange]);
 
   return (
-    <div
-      className={`absolute z-60 flex ${docked ? "top-0 right-0 bottom-0" : "top-2 right-2 max-h-[calc(100%-1rem)]"}`}>
-      <div className={`flex max-h-full flex-col overflow-hidden ${docked ? "items-stretch" : "items-end gap-0.5"}`}>
-        <AnimatePresence mode="popLayout">
-          {!isExpanded ? (
-            <div className="flex flex-col items-end gap-0.5">
+    <div className={`absolute z-60 ${docked ? "top-0 right-0 bottom-0" : "top-2 right-2 bottom-2"}`}>
+      <div className="flex h-full max-h-full min-h-0 items-start gap-2">
+        <div className={`relative flex flex-col items-end gap-2 ${docked ? "top-2" : ""}`}>
+          <motion.div
+            key="collapsed"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
+            {COLLAPSED_VIEW_PRESET_OPTIONS.map(({ view, label }) => (
+              <Tooltip key={view} disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => resetView(view)}
+                    className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none hover:bg-neutral-200">
+                    {label}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}>
+                  {label} View
+                </TooltipContent>
+              </Tooltip>
+            ))}
+            <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={toggleCameraType}
+                  className={`rounded p-1 transition-colors ${
+                    isOrthographic ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
+                  }`}>
+                  {isOrthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8}>
+                {isOrthographic ? "Orthographic" : "Perspective"}
+              </TooltipContent>
+            </Tooltip>
+            <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={resetHomeView}
+                  className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200"
+                  title="Home View">
+                  <Home size={14} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8}>
+                Home View
+              </TooltipContent>
+            </Tooltip>
+            <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200">
+                  <ChevronLeftIcon size={14} className={isExpanded ? "rotate-180" : undefined} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8}>
+                {isExpanded ? "Hide sidebar" : "More options"}
+              </TooltipContent>
+            </Tooltip>
+          </motion.div>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
               <motion.div
-                key="collapsed"
+                key="collapsed-colorbar"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.15 }}
-                className="flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
-                {COLLAPSED_VIEW_PRESET_OPTIONS.map(({ view, label }) => (
-                  <Tooltip key={view} disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => resetView(view)}
-                        className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none hover:bg-neutral-200">
-                        {label}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      {label} View
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
-                <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+                className="w-full gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
+                <div className="mb-0.5 text-[10px] font-medium text-neutral-700">{config.label}</div>
+                <ColorScaleBar
+                  currentMetric={currentMetric}
+                  thresholdHighlighting={thresholdHighlighting}
+                  thresholds={thresholds}
+                  animationData={animationData}
+                />
+              </motion.div>
+            </TooltipTrigger>
+            <TooltipContent side="left" sideOffset={8}>
+              <div className="mb-1 font-semibold">{config.label}</div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                <span className="text-neutral-400">Max:</span>
+                <span>
+                  {positiveOnly ? maxValue.toFixed(2) : `+${maxValue.toFixed(2)}`} {unit.abbr}
+                </span>
+                <span className="text-neutral-400">Min:</span>
+                <span>
+                  {positiveOnly ? "0" : `-${maxValue.toFixed(2)}`} {unit.abbr}
+                </span>
+                {thresholdHighlighting && thresholdValue > 0 && (
+                  <>
+                    <span className="text-neutral-400">Threshold:</span>
+                    <span>
+                      {thresholdValue.toFixed(2)} {unit.abbr}
+                    </span>
+                  </>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+          <AnimatePresence>
+            {showNodeVisibilityMenu && (
+              <motion.div
+                key="node-visibility-menu"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.15 }}
+                className="flex items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
                 <Tooltip disableHoverableContent>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={toggleCameraType}
-                      className={`rounded p-1 transition-colors ${
-                        isOrthographic ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
-                      }`}>
-                      {isOrthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
+                      onClick={() => hideNodes(selectedIds)}
+                      disabled={visibleSelectedCount === 0}
+                      className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
+                      <EyeOff size={14} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" sideOffset={8}>
-                    {isOrthographic ? "Orthographic" : "Perspective"}
+                    Hide Selected ({visibleSelectedCount})
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => showNodes(selectedIds)}
+                      disabled={hiddenSelectedCount === 0}
+                      className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
+                      <Eye size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    Show Selected ({hiddenSelectedCount})
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={showAllNodes}
+                      disabled={hiddenCount === 0}
+                      className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
+                      <RotateCcw size={14} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    Show All Nodes ({hiddenCount})
                   </TooltipContent>
                 </Tooltip>
                 <div className="mx-0.5 h-4 w-px bg-neutral-300" />
@@ -283,144 +400,25 @@ export function ViewControls({
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={resetHomeView}
-                      className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200"
-                      title="Home View">
-                      <Home size={14} />
+                      onClick={clearSelection}
+                      disabled={selectedCount === 0}
+                      className="rounded p-1 text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-30">
+                      <XCircle size={14} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" sideOffset={8}>
-                    Home View
-                  </TooltipContent>
-                </Tooltip>
-                <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => setIsExpanded(true)}
-                      className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200">
-                      <ChevronLeftIcon size={14} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8}>
-                    More options
+                    Clear Selection ({selectedCount})
                   </TooltipContent>
                 </Tooltip>
               </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <motion.div
-                    key="collapsed-colorbar"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.15 }}
-                    className="w-full gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
-                    <div className="mb-0.5 text-[10px] font-medium text-neutral-700">{config.label}</div>
-                    <ColorScaleBar
-                      currentMetric={currentMetric}
-                      thresholdHighlighting={thresholdHighlighting}
-                      thresholds={thresholds}
-                      animationData={animationData}
-                    />
-                  </motion.div>
-                </TooltipTrigger>
-                <TooltipContent side="left" sideOffset={8}>
-                  <div className="mb-1 font-semibold">{config.label}</div>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                    <span className="text-neutral-400">Max:</span>
-                    <span>
-                      {positiveOnly ? maxValue.toFixed(2) : `+${maxValue.toFixed(2)}`} {unit.abbr}
-                    </span>
-                    <span className="text-neutral-400">Min:</span>
-                    <span>
-                      {positiveOnly ? "0" : `-${maxValue.toFixed(2)}`} {unit.abbr}
-                    </span>
-                    {thresholdHighlighting && thresholdValue > 0 && (
-                      <>
-                        <span className="text-neutral-400">Threshold:</span>
-                        <span>
-                          {thresholdValue.toFixed(2)} {unit.abbr}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-              {showNodeVisibilityMenu && (
-                <motion.div
-                  key="node-visibility-menu"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => hideNodes(selectedIds)}
-                        disabled={visibleSelectedCount === 0}
-                        className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                        <EyeOff size={14} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      Hide Selected ({visibleSelectedCount})
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => showNodes(selectedIds)}
-                        disabled={hiddenSelectedCount === 0}
-                        className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                        <Eye size={14} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      Show Selected ({hiddenSelectedCount})
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={showAllNodes}
-                        disabled={hiddenCount === 0}
-                        className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                        <RotateCcw size={14} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      Show All Nodes ({hiddenCount})
-                    </TooltipContent>
-                  </Tooltip>
-                  <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={clearSelection}
-                        disabled={selectedCount === 0}
-                        className="rounded p-1 text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-30">
-                        <XCircle size={14} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8}>
-                      Clear Selection ({selectedCount})
-                    </TooltipContent>
-                  </Tooltip>
-                </motion.div>
-              )}
-            </div>
-          ) : (
+        <AnimatePresence mode="popLayout">
+          {isExpanded && (
             <motion.div
-              ref={expandedPanelRef}
+              ref={expandedLayoutRef}
               key="expanded"
               variants={{
                 initial: { opacity: 0, scale: 0.95, x: 10 },

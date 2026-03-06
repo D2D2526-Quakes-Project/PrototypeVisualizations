@@ -42,6 +42,7 @@ export function CanvasWithControls({
   const [containerWidth, setContainerWidth] = useState(0);
   const [controlsWidth, setControlsWidth] = useState(0);
   const [isViewControlsExpanded, setIsViewControlsExpanded] = useState(false);
+  const [isControlsDocked, setIsControlsDocked] = useState(false);
   const [cameraModeOverride, setCameraModeOverride] = useState<{ panelId: string; value: boolean } | null>(null);
   const hasWrittenCameraModeRef = useRef(false);
   const hasPersistedCameraModeRef = useRef(false);
@@ -94,6 +95,20 @@ export function CanvasWithControls({
       setCameraModeOverride({ panelId, value });
     },
     [panelId]
+  );
+
+  const getDockedState = useCallback(
+    (nextContainerWidth: number, nextControlsWidth: number, expanded: boolean) => {
+      setIsControlsDocked((current) => {
+        if (!expanded || nextControlsWidth <= 0) return false;
+        const dockThreshold = nextControlsWidth * 3;
+        const hysteresis = 32;
+        return current
+          ? nextContainerWidth >= dockThreshold - hysteresis
+          : nextContainerWidth >= dockThreshold + hysteresis;
+      });
+    },
+    []
   );
 
   useEffect(() => {
@@ -237,20 +252,40 @@ export function CanvasWithControls({
     const element = containerRef.current;
     if (!element) return;
 
-    setContainerWidth(element.getBoundingClientRect().width);
+    const updateContainerWidth = (width: number) => {
+      setContainerWidth(width);
+      getDockedState(width, controlsWidth, isViewControlsExpanded);
+    };
+
+    updateContainerWidth(element.getBoundingClientRect().width);
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
         const borderBoxSize = Array.isArray(entry.borderBoxSize) ? entry.borderBoxSize[0] : entry.borderBoxSize;
-        setContainerWidth(borderBoxSize?.inlineSize ?? element.getBoundingClientRect().width);
+        updateContainerWidth(borderBoxSize?.inlineSize ?? element.getBoundingClientRect().width);
       }
     });
     observer.observe(element);
 
     return () => observer.disconnect();
-  }, []);
+  }, [controlsWidth, getDockedState, isViewControlsExpanded]);
 
-  const isControlsDocked = isViewControlsExpanded && controlsWidth > 0 && containerWidth >= controlsWidth * 3;
+  const handleSetIsViewControlsExpanded = useCallback(
+    (expanded: boolean) => {
+      setIsViewControlsExpanded(expanded);
+      getDockedState(containerWidth, controlsWidth, expanded);
+    },
+    [containerWidth, controlsWidth, getDockedState]
+  );
+
+  const handleExpandedWidthChange = useCallback(
+    (width: number) => {
+      setControlsWidth(width);
+      getDockedState(containerWidth, width, isViewControlsExpanded);
+    },
+    [containerWidth, getDockedState, isViewControlsExpanded]
+  );
+
   const rightPadding = isControlsDocked ? controlsWidth : 0;
 
   return (
@@ -279,8 +314,8 @@ export function CanvasWithControls({
         isOrthographic={isOrthographic}
         setIsOrthographic={handleSetIsOrthographic}
         isExpanded={isViewControlsExpanded}
-        setIsExpanded={setIsViewControlsExpanded}
-        onExpandedWidthChange={setControlsWidth}
+        setIsExpanded={handleSetIsViewControlsExpanded}
+        onExpandedWidthChange={handleExpandedWidthChange}
         docked={isControlsDocked}
       />
       {showPlaybackControls && (

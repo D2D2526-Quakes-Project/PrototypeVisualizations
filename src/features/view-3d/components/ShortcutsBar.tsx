@@ -22,9 +22,11 @@ import {
   Keyboard,
   MousePointer2,
   Mouse,
+  MousePointerClick,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import type { ViewMode } from "@/features/view-3d/contexts/visualization/ViewModeContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,26 +88,40 @@ const MODES: Mode[] = [
   },
 ];
 
-const MOUSE_SHORTCUTS: Shortcut[] = [
-  { icon: <MousePointer2 size={10} />, label: "Orbit", key: "L-drag" },
-  { icon: <ArrowDownUp size={10} />, label: "Zoom", key: "Wheel" },
-  { icon: <CircleDashed size={10} />, label: "Pan", key: "R-drag" },
-];
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 type ShortcutContext = {
   isBoxSelecting: boolean;
   hasSelection: boolean;
   showPlayback: boolean;
+  mode: ViewMode;
 };
+
+function getMouseShortcuts({ mode }: ShortcutContext): Shortcut[] {
+  if (mode === "floor-slabs") {
+    return [
+      { icon: <MousePointerClick size={10} />, label: "Open floor", key: "Click" },
+      { icon: <MousePointer2 size={10} />, label: "Orbit", key: "L-drag" },
+      { icon: <CircleDashed size={10} />, label: "Pan", key: "R-drag" },
+      { icon: <ArrowDownUp size={10} />, label: "Zoom", key: "Wheel" },
+    ];
+  }
+
+  return [
+    { icon: <MousePointerClick size={10} />, label: "Open node", key: "Click" },
+    { icon: <MousePointerClick size={10} />, label: "Open floor", key: "R-click" },
+    { icon: <MousePointer2 size={10} />, label: "Orbit", key: "L-drag" },
+    { icon: <CircleDashed size={10} />, label: "Pan", key: "R-drag" },
+    { icon: <ArrowDownUp size={10} />, label: "Zoom", key: "Wheel" },
+  ];
+}
 
 export function ShortcutsBar(ctx: ShortcutContext) {
   const activeMode = MODES.find((m) => m.active(ctx))!;
-  const mouseShortcuts = activeMode.mouseShortcuts ?? MOUSE_SHORTCUTS;
+  const mouseShortcuts = activeMode.mouseShortcuts ?? getMouseShortcuts(ctx);
 
   return (
-    <div className="pointer-events-none absolute bottom-2 left-2 z-40">
+    <div className="w-full border-t border-neutral-200 bg-neutral-100">
       <AnimatePresence mode="wait">
         <motion.div
           key={activeMode.id}
@@ -113,11 +129,11 @@ export function ShortcutsBar(ctx: ShortcutContext) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.15 }}
-          className="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-white/90 px-2 py-1.5 backdrop-blur-sm">
-          <div className="flex items-center gap-0.5">
+          className="flex w-full flex-col gap-1 p-1">
+          <div className="flex min-h-[10px] flex-nowrap items-center gap-0.5 overflow-hidden">
             <Keyboard size={10} className="mr-0.5 shrink-0 text-neutral-500" />
             {activeMode.shortcuts.map((s, i) => (
-              <span key={`${activeMode.id}-${i}`} className="flex items-center gap-0.5">
+              <span key={`${activeMode.id}-${i}`} className="flex shrink-0 items-center gap-0.5">
                 {i > 0 && <span className="mx-0.5 h-3 w-px bg-neutral-200" />}
                 <span>{s.icon}</span>
                 <span className="text-[9px] leading-none text-neutral-500">{s.label}</span>
@@ -127,10 +143,10 @@ export function ShortcutsBar(ctx: ShortcutContext) {
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-0.5">
+          <div className="flex min-h-[10px] flex-nowrap items-center gap-0.5 overflow-hidden">
             <Mouse size={10} className="mr-0.5 shrink-0 text-neutral-500" />
             {mouseShortcuts.map((s, i) => (
-              <span key={`mouse-${i}`} className="flex items-center gap-0.5">
+              <span key={`mouse-${i}`} className="flex shrink-0 items-center gap-0.5">
                 {i > 0 && <span className="mx-0.5 h-3 w-px bg-neutral-200" />}
                 <span>{s.icon}</span>
                 <span className="text-[9px] leading-none text-neutral-500">{s.label}</span>

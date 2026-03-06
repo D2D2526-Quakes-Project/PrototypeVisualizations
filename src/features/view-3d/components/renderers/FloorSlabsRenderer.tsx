@@ -71,9 +71,9 @@ interface FloorSlabProps {
 function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset }: FloorSlabProps) {
   const { animationData } = useAnimationData();
   const { getNodeColor } = useColor();
-  const { hoveredSlice, selectedSlice, selectSlice, setHovered } = useSliceSelection();
+  const { hoveredSlice, selectSlice, setHovered } = useSliceSelection();
 
-  const isHovered = hoveredSlice?.storyId === storyId || selectedSlice?.storyId === storyId;
+  const isHovered = hoveredSlice?.storyId === storyId;
 
   const { geometry, color } = useMemo(() => {
     if (nodeIds.length < 3) {
@@ -160,6 +160,8 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset }
         color={isHovered ? HOVER_HIGHLIGHT_COLOR : color}
         transparent
         opacity={isHovered ? 0.9 : 0.6}
+        depthWrite={false}
+        forceSinglePass
         side={THREE.DoubleSide}
       />
     </mesh>

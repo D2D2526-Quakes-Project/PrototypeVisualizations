@@ -12,6 +12,7 @@ import { AlertTriangle } from "lucide-react";
 
 import { BoxSelectionOverlay } from "./CanvasWithControls/BoxSelectionOverlay";
 import { CameraManager } from "./CanvasWithControls/CameraManager";
+import { OrientationCube } from "./CanvasWithControls/OrientationCube";
 import { SelectionShortcuts } from "./CanvasWithControls/SelectionShortcuts";
 import { ViewControls } from "./CanvasWithControls/ViewControls";
 
@@ -97,19 +98,16 @@ export function CanvasWithControls({
     [panelId]
   );
 
-  const getDockedState = useCallback(
-    (nextContainerWidth: number, nextControlsWidth: number, expanded: boolean) => {
-      setIsControlsDocked((current) => {
-        if (!expanded || nextControlsWidth <= 0) return false;
-        const dockThreshold = nextControlsWidth * 3;
-        const hysteresis = 32;
-        return current
-          ? nextContainerWidth >= dockThreshold - hysteresis
-          : nextContainerWidth >= dockThreshold + hysteresis;
-      });
-    },
-    []
-  );
+  const getDockedState = useCallback((nextContainerWidth: number, nextControlsWidth: number, expanded: boolean) => {
+    setIsControlsDocked((current) => {
+      if (!expanded || nextControlsWidth <= 0) return false;
+      const dockThreshold = nextControlsWidth * 3;
+      const hysteresis = 32;
+      return current
+        ? nextContainerWidth >= dockThreshold - hysteresis
+        : nextContainerWidth >= dockThreshold + hysteresis;
+    });
+  }, []);
 
   useEffect(() => {
     hasWrittenCameraModeRef.current = false;
@@ -291,12 +289,13 @@ export function CanvasWithControls({
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full"
-      style={rightPadding > 0 ? { paddingRight: `${rightPadding}px` } : undefined}
+      className="relative flex h-full w-full min-h-0 flex-col"
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}>
-      <div className="relative h-full w-full">
+      <div
+        className="relative min-h-0 flex-1"
+        style={rightPadding > 0 ? { paddingRight: `${rightPadding}px` } : undefined}>
         <Canvas
           linear
           flat
@@ -306,8 +305,26 @@ export function CanvasWithControls({
           <color attach="background" args={[backgroundColor]} />
           {children}
           <CameraManager isOrthographic={isOrthographic} enableSmoothing={false} enablePan />
+          <OrientationCube />
         </Canvas>
         <BoxSelectionOverlay panelId={panelId} />
+        {showPlaybackControls && (
+          <div className="absolute bottom-2 left-2 z-50">
+            <div className="flex items-start gap-1">
+              <SmallPlaybackControls />
+              {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
+                <button
+                  type="button"
+                  onClick={() => showAllFloors(animationData.metadata.storyOrder)}
+                  className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1.5 py-1 text-[10px] font-medium text-amber-800 shadow-sm hover:bg-amber-100"
+                  title="All floors are hidden. Show all floors.">
+                  <AlertTriangle size={10} />
+                  No floors
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <ViewControls
         orbitControlsRef={orbitControlsRef}
@@ -318,23 +335,6 @@ export function CanvasWithControls({
         onExpandedWidthChange={handleExpandedWidthChange}
         docked={isControlsDocked}
       />
-      {showPlaybackControls && (
-        <div className="absolute top-2 left-2 z-50">
-          <div className="flex items-start gap-1">
-            <SmallPlaybackControls />
-            {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
-              <button
-                type="button"
-                onClick={() => showAllFloors(animationData.metadata.storyOrder)}
-                className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1.5 py-1 text-[10px] font-medium text-amber-800 shadow-sm hover:bg-amber-100"
-                title="All floors are hidden. Show all floors.">
-                <AlertTriangle size={10} />
-                No floors
-              </button>
-            )}
-          </div>
-        </div>
-      )}
       <SelectionShortcuts showPlayback={Boolean(showPlaybackControls)} />
     </div>
   );

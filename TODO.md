@@ -197,6 +197,7 @@
 - [x] Improve panel drag/resize handles
 - [x] Consolidate 3D view preset definitions into shared canvas-controls config
 - [x] Keep compact view controls visible while the expanded sidebar is open
+- [x] Add a clickable 3D orientation cube to the main canvas for face/edge/corner camera snapping
 
 - [x] Change the views menu popover to be a sidebar that takes up space next to the canvas
 
@@ -405,6 +406,7 @@ _Last Updated: February 2026_
 
 - [x] Keyboard shortcuts helper: add mouse controls on second row
 - [x] Keyboard shortcuts helper: make smaller, show fewer icons
+- [x] Keyboard shortcuts helper: show click / right-click actions for nodes and floor slabs
 
 ### 20.4 Visualization
 
@@ -550,8 +552,8 @@ _Last Updated: February 2026_
 ### 23.7 View Modes
 
 - [x] ISD Threshold view mode has a really tiny building not scaled or position correctly. Also has a grid plane for some reason.
-- [ ] FloorSlab view mode has incorrect colors. They appear darker than they should (namely the hovered floor slab color)
-- [ ] The FloorSlab renderer shouldn't have a "selectedSlice" check. It should just color by hover
+- [x] FloorSlab view mode has incorrect colors. They appear darker than they should (namely the hovered floor slab color)
+- [x] The FloorSlab renderer shouldn't have a "selectedSlice" check. It should just color by hover
 
 ### 23.8 Data & Parser
 

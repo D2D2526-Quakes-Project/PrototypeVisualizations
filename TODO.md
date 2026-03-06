@@ -503,7 +503,7 @@ _Last Updated: February 2026_
 ### 23.1 View Controls & Camera
 
 - [x] Home view should be facing +X +Y, currently opposite
-- [ ] Buttons should make you face the direction you clicked
+- [x] Buttons should make you face the direction you clicked
 - [x] Grid layout of view presets has gaps
 - [x] Ortho is saved as opposite of what it should be
 

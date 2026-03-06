@@ -12,6 +12,26 @@ interface ColorScaleBarProps {
   noLabel?: boolean;
 }
 
+function clamp01(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(1, Math.max(0, value));
+}
+
+function formatScaleValue(value: number, unitAbbr: string) {
+  return `${value.toFixed(2)} ${unitAbbr}`;
+}
+
+function LabelBox({ value, underlined = false }: { value: string; underlined?: boolean }) {
+  return (
+    <span
+      className={`shrink-0 whitespace-nowrap font-mono text-[9px] leading-none text-neutral-400 ${
+        underlined ? "border-b border-current pb-px text-neutral-500" : ""
+      }`}>
+      {value}
+    </span>
+  );
+}
+
 function getScaleStopsAndLabels(
   config: ReturnType<typeof getMetricConfig>,
   maxValue: number,
@@ -21,10 +41,9 @@ function getScaleStopsAndLabels(
 ) {
   const positiveStops = config.positiveColorStops;
   const negativeStops = (config as { negativeColorStops: [string, string, string, string] }).negativeColorStops;
-  const thresholdRatio = maxValue > 0 ? thresholdValue / maxValue : 0;
+  const thresholdRatio = clamp01(maxValue > 0 ? thresholdValue / maxValue : 0);
 
   let stops: string[];
-  const labels: Array<{ value: number; positionPct: number }> = [];
 
   if (thresholdHighlighting) {
     if (positiveOnly) {
@@ -36,9 +55,6 @@ function getScaleStopsAndLabels(
         `${positiveStops[2]} ${thresholdPos}%`,
         `${positiveStops[3]} 100%`,
       ];
-      labels.push({ value: 0, positionPct: 0 });
-      labels.push({ value: thresholdValue, positionPct: thresholdPos });
-      labels.push({ value: maxValue, positionPct: 100 });
     } else {
       const posThresholdPos = thresholdRatio * 50 + 50;
       const negThresholdPos = (1 - thresholdRatio) * 50;
@@ -53,16 +69,10 @@ function getScaleStopsAndLabels(
         `${positiveStops[2]} ${posThresholdPos}%`,
         `${positiveStops[3]} 100%`,
       ];
-      labels.push({ value: -maxValue, positionPct: 0 });
-      labels.push({ value: 0, positionPct: 50 });
-      labels.push({ value: thresholdValue, positionPct: 75 });
-      labels.push({ value: maxValue, positionPct: 100 });
     }
   } else {
     if (positiveOnly) {
       stops = [`${positiveStops[0]} 0%`, `${positiveStops[1]} 100%`];
-      labels.push({ value: 0, positionPct: 0 });
-      labels.push({ value: maxValue, positionPct: 100 });
     } else {
       stops = [
         `${negativeStops[1]} 0%`,
@@ -70,13 +80,10 @@ function getScaleStopsAndLabels(
         `${positiveStops[0]} 50%`,
         `${positiveStops[1]} 100%`,
       ];
-      labels.push({ value: -maxValue, positionPct: 0 });
-      labels.push({ value: 0, positionPct: 50 });
-      labels.push({ value: maxValue, positionPct: 100 });
     }
   }
 
-  return { stops, labels };
+  return { stops, thresholdRatio };
 }
 
 export function ColorScaleBar({
@@ -91,13 +98,17 @@ export function ColorScaleBar({
   const positiveOnly = config.positiveOnly;
   const thresholdValue = thresholds[currentMetric] ?? 0;
 
-  const { stops, labels } = getScaleStopsAndLabels(
+  const { stops, thresholdRatio } = getScaleStopsAndLabels(
     config,
     maxValue,
     positiveOnly,
     thresholdHighlighting,
     thresholdValue
   );
+  const minLabel = formatScaleValue(positiveOnly ? 0 : -maxValue, config.unit.abbr);
+  const centerLabel = formatScaleValue(0, config.unit.abbr);
+  const maxLabel = formatScaleValue(maxValue, config.unit.abbr);
+  const thresholdLabel = formatScaleValue(thresholdValue, config.unit.abbr);
 
   return (
     <>
@@ -105,21 +116,46 @@ export function ColorScaleBar({
         className="relative h-3 w-full flex-1 rounded-sm"
         style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}></div>
       {!noLabel && (
-        <div className="relative mt-0.5 h-3">
-          {labels.map((label, index) => (
-            <span
-              key={`${label.positionPct}-${index}`}
-              className={`absolute text-[9px] text-neutral-400 ${
-                label.positionPct === 0
-                  ? "left-0 -translate-x-0"
-                  : label.positionPct === 100
-                    ? "left-full -translate-x-full"
-                    : "-translate-x-1/2"
-              }`}
-              style={{ left: `${label.positionPct}%` }}>
-              {label.value.toFixed(2)} {config.unit.abbr}
-            </span>
-          ))}
+        <div className="mt-1 flex items-start gap-1 overflow-hidden">
+          {positiveOnly ? (
+            <>
+              <LabelBox value={minLabel} />
+              <div className="flex min-w-0 flex-1 items-start">
+                {thresholdHighlighting ? (
+                  <>
+                    <div style={{ flexGrow: thresholdRatio }} />
+                    <LabelBox value={thresholdLabel} underlined />
+                    <div style={{ flexGrow: 1 - thresholdRatio }} />
+                  </>
+                ) : (
+                  <div className="flex-1" />
+                )}
+              </div>
+              <LabelBox value={maxLabel} />
+            </>
+          ) : (
+            <>
+              <LabelBox value={minLabel} />
+              <div className="flex min-w-0 flex-1 items-start">
+                <div className="flex min-w-0 flex-1 items-start">
+                  <div className="flex-1" />
+                  <LabelBox value={centerLabel} />
+                </div>
+                <div className="flex min-w-0 flex-1 items-start">
+                  {thresholdHighlighting ? (
+                    <>
+                      <div style={{ flexGrow: thresholdRatio }} />
+                      <LabelBox value={thresholdLabel} underlined />
+                      <div style={{ flexGrow: 1 - thresholdRatio }} />
+                    </>
+                  ) : (
+                    <div className="flex-1" />
+                  )}
+                </div>
+              </div>
+              <LabelBox value={maxLabel} />
+            </>
+          )}
         </div>
       )}
     </>

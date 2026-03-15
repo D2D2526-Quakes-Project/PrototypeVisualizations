@@ -4,6 +4,68 @@
 
 ---
 
+## 0. Product Reframing Before Next Science Partner Review
+
+### 0.1 Trim Prototype Sprawl
+
+- [ ] Reduce top-level navigation to the research-critical workflow and hide or remove legacy experiment routes from the main nav
+  - Current issue: `src/main.tsx` still exposes many exploratory routes (`Data Explorer`, `Surface`, `Node Grid`, `Ribbons`, `Elevation Slice`, `Thresholds`, `Floor Torsion`, `Volumes`, `Time Volumes`) as peers of the main 3D tool.
+  - Decide which routes are true product surfaces versus old experiments and move non-essential ones behind a dev/lab entry point or remove them entirely.
+  - Keep the next science partner session focused on one coherent tool, not a menu of unrelated concepts.
+- [ ] Audit standalone pages that duplicate or compete with in-dock view-3d analysis panels
+  - `damage-threshold`, `floor-plan-torsion`, and other standalone pages overlap with dock panels and weaken the sense of a single intentional workflow.
+  - Decide whether each concept should live as a dedicated route, a dock panel, or be cut.
+- [ ] Cut or quarantine novelty visualizations that do not currently support a scientific inference path
+  - Candidate trims based on current routes/pages: `surface`, `temporal-ribbons`, `node-grid`, `data-explorer`, `floor-time-volume`, and similar pages that mostly show alternative encodings rather than helping answer “where is the problem, how severe is it, and why?”
+  - For each candidate, document the research question it answers; if none is credible, remove it from the primary experience.
+- [ ] Reduce panel-picker breadth for external demos
+  - Current `MagicPanel` catalog presents many panels as equally important, which reinforces playground behavior.
+  - Create a curated partner/demo mode that exposes only the core investigation panels needed for the current scientific question.
+- [ ] Rework default layout/copy to tell a single analysis story
+  - The existing default layout already leans toward `Interstory Drift`, `Story Drift Heatmap`, `ISD Threshold`, and `Hinge Hotspots`; make that explicit in labels, captions, and panel ordering.
+  - Reframe or rename generic panels whose purpose is unclear in a research walkthrough.
+
+### 0.2 Meeting Prep And Research Framing
+
+- [ ] Convert the next science partner session into a hypothesis-finding interview instead of a general feedback walkthrough
+  - Use the brief in `SCIENCE_PARTNER_MEETING_BRIEF.md`.
+  - Ask what decisions, evidence, and interpretations the current views support.
+  - Defer general UI polish questions until the end of the session.
+- [ ] Write a short internal statement of product intent and scientific task before adding more features
+  - Define the primary user, the inference they need to make, the evidence they rely on, and the 2-3 views that should support that task.
+  - Use that statement as the filter for future TODO prioritization.
+
+### 0.3 User Needs And Workflow Spec
+
+- [x] Write a product/user-flow spec that distinguishes core workflows from secondary and experimental ones
+  - See `USER_FLOW_PRODUCT_SPEC.md`.
+  - Treat this as the current working reference for roadmap decisions until science partner feedback sharpens it further.
+- [ ] Reconcile existing backlog items against the core workflows in `USER_FLOW_PRODUCT_SPEC.md`
+  - Classify each major feature request as `core`, `supporting`, `experimental`, or `cut`.
+  - Stop promoting feature ideas into active implementation without a clear workflow match.
+- [ ] Replace generic “more visualization” planning with user-need-driven planning
+  - For every new task, state which user it serves, what question it helps answer, and what evidence or decision it supports.
+  - If a task cannot be tied to a user need, keep it out of the near-term roadmap.
+
+### 0.4 Current User-Needed Capabilities
+
+- [ ] Strengthen the single-simulation triage workflow as the main product path
+  - The current user most urgently needs to load a simulation, find the anomalous region, inspect why it stands out, and capture that state.
+  - Prioritize the sequence: `load -> locate concentration -> threshold check -> inspect local evidence -> save/share/export`.
+- [ ] Support comparison only where it helps answer “what changed and why?”
+  - Multi-simulation comparison is valuable, but only if the comparison view makes differences in vulnerable regions, threshold timing, and hotspot evidence legible.
+  - Avoid building split-view mechanics without a clear comparison narrative.
+- [ ] Make “evidence localization” a first-class capability
+  - Users need to move from a suspicious story/time pattern to a specific floor/corner/node/hinge region without manually reconstructing context across panels.
+  - Favor linked selections and synchronized focus over more independent charts.
+- [ ] Make “evidence capture” a first-class capability
+  - Users need to preserve a finding once they see it: camera, time, floor/story target, panel layout, and short notes.
+  - Shared state and exports should preserve the interpretation context, not just the raw view.
+- [ ] Make the threshold workflow explainable
+  - Users need to understand not only that a threshold was crossed, but where, when, in what order, and why that matters for the building interpretation.
+  - Avoid threshold panels that act as generic warning dashboards with no analytical bridge.
+
+
 ### 2.2 Update Color UI
 
 - [ ] Allow the user to change the color for each metric
@@ -25,6 +87,9 @@
 - [x] Acceleration Distribution Panel
 - [x] Combined Metrics Panel (multiple metrics overlay)
 - [ ] Time Range Analysis Panel
+- [ ] Defer new panel creation unless it strengthens one of the core workflows in `USER_FLOW_PRODUCT_SPEC.md`
+  - New panels should usually be justified as: locating anomalies, inspecting local evidence, comparing simulations, or communicating a finding.
+  - Avoid adding panels that only provide an alternative encoding of already-visible information.
 
 ### 5.2 Existing Panel Improvements
 
@@ -127,6 +192,10 @@
   - Use `HINGE_METRIC_UNITS` consistently in chart axis names, tooltips, summary cards, and table headers.
   - Clarify `M3` unit source/provenance from hinge exports before exposing unit text in UI (avoid incorrect units).
   - Add `UnitTooltip` where values have known units and keep static/dimensionless metrics explicitly labeled as such.
+- [x] Fix binary generator node-coordinate unit auto-detection and unbound scale usage
+  - Move `node_to_inches_scale` inference before geometry buffer writes in `scripts/generate_binary_data.py`.
+  - Match normalized node elevation levels against story elevations so mixed `node_data.csv` exports (`in` vs `ft`) resolve correctly.
+  - Re-validate with `--dryrun` for both `15story` and `52story`.
 
 ### 6.1.3 Hinge Analysis Panels (Next Candidates)
 
@@ -149,6 +218,9 @@
 - [ ] Add difference visualization
 - [ ] Add simulation selector UI
 - [ ] Upgrade main menu simulation picker from single-select staged open to true multi-select split-view launch flow
+- [ ] Define the comparison questions before expanding comparison UI
+  - Examples: pre- vs post-retrofit, station A vs station B, different threshold onset timing, shifted vulnerable region.
+  - Comparison features should answer what changed, where it changed, and whether the change matters.
 
 ### 6.3 Export Functionality
 
@@ -157,6 +229,9 @@
 - [ ] Add GIF recording for playback
 - [ ] Add video export (MP4/WebM)
 - [ ] Add data table CSV export
+- [ ] Prioritize exports that preserve analytical context over exhaustive export permutations
+  - First-class need: export the exact finding state with the relevant panels and comparison context.
+  - Lower priority: every possible panel-format-resolution combination.
 
 ---
 
@@ -167,6 +242,9 @@
 - [ ] Add a way to view the ground motion either in the scene or in a separate panel
 - [ ] Create "Velocity Vectors" view mode
 - [ ] Create "Acceleration Vectors" view mode
+- [ ] Gate new view modes behind a clear analytical need
+  - Before adding a new mode, define what question it answers that current drift/threshold/hinge/torsion views do not.
+  - If it is primarily a new visual style, keep it experimental.
 
 ### 7.2 Enhanced Rendering
 
@@ -210,6 +288,39 @@
 - [ ] Create in-app help overlay
 
 - [ ] Switch save-profile changes without requiring full page reload
+
+### 9.3 Discovery-Focused Workflow Improvements
+
+- [ ] Add a guided investigation mode centered on one triage workflow
+  - Proposed core flow: locate drift concentration -> inspect threshold crossings -> verify with hinge hotspots -> isolate floors/corners/components of interest.
+  - The mode should bias the layout, panel availability, and copy toward this sequence.
+- [ ] Link the main evidence views more tightly so a finding in one panel drives the others
+  - Selecting a story/corner/time range in the heatmap or threshold panel should focus the 3D view, floor panel, and hinge summaries on the same target.
+  - Reduce the need for manual cross-referencing between separate panels.
+- [ ] Add explanatory captions that state what each core panel is for and what interpretation it supports
+  - Example: not just “Story Drift Heatmap,” but what a strong band, hotspot, or threshold crossing is meant to reveal.
+  - This should help science partners respond with scientific interpretation instead of UI uncertainty.
+- [ ] Add an evidence trail / finding capture workflow
+  - Let users save or pin a notable floor/corner/time/hotspot combination with a short note about what was observed.
+  - This would support discovery, comparison, and later research discussion better than transient exploration alone.
+- [ ] Add a “why this matters” bridge between thresholds and downstream meaning
+  - When a threshold is crossed, summarize what that implies in the partner’s analysis language once that language is validated.
+  - Avoid generic “warning” semantics if the real interpretation is more specific.
+- [ ] Add a compact sequence-of-events view for thresholded behavior
+  - Show which floors/corners/components cross first, whether exceedance is isolated or cascading, and how the order changes by simulation.
+  - This is likely more discovery-oriented than another isolated static panel.
+- [ ] Add stronger story/corner/component localization for hinge analysis
+  - Current hinge views are useful but still feel detached from the building-level narrative.
+  - Prioritize floor/slice localization and alignment with drift/threshold views over adding more hinge chart variants.
+- [ ] Add side-by-side “signal agreement” summaries across drift, torsion, and hinge evidence
+  - Help users answer whether multiple metrics point to the same vulnerable region or reveal competing interpretations.
+  - This supports discovery better than showing each metric in isolation.
+- [ ] Add a saved finding / pinned investigation state concept
+  - Support naming a finding, storing the relevant time/floor/corner selection, and reopening it later.
+  - This should become the bridge between analysis, collaboration, and export.
+- [ ] Add a curated “partner review” mode
+  - Remove distracting routes/panels and expose only the workflow needed for a science partner session.
+  - Use it to keep feedback focused on interpretation instead of general UI exploration.
 
 ---
 
@@ -259,6 +370,9 @@ The view mode system has incompatibilities and incomplete features. Need to unif
 
 - [ ] Add ribbons view mode to main 3D view (based on TemporalRibbons page)
 - [ ] Move elevation slice features into main view as a mode
+- [ ] Re-evaluate whether ribbons belong in the main product at all
+  - Keep only if science partners can articulate a specific interpretive value that current views miss.
+  - Otherwise leave ribbons as an experimental artifact, not a roadmap driver.
 
 ---
 
@@ -568,11 +682,14 @@ _Last Updated: February 2026_
 - [x] Quick buttons in the !isExpanded view menu should still be visible
 - [ ] The peak Values table is pointless and completely useless
 - [ ] Peak response time panel is awful and completely disgusting
+- [ ] Audit existing panels/pages for “useful evidence” versus “prototype residue”
+  - For each low-value surface, decide: improve, merge, hide, or delete.
+  - Start with `Peak Values`, `Peak Response Time`, and standalone experimental pages exposed in the main navigation.
 
 ---
 
 ## 25. Known Issues
 
-- [x] When the view menu is docked, the ctrl+drag selection box is visually offset
+- [ ] When the view menu is docked, the ctrl+drag selection box is visually offset
 
 _Last Updated: March 2026_

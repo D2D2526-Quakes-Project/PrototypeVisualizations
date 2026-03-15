@@ -258,7 +258,7 @@ export const createViewStore = () =>
         }),
 
       // Color
-      currentMetric: "displacementMag",
+      currentMetric: "interstoryDrift",
       setColorMetric: (currentMetric) => set({ currentMetric }),
       thresholdHighlighting: false,
       setThresholdHighlighting: (thresholdHighlighting) => set({ thresholdHighlighting }),

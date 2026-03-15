@@ -8,10 +8,6 @@ import {
   cyan50,
   cyan600,
   cyan900,
-  green400,
-  green50,
-  green600,
-  green900,
   orange400,
   orange50,
   orange600,
@@ -501,7 +497,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
-    positiveColorStops: [green50, green400, green600, green900],
+    positiveColorStops: [red50, red400, red600, red900],
   },
   displacementX: {
     metric: "displacementX",
@@ -514,8 +510,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[0];
     },
-    positiveColorStops: [green50, green400, green600, green900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    positiveColorStops: [red50, red400, red600, red900],
+    negativeColorStops: [red50, red400, red600, red900],
   },
   displacementY: {
     metric: "displacementY",
@@ -528,8 +524,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[1];
     },
-    positiveColorStops: [green50, green400, green600, green900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    positiveColorStops: [red50, red400, red600, red900],
+    negativeColorStops: [red50, red400, red600, red900],
   },
   displacementZ: {
     metric: "displacementZ",
@@ -542,8 +538,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[2];
     },
-    positiveColorStops: [green50, green400, green600, green900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    positiveColorStops: [red50, red400, red600, red900],
+    negativeColorStops: [red50, red400, red600, red900],
   },
   velocityMag: {
     metric: "velocityMag",
@@ -573,7 +569,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [cyan50, cyan400, cyan600, cyan900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [cyan50, cyan400, cyan600, cyan900],
   },
   velocityY: {
     metric: "velocityY",
@@ -588,7 +584,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [cyan50, cyan400, cyan600, cyan900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [cyan50, cyan400, cyan600, cyan900],
   },
   velocityZ: {
     metric: "velocityZ",
@@ -603,7 +599,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [cyan50, cyan400, cyan600, cyan900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [cyan50, cyan400, cyan600, cyan900],
   },
   accelerationMag: {
     metric: "accelerationMag",
@@ -633,7 +629,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [violet50, violet400, violet600, violet900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [violet50, violet400, violet600, violet900],
   },
   accelerationY: {
     metric: "accelerationY",
@@ -648,7 +644,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [violet50, violet400, violet600, violet900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [violet50, violet400, violet600, violet900],
   },
   accelerationZ: {
     metric: "accelerationZ",
@@ -663,7 +659,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [violet50, violet400, violet600, violet900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [violet50, violet400, violet600, violet900],
   },
   rotationMag: {
     metric: "rotationMag",
@@ -693,7 +689,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [orange50, orange400, orange600, orange900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [orange50, orange400, orange600, orange900],
   },
   rotationY: {
     metric: "rotationY",
@@ -708,7 +704,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [orange50, orange400, orange600, orange900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [orange50, orange400, orange600, orange900],
   },
   rotationZ: {
     metric: "rotationZ",
@@ -723,7 +719,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [orange50, orange400, orange600, orange900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [orange50, orange400, orange600, orange900],
   },
   rotationVelocityMag: {
     metric: "rotationVelocityMag",
@@ -753,7 +749,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [teal50, teal400, teal600, teal900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [teal50, teal400, teal600, teal900],
   },
   rotationVelocityY: {
     metric: "rotationVelocityY",
@@ -768,7 +764,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [teal50, teal400, teal600, teal900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [teal50, teal400, teal600, teal900],
   },
   rotationVelocityZ: {
     metric: "rotationVelocityZ",
@@ -783,7 +779,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [teal50, teal400, teal600, teal900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [teal50, teal400, teal600, teal900],
   },
   rotationAccelerationMag: {
     metric: "rotationAccelerationMag",
@@ -813,7 +809,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [purple50, purple400, purple600, purple900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [purple50, purple400, purple600, purple900],
   },
   rotationAccelerationY: {
     metric: "rotationAccelerationY",
@@ -828,7 +824,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [purple50, purple400, purple600, purple900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [purple50, purple400, purple600, purple900],
   },
   rotationAccelerationZ: {
     metric: "rotationAccelerationZ",
@@ -843,14 +839,14 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
     },
     positiveColorStops: [purple50, purple400, purple600, purple900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
+    negativeColorStops: [purple50, purple400, purple600, purple900],
   },
   interstoryDrift: {
     metric: "interstoryDrift",
     thresholdKey: "interstoryDrift",
     label: "Story Drift",
     unit: UNITS["percent"],
-    positiveOnly: false,
+    positiveOnly: true,
     getPrecomputedMax: get("maxStoryDrift"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -888,7 +884,6 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return drifts[cornerIndex];
     },
     positiveColorStops: [red50, red400, red600, red900],
-    negativeColorStops: [blue50, blue400, blue600, blue900],
   },
 };
 

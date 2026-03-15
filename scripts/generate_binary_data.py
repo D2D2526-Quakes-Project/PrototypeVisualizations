@@ -751,6 +751,101 @@ def load_ladwp_data(filepath, col_map, num_frames_expected=None):
     return vals, col_map
 
 
+def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
+    """Infer whether node elevations are in inches or feet by matching normalized story elevations."""
+    candidate_scales = [1.0, 12.0]
+    tolerance_in = 0.5
+
+    node_elevations = np.asarray(node_elevations_in, dtype=np.float64)
+    story_elevations = np.asarray(story_elevations_in, dtype=np.float64)
+
+    if node_elevations.size == 0 or story_elevations.size == 0:
+        return 1.0
+
+    unique_node_elevations = np.unique(np.round(node_elevations, decimals=6))
+    best_scale = 1.0
+    best_matched = -1
+    best_mean_delta = np.inf
+
+    for scale in candidate_scales:
+        scaled_elev = unique_node_elevations * scale
+        normalized_elev = scaled_elev - np.min(scaled_elev)
+        min_deltas = np.min(np.abs(normalized_elev[None, :] - story_elevations[:, None]), axis=1)
+        matched_count = int(np.count_nonzero(min_deltas <= tolerance_in))
+        mean_delta = float(np.mean(min_deltas))
+
+        print(
+            f"Scale check ({scale:.1f}): matched {matched_count}/{len(story_elevations)} "
+            f"story elevations (mean abs delta={mean_delta:.3f} in)."
+        )
+
+        if matched_count > best_matched or (matched_count == best_matched and mean_delta < best_mean_delta):
+            best_scale = scale
+            best_matched = matched_count
+            best_mean_delta = mean_delta
+
+    print(
+        f"Auto-selected node scale: {best_scale:.1f} "
+        f"(matched {best_matched}/{len(story_elevations)} story elevations)"
+    )
+    return best_scale
+
+
+def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scale, min_x, min_y, min_v, tol=0.5):
+    stories = {}
+    unmatched_nodes = []
+
+    for _, row in df_nodes.iterrows():
+        x = row["H1"] * node_scale - min_x
+        y = row["H2"] * node_scale - min_y
+        z = row["V"] * node_scale - min_v
+        matches = np.where(np.isclose(story_elevations, z, atol=tol))[0]
+        if len(matches) == 0:
+            unmatched_nodes.append(
+                {
+                    "node_id": row["Node ID"],
+                    "x": float(x),
+                    "y": float(y),
+                    "z": float(z),
+                }
+            )
+            continue
+
+        stidx = int(matches[0])
+        story = story_levels[stidx]
+        stories.setdefault(story, []).append(row["Node ID"] if pd.notna(row["Node ID"]) else None)
+
+    # Remove any accidental Nones (in case IDs are malformed)
+    stories = {story: [idx for idx in node_indices if idx is not None] for story, node_indices in stories.items()}
+    unmatched_nodes = [n for n in unmatched_nodes if n["node_id"] is not None]
+    return stories, unmatched_nodes
+
+
+def _warn_unmatched_nodes(building_name, unmatched_nodes, story_elevations):
+    if not unmatched_nodes:
+        print(f"✓ All nodes were assigned to story elevations for {building_name}.")
+        return
+
+    unmatched_count = len(unmatched_nodes)
+    print(f"\n⚠ WARNING: {unmatched_count} nodes in {building_name} were not assigned to any story elevation.")
+    print("      These nodes often indicate non-floor nodes (e.g., hinges, connectors, auxiliary points) or mismatched unit scale.")
+    print("      node_id, x(in), y(in), z(in):")
+
+    sample = unmatched_nodes[:20]
+    for node in sample:
+        print(f"      {node['node_id']}: ({node['x']:.3f}, {node['y']:.3f}, {node['z']:.3f})")
+
+    if unmatched_count > len(sample):
+        print(f"      ... and {unmatched_count - len(sample)} more.")
+
+    if story_elevations.size > 0:
+        deltas = []
+        for node in unmatched_nodes:
+            z = node["z"]
+            deltas.append(float(np.min(np.abs(story_elevations - z))))
+        print(f"      Nearest-story delta stats: min={min(deltas):.4f} in, max={max(deltas):.4f} in, mean={np.mean(deltas):.4f} in")
+
+
 # --- PROCESSORS ---
 
 
@@ -769,25 +864,13 @@ def process_building(building):
     # 1. Load Nodes + Story Heights
     df_nodes = pd.read_csv(building["node_data"])
     df_height = pd.read_csv(building["height"])
-    # node_data.csv coordinates are already in inches.
-    node_to_inches_scale = 1.0
 
     unique_ids = df_nodes["Node ID"].unique()
     id_to_index = {uid: i for i, uid in enumerate(unique_ids)}
     index_to_id = {i: uid for i, uid in enumerate(unique_ids)}
     count_nodes = len(unique_ids)
 
-    # 2. Prepare Binary Buffer (Only XYZ)
-    # node_data.csv is already in inches; write directly to the binary geometry buffer.
-    buffer = np.zeros(count_nodes * 3, dtype=np.float32)
-    for _, row in df_nodes.iterrows():
-        idx = id_to_index.get(row["Node ID"])
-        if idx is not None:
-            buffer[idx * 3 + 0] = row["H1"] * node_to_inches_scale
-            buffer[idx * 3 + 1] = row["H2"] * node_to_inches_scale
-            buffer[idx * 3 + 2] = row["V"] * node_to_inches_scale
-
-    # 3. Load Stories & Corners
+    # 2. Load Stories & Corners
 
     # Cumulative elevation from ground for each story (story level -> elevation in inches)
     # This is the sum of all story heights from ground up to this story
@@ -806,29 +889,39 @@ def process_building(building):
     stories = {}
     storiesCorners = {}
 
+    # Infer whether node coordinates are already inches (scale=1.0) or feet (scale=12.0)
+    story_elevations_array = np.array(list(storiesElevations.values()), dtype=np.float64)
+    node_to_inches_scale = _infer_node_to_inches_scale(df_nodes["V"].values, story_elevations_array)
+
+    # 3. Prepare Binary Buffer (Only XYZ), always written in inches.
+    buffer = np.zeros(count_nodes * 3, dtype=np.float32)
+    for _, row in df_nodes.iterrows():
+        idx = id_to_index.get(row["Node ID"])
+        if idx is not None:
+            buffer[idx * 3 + 0] = row["H1"] * node_to_inches_scale
+            buffer[idx * 3 + 1] = row["H2"] * node_to_inches_scale
+            buffer[idx * 3 + 2] = row["V"] * node_to_inches_scale
+
+    # Write node positions in inches
     min_x = df_nodes["H1"].min() * node_to_inches_scale
     min_y = df_nodes["H2"].min() * node_to_inches_scale
     min_v = df_nodes["V"].min() * node_to_inches_scale
     story_levels = list(storiesElevations.keys())
-    story_elevations = np.array(list(storiesElevations.values()), dtype=np.float64)
+    story_elevations = story_elevations_array
 
-    for _, row in df_nodes.iterrows():
-        nid = row["Node ID"]
-        idx = id_to_index.get(nid)
-        if idx is not None:
-            x = row["H1"] * node_to_inches_scale - min_x
-            y = row["H2"] * node_to_inches_scale - min_y
-            z = row["V"] * node_to_inches_scale - min_v
+    stories, unmatched_nodes = _assign_nodes_to_stories(
+        df_nodes,
+        story_elevations,
+        story_levels,
+        node_to_inches_scale,
+        min_x,
+        min_y,
+        min_v,
+    )
+    _warn_unmatched_nodes(building_name, unmatched_nodes, story_elevations)
 
-            # Find story elevation closest to node
-            matches = np.where(np.isclose(story_elevations, z, atol=1e-2))[0]
-            stidx = int(matches[0]) if len(matches) else None
-            if stidx is None:
-                continue
-            story = story_levels[stidx]
-            if story not in stories:
-                stories[story] = []
-            stories[story].append(idx)
+    # Convert discovered floor Node IDs to zero-based geometry indices used by parser/binary output
+    stories = {story: [id_to_index[nid] for nid in node_indices if nid in id_to_index] for story, node_indices in stories.items()}
 
     # Now find corners for each story based on all nodes at that elevation
     for story, node_indices in stories.items():

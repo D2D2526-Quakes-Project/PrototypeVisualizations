@@ -589,7 +589,7 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     version: STATE_VERSION,
     timestamp: Date.now(),
     frameIndex: 0,
-    currentMetric: "displacementMag",
+    currentMetric: "interstoryDrift",
     thresholdHighlighting: false,
     thresholds: { ...DEFAULT_THRESHOLDS },
     visibleFloors: [],

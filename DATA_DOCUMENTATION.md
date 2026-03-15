@@ -30,13 +30,13 @@ public/data/
 
 ### Overview
 
-All measurements in the binary format use **inches** for consistency. Source CSV files are mixed-unit by file type (for example, `node_data.csv` uses inches while `building_height.csv` uses feet).
+All measurements in the binary format use **inches** for consistency. Source CSV files are mixed-unit by file type and, for some building exports, by dataset as well.
 
 ### Unit Conversions
 
 | Data Type            | CSV Source Units | Binary Format Units | Conversion Factor | Notes                             |
 | :------------------- | :--------------- | :------------------ | :---------------- | :-------------------------------- |
-| **Node Coordinates** | Inches           | Inches              | × 1               | `node_data.csv` H1, H2, V columns |
+| **Node Coordinates** | Inches or Feet   | Inches              | Auto-detected (`× 1` or `× 12`) | `node_data.csv` H1, H2, V columns |
 | **Story Heights**    | Feet             | Inches              | × 12              | `building_height.csv`             |
 | **Story Elevations** | Feet             | Inches              | × 12              | Cumulative height calculations    |
 | **Displacements**    | Inches           | Inches              | × 1               | Already in inches in source files |
@@ -55,10 +55,10 @@ All measurements in the binary format use **inches** for consistency. Source CSV
 
 ### Important Notes
 
-- `node_data.csv` stores building node coordinates in **inches**
+- `node_data.csv` may store building node coordinates in **inches** or **feet** depending on the building export
 - `building_height.csv` stores story heights in **feet**
 - Simulation response files (Displacements, Velocities, Accelerations) store values in **inch-based units**
-- The binary conversion script (`scripts/generate_binary_data.py`) converts story heights/elevations to inches for binary metadata
+- The binary conversion script (`scripts/generate_binary_data.py`) converts story heights/elevations to inches for binary metadata and auto-detects whether node coordinates need a feet-to-inches conversion
 - Always verify units when working directly with CSV source files vs. binary output
 
 ## Data Types

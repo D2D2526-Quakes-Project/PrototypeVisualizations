@@ -37,6 +37,8 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 
+type StatScope = "current" | "static";
+
 function StatRow({
   label,
   value,
@@ -81,10 +83,21 @@ function StatRow({
   );
 }
 
-function StatGroup({ title, children }: { title: string; children: React.ReactNode }) {
+function ScopeBadge({ scope }: { scope: StatScope }) {
+  return (
+    <span className={`text-[10px] font-medium ${scope === "current" ? "text-blue-700" : "text-neutral-600"}`}>
+      {scope === "current" ? "Current frame" : "Static"}
+    </span>
+  );
+}
+
+function StatGroup({ title, scope, children }: { title: string; scope: StatScope; children: React.ReactNode }) {
   return (
     <div className="mb-3">
-      <div className="mb-1 text-xs font-semibold tracking-wide text-neutral-700 uppercase">{title}</div>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="text-xs font-semibold tracking-wide text-neutral-700 uppercase">{title}</div>
+        <ScopeBadge scope={scope} />
+      </div>
       <div className="rounded bg-neutral-50 px-2 py-1">{children}</div>
     </div>
   );
@@ -149,6 +162,11 @@ export function StatisticsPanel() {
         z: gm[2],
         magnitude: gmMag,
       },
+      optionalPeaks: {
+        maxRotation: precomputed.maxRotation ?? null,
+        maxRotationVelocity: precomputed.maxRotationVelocity ?? null,
+        maxRotationAcceleration: precomputed.maxRotationAcceleration ?? null,
+      },
       precomputed,
     };
   }, [animationData, frameIndex]);
@@ -162,11 +180,10 @@ export function StatisticsPanel() {
         <span className="text-neutral-300">•</span>
         <span>Ground motion in g</span>
         <span className="text-neutral-300">•</span>
-        <span>Hover values for unit conversions</span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto p-3">
-        <StatGroup title="Simulation">
+        <StatGroup title="Simulation" scope="static">
           <StatRow label="Nodes" value={stats.nodeCount} />
           <StatRow label="Frames" value={stats.frameCount} />
           <StatRow label="Duration" value={stats.duration} unit="s" decimals={2} />
@@ -174,50 +191,62 @@ export function StatisticsPanel() {
           <StatRow label="Stories" value={stats.storyCount} />
         </StatGroup>
 
-        <StatGroup title="Current Frame">
+        <StatGroup title="Current Frame" scope="current">
           <StatRow label="Frame" value={stats.currentFrame + 1} />
           <StatRow label="Time" value={stats.currentTime} unit="s" decimals={3} />
         </StatGroup>
 
-        <StatGroup title="Displacement Range">
+        <StatGroup title="Displacement Range" scope="current">
           <StatRow label="X Range" value={stats.displacement.range.x} unit="in" />
           <StatRow label="Y Range" value={stats.displacement.range.y} unit="in" />
           <StatRow label="Z Range" value={stats.displacement.range.z} unit="in" />
         </StatGroup>
 
-        <StatGroup title="Displacement Min">
+        <StatGroup title="Displacement Min" scope="current">
           <StatRow label="X Min" value={stats.displacement.min.x} unit="in" />
           <StatRow label="Y Min" value={stats.displacement.min.y} unit="in" />
           <StatRow label="Z Min" value={stats.displacement.min.z} unit="in" />
         </StatGroup>
 
-        <StatGroup title="Displacement Max">
+        <StatGroup title="Displacement Max" scope="current">
           <StatRow label="X Max" value={stats.displacement.max.x} unit="in" />
           <StatRow label="Y Max" value={stats.displacement.max.y} unit="in" />
           <StatRow label="Z Max" value={stats.displacement.max.z} unit="in" />
         </StatGroup>
 
-        <StatGroup title="Average Displacement">
+        <StatGroup title="Average Displacement" scope="current">
           <StatRow label="X Avg" value={stats.displacement.avg.x} unit="in" />
           <StatRow label="Y Avg" value={stats.displacement.avg.y} unit="in" />
           <StatRow label="Z Avg" value={stats.displacement.avg.z} unit="in" />
         </StatGroup>
 
-        <StatGroup title="Ground Motion">
+        <StatGroup title="Ground Motion" scope="current">
           <StatRow label="X" value={stats.groundMotion.x} unit="g" />
           <StatRow label="Y" value={stats.groundMotion.y} unit="g" />
           <StatRow label="Z" value={stats.groundMotion.z} unit="g" />
           <StatRow label="Magnitude" value={stats.groundMotion.magnitude} unit="g" />
         </StatGroup>
 
-        <StatGroup title="Peak Values (All Time)">
+        <StatGroup title="Precomputed Peaks" scope="static">
           <StatRow label="Max Displacement" value={stats.precomputed.maxDisplacement} unit="in" />
           <StatRow label="Max GM Magnitude" value={stats.precomputed.groundMotion.maxMagnitude} unit="g" />
+          <StatRow label="Min GM Magnitude" value={stats.precomputed.groundMotion.minMagnitude} unit="g" />
           {stats.precomputed.maxVelocity && (
             <StatRow label="Max Velocity" value={stats.precomputed.maxVelocity} unit="in/s" />
           )}
           {stats.precomputed.maxAcceleration && (
             <StatRow label="Max Acceleration" value={stats.precomputed.maxAcceleration} unit="in/s²" />
+          )}
+          <StatRow label="Max Story Drift" value={stats.precomputed.maxStoryDrift} unit="%" decimals={3} />
+          <StatRow label="Avg Story Drift" value={stats.precomputed.avgStoryDrift} unit="%" decimals={3} />
+          {stats.optionalPeaks.maxRotation !== null && (
+            <StatRow label="Max Rotation" value={stats.optionalPeaks.maxRotation} unit="rad" />
+          )}
+          {stats.optionalPeaks.maxRotationVelocity !== null && (
+            <StatRow label="Max Rot. Velocity" value={stats.optionalPeaks.maxRotationVelocity} unit="rad/s" />
+          )}
+          {stats.optionalPeaks.maxRotationAcceleration !== null && (
+            <StatRow label="Max Rot. Accel." value={stats.optionalPeaks.maxRotationAcceleration} unit="rad/s²" />
           )}
         </StatGroup>
       </div>

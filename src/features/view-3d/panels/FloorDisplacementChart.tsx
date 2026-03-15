@@ -21,7 +21,7 @@
  *
  * UNITS:
  * - Displacement: inches
- * - Elevation: feet (converted from inches)
+ * - Elevation: inches
  *
  * IMPORTANCE:
  * Helps engineers understand how displacement varies across building height,
@@ -64,7 +64,7 @@ export function FloorDisplacementChart() {
 
     const storyData: Array<{
       story: string;
-      elevation: number;
+      elevationIn: number;
       avgX: number;
       avgY: number;
       avgZ: number;
@@ -73,8 +73,7 @@ export function FloorDisplacementChart() {
 
     visibleStories.forEach((storyId) => {
       const nodes = stories[storyId] || [];
-      const heightIn = storyHeights[storyId] || 0;
-      const heightFt = heightIn / 12;
+      const elevationIn = storyHeights[storyId] || 0;
 
       let sumX = 0,
         sumY = 0,
@@ -93,7 +92,7 @@ export function FloorDisplacementChart() {
 
       storyData.push({
         story: storyId,
-        elevation: heightFt,
+        elevationIn,
         avgX,
         avgY,
         avgZ,
@@ -118,7 +117,7 @@ export function FloorDisplacementChart() {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
           const data = chartData[params[0].dataIndex];
           return `
-            <div style="font-weight: 600; margin-bottom: 6px;">Story ${data.story} (${data.elevation.toFixed(0)}ft)</div>
+            <div style="font-weight: 600; margin-bottom: 6px;">Story ${data.story} (${data.elevationIn.toFixed(0)} in)</div>
             <div>X: ${data.avgX.toFixed(4)} in</div>
             <div>Y: ${data.avgY.toFixed(4)} in</div>
             <div>Z: ${data.avgZ.toFixed(4)} in</div>
@@ -135,8 +134,14 @@ export function FloorDisplacementChart() {
       grid: {
         left: 60,
         right: 20,
-        top: 30,
+        top: 54,
         bottom: 30,
+      },
+      title: {
+        text: "Average Story Displacement by Elevation",
+        left: 60,
+        top: 6,
+        textStyle: { fontSize: 12, fontWeight: "bold", color: "#374151" },
       },
       xAxis: {
         type: "value",
@@ -152,7 +157,11 @@ export function FloorDisplacementChart() {
       },
       yAxis: {
         type: "category",
-        data: chartData.map((d) => `${d.story} (${d.elevation.toFixed(0)}ft)`),
+        name: "Story / Elevation (in)",
+        nameLocation: "middle",
+        nameGap: 52,
+        nameTextStyle: { fontSize: 11, color: "#4b5563" },
+        data: chartData.map((d) => `${d.story} (${d.elevationIn.toFixed(0)} in)`),
         axisLine: { lineStyle: { color: "#d1d5db" } },
         axisLabel: { color: "#374151", fontSize: 10, fontWeight: 500 },
         axisTick: { show: false },
@@ -207,7 +216,7 @@ export function FloorDisplacementChart() {
         <span className="text-neutral-300">•</span>
         <span>X-axis: in</span>
         <span className="text-neutral-300">•</span>
-        <span>Story labels include elevation (ft)</span>
+        <span>Story labels include elevation (in)</span>
       </div>
 
       <div className="min-h-0 w-full flex-1">

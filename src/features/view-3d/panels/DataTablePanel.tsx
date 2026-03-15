@@ -138,7 +138,7 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
               <th className="px-2 py-1.5 text-right">X (in)</th>
               <th className="px-2 py-1.5 text-right">Y (in)</th>
               <th className="px-2 py-1.5 text-right">Z (in)</th>
-              <th className="px-2 py-1.5 text-right">Magnitude</th>
+              <th className="px-2 py-1.5 text-right">Magnitude (in)</th>
             </tr>
           </thead>
           <tbody>

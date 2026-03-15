@@ -98,6 +98,10 @@
   - Standardize panel header layout/caption pattern (title + subtitle + controls) across charts/tables/analysis panels.
   - Standardize panel-local UI state persistence via `useViewStore` + `panelId` for panels with user selections (channel filters, axis selectors, sort state, pagination).
   - Recheck unit labels against `DATA_DOCUMENTATION.md` and project standard (`in`, `rad`, `s`) for all displayed values and axes.
+  - Enforce spacing in all number-unit strings (e.g., `12 in`, `2.5 rad`, `3.0 s`) across labels, tooltips, and chart text.
+  - [x] Normalize `Floor Displacement` story/elevation labels to inches and add explicit chart title + y-axis label
+  - [x] Add a normalized drift color legend and inch-based elevation labels to `Peak Response Time`
+  - [x] Clarify older table-panel metadata by labeling `Data Table` magnitude units and separating `Peak Values` rank from node id
 - [x] Persist analysis-panel UI state for `Histogram`, `Data Table`, `Peak Values`, `Hinge Distribution`, and `Hinge Hotspots`
 - [x] Add secondary metadata/status rows to older panels (`Data Table`, `Peak Values`, `Statistics`, `Floor Displacement`) for consistency with newer analysis panels
 - [x] Introduce shared panel-header component and migrate common panel headers to reduce styling drift
@@ -270,6 +274,9 @@
 
 - [ ] Statistics panel needs indicate which values change based on current frame and which are static
 - [ ] Statistics panel should show more of the precomputed values
+- [ ] Expand `Statistics` panel with maximum inter-story drift and other derived summary metrics
+- [ ] Remove all “magnitude” rows/labels from `Statistics`; replace GM Magnitude with peak ground acceleration (PGA)
+- [ ] Update `Statistics` panel to show XY components where relevant and remove all Z component rows
 - [x] Add keyboard shortcuts for common actions
 - [ ] Add undo/redo for selections
 - [x] Add "reset to defaults" button
@@ -549,6 +556,11 @@ _Last Updated: February 2026_
 ### 20.7 ISD Graph
 
 - [x] Change Y axis labels to show floor elevation not story height (e.g., "Floor 6 (85ft)" instead of "6 (13ft)")
+- [ ] Make interstory drift values non-negative (`ISD` should not show negative values)
+- [ ] Update interstory drift chart floor labels
+  - Remove `Floor` prefix
+  - Render numeric floor names as ordinals (e.g., `1st`, `5th`, `11th`) and preserve existing non-numeric floor labels
+- [ ] Make Floor Displacement Y-axis floor labels match interstory drift chart format (same floor naming and number formatting)
 
 ### 20.8 Node Interaction
 
@@ -573,6 +585,7 @@ _Last Updated: February 2026_
 
 - [ ] Remove "performance level" in hinges
 - [ ] Preserve and expose hinge Performance Level from source data
+- [ ] Default Hinge Distribution to performance level 1 and remove its performance-level dropdown
 
 ### 20.12 Precision & Display
 
@@ -596,6 +609,7 @@ _Last Updated: February 2026_
 ### 20.16 Heatmap & Charts
 
 - [ ] Improve heatmap communication (users think it's "spatial")
+- [ ] Remove `StoryDrift` heatmap from the application
 - [ ] Consider continuous time instead of discrete grid for heatmap
 - [ ] Add charts showing all floors with line chart per floor for same metrics like ISD
 
@@ -626,6 +640,8 @@ _Last Updated: February 2026_
 - [x] Buttons should make you face the direction you clicked
 - [x] Grid layout of view presets has gaps
 - [x] Ortho is saved as opposite of what it should be
+- [ ] Fix the top-left 3D orientation cube orientation and face clicks
+  - The cube should not rotate the scene into Z-up when top/bottom faces are clicked; ensure snapping and rotation behavior stays in the intended world axes.
 
 ### 23.2 Timeline & Playback
 
@@ -664,6 +680,13 @@ _Last Updated: February 2026_
 - [x] Delete the duplicate Hinge Performance Panel
 - [x] All Displacement Thresholds should be merged into one "Displacement Threshold" value instead of separate per MagXYZ
 - [x] Generalize threshold sharing so metric families use config-driven shared thresholds and the threshold panel renders unique threshold controls
+- [ ] Hinge Distribution panel redesign
+  - Remove top summary boxes/cards (filtered rows, P99s, and the other eight summary values)
+  - Rename chart Y-axis from "hinge rows" to "hinge number"; use "number of hinges" as supporting label copy
+  - Add slider for histogram bin count
+  - Add toggle for log scaling on the vertical axis
+  - Replace metric dropdown with five stacked charts in a single scrollable panel column
+  - Add truncation/cropping control for tall bins with an explicit indication of clipped continuation
 
 ### 23.7 View Modes
 

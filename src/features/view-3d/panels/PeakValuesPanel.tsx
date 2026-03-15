@@ -185,7 +185,8 @@ export function PeakValuesPanel({ api }: IDockviewPanelProps) {
         <table className="w-full text-xs">
           <thead className="sticky top-0 border-b border-neutral-200 bg-neutral-50">
             <tr className="font-medium text-neutral-600">
-              <SortHeader label="#" k="node" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
+              <th className="px-2 py-1.5 text-left">Rank</th>
+              <SortHeader label="Node" k="node" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
               <SortHeader label="X (in)" k="x" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
               <SortHeader label="Y (in)" k="y" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
               <SortHeader label="Z (in)" k="z" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
@@ -198,6 +199,7 @@ export function PeakValuesPanel({ api }: IDockviewPanelProps) {
             {top10.map((row, idx) => (
               <tr key={row.node} className="border-b border-neutral-100 hover:bg-neutral-50">
                 <td className="px-2 py-1 font-mono text-neutral-500">{idx + 1}</td>
+                <td className="px-2 py-1 font-mono text-neutral-500">{row.node}</td>
                 <td className="px-2 py-1 font-mono" style={{ color: displacementXColor }}>
                   <UnitTooltip value={row.x} unit="in" decimals={4} interactive={!playing} />
                 </td>

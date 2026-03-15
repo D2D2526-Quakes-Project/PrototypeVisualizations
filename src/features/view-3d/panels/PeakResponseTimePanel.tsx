@@ -32,7 +32,7 @@ type CornerName = keyof typeof cornerMeta;
 type PeakCorner = { drift: number; frame: number; time: number };
 type PeakRow = {
   story: string;
-  elevationFt: number;
+  elevationIn: number;
   corners: Record<CornerName, PeakCorner>;
   maxCorner: CornerName;
   maxDrift: number;
@@ -62,6 +62,8 @@ function fmtCornerTime(time: number) {
 const SortCaret = ({ active }: { active: boolean }) => (
   <span className={`ml-1 inline-block ${active ? "text-neutral-700" : "text-neutral-300"}`}>▾</span>
 );
+
+const PEAK_DRIFT_LEGEND = `linear-gradient(90deg, ${blue900} 0%, ${blue400} 25%, ${white} 50%, ${red400} 75%, ${red900} 100%)`;
 
 export function PeakResponseTimePanel() {
   const { animationData } = useAnimationData();
@@ -118,7 +120,7 @@ export function PeakResponseTimePanel() {
 
       data.push({
         story: storyId,
-        elevationFt: heightIn / 12,
+        elevationIn: heightIn,
         corners,
         maxCorner,
         maxDrift,
@@ -155,7 +157,7 @@ export function PeakResponseTimePanel() {
             dir
           );
         case "elev":
-          return (a.elevationFt - b.elevationFt) * dir;
+          return (a.elevationIn - b.elevationIn) * dir;
         case "maxTime":
           return (a.maxTime - b.maxTime) * dir;
         case "corner":
@@ -216,7 +218,20 @@ export function PeakResponseTimePanel() {
         <span className="text-neutral-300">•</span>
         <span>Time: s</span>
         <span className="text-neutral-300">•</span>
-        <span>Color normalized to global peak</span>
+        <span>Elevation: in</span>
+      </div>
+
+      <div className="border-b border-neutral-100 bg-neutral-50 px-3 py-2">
+        <div className="flex items-center justify-between gap-3 text-[11px] text-neutral-600">
+          <span>Color bar: normalized max story drift relative to the global peak</span>
+          <span className="font-mono text-[10px] text-neutral-500">blue = lower, red = higher</span>
+        </div>
+        <div className="mt-1.5 h-2 rounded-sm border border-neutral-200" style={{ background: PEAK_DRIFT_LEGEND }} />
+        <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-neutral-500">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
       </div>
 
       {/* Insights + Controls */}
@@ -345,8 +360,7 @@ export function PeakResponseTimePanel() {
                   <div className="text-sm font-medium text-neutral-800">{r.story}</div>
 
                   <div className="text-sm text-neutral-600 tabular-nums">
-                    {/* UnitTooltip expects inches for conversions; feed inches, show ft via conversions naturally */}
-                    <UnitTooltip value={r.elevationFt * 12} unit="in" decimals={0} />
+                    <UnitTooltip value={r.elevationIn} unit="in" decimals={0} />
                   </div>
 
                   <div className="flex items-center gap-2">

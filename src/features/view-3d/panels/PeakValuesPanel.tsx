@@ -39,9 +39,9 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import type { IDockviewPanelProps } from "dockview";
+import { getMetricKeyColor } from "@/lib/metrics";
 import { useViewStore } from "@/state";
 import { formatFixed3 } from "@/lib/utils";
-import { PanelHeader } from "@/features/view-3d/components/PanelHeader";
 
 type SortKey = "node" | "x" | "y" | "z" | "magnitude";
 type SortDir = "asc" | "desc";
@@ -83,12 +83,16 @@ export function PeakValuesPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, playing } = usePlayback();
   const setPanelState = useViewStore((s) => s.setPanelState);
+  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
   const panelId = api?.id ?? "peak-values";
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const defaultState = getDefaultPeakValuesPanelState();
   const savedState = savedPanelState?.type === "peakValues" ? savedPanelState.state : defaultState;
   const [sortKey, setSortKey] = useState<SortKey>(() => sanitizeSortKey(savedState.sortKey));
   const [sortDir, setSortDir] = useState<SortDir>(() => sanitizeSortDir(savedState.sortDir));
+  const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
+  const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
+  const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
 
   const { metadata, precomputed, displacementLin } = animationData;
   const { nodeCount } = metadata;
@@ -165,23 +169,18 @@ export function PeakValuesPanel({ api }: IDockviewPanelProps) {
 
   return (
     <div className="flex h-full w-full flex-col bg-white">
-      <PanelHeader
-        title="Peak Values"
-        subtitle="- Top 10 nodes by peak displacement"
-        meta={
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-            <span>Frame {frameIndex + 1}</span>
-            <span className="text-neutral-300">•</span>
-            <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
-            <span className="text-neutral-300">•</span>
-            <span>
-              Sort: {sortKey} ({sortDir})
-            </span>
-            <span className="text-neutral-300">•</span>
-            <span>Units: in</span>
-          </div>
-        }
-      />
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+        <span>Frame {frameIndex + 1}</span>
+        <span className="text-neutral-300">•</span>
+        <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+        <span className="text-neutral-300">•</span>
+        <span>
+          Sort: {sortKey} ({sortDir})
+        </span>
+        <span className="text-neutral-300">•</span>
+        <span>Units: in</span>
+      </div>
+
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full text-xs">
           <thead className="sticky top-0 border-b border-neutral-200 bg-neutral-50">
@@ -199,13 +198,13 @@ export function PeakValuesPanel({ api }: IDockviewPanelProps) {
             {top10.map((row, idx) => (
               <tr key={row.node} className="border-b border-neutral-100 hover:bg-neutral-50">
                 <td className="px-2 py-1 font-mono text-neutral-500">{idx + 1}</td>
-                <td className="px-2 py-1 font-mono" style={{ color: "#ef4444" }}>
+                <td className="px-2 py-1 font-mono" style={{ color: displacementXColor }}>
                   <UnitTooltip value={row.x} unit="in" decimals={4} interactive={!playing} />
                 </td>
-                <td className="px-2 py-1 font-mono" style={{ color: "#22c55e" }}>
+                <td className="px-2 py-1 font-mono" style={{ color: displacementYColor }}>
                   <UnitTooltip value={row.y} unit="in" decimals={4} interactive={!playing} />
                 </td>
-                <td className="px-2 py-1 font-mono" style={{ color: "#3b82f6" }}>
+                <td className="px-2 py-1 font-mono" style={{ color: displacementZColor }}>
                   <UnitTooltip value={row.z} unit="in" decimals={4} interactive={!playing} />
                 </td>
                 <td className="px-2 py-1 font-mono font-medium">

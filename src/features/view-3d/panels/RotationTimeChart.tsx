@@ -13,17 +13,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { IDockviewPanelProps } from "dockview";
+import { getMetricKeyColor } from "@/lib/metrics";
 import { useViewStore } from "@/state";
 
 const CHANNEL_CONFIG = {
-  rx: { id: "rx", label: "RX Angular Velocity", shortName: "RX", color: "#f87171", unit: "rad/s", thresholdKey: "rotationVelocity" },
-  ry: { id: "ry", label: "RY Angular Velocity", shortName: "RY", color: "#4ade80", unit: "rad/s", thresholdKey: "rotationVelocity" },
-  rz: { id: "rz", label: "RZ Angular Velocity", shortName: "RZ", color: "#60a5fa", unit: "rad/s", thresholdKey: "rotationVelocity" },
+  rx: { id: "rx", label: "RX Angular Velocity", shortName: "RX", metric: "rotationVelocityX", unit: "rad/s", thresholdKey: "rotationVelocity" },
+  ry: { id: "ry", label: "RY Angular Velocity", shortName: "RY", metric: "rotationVelocityY", unit: "rad/s", thresholdKey: "rotationVelocity" },
+  rz: { id: "rz", label: "RZ Angular Velocity", shortName: "RZ", metric: "rotationVelocityZ", unit: "rad/s", thresholdKey: "rotationVelocity" },
   magnitude: {
     id: "magnitude",
     label: "Angular Speed",
     shortName: "Mag",
-    color: "#fbbf24",
+    metric: "rotationVelocityMag",
     unit: "rad/s",
     thresholdKey: "rotationVelocity",
   },
@@ -67,7 +68,15 @@ function TooltipContent({
   );
 }
 
-function CheckSelect({ selected, onChange }: { selected: ChannelKey[]; onChange: (keys: ChannelKey[]) => void }) {
+function CheckSelect({
+  channelConfig,
+  selected,
+  onChange,
+}: {
+  channelConfig: { [K in ChannelKey]: (typeof CHANNEL_CONFIG)[K] & { color: string } };
+  selected: ChannelKey[];
+  onChange: (keys: ChannelKey[]) => void;
+}) {
   const [open, setOpen] = useState(false);
 
   const toggleOption = (key: ChannelKey) => {
@@ -82,7 +91,7 @@ function CheckSelect({ selected, onChange }: { selected: ChannelKey[]; onChange:
   };
 
   const labelText = CHANNEL_ORDER.filter((k) => selected.includes(k))
-    .map((k) => CHANNEL_CONFIG[k].shortName)
+    .map((k) => channelConfig[k].shortName)
     .join(", ");
 
   return (
@@ -98,7 +107,7 @@ function CheckSelect({ selected, onChange }: { selected: ChannelKey[]; onChange:
       <PopoverContent align="end" className="w-56 p-1">
         <div className="flex flex-col gap-0.5">
           {CHANNEL_ORDER.map((key) => {
-            const option = CHANNEL_CONFIG[key];
+            const option = channelConfig[key];
             const isChecked = selected.includes(key);
             return (
               <Label
@@ -134,6 +143,7 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
   const { frameIndex, setFrameIndex } = usePlayback();
   const { thresholds } = useThresholds();
   const setPanelState = useViewStore((s) => s.setPanelState);
+  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
   const panelId = api?.id ?? "rotation-time-chart";
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const defaultState = getDefaultRotationTimeChartPanelState();
@@ -143,6 +153,16 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
   const [isDragging, setIsDragging] = useState(false);
   const hasRotationVelocity = Boolean(animationData.velocityRot);
   const panelIdRef = useRef(panelId);
+  const channelConfig = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(CHANNEL_CONFIG).map(([key, config]) => [
+          key,
+          { ...config, color: getMetricKeyColor(config.metric, metricPaletteOverrides) },
+        ])
+      ) as { [K in ChannelKey]: (typeof CHANNEL_CONFIG)[K] & { color: string } },
+    [metricPaletteOverrides]
+  );
 
   const maxFrame = animationData.metadata.frameCount - 1;
 
@@ -211,7 +231,7 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
     const AVAILABLE_HEIGHT_PCT = 92;
 
     activeKeys.forEach((key, index) => {
-      const config = CHANNEL_CONFIG[key];
+      const config = channelConfig[key];
       const data =
         key === "rx"
           ? rotationData.avgRx
@@ -329,7 +349,7 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
           const values = params.map((param) => ({
             name: param.seriesName ?? "Series",
             color: typeof param.color === "string" ? param.color : "#6b7280",
-            unit: CHANNEL_CONFIG[param.seriesName?.split(" ")[0].toLowerCase() as ChannelKey]?.unit || "rad/s",
+            unit: channelConfig[param.seriesName?.split(" ")[0].toLowerCase() as ChannelKey]?.unit || "rad/s",
             value: (param.data as number[])[1],
           }));
 
@@ -338,7 +358,7 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
       },
       animation: false,
     };
-  }, [animationData.metadata.dt, frameIndex, maxFrame, rotationData, selectedKeys, thresholds, times]);
+  }, [animationData.metadata.dt, channelConfig, frameIndex, maxFrame, rotationData, selectedKeys, thresholds, times]);
 
   useEffect(() => {
     setPanelState(panelIdRef.current, "rotationTimeChart", { selectedKeys });
@@ -402,7 +422,7 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
     <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
       <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
         <div className="float-right mt-0.5 ml-2">
-          <CheckSelect selected={selectedKeys} onChange={setSelectedKeys} />
+          <CheckSelect channelConfig={channelConfig} selected={selectedKeys} onChange={setSelectedKeys} />
         </div>
         <div className="flex items-center gap-2 text-sm text-neutral-700">
           <span className="font-medium">Avg. Angular Velocity</span>

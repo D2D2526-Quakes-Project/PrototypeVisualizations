@@ -36,7 +36,6 @@ import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { PanelHeader } from "@/features/view-3d/components/PanelHeader";
 
 function StatRow({
   label,
@@ -156,21 +155,16 @@ export function StatisticsPanel() {
 
   return (
     <div className="flex h-full w-full flex-col overflow-auto bg-white">
-      <PanelHeader
-        title="Statistics"
-        subtitle={`- Frame ${frameIndex + 1}`}
-        meta={
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-            <span>Time: {(frameIndex * animationData.metadata.dt).toFixed(3)} s</span>
-            <span className="text-neutral-300">•</span>
-            <span>Displacement/velocity/acceleration in in, in/s, in/s²</span>
-            <span className="text-neutral-300">•</span>
-            <span>Ground motion in g</span>
-            <span className="text-neutral-300">•</span>
-            <span>Hover values for unit conversions</span>
-          </div>
-        }
-      />
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+        <span>Time: {(frameIndex * animationData.metadata.dt).toFixed(3)} s</span>
+        <span className="text-neutral-300">•</span>
+        <span>Displacement/velocity/acceleration in in, in/s, in/s²</span>
+        <span className="text-neutral-300">•</span>
+        <span>Ground motion in g</span>
+        <span className="text-neutral-300">•</span>
+        <span>Hover values for unit conversions</span>
+      </div>
+
       <div className="min-h-0 flex-1 overflow-auto p-3">
         <StatGroup title="Simulation">
           <StatRow label="Nodes" value={stats.nodeCount} />

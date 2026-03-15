@@ -1,6 +1,7 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
+import { getMetricKeyColor } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useViewStoreRaw } from "@/state";
+import { useViewStore, useViewStoreRaw } from "@/state";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
 import { InfoIcon, XIcon } from "lucide-react";
 import { useEffect, useMemo } from "react";
@@ -26,6 +27,11 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
   const { animationData } = useAnimationData();
   const { frameIndex, playing } = usePlayback();
   const store = useViewStoreRaw();
+  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
+  const displacementMagColor = getMetricKeyColor("displacementMag", metricPaletteOverrides);
+  const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
+  const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
+  const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
 
   useEffect(() => {
     store.getState().addOpenedNodePanel(nodeId);
@@ -541,7 +547,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <MiniTimeSeries
                 data={displacementTimeSeries.magnitudes}
                 times={displacementTimeSeries.times}
-                color="#f59e0b"
+                color={displacementMagColor}
                 currentValue={displacementMag}
                 unit="in"
                 label="Displacement Magnitude"
@@ -549,7 +555,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <MiniTimeSeries
                 data={displacementTimeSeries.xValues}
                 times={displacementTimeSeries.times}
-                color="#ef4444"
+                color={displacementXColor}
                 currentValue={currentDispRaw[0]}
                 unit="in"
                 label="Displacement X"
@@ -557,7 +563,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <MiniTimeSeries
                 data={displacementTimeSeries.yValues}
                 times={displacementTimeSeries.times}
-                color="#22c55e"
+                color={displacementYColor}
                 currentValue={currentDispRaw[1]}
                 unit="in"
                 label="Displacement Y"
@@ -565,7 +571,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <MiniTimeSeries
                 data={displacementTimeSeries.zValues}
                 times={displacementTimeSeries.times}
-                color="#3b82f6"
+                color={displacementZColor}
                 currentValue={currentDispRaw[2]}
                 unit="in"
                 label="Displacement Z"
@@ -690,7 +696,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 <MiniTimeSeries
                   data={velocityTimeSeries.magnitudes}
                   times={velocityTimeSeries.times}
-                  color="#f59e0b"
+                  color={displacementMagColor}
                   currentValue={currentVelocity?.magnitude ?? 0}
                   unit="in/s"
                   label="Velocity Magnitude"
@@ -758,7 +764,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 <MiniTimeSeries
                   data={accelerationTimeSeries.magnitudes}
                   times={accelerationTimeSeries.times}
-                  color="#f59e0b"
+                  color={displacementMagColor}
                   currentValue={currentAcceleration?.magnitude ?? 0}
                   unit="in/s²"
                   label="Acceleration Magnitude"

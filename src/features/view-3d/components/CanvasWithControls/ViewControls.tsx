@@ -60,8 +60,15 @@ export function ViewControls({
   docked,
 }: ViewControlsProps) {
   const { animationData } = useAnimationData();
-  const { currentMetric, setColorMetric, availableMetrics, thresholdHighlighting, setThresholdHighlighting } =
-    useColor();
+  const {
+    currentMetric,
+    setColorMetric,
+    metricPaletteOverrides,
+    setMetricPalette,
+    availableMetrics,
+    thresholdHighlighting,
+    setThresholdHighlighting,
+  } = useColor();
   const { mode, setMode } = useViewMode();
   const {
     state: expandedScaleState,
@@ -317,6 +324,7 @@ export function ViewControls({
                 <div className="mb-0.5 text-[10px] font-medium text-neutral-700">{config.label}</div>
                 <ColorScaleBar
                   currentMetric={currentMetric}
+                  metricPaletteOverrides={metricPaletteOverrides}
                   thresholdHighlighting={thresholdHighlighting}
                   thresholds={thresholds}
                   animationData={animationData}
@@ -495,6 +503,8 @@ export function ViewControls({
                   <ColorPanel
                     currentMetric={currentMetric}
                     setColorMetric={setColorMetric}
+                    metricPaletteOverrides={metricPaletteOverrides}
+                    setMetricPalette={setMetricPalette}
                     availableMetrics={availableMetrics}
                     thresholdHighlighting={thresholdHighlighting}
                     setThresholdHighlighting={setThresholdHighlighting}

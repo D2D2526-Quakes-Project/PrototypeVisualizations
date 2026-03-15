@@ -52,7 +52,7 @@ import { useViewStore } from "@/state";
 
 const POSITION_AXIS_CONFIG = {
   x: { id: "x", label: "X Position", color: "#f87171" },
-  y: { id: "y", label: "Y Position", color: "#4ade80" },
+  y: { id: "y", label: "Y Position", color: "#fb7185" },
   z: { id: "z", label: "Z Position (Elevation)", color: "#60a5fa" },
 } as const;
 

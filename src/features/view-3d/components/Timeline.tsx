@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { formatFixed3 } from "@/lib/utils";
 import { getDefaultTimelinePanelState } from "@/features/view-3d/lib/statePersistence";
 import { useViewStore } from "@/state";
-import { UNITS, type UnitConfig } from "@/lib/metrics";
+import { getMetricKeyColor, UNITS, type UnitConfig } from "@/lib/metrics";
 
 const GROUND_CHANNEL_CONFIG = {
   x: {
@@ -29,7 +29,7 @@ const GROUND_CHANNEL_CONFIG = {
     id: "y",
     label: "Y Ground Motion",
     shortName: "Y",
-    color: "#4ade80",
+    color: "#fb7185",
     unit: UNITS.g,
     group: "Ground Motion",
   },
@@ -56,7 +56,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgDisplacementX",
     label: "Avg Displacement X",
     shortName: "Disp X",
-    color: "#16a34a",
+    metric: "displacementX",
     unit: UNITS.inches,
     group: "Node Averages",
   },
@@ -64,7 +64,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgDisplacementY",
     label: "Avg Displacement Y",
     shortName: "Disp Y",
-    color: "#65a30d",
+    metric: "displacementY",
     unit: UNITS.inches,
     group: "Node Averages",
   },
@@ -72,7 +72,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgDisplacementZ",
     label: "Avg Displacement Z",
     shortName: "Disp Z",
-    color: "#84cc16",
+    metric: "displacementZ",
     unit: UNITS.inches,
     group: "Node Averages",
   },
@@ -80,7 +80,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgDisplacementMag",
     label: "Avg Displacement",
     shortName: "Disp Mag",
-    color: "#22c55e",
+    metric: "displacementMag",
     unit: UNITS.inches,
     group: "Node Averages",
   },
@@ -88,7 +88,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgVelocityX",
     label: "Avg Velocity X",
     shortName: "Vel X",
-    color: "#0891b2",
+    metric: "velocityX",
     unit: UNITS["inches/second"],
     group: "Node Averages",
   },
@@ -96,7 +96,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgVelocityY",
     label: "Avg Velocity Y",
     shortName: "Vel Y",
-    color: "#0284c7",
+    metric: "velocityY",
     unit: UNITS["inches/second"],
     group: "Node Averages",
   },
@@ -104,7 +104,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgVelocityZ",
     label: "Avg Velocity Z",
     shortName: "Vel Z",
-    color: "#0369a1",
+    metric: "velocityZ",
     unit: UNITS["inches/second"],
     group: "Node Averages",
   },
@@ -112,7 +112,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgVelocityMag",
     label: "Avg Velocity",
     shortName: "Vel Mag",
-    color: "#06b6d4",
+    metric: "velocityMag",
     unit: UNITS["inches/second"],
     group: "Node Averages",
   },
@@ -120,7 +120,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgAccelerationX",
     label: "Avg Acceleration X",
     shortName: "Acc X",
-    color: "#7c3aed",
+    metric: "accelerationX",
     unit: UNITS["inches/second²"],
     group: "Node Averages",
   },
@@ -128,7 +128,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgAccelerationY",
     label: "Avg Acceleration Y",
     shortName: "Acc Y",
-    color: "#6d28d9",
+    metric: "accelerationY",
     unit: UNITS["inches/second²"],
     group: "Node Averages",
   },
@@ -136,7 +136,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgAccelerationZ",
     label: "Avg Acceleration Z",
     shortName: "Acc Z",
-    color: "#5b21b6",
+    metric: "accelerationZ",
     unit: UNITS["inches/second²"],
     group: "Node Averages",
   },
@@ -144,7 +144,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgAccelerationMag",
     label: "Avg Acceleration",
     shortName: "Acc Mag",
-    color: "#8b5cf6",
+    metric: "accelerationMag",
     unit: UNITS["inches/second²"],
     group: "Node Averages",
   },
@@ -152,7 +152,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgRotationX",
     label: "Avg Rotation X",
     shortName: "Rot X",
-    color: "#ea580c",
+    metric: "rotationX",
     unit: UNITS.radians,
     group: "Node Averages",
   },
@@ -160,7 +160,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgRotationY",
     label: "Avg Rotation Y",
     shortName: "Rot Y",
-    color: "#fb923c",
+    metric: "rotationY",
     unit: UNITS.radians,
     group: "Node Averages",
   },
@@ -168,7 +168,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgRotationZ",
     label: "Avg Rotation Z",
     shortName: "Rot Z",
-    color: "#c2410c",
+    metric: "rotationZ",
     unit: UNITS.radians,
     group: "Node Averages",
   },
@@ -176,7 +176,7 @@ const NODE_AVERAGE_CHANNEL_CONFIG = {
     id: "avgRotationMag",
     label: "Avg Rotation",
     shortName: "Rot Mag",
-    color: "#f97316",
+    metric: "rotationMag",
     unit: UNITS.radians,
     group: "Node Averages",
   },
@@ -380,6 +380,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const isDraggingRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const setPanelState = useViewStore((s) => s.setPanelState);
+  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
 
   const panelId = api?.id ?? "timeline";
   const defaultState = getDefaultTimelinePanelState();
@@ -429,6 +430,19 @@ export function Timeline({ api }: IDockviewPanelProps) {
     return result;
   }, [animationData]);
 
+  const nodeAverageChannelConfig = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(NODE_AVERAGE_CHANNEL_CONFIG).map(([key, config]) => [
+          key,
+          { ...config, color: getMetricKeyColor(config.metric, metricPaletteOverrides) },
+        ])
+      ) as {
+        [K in keyof typeof NODE_AVERAGE_CHANNEL_CONFIG]: (typeof NODE_AVERAGE_CHANNEL_CONFIG)[K] & { color: string };
+      },
+    [metricPaletteOverrides]
+  );
+
   const channelAccessors = useMemo(() => {
     return {
       x: {
@@ -449,70 +463,70 @@ export function Timeline({ api }: IDockviewPanelProps) {
       },
       avgDisplacementMag: {
         accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.mag[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgDisplacementMag,
+        config: nodeAverageChannelConfig.avgDisplacementMag,
       },
       avgDisplacementX: {
         accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.x[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgDisplacementX,
+        config: nodeAverageChannelConfig.avgDisplacementX,
       },
       avgDisplacementY: {
         accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.y[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgDisplacementY,
+        config: nodeAverageChannelConfig.avgDisplacementY,
       },
       avgDisplacementZ: {
         accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.z[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgDisplacementZ,
+        config: nodeAverageChannelConfig.avgDisplacementZ,
       },
       avgVelocityMag: {
         accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.mag[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgVelocityMag,
+        config: nodeAverageChannelConfig.avgVelocityMag,
       },
       avgVelocityX: {
         accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.x[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgVelocityX,
+        config: nodeAverageChannelConfig.avgVelocityX,
       },
       avgVelocityY: {
         accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.y[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgVelocityY,
+        config: nodeAverageChannelConfig.avgVelocityY,
       },
       avgVelocityZ: {
         accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.z[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgVelocityZ,
+        config: nodeAverageChannelConfig.avgVelocityZ,
       },
       avgAccelerationMag: {
         accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.mag[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgAccelerationMag,
+        config: nodeAverageChannelConfig.avgAccelerationMag,
       },
       avgAccelerationX: {
         accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.x[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgAccelerationX,
+        config: nodeAverageChannelConfig.avgAccelerationX,
       },
       avgAccelerationY: {
         accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.y[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgAccelerationY,
+        config: nodeAverageChannelConfig.avgAccelerationY,
       },
       avgAccelerationZ: {
         accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.z[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgAccelerationZ,
+        config: nodeAverageChannelConfig.avgAccelerationZ,
       },
       avgRotationMag: {
         accessor: (idx: number) => averageRotationByFrame.mag[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgRotationMag,
+        config: nodeAverageChannelConfig.avgRotationMag,
       },
       avgRotationX: {
         accessor: (idx: number) => averageRotationByFrame.x[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgRotationX,
+        config: nodeAverageChannelConfig.avgRotationX,
       },
       avgRotationY: {
         accessor: (idx: number) => averageRotationByFrame.y[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgRotationY,
+        config: nodeAverageChannelConfig.avgRotationY,
       },
       avgRotationZ: {
         accessor: (idx: number) => averageRotationByFrame.z[idx] ?? 0,
-        config: NODE_AVERAGE_CHANNEL_CONFIG.avgRotationZ,
+        config: nodeAverageChannelConfig.avgRotationZ,
       },
     } as const;
-  }, [animationData, averageRotationByFrame]);
+  }, [animationData, averageRotationByFrame, nodeAverageChannelConfig]);
 
   const availableChannelOptions = useMemo(() => {
     const options: ChannelOption[] = [

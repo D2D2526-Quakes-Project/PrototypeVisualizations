@@ -1,7 +1,7 @@
 import { DockviewWrapper } from "@/features/view-3d/components/dockviewWrapper";
 import { MagicPanel, MagicPanelHeaderActions, MagicPanelTab } from "@/features/view-3d/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/features/view-3d/components/NodePanel";
-import { FloorPanel } from "@/features/view-3d/components/FloorPanel";
+import { FloorPanel, FloorTab } from "@/features/view-3d/components/FloorPanel";
 import { NodeSelectionProvider, useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
 import { useSliceSelection } from "@/features/view-3d/contexts/visualization";
 import { useAutoSave } from "@/features/view-3d/hooks/useAutoSave";
@@ -12,7 +12,7 @@ import {
   getDefaultAppState,
   type AppState,
 } from "@/features/view-3d/lib/statePersistence";
-import { THRESHOLD_CONFIGS, type ThresholdKey } from "@/lib/metrics";
+import { THRESHOLD_CONFIGS, type Metric, type MetricPaletteKey, type ThresholdKey } from "@/lib/metrics";
 import { useViewStoreRaw } from "@/state";
 import { type DockviewApi, type DockviewReadyEvent, type SerializedDockview } from "dockview";
 import { useCallback, useEffect, useState, useRef } from "react";
@@ -25,6 +25,7 @@ const components = {
 
 const tabComponents = {
   nodeTab: NodeTab,
+  floorTab: FloorTab,
   magicPanelTab: MagicPanelTab,
 };
 
@@ -95,6 +96,11 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
     const s = store.getState();
     s.setFrameIndex(initialState.frameIndex);
     s.setColorMetric(initialState.currentMetric);
+    (Object.entries(initialState.metricPaletteOverrides ?? {}) as Array<[Metric, MetricPaletteKey]>).forEach(
+      ([metric, palette]) => {
+        s.setMetricPalette(metric, palette);
+      }
+    );
     s.setThresholdHighlighting(initialState.thresholdHighlighting);
 
     (Object.entries(initialState.thresholds) as Array<[ThresholdKey, number]>).forEach(([key, value]) => {

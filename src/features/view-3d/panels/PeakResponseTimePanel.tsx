@@ -2,7 +2,6 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo, useState } from "react";
 import { formatHex, interpolate } from "culori";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { PanelHeader } from "@/features/view-3d/components/PanelHeader";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue400 = formatHex("oklch(70.7% 0.165 254.624)")!;
@@ -67,10 +66,7 @@ const SortCaret = ({ active }: { active: boolean }) => (
 export function PeakResponseTimePanel() {
   const { animationData } = useAnimationData();
   const storyOrderIndex = useMemo(
-    () =>
-      new Map(
-        animationData.metadata.storyOrder.map((storyId, index) => [storyId, index] as const)
-      ),
+    () => new Map(animationData.metadata.storyOrder.map((storyId, index) => [storyId, index] as const)),
     [animationData.metadata.storyOrder]
   );
 
@@ -153,9 +149,11 @@ export function PeakResponseTimePanel() {
     const cmp = (a: PeakRow, b: PeakRow) => {
       switch (sortKey) {
         case "story":
-          return ((storyOrderIndex.get(a.story) ?? Number.MAX_SAFE_INTEGER) -
-            (storyOrderIndex.get(b.story) ?? Number.MAX_SAFE_INTEGER)) *
-            dir;
+          return (
+            ((storyOrderIndex.get(a.story) ?? Number.MAX_SAFE_INTEGER) -
+              (storyOrderIndex.get(b.story) ?? Number.MAX_SAFE_INTEGER)) *
+            dir
+          );
         case "elev":
           return (a.elevationFt - b.elevationFt) * dir;
         case "maxTime":
@@ -211,21 +209,15 @@ export function PeakResponseTimePanel() {
 
   return (
     <div className="flex h-full w-full flex-col bg-white">
-      <PanelHeader
-        title="Peak Response Timing"
-        subtitle="Fast scan + sort + compare max drift timing per corner"
-        meta={
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-            <span>Stories: {rows.length}</span>
-            <span className="text-neutral-300">•</span>
-            <span>Drift: %</span>
-            <span className="text-neutral-300">•</span>
-            <span>Time: s</span>
-            <span className="text-neutral-300">•</span>
-            <span>Color normalized to global peak</span>
-          </div>
-        }
-      />
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+        <span>Stories: {rows.length}</span>
+        <span className="text-neutral-300">•</span>
+        <span>Drift: %</span>
+        <span className="text-neutral-300">•</span>
+        <span>Time: s</span>
+        <span className="text-neutral-300">•</span>
+        <span>Color normalized to global peak</span>
+      </div>
 
       {/* Insights + Controls */}
       <div className="border-b border-neutral-200 bg-neutral-50">

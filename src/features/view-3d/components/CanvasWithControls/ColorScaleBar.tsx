@@ -1,4 +1,4 @@
-import { getMetricConfig, type Metric } from "@/lib/metrics";
+import { getMetricColorScale, getMetricConfig, type Metric, type MetricPaletteOverrides } from "@/lib/metrics";
 import type { ComputedStats } from "@/lib/types";
 import type { ThresholdState } from "@/state";
 
@@ -9,6 +9,7 @@ interface ColorScaleBarProps {
   animationData: {
     precomputed: ComputedStats;
   };
+  metricPaletteOverrides?: MetricPaletteOverrides;
   noLabel?: boolean;
 }
 
@@ -33,14 +34,14 @@ function LabelBox({ value, underlined = false }: { value: string; underlined?: b
 }
 
 function getScaleStopsAndLabels(
-  config: ReturnType<typeof getMetricConfig>,
+  colorScale: ReturnType<typeof getMetricColorScale>,
   maxValue: number,
   positiveOnly: boolean,
   thresholdHighlighting: boolean,
   thresholdValue: number
 ) {
-  const positiveStops = config.positiveColorStops;
-  const negativeStops = (config as { negativeColorStops: [string, string, string, string] }).negativeColorStops;
+  const positiveStops = colorScale.positiveColorStops;
+  const negativeStops = colorScale.negativeColorStops;
   const thresholdRatio = clamp01(maxValue > 0 ? thresholdValue / maxValue : 0);
 
   let stops: string[];
@@ -91,15 +92,17 @@ export function ColorScaleBar({
   thresholdHighlighting,
   thresholds,
   animationData,
+  metricPaletteOverrides,
   noLabel,
 }: ColorScaleBarProps) {
   const config = getMetricConfig(currentMetric);
+  const colorScale = getMetricColorScale(currentMetric, metricPaletteOverrides);
   const maxValue = config.getPrecomputedMax(animationData.precomputed);
   const positiveOnly = config.positiveOnly;
   const thresholdValue = thresholds[config.thresholdKey] ?? 0;
 
   const { stops, thresholdRatio } = getScaleStopsAndLabels(
-    config,
+    colorScale,
     maxValue,
     positiveOnly,
     thresholdHighlighting,

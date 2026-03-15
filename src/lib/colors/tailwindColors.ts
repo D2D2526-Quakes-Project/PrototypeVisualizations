@@ -218,6 +218,154 @@ export const zinc500 = formatHex("oklch(55.2% 0.016 285.938)")!;
 export const zinc600 = formatHex("oklch(44.2% 0.017 285.786)")!;
 export const zinc700 = formatHex("oklch(37% 0.013 285.805)")!;
 export const zinc800 = formatHex("oklch(27.4% 0.006 286.033)")!;
+export interface TailwindPaletteScale {
+  50: string;
+  100: string;
+  200: string;
+  300: string;
+  400: string;
+  500: string;
+  600: string;
+  700: string;
+  800: string;
+  900: string;
+  950: string;
+}
+
+export const TAILWIND_PALETTES = {
+  red: {
+    50: red50,
+    100: red100,
+    200: red200,
+    300: red300,
+    400: red400,
+    500: red500,
+    600: red600,
+    700: red700,
+    800: red800,
+    900: red900,
+    950: red950,
+  },
+  orange: {
+    50: orange50,
+    100: orange100,
+    200: orange200,
+    300: orange300,
+    400: orange400,
+    500: orange500,
+    600: orange600,
+    700: orange700,
+    800: orange800,
+    900: orange900,
+    950: orange950,
+  },
+  amber: {
+    50: amber50,
+    100: amber100,
+    200: amber200,
+    300: amber300,
+    400: amber400,
+    500: amber500,
+    600: amber600,
+    700: amber700,
+    800: amber800,
+    900: amber900,
+    950: amber950,
+  },
+  green: {
+    50: green50,
+    100: green100,
+    200: green200,
+    300: green300,
+    400: green400,
+    500: green500,
+    600: green600,
+    700: green700,
+    800: green800,
+    900: green900,
+    950: green950,
+  },
+  teal: {
+    50: teal50,
+    100: teal100,
+    200: teal200,
+    300: teal300,
+    400: teal400,
+    500: teal500,
+    600: teal600,
+    700: teal700,
+    800: teal800,
+    900: teal900,
+    950: teal950,
+  },
+  cyan: {
+    50: cyan50,
+    100: cyan100,
+    200: cyan200,
+    300: cyan300,
+    400: cyan400,
+    500: cyan500,
+    600: cyan600,
+    700: cyan700,
+    800: cyan800,
+    900: cyan900,
+    950: cyan950,
+  },
+  blue: {
+    50: blue50,
+    100: blue100,
+    200: blue200,
+    300: blue300,
+    400: blue400,
+    500: blue500,
+    600: blue600,
+    700: blue700,
+    800: blue800,
+    900: blue900,
+    950: blue950,
+  },
+  violet: {
+    50: violet50,
+    100: violet100,
+    200: violet200,
+    300: violet300,
+    400: violet400,
+    500: violet500,
+    600: violet600,
+    700: violet700,
+    800: violet800,
+    900: violet900,
+    950: violet950,
+  },
+  purple: {
+    50: purple50,
+    100: purple100,
+    200: purple200,
+    300: purple300,
+    400: purple400,
+    500: purple500,
+    600: purple600,
+    700: purple700,
+    800: purple800,
+    900: purple900,
+    950: purple950,
+  },
+  rose: {
+    50: rose50,
+    100: rose100,
+    200: rose200,
+    300: rose300,
+    400: rose400,
+    500: rose500,
+    600: rose600,
+    700: rose700,
+    800: rose800,
+    900: rose900,
+    950: rose950,
+  },
+} satisfies Record<string, TailwindPaletteScale>;
+
+export type TailwindPaletteKey = keyof typeof TAILWIND_PALETTES;
 export const zinc900 = formatHex("oklch(21% 0.006 285.885)")!;
 export const zinc950 = formatHex("oklch(14.1% 0.005 285.823)")!;
 export const neutral50 = formatHex("oklch(98.5% 0 0)")!;

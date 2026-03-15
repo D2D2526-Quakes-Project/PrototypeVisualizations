@@ -53,6 +53,7 @@ function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState
     timestamp: Date.now(),
     frameIndex: state.frameIndex,
     currentMetric: state.currentMetric,
+    metricPaletteOverrides: state.metricPaletteOverrides,
     thresholdHighlighting: state.thresholdHighlighting,
     thresholds: state.thresholds,
     visibleFloors: state.visibleFloors,

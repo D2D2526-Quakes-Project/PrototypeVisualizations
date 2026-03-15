@@ -23,6 +23,7 @@ export function useAutoSave() {
       timestamp: Date.now(),
       frameIndex: state.frameIndex,
       currentMetric: state.currentMetric,
+      metricPaletteOverrides: state.metricPaletteOverrides,
       thresholdHighlighting: state.thresholdHighlighting,
       thresholds: state.thresholds,
       visibleFloors: state.visibleFloors,
@@ -77,6 +78,7 @@ export function useAutoSave() {
     const stateFields = [
       "frameIndex",
       "currentMetric",
+      "metricPaletteOverrides",
       "thresholdHighlighting",
       "thresholds",
       "visibleFloors",

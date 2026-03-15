@@ -108,10 +108,10 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
     [store]
   );
 
-  const openSlicePanel = useCallback((sliceId: string, storyId: string) => {
+  const openSlicePanel = useCallback((storyId: string) => {
     if (!dockviewApiRef) return;
 
-    const panelId = `slice-panel-${sliceId}`;
+    const panelId = `slice-panel-${storyId}`;
     const existingPanel = dockviewApiRef.getPanel(panelId);
 
     if (existingPanel) {
@@ -122,8 +122,9 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
     dockviewApiRef.addPanel({
       id: panelId,
       component: "floorPanel",
+      tabComponent: "floorTab",
       title: `Floor ${storyId}`,
-      params: { sliceId },
+      params: { storyId },
       maximumWidth: 300,
       position: { direction: "right" },
     });
@@ -133,7 +134,7 @@ export function SliceSelectionProvider({ children }: { children: ReactNode }) {
     (slice: Slice) => {
       selectSliceStore(slice);
       if (slice.type === "floor" && slice.storyId) {
-        openSlicePanel(slice.id, slice.storyId);
+        openSlicePanel(slice.storyId);
       }
     },
     [openSlicePanel, selectSliceStore]

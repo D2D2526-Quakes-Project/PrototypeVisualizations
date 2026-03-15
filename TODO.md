@@ -65,10 +65,9 @@
   - Users need to understand not only that a threshold was crossed, but where, when, in what order, and why that matters for the building interpretation.
   - Avoid threshold panels that act as generic warning dashboards with no analytical bridge.
 
-
 ### 2.2 Update Color UI
 
-- [ ] Allow the user to change the color for each metric
+- [x] Allow the user to change the color for each metric
 
 ---
 
@@ -269,6 +268,8 @@
 
 ### 9.1 UI Improvements
 
+- [ ] Statistics panel needs indicate which values change based on current frame and which are static
+- [ ] Statistics panel should show more of the precomputed values
 - [x] Add keyboard shortcuts for common actions
 - [ ] Add undo/redo for selections
 - [x] Add "reset to defaults" button
@@ -538,11 +539,11 @@ _Last Updated: February 2026_
 - [x] Colorbar overlay: show metric name and min/threshold/max numbers
 - [x] Colorbar in view menu: fix incorrect min numbers when metric can be negative
 - [x] Colorbar: center number should show 0 when metric can be negative, show threshold midway between 0 and pos
-- [ ] Change green color bars to show red
+- [x] Change green color bars to show red
 
 ### 20.6 Rotation Units
 
-- [ ] Fix rotation units bug showing numbers larger than 145,000 rad/s
+- [x] Fix rotation units bug showing numbers larger than 145,000 rad/s
 - [ ] Fix rotation panel and all rotation displays
 
 ### 20.7 ISD Graph
@@ -556,7 +557,7 @@ _Last Updated: February 2026_
 
 ### 20.9 Panels & Tabs
 
-- [ ] Remove header text at top of panels (redundant with tab names)
+- [x] Remove header text at top of panels (redundant with tab names)
 - [x] Rename "Damage Threshold" panel to "ISD Threshold"
 - [x] Rename "Damage" to "ISD" across the app
 - [x] Create panel for hinges called "Hinge Performance"

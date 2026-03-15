@@ -36,7 +36,7 @@ export function ThresholdPanel({ animationData, setThreshold, currentMetric }: T
             key: thresholdKey,
             label: config.label,
             unit: config.unit,
-            max: Math.max(config.getPrecomputedMax(animationData.precomputed) * 1.2, thresholds[thresholdKey] || 0, 1),
+            max: Math.max(config.getPrecomputedMax(animationData.precomputed), thresholds[thresholdKey] || 0, 1),
             tooltip: `Shared threshold for ${metrics.map((metric) => METRIC_CONFIGS[metric].label).join(", ")}`,
           };
         }

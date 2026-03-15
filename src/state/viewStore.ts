@@ -1,5 +1,5 @@
 import type { ViewMode } from "@/features/view-3d/contexts/visualization/ViewModeContext";
-import type { Metric, ThresholdKey } from "@/lib/metrics";
+import type { Metric, MetricPaletteKey, MetricPaletteOverrides, ThresholdKey } from "@/lib/metrics";
 import type { ComputedStats } from "@/lib/types";
 import type { PanelState } from "@/features/view-3d/lib/statePersistence";
 import type { SerializedDockview } from "dockview";
@@ -105,6 +105,8 @@ export interface ViewState {
   // Color
   currentMetric: Metric;
   setColorMetric: (metric: Metric) => void;
+  metricPaletteOverrides: MetricPaletteOverrides;
+  setMetricPalette: (metric: Metric, palette: MetricPaletteKey | null) => void;
   thresholdHighlighting: boolean;
   setThresholdHighlighting: (enabled: boolean) => void;
 
@@ -260,6 +262,21 @@ export const createViewStore = () =>
       // Color
       currentMetric: "interstoryDrift",
       setColorMetric: (currentMetric) => set({ currentMetric }),
+      metricPaletteOverrides: {},
+      setMetricPalette: (metric, palette) =>
+        set((state) => {
+          if (palette === null) {
+            const { [metric]: _removed, ...rest } = state.metricPaletteOverrides;
+            return { metricPaletteOverrides: rest };
+          }
+
+          return {
+            metricPaletteOverrides: {
+              ...state.metricPaletteOverrides,
+              [metric]: palette,
+            },
+          };
+        }),
       thresholdHighlighting: false,
       setThresholdHighlighting: (thresholdHighlighting) => set({ thresholdHighlighting }),
 

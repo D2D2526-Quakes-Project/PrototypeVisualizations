@@ -1,25 +1,44 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { buildHingeEnrichedRows } from "@/lib/hingeAnalysis";
-import type { IDockviewPanelProps } from "dockview";
+import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { useMemo } from "react";
 import { MiniTimeSeries } from "./MiniTimeSeries";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { FloorTorsionPlanPreview } from "@/features/view-3d/components/FloorTorsionPlanPreview";
 import { buildFloorTorsionSnapshot, computeStoryPlanRotationPeak } from "@/features/view-3d/lib/floorTorsion";
+import { getMetricKeyColor } from "@/lib/metrics";
+import { useViewStore } from "@/state";
 import { formatHex, interpolate } from "culori";
+import { XIcon } from "lucide-react";
+import { stringToNumber } from "@/lib/utils";
 
 const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
-export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
-  const { sliceId } = props.params;
+// Generate a unique vibrant color based on node ID
+export function getFloorColor(storyId: string): string {
+  // Use golden ratio for good distribution
+  const num: number = stringToNumber(storyId);
+  const hue = (num * 137.508) % 360;
+  return `hsl(${hue}, 70%, 45%)`;
+}
+
+// Generate a lighter version for backgrounds
+export function getFloorColorLight(storyId: string): string {
+  const num: number = stringToNumber(storyId);
+  const hue = (num * 137.508) % 360;
+  return `hsl(${hue}, 70%, 90%)`;
+}
+
+export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
+  const storyId = props.params.storyId;
   const { animationData } = useAnimationData();
   const { frameIndex, playing } = usePlayback();
-
-  const storyId = useMemo(() => {
-    const parts = sliceId.split("-");
-    return parts[1];
-  }, [sliceId]);
+  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
+  const displacementMagColor = getMetricKeyColor("displacementMag", metricPaletteOverrides);
+  const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
+  const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
+  const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
 
   const nodeIds = useMemo(
     () => animationData.metadata.stories[storyId] || [],
@@ -557,7 +576,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <MiniTimeSeries
                 data={displacementTimeSeries.magnitudes}
                 times={displacementTimeSeries.times}
-                color="#f59e0b"
+                color={displacementMagColor}
                 currentValue={displacementData.current.magnitude}
                 unit="in"
                 label="Displacement Magnitude"
@@ -565,7 +584,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <MiniTimeSeries
                 data={displacementTimeSeries.xValues}
                 times={displacementTimeSeries.times}
-                color="#ef4444"
+                color={displacementXColor}
                 currentValue={displacementData.current.x}
                 unit="in"
                 label="Displacement X"
@@ -573,7 +592,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <MiniTimeSeries
                 data={displacementTimeSeries.yValues}
                 times={displacementTimeSeries.times}
-                color="#22c55e"
+                color={displacementYColor}
                 currentValue={displacementData.current.y}
                 unit="in"
                 label="Displacement Y"
@@ -581,7 +600,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
               <MiniTimeSeries
                 data={displacementTimeSeries.zValues}
                 times={displacementTimeSeries.times}
-                color="#3b82f6"
+                color={displacementZColor}
                 currentValue={displacementData.current.z}
                 unit="in"
                 label="Displacement Z"
@@ -627,7 +646,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                 <MiniTimeSeries
                   data={velocityTimeSeries.magnitudes}
                   times={velocityTimeSeries.times}
-                  color="#f59e0b"
+                  color={displacementMagColor}
                   currentValue={velocityData.current.magnitude}
                   unit="in/s"
                   label="Velocity Magnitude"
@@ -635,7 +654,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                 <MiniTimeSeries
                   data={velocityTimeSeries.xValues}
                   times={velocityTimeSeries.times}
-                  color="#ef4444"
+                  color={displacementXColor}
                   currentValue={velocityData.current.x}
                   unit="in/s"
                   label="Velocity X"
@@ -643,7 +662,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                 <MiniTimeSeries
                   data={velocityTimeSeries.yValues}
                   times={velocityTimeSeries.times}
-                  color="#22c55e"
+                  color={displacementYColor}
                   currentValue={velocityData.current.y}
                   unit="in/s"
                   label="Velocity Y"
@@ -651,7 +670,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
                 <MiniTimeSeries
                   data={velocityTimeSeries.zValues}
                   times={velocityTimeSeries.times}
-                  color="#3b82f6"
+                  color={displacementZColor}
                   currentValue={velocityData.current.z}
                   unit="in/s"
                   label="Velocity Z"
@@ -730,11 +749,34 @@ export function FloorPanel(props: IDockviewPanelProps<{ sliceId: string }>) {
   );
 }
 
+export function FloorTab(props: IDockviewPanelHeaderProps<{ storyId: string }>) {
+  const storyId = props.params.storyId;
+  const color = getFloorColor(storyId);
+  const lightColor = getFloorColorLight(storyId);
 
-export function SliceTab(props: { sliceId: string; storyId: string }) {
+  const handleClose = () => {
+    props.api.close();
+  };
+
   return (
-    <div className="z-10 flex h-full w-full items-center bg-neutral-200/80">
-      <span className="px-4 py-0 text-sm font-medium text-neutral-700">Floor {props.storyId}</span>
+    <div
+      className="flex cursor-grab items-center justify-between border-b px-3 py-2 transition-colors active:cursor-grabbing"
+      style={{ backgroundColor: lightColor, borderColor: color }}>
+      <div className="pointer-events-none flex items-center gap-2">
+        <span className="text-sm font-semibold" style={{ color }}>
+          Floor {storyId}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={handleClose}
+          className="rounded p-1 transition-colors hover:bg-white/50"
+          style={{ color }}
+          title="Close">
+          <XIcon className="size-3" />
+        </button>
+      </div>
     </div>
   );
 }

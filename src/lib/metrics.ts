@@ -1,34 +1,5 @@
 import type { BuildingAnimationData, ComputedStats } from "@/lib/types";
-import {
-  blue400,
-  blue50,
-  blue600,
-  blue900,
-  cyan400,
-  cyan50,
-  cyan600,
-  cyan900,
-  orange400,
-  orange50,
-  orange600,
-  orange900,
-  purple400,
-  purple50,
-  purple600,
-  purple900,
-  red400,
-  red50,
-  red600,
-  red900,
-  teal400,
-  teal50,
-  teal600,
-  teal900,
-  violet400,
-  violet50,
-  violet600,
-  violet900,
-} from "./colors/tailwindColors";
+import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
 
 export type Metric =
   | "displacementX"
@@ -72,6 +43,18 @@ export interface ColorScale {
   label: string;
   unit: string;
 }
+
+export type MetricPaletteKey = TailwindPaletteKey;
+
+export interface MetricPaletteDefinition {
+  label: string;
+  paletteKey: MetricPaletteKey;
+  positiveColorStops: [string, string, string, string];
+  negativeColorStops: [string, string, string, string];
+  keyColor: string;
+}
+
+export type MetricPaletteOverrides = Partial<Record<Metric, MetricPaletteKey>>;
 
 export type Unit =
   | "inches"
@@ -402,19 +385,185 @@ export type MetricConfig = {
   thresholdKey: ThresholdKey;
   label: string;
   unit: UnitConfig;
+  defaultPalette: MetricPaletteKey;
   getPrecomputedMax: (stats: ComputedStats) => number;
   getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => number | undefined;
   isAvailable: (animationData: BuildingAnimationData) => boolean;
-  positiveColorStops: [string, string, string, string];
-} & (
-  | {
-      positiveOnly: true;
-    }
-  | {
-      positiveOnly: false;
-      negativeColorStops: [string, string, string, string];
-    }
-);
+  positiveOnly: boolean;
+};
+
+export const METRIC_PALETTES: Record<MetricPaletteKey, MetricPaletteDefinition> = {
+  red: {
+    label: "Red",
+    paletteKey: "red",
+    positiveColorStops: [
+      TAILWIND_PALETTES.red[50],
+      TAILWIND_PALETTES.red[400],
+      TAILWIND_PALETTES.red[600],
+      TAILWIND_PALETTES.red[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.red[50],
+      TAILWIND_PALETTES.red[400],
+      TAILWIND_PALETTES.red[600],
+      TAILWIND_PALETTES.red[900],
+    ],
+    keyColor: TAILWIND_PALETTES.red[500],
+  },
+  rose: {
+    label: "Rose",
+    paletteKey: "rose",
+    positiveColorStops: [
+      TAILWIND_PALETTES.rose[50],
+      TAILWIND_PALETTES.rose[400],
+      TAILWIND_PALETTES.rose[600],
+      TAILWIND_PALETTES.rose[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.rose[50],
+      TAILWIND_PALETTES.rose[400],
+      TAILWIND_PALETTES.rose[600],
+      TAILWIND_PALETTES.rose[900],
+    ],
+    keyColor: TAILWIND_PALETTES.rose[500],
+  },
+  orange: {
+    label: "Orange",
+    paletteKey: "orange",
+    positiveColorStops: [
+      TAILWIND_PALETTES.orange[50],
+      TAILWIND_PALETTES.orange[400],
+      TAILWIND_PALETTES.orange[600],
+      TAILWIND_PALETTES.orange[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.orange[50],
+      TAILWIND_PALETTES.orange[400],
+      TAILWIND_PALETTES.orange[600],
+      TAILWIND_PALETTES.orange[900],
+    ],
+    keyColor: TAILWIND_PALETTES.orange[500],
+  },
+  amber: {
+    label: "Amber",
+    paletteKey: "amber",
+    positiveColorStops: [
+      TAILWIND_PALETTES.amber[50],
+      TAILWIND_PALETTES.amber[400],
+      TAILWIND_PALETTES.amber[600],
+      TAILWIND_PALETTES.amber[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.amber[50],
+      TAILWIND_PALETTES.amber[400],
+      TAILWIND_PALETTES.amber[600],
+      TAILWIND_PALETTES.amber[900],
+    ],
+    keyColor: TAILWIND_PALETTES.amber[500],
+  },
+  green: {
+    label: "Green",
+    paletteKey: "green",
+    positiveColorStops: [
+      TAILWIND_PALETTES.green[50],
+      TAILWIND_PALETTES.green[400],
+      TAILWIND_PALETTES.green[600],
+      TAILWIND_PALETTES.green[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.green[50],
+      TAILWIND_PALETTES.green[400],
+      TAILWIND_PALETTES.green[600],
+      TAILWIND_PALETTES.green[900],
+    ],
+    keyColor: TAILWIND_PALETTES.green[500],
+  },
+  blue: {
+    label: "Blue",
+    paletteKey: "blue",
+    positiveColorStops: [
+      TAILWIND_PALETTES.blue[50],
+      TAILWIND_PALETTES.blue[400],
+      TAILWIND_PALETTES.blue[600],
+      TAILWIND_PALETTES.blue[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.blue[50],
+      TAILWIND_PALETTES.blue[400],
+      TAILWIND_PALETTES.blue[600],
+      TAILWIND_PALETTES.blue[900],
+    ],
+    keyColor: TAILWIND_PALETTES.blue[500],
+  },
+  cyan: {
+    label: "Cyan",
+    paletteKey: "cyan",
+    positiveColorStops: [
+      TAILWIND_PALETTES.cyan[50],
+      TAILWIND_PALETTES.cyan[400],
+      TAILWIND_PALETTES.cyan[600],
+      TAILWIND_PALETTES.cyan[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.cyan[50],
+      TAILWIND_PALETTES.cyan[400],
+      TAILWIND_PALETTES.cyan[600],
+      TAILWIND_PALETTES.cyan[900],
+    ],
+    keyColor: TAILWIND_PALETTES.cyan[500],
+  },
+  teal: {
+    label: "Teal",
+    paletteKey: "teal",
+    positiveColorStops: [
+      TAILWIND_PALETTES.teal[50],
+      TAILWIND_PALETTES.teal[400],
+      TAILWIND_PALETTES.teal[600],
+      TAILWIND_PALETTES.teal[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.teal[50],
+      TAILWIND_PALETTES.teal[400],
+      TAILWIND_PALETTES.teal[600],
+      TAILWIND_PALETTES.teal[900],
+    ],
+    keyColor: TAILWIND_PALETTES.teal[500],
+  },
+  violet: {
+    label: "Violet",
+    paletteKey: "violet",
+    positiveColorStops: [
+      TAILWIND_PALETTES.violet[50],
+      TAILWIND_PALETTES.violet[400],
+      TAILWIND_PALETTES.violet[600],
+      TAILWIND_PALETTES.violet[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.violet[50],
+      TAILWIND_PALETTES.violet[400],
+      TAILWIND_PALETTES.violet[600],
+      TAILWIND_PALETTES.violet[900],
+    ],
+    keyColor: TAILWIND_PALETTES.violet[500],
+  },
+  purple: {
+    label: "Purple",
+    paletteKey: "purple",
+    positiveColorStops: [
+      TAILWIND_PALETTES.purple[50],
+      TAILWIND_PALETTES.purple[400],
+      TAILWIND_PALETTES.purple[600],
+      TAILWIND_PALETTES.purple[900],
+    ],
+    negativeColorStops: [
+      TAILWIND_PALETTES.purple[50],
+      TAILWIND_PALETTES.purple[400],
+      TAILWIND_PALETTES.purple[600],
+      TAILWIND_PALETTES.purple[900],
+    ],
+    keyColor: TAILWIND_PALETTES.purple[500],
+  },
+};
 
 type NumericKeys<T> = {
   [K in keyof T]: T[K] extends number | undefined ? K : never;
@@ -490,6 +639,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     thresholdKey: "displacement",
     label: "Displacement (Mag)",
     unit: UNITS["inches"],
+    defaultPalette: "red",
     positiveOnly: true,
     getPrecomputedMax: get("maxDisplacement"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
@@ -497,55 +647,52 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
-    positiveColorStops: [red50, red400, red600, red900],
   },
   displacementX: {
     metric: "displacementX",
     thresholdKey: "displacement",
     label: "Displacement X",
     unit: UNITS["inches"],
+    defaultPalette: "red",
     positiveOnly: false,
     getPrecomputedMax: get("maxDisplacementX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[0];
     },
-    positiveColorStops: [red50, red400, red600, red900],
-    negativeColorStops: [red50, red400, red600, red900],
   },
   displacementY: {
     metric: "displacementY",
     thresholdKey: "displacement",
     label: "Displacement Y",
     unit: UNITS["inches"],
+    defaultPalette: "red",
     positiveOnly: false,
     getPrecomputedMax: get("maxDisplacementY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[1];
     },
-    positiveColorStops: [red50, red400, red600, red900],
-    negativeColorStops: [red50, red400, red600, red900],
   },
   displacementZ: {
     metric: "displacementZ",
     thresholdKey: "displacement",
     label: "Displacement Z",
     unit: UNITS["inches"],
+    defaultPalette: "red",
     positiveOnly: false,
     getPrecomputedMax: get("maxDisplacementZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[2];
     },
-    positiveColorStops: [red50, red400, red600, red900],
-    negativeColorStops: [red50, red400, red600, red900],
   },
   velocityMag: {
     metric: "velocityMag",
     thresholdKey: "velocity",
     label: "Velocity (Mag)",
     unit: UNITS["inches/second"],
+    defaultPalette: "cyan",
     positiveOnly: true,
     getPrecomputedMax: get("maxVelocity"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
@@ -554,43 +701,41 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.velocityLin.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
-    positiveColorStops: [cyan50, cyan400, cyan600, cyan900],
   },
   velocityX: {
     metric: "velocityX",
     thresholdKey: "velocity",
     label: "Velocity X",
     unit: UNITS["inches/second"],
+    defaultPalette: "cyan",
     positiveOnly: false,
     getPrecomputedMax: get("maxVelocityX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.velocityLin) return undefined;
-      return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[0];
     },
-    positiveColorStops: [cyan50, cyan400, cyan600, cyan900],
-    negativeColorStops: [cyan50, cyan400, cyan600, cyan900],
   },
   velocityY: {
     metric: "velocityY",
     thresholdKey: "velocity",
     label: "Velocity Y",
     unit: UNITS["inches/second"],
+    defaultPalette: "cyan",
     positiveOnly: false,
     getPrecomputedMax: get("maxVelocityY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.velocityLin) return undefined;
-      return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[1];
     },
-    positiveColorStops: [cyan50, cyan400, cyan600, cyan900],
-    negativeColorStops: [cyan50, cyan400, cyan600, cyan900],
   },
   velocityZ: {
     metric: "velocityZ",
     thresholdKey: "velocity",
     label: "Velocity Z",
     unit: UNITS["inches/second"],
+    defaultPalette: "cyan",
     positiveOnly: false,
     getPrecomputedMax: get("maxVelocityZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
@@ -598,14 +743,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.velocityLin) return undefined;
       return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[2];
     },
-    positiveColorStops: [cyan50, cyan400, cyan600, cyan900],
-    negativeColorStops: [cyan50, cyan400, cyan600, cyan900],
   },
   accelerationMag: {
     metric: "accelerationMag",
     thresholdKey: "acceleration",
     label: "Acceleration (Mag)",
     unit: UNITS["inches/second²"],
+    defaultPalette: "violet",
     positiveOnly: true,
     getPrecomputedMax: get("maxAcceleration"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
@@ -614,43 +758,41 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.accelerationLin.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
-    positiveColorStops: [violet50, violet400, violet600, violet900],
   },
   accelerationX: {
     metric: "accelerationX",
     thresholdKey: "acceleration",
     label: "Acceleration X",
     unit: UNITS["inches/second²"],
+    defaultPalette: "violet",
     positiveOnly: false,
     getPrecomputedMax: get("maxAccelerationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.accelerationLin) return undefined;
-      return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[0];
     },
-    positiveColorStops: [violet50, violet400, violet600, violet900],
-    negativeColorStops: [violet50, violet400, violet600, violet900],
   },
   accelerationY: {
     metric: "accelerationY",
     thresholdKey: "acceleration",
     label: "Acceleration Y",
     unit: UNITS["inches/second²"],
+    defaultPalette: "violet",
     positiveOnly: false,
     getPrecomputedMax: get("maxAccelerationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.accelerationLin) return undefined;
-      return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[1];
     },
-    positiveColorStops: [violet50, violet400, violet600, violet900],
-    negativeColorStops: [violet50, violet400, violet600, violet900],
   },
   accelerationZ: {
     metric: "accelerationZ",
     thresholdKey: "acceleration",
     label: "Acceleration Z",
     unit: UNITS["inches/second²"],
+    defaultPalette: "violet",
     positiveOnly: false,
     getPrecomputedMax: get("maxAccelerationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
@@ -658,14 +800,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.accelerationLin) return undefined;
       return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[2];
     },
-    positiveColorStops: [violet50, violet400, violet600, violet900],
-    negativeColorStops: [violet50, violet400, violet600, violet900],
   },
   rotationMag: {
     metric: "rotationMag",
     thresholdKey: "rotation",
     label: "Rotation (Mag)",
     unit: UNITS["radians"],
+    defaultPalette: "orange",
     positiveOnly: true,
     getPrecomputedMax: get("maxRotation"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
@@ -674,43 +815,41 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.displacementRot.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
-    positiveColorStops: [orange50, orange400, orange600, orange900],
   },
   rotationX: {
     metric: "rotationX",
     thresholdKey: "rotation",
     label: "Rotation X",
     unit: UNITS["radians"],
+    defaultPalette: "orange",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.displacementRot) return undefined;
-      return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[0];
     },
-    positiveColorStops: [orange50, orange400, orange600, orange900],
-    negativeColorStops: [orange50, orange400, orange600, orange900],
   },
   rotationY: {
     metric: "rotationY",
     thresholdKey: "rotation",
     label: "Rotation Y",
     unit: UNITS["radians"],
+    defaultPalette: "orange",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.displacementRot) return undefined;
-      return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[1];
     },
-    positiveColorStops: [orange50, orange400, orange600, orange900],
-    negativeColorStops: [orange50, orange400, orange600, orange900],
   },
   rotationZ: {
     metric: "rotationZ",
     thresholdKey: "rotation",
     label: "Rotation Z",
     unit: UNITS["radians"],
+    defaultPalette: "orange",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
@@ -718,14 +857,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.displacementRot) return undefined;
       return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[2];
     },
-    positiveColorStops: [orange50, orange400, orange600, orange900],
-    negativeColorStops: [orange50, orange400, orange600, orange900],
   },
   rotationVelocityMag: {
     metric: "rotationVelocityMag",
     thresholdKey: "rotationVelocity",
     label: "Rotation Velocity (Mag)",
     unit: UNITS["radians/second"],
+    defaultPalette: "teal",
     positiveOnly: true,
     getPrecomputedMax: get("maxRotationVelocity"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
@@ -734,43 +872,41 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.velocityRot.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
-    positiveColorStops: [teal50, teal400, teal600, teal900],
   },
   rotationVelocityX: {
     metric: "rotationVelocityX",
     thresholdKey: "rotationVelocity",
     label: "Rotation Velocity X",
     unit: UNITS["radians/second"],
+    defaultPalette: "teal",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationVelocityX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.velocityRot) return undefined;
-      return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[0];
     },
-    positiveColorStops: [teal50, teal400, teal600, teal900],
-    negativeColorStops: [teal50, teal400, teal600, teal900],
   },
   rotationVelocityY: {
     metric: "rotationVelocityY",
     thresholdKey: "rotationVelocity",
     label: "Rotation Velocity Y",
     unit: UNITS["radians/second"],
+    defaultPalette: "teal",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationVelocityY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.velocityRot) return undefined;
-      return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[1];
     },
-    positiveColorStops: [teal50, teal400, teal600, teal900],
-    negativeColorStops: [teal50, teal400, teal600, teal900],
   },
   rotationVelocityZ: {
     metric: "rotationVelocityZ",
     thresholdKey: "rotationVelocity",
     label: "Rotation Velocity Z",
     unit: UNITS["radians/second"],
+    defaultPalette: "teal",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationVelocityZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
@@ -778,14 +914,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.velocityRot) return undefined;
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[2];
     },
-    positiveColorStops: [teal50, teal400, teal600, teal900],
-    negativeColorStops: [teal50, teal400, teal600, teal900],
   },
   rotationAccelerationMag: {
     metric: "rotationAccelerationMag",
     thresholdKey: "rotationAcceleration",
     label: "Rotation Acceleration (Mag)",
     unit: UNITS["radians/second²"],
+    defaultPalette: "purple",
     positiveOnly: true,
     getPrecomputedMax: get("maxRotationAcceleration"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
@@ -794,43 +929,41 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.accelerationRot.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
-    positiveColorStops: [purple50, purple400, purple600, purple900],
   },
   rotationAccelerationX: {
     metric: "rotationAccelerationX",
     thresholdKey: "rotationAcceleration",
     label: "Rotation Acceleration X",
     unit: UNITS["radians/second²"],
+    defaultPalette: "purple",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationAccelerationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.accelerationRot) return undefined;
-      return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[0];
     },
-    positiveColorStops: [purple50, purple400, purple600, purple900],
-    negativeColorStops: [purple50, purple400, purple600, purple900],
   },
   rotationAccelerationY: {
     metric: "rotationAccelerationY",
     thresholdKey: "rotationAcceleration",
     label: "Rotation Acceleration Y",
     unit: UNITS["radians/second²"],
+    defaultPalette: "purple",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationAccelerationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.accelerationRot) return undefined;
-      return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
+      return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[1];
     },
-    positiveColorStops: [purple50, purple400, purple600, purple900],
-    negativeColorStops: [purple50, purple400, purple600, purple900],
   },
   rotationAccelerationZ: {
     metric: "rotationAccelerationZ",
     thresholdKey: "rotationAcceleration",
     label: "Rotation Acceleration Z",
     unit: UNITS["radians/second²"],
+    defaultPalette: "purple",
     positiveOnly: false,
     getPrecomputedMax: get("maxRotationAccelerationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
@@ -838,14 +971,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.accelerationRot) return undefined;
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
     },
-    positiveColorStops: [purple50, purple400, purple600, purple900],
-    negativeColorStops: [purple50, purple400, purple600, purple900],
   },
   interstoryDrift: {
     metric: "interstoryDrift",
     thresholdKey: "interstoryDrift",
     label: "Story Drift",
     unit: UNITS["percent"],
+    defaultPalette: "red",
     positiveOnly: true,
     getPrecomputedMax: get("maxStoryDrift"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
@@ -883,7 +1015,6 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const drifts = animationData.precomputed.storyDrift.getStoryDrift(storyIndex, frameIndex);
       return drifts[cornerIndex];
     },
-    positiveColorStops: [red50, red400, red600, red900],
   },
 };
 
@@ -906,12 +1037,33 @@ export function getThresholdKey(metric: Metric): ThresholdKey {
 }
 
 export function getMetricsForThreshold(thresholdKey: ThresholdKey): Metric[] {
-  return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) => METRIC_CONFIGS[metric].thresholdKey === thresholdKey);
+  return (Object.keys(METRIC_CONFIGS) as Metric[]).filter(
+    (metric) => METRIC_CONFIGS[metric].thresholdKey === thresholdKey
+  );
 }
 
 export function getMetricConfig(metric: Metric): MetricConfig {
   return METRIC_CONFIGS[metric];
 }
+
+export function getMetricColorScale(metric: Metric, overrides?: MetricPaletteOverrides) {
+  const config = METRIC_CONFIGS[metric];
+  const paletteKey = overrides?.[metric] ?? config.defaultPalette;
+  const palette = METRIC_PALETTES[paletteKey];
+  return {
+    positiveColorStops: palette.positiveColorStops,
+    negativeColorStops: palette.negativeColorStops,
+    paletteKey,
+    paletteLabel: palette.label,
+    keyColor: palette.keyColor,
+    isDefault: paletteKey === config.defaultPalette,
+  };
+}
+
+export function getMetricKeyColor(metric: Metric, overrides?: MetricPaletteOverrides) {
+  return getMetricColorScale(metric, overrides).keyColor;
+}
+
 export function positiveOnlyMetric(metric: Metric): boolean {
   return METRIC_CONFIGS[metric].positiveOnly;
 }

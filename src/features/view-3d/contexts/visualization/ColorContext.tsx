@@ -4,7 +4,14 @@ import { useViewStore } from "@/state";
 import { useCallback, useMemo } from "react";
 import * as THREE from "three";
 import { useThresholds } from "./ThresholdContext";
-import { getMetricConfig, METRIC_CONFIGS, type Metric } from "@/lib/metrics";
+import {
+  getMetricColorScale,
+  getMetricConfig,
+  METRIC_CONFIGS,
+  type Metric,
+  type MetricPaletteKey,
+  type MetricPaletteOverrides,
+} from "@/lib/metrics";
 import { interpolate } from "culori";
 import type { FindColorByMode } from "node_modules/@types/culori/src/common";
 
@@ -13,6 +20,8 @@ const grayColor = new THREE.Color(0.5, 0.5, 0.5);
 interface ColorContextType {
   currentMetric: Metric;
   setColorMetric: (metric: Metric) => void;
+  metricPaletteOverrides: MetricPaletteOverrides;
+  setMetricPalette: (metric: Metric, palette: MetricPaletteKey | null) => void;
   getNodeColor: (nodeId: number, frameIndex: number) => THREE.Color;
   availableMetrics: Metric[];
   thresholdHighlighting: boolean;
@@ -28,30 +37,36 @@ export function useColor(): ColorContextType {
   const { thresholds } = useThresholds();
   const currentMetric = useViewStore((s) => s.currentMetric);
   const setColorMetric = useViewStore((s) => s.setColorMetric);
+  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
+  const setMetricPalette = useViewStore((s) => s.setMetricPalette);
   const thresholdHighlighting = useViewStore((s) => s.thresholdHighlighting);
   const setThresholdHighlighting = useViewStore((s) => s.setThresholdHighlighting);
 
   const metricConfig = useMemo(() => getMetricConfig(currentMetric), [currentMetric]);
+  const metricColorScale = useMemo(
+    () => getMetricColorScale(currentMetric, metricPaletteOverrides),
+    [currentMetric, metricPaletteOverrides]
+  );
 
   const { positiveInterpolator, positiveThresholdInterpolator, negativeInterpolator, negativeThresholdInterpolator } =
     useMemo(() => {
       return {
         positiveInterpolator: interpolate(
-          [metricConfig.positiveColorStops[0], metricConfig.positiveColorStops[1]],
+          [metricColorScale.positiveColorStops[0], metricColorScale.positiveColorStops[1]],
           "oklab"
         ),
         positiveThresholdInterpolator: interpolate(
-          [metricConfig.positiveColorStops[2], metricConfig.positiveColorStops[3]],
+          [metricColorScale.positiveColorStops[2], metricColorScale.positiveColorStops[3]],
           "oklab"
         ),
         negativeInterpolator: metricConfig.positiveOnly
           ? interpolate(["magenta"], "oklab")
-          : interpolate([metricConfig.negativeColorStops[0], metricConfig.negativeColorStops[1]], "oklab"),
+          : interpolate([metricColorScale.negativeColorStops[0], metricColorScale.negativeColorStops[1]], "oklab"),
         negativeThresholdInterpolator: metricConfig.positiveOnly
           ? interpolate(["magenta"], "oklab")
-          : interpolate([metricConfig.negativeColorStops[2], metricConfig.negativeColorStops[3]], "oklab"),
+          : interpolate([metricColorScale.negativeColorStops[2], metricColorScale.negativeColorStops[3]], "oklab"),
       };
-    }, [metricConfig]);
+    }, [metricConfig, metricColorScale]);
 
   const maxValue = useMemo(() => {
     return metricConfig.getPrecomputedMax(animationData.precomputed);
@@ -120,6 +135,8 @@ export function useColor(): ColorContextType {
   return {
     currentMetric,
     setColorMetric,
+    metricPaletteOverrides,
+    setMetricPalette,
     getNodeColor,
     availableMetrics,
     thresholdHighlighting,

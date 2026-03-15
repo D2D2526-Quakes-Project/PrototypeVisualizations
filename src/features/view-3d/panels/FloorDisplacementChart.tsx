@@ -9,7 +9,7 @@
  * WHAT IT SHOWS:
  * - Y-axis: Story levels from bottom to top
  * - X-axis: Displacement magnitude (inches)
- * - Bars for X (red), Y (green), Z (blue) components
+ * - Bars for X (red), Y (rose), Z (blue) components
  * - Line for overall magnitude (amber)
  *
  * DATA SOURCES:
@@ -36,13 +36,19 @@ import { useMemo } from "react";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import type { EChartsOption } from "echarts";
+import { getMetricKeyColor } from "@/lib/metrics";
 import { formatFixed3 } from "@/lib/utils";
-import { PanelHeader } from "@/features/view-3d/components/PanelHeader";
+import { useViewStore } from "@/state";
 
 export function FloorDisplacementChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getVisibleStoryOrder } = useFloorVisibility();
+  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
+  const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
+  const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
+  const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
+  const displacementMagColor = getMetricKeyColor("displacementMag", metricPaletteOverrides);
 
   const xAxisMax = useMemo(() => {
     const maxDisp = animationData.precomputed.maxDisplacement;
@@ -156,7 +162,7 @@ export function FloorDisplacementChart() {
           name: "X",
           type: "bar",
           data: chartData.map((d) => d.avgX),
-          itemStyle: { color: "#ef4444", opacity: 0.8 },
+          itemStyle: { color: displacementXColor, opacity: 0.8 },
           barGap: "0%",
           barCategoryGap: "20%",
         },
@@ -164,7 +170,7 @@ export function FloorDisplacementChart() {
           name: "Y",
           type: "bar",
           data: chartData.map((d) => d.avgY),
-          itemStyle: { color: "#22c55e", opacity: 0.8 },
+          itemStyle: { color: displacementYColor, opacity: 0.8 },
           barGap: "0%",
           barCategoryGap: "20%",
         },
@@ -172,7 +178,7 @@ export function FloorDisplacementChart() {
           name: "Z",
           type: "bar",
           data: chartData.map((d) => d.avgZ),
-          itemStyle: { color: "#3b82f6", opacity: 0.8 },
+          itemStyle: { color: displacementZColor, opacity: 0.8 },
           barGap: "0%",
           barCategoryGap: "20%",
         },
@@ -180,35 +186,30 @@ export function FloorDisplacementChart() {
           name: "Magnitude",
           type: "line",
           data: chartData.map((d) => d.avgMag),
-          lineStyle: { color: "#f59e0b", width: 2 },
+          lineStyle: { color: displacementMagColor, width: 2 },
           symbol: "circle",
           symbolSize: 6,
-          itemStyle: { color: "#f59e0b" },
+          itemStyle: { color: displacementMagColor },
         },
       ],
       animation: false,
     };
-  }, [chartData, xAxisMax]);
+  }, [chartData, displacementMagColor, displacementXColor, displacementYColor, displacementZColor, xAxisMax]);
 
   return (
     <div className="flex h-full w-full flex-col bg-white">
-      <PanelHeader
-        title="Floor Displacement"
-        subtitle="- Average displacement per story"
-        meta={
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-            <span>Frame {frameIndex + 1}</span>
-            <span className="text-neutral-300">•</span>
-            <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
-            <span className="text-neutral-300">•</span>
-            <span>Visible stories: {chartData.length}</span>
-            <span className="text-neutral-300">•</span>
-            <span>X-axis: in</span>
-            <span className="text-neutral-300">•</span>
-            <span>Story labels include elevation (ft)</span>
-          </div>
-        }
-      />
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
+        <span>Frame {frameIndex + 1}</span>
+        <span className="text-neutral-300">•</span>
+        <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+        <span className="text-neutral-300">•</span>
+        <span>Visible stories: {chartData.length}</span>
+        <span className="text-neutral-300">•</span>
+        <span>X-axis: in</span>
+        <span className="text-neutral-300">•</span>
+        <span>Story labels include elevation (ft)</span>
+      </div>
+
       <div className="min-h-0 w-full flex-1">
         <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
       </div>

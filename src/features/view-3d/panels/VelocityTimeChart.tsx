@@ -41,19 +41,20 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown } from "lucide-react";
 import { renderToString } from "react-dom/server";
 import { formatFixed3 } from "@/lib/utils";
+import { getMetricKeyColor } from "@/lib/metrics";
 import type { EChartsOption } from "echarts";
 import type { IDockviewPanelProps } from "dockview";
 import { useViewStore } from "@/state";
 
 const CHANNEL_CONFIG = {
-  x: { id: "x", label: "X Velocity", shortName: "X", color: "#f87171", unit: "in/s", thresholdKey: "velocity" },
-  y: { id: "y", label: "Y Velocity", shortName: "Y", color: "#4ade80", unit: "in/s", thresholdKey: "velocity" },
-  z: { id: "z", label: "Z Velocity", shortName: "Z", color: "#60a5fa", unit: "in/s", thresholdKey: "velocity" },
+  x: { id: "x", label: "X Velocity", shortName: "X", metric: "velocityX", unit: "in/s", thresholdKey: "velocity" },
+  y: { id: "y", label: "Y Velocity", shortName: "Y", metric: "velocityY", unit: "in/s", thresholdKey: "velocity" },
+  z: { id: "z", label: "Z Velocity", shortName: "Z", metric: "velocityZ", unit: "in/s", thresholdKey: "velocity" },
   magnitude: {
     id: "magnitude",
     label: "Speed",
     shortName: "Spd",
-    color: "#fbbf24",
+    metric: "velocityMag",
     unit: "in/s",
     thresholdKey: "velocity",
   },
@@ -102,7 +103,7 @@ function CheckSelect({
   selected,
   onChange,
 }: {
-  options: typeof CHANNEL_CONFIG;
+  options: { [K in ChannelKey]: (typeof CHANNEL_CONFIG)[K] & { color: string } };
   selected: ChannelKey[];
   onChange: (keys: ChannelKey[]) => void;
 }) {
@@ -171,6 +172,7 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
   const { frameIndex, setFrameIndex } = usePlayback();
   const { thresholds } = useThresholds();
   const setPanelState = useViewStore((s) => s.setPanelState);
+  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
   const panelId = api?.id ?? "velocity-time-chart";
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const defaultState = getDefaultVelocityTimeChartPanelState();
@@ -179,6 +181,16 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
   const chartRef = useRef<ReactECharts>(null);
   const [isDragging, setIsDragging] = useState(false);
   const panelIdRef = useRef(panelId);
+  const channelConfig = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(CHANNEL_CONFIG).map(([key, config]) => [
+          key,
+          { ...config, color: getMetricKeyColor(config.metric, metricPaletteOverrides) },
+        ])
+      ) as { [K in ChannelKey]: (typeof CHANNEL_CONFIG)[K] & { color: string } },
+    [metricPaletteOverrides]
+  );
 
   const maxFrame = animationData.metadata.frameCount - 1;
 
@@ -196,17 +208,17 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
       if (!precomputed.avgVelocityPerFrame) return undefined;
       switch (key) {
         case "x":
-          return { data: precomputed.avgVelocityPerFrame.x, config: CHANNEL_CONFIG.x };
+          return { data: precomputed.avgVelocityPerFrame.x, config: channelConfig.x };
         case "y":
-          return { data: precomputed.avgVelocityPerFrame.y, config: CHANNEL_CONFIG.y };
+          return { data: precomputed.avgVelocityPerFrame.y, config: channelConfig.y };
         case "z":
-          return { data: precomputed.avgVelocityPerFrame.z, config: CHANNEL_CONFIG.z };
+          return { data: precomputed.avgVelocityPerFrame.z, config: channelConfig.z };
         case "magnitude":
         default:
-          return { data: precomputed.avgVelocityPerFrame.mag, config: CHANNEL_CONFIG.magnitude };
+          return { data: precomputed.avgVelocityPerFrame.mag, config: channelConfig.magnitude };
       }
     },
-    [animationData]
+    [animationData, channelConfig]
   );
 
   const option: EChartsOption = useMemo((): EChartsOption => {
@@ -334,8 +346,10 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
           const frame = Math.round(time / animationData.metadata.dt);
           const values = params.map((p) => ({
             name: p.seriesName!,
-            color: CHANNEL_CONFIG[p.seriesName?.toLowerCase().split(" ")[0] as ChannelKey]?.color || p.color,
-            unit: CHANNEL_CONFIG[p.seriesName?.toLowerCase().split(" ")[0] as ChannelKey]?.unit || "in/s",
+            color:
+              channelConfig[p.seriesName?.toLowerCase().split(" ")[0] as ChannelKey]?.color ||
+              (typeof p.color === "string" ? p.color : "#6b7280"),
+            unit: channelConfig[p.seriesName?.toLowerCase().split(" ")[0] as ChannelKey]?.unit || "in/s",
             value: (p.data as number[])[1],
           }));
           return renderToString(<TooltipContent frame={frame} time={time} values={values} />);
@@ -343,7 +357,7 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
       },
       animation: false,
     };
-  }, [selectedKeys, frameIndex, thresholds, animationData.metadata.dt, maxFrame, times, getChannelData]);
+  }, [selectedKeys, frameIndex, thresholds, animationData.metadata.dt, maxFrame, times, getChannelData, channelConfig]);
 
   useEffect(() => {
     setPanelState(panelIdRef.current, "velocityTimeChart", { selectedKeys });
@@ -396,7 +410,7 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
     <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
       <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
         <div className="float-right mt-0.5 ml-2">
-          <CheckSelect options={CHANNEL_CONFIG} selected={selectedKeys} onChange={setSelectedKeys} />
+          <CheckSelect options={channelConfig} selected={selectedKeys} onChange={setSelectedKeys} />
         </div>
         <div className="flex items-center gap-2 text-sm text-neutral-700">
           <span className="font-medium">Avg. Velocity</span>

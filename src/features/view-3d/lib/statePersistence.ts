@@ -1,5 +1,5 @@
 import LZString from "lz-string";
-import type { Metric } from "@/lib/metrics";
+import type { Metric, MetricPaletteKey, MetricPaletteOverrides } from "@/lib/metrics";
 import type { SerializedDockview } from "dockview";
 import {
   DEFAULT_BACKGROUND_COLOR,
@@ -138,6 +138,7 @@ export interface AppState {
   timestamp: number;
   frameIndex: number;
   currentMetric: Metric;
+  metricPaletteOverrides: MetricPaletteOverrides;
   thresholdHighlighting: boolean;
   thresholds: ThresholdState;
   visibleFloors: string[];
@@ -245,6 +246,18 @@ function isNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function getMetricPaletteOverridesPatch(value: unknown): MetricPaletteOverrides {
+  if (!isRecord(value)) return {};
+
+  const patch: MetricPaletteOverrides = {};
+  for (const [metric, palette] of Object.entries(value)) {
+    if (typeof palette === "string") {
+      patch[metric as Metric] = palette as MetricPaletteKey;
+    }
+  }
+  return patch;
+}
+
 function getExpandedScalePatch(value: unknown): Partial<ExpandedScaleState> {
   if (!isRecord(value)) return {};
 
@@ -285,6 +298,7 @@ function normalizeState(state: AppState): AppState {
 
   return {
     ...stateWithoutLegacy,
+    metricPaletteOverrides: getMetricPaletteOverridesPatch(state.metricPaletteOverrides),
     expandedScale,
     hiddenNodeIds: Array.isArray(state.hiddenNodeIds) ? state.hiddenNodeIds : legacySelectedAsHidden,
     version: STATE_VERSION,
@@ -590,6 +604,7 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     timestamp: Date.now(),
     frameIndex: 0,
     currentMetric: "interstoryDrift",
+    metricPaletteOverrides: {},
     thresholdHighlighting: false,
     thresholds: { ...DEFAULT_THRESHOLDS },
     visibleFloors: [],
@@ -1378,6 +1393,10 @@ export function getStateForUrlWithDefaults(
     ...defaults,
     ...stateWithoutLegacy,
     thresholds: { ...defaults.thresholds, ...(state.thresholds ?? {}) },
+    metricPaletteOverrides: {
+      ...defaults.metricPaletteOverrides,
+      ...getMetricPaletteOverridesPatch(state.metricPaletteOverrides),
+    },
     expandedScale,
     camera: { ...defaults.camera, ...(state.camera ?? {}) },
     panelStates: includePanelStates ? (state.panelStates ?? {}) : {},

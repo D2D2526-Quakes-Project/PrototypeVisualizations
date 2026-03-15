@@ -7,7 +7,6 @@ import { FloorDisplacementChart } from "@/features/view-3d/panels/FloorDisplacem
 import { StatisticsPanel } from "@/features/view-3d/panels/StatisticsPanel";
 import { VelocityTimeChart } from "@/features/view-3d/panels/VelocityTimeChart";
 import { RotationTimeChart } from "@/features/view-3d/panels/RotationTimeChart";
-import { StoryDriftHeatmap } from "@/features/view-3d/panels/StoryDriftHeatmap";
 import { PeakResponseTimePanel } from "@/features/view-3d/panels/PeakResponseTimePanel";
 import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
 import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDistributionPanel";
@@ -187,14 +186,6 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
     category: "Summaries",
     icon: RotateCw,
     description: "Top-down rotation preview per floor",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "Story Drift Heatmap": {
-    component: StoryDriftHeatmap,
-    category: "Threshold / ISD",
-    icon: ShieldAlert,
-    description: "Drift heatmap by story/time",
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },

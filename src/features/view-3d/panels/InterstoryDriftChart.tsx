@@ -43,6 +43,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 import type { EChartsOption } from "echarts";
 import type { DockviewPanelApi } from "dockview";
+import { formatStoryLabel } from "@/lib/utils";
 
 interface InterstoryDriftChartProps {
   api?: DockviewPanelApi;
@@ -73,11 +74,14 @@ function TooltipContent({
   return (
     <div style={{ minWidth: "200px" }}>
       <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "13px" }}>
-        Floor {storyId} ({elevationFt.toFixed(0)}ft)
+        {formatStoryLabel(storyId, elevationFt)}
+      </div>
+      <div className="text-xs text-neutral-500" style={{ marginBottom: "6px" }}>
+        Interstory drift values use absolute values.
       </div>
       {corners.map((corner) => {
-        const current = currentDrifts[storyId]?.[corner] || 0;
-        const peak = peakDrift[storyId]?.[corner] || 0;
+        const current = Math.abs(currentDrifts[storyId]?.[corner] || 0);
+        const peak = Math.abs(peakDrift[storyId]?.[corner] || 0);
 
         return (
           <div
@@ -101,8 +105,8 @@ function TooltipContent({
               <span style={{ color: "#6b7280", fontSize: "11px" }}>{corner}</span>
             </div>
             <div style={{ textAlign: "right" }}>
-              <span style={{ fontWeight: 500 }}>{current.toFixed(4)}%</span>
-              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>/ {peak.toFixed(4)}%</span>
+              <span style={{ fontWeight: 500 }}>{current.toFixed(4)} %</span>
+              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>/ {peak.toFixed(4)} %</span>
             </div>
           </div>
         );
@@ -163,18 +167,17 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
 
     const yAxisData = storyOrderWithoutGround.map((storyId) => {
       const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;
-      const elevationFt = elevationIn / 12;
-      return `Floor ${storyId} (${elevationFt.toFixed(0)}ft)`;
+      return formatStoryLabel(storyId, elevationIn);
     });
 
     // Pre-compute max peak ratio
     let maxPeakRatio = 0.0001;
     storyOrderWithoutGround.forEach((storyId) => {
       const peakCornerDrifts = [
-        peakStoryDrift[storyId]?.NW || 0,
-        peakStoryDrift[storyId]?.NE || 0,
-        peakStoryDrift[storyId]?.SW || 0,
-        peakStoryDrift[storyId]?.SE || 0,
+        Math.abs(peakStoryDrift[storyId]?.NW || 0),
+        Math.abs(peakStoryDrift[storyId]?.NE || 0),
+        Math.abs(peakStoryDrift[storyId]?.SW || 0),
+        Math.abs(peakStoryDrift[storyId]?.SE || 0),
       ];
       maxPeakRatio = Math.max(maxPeakRatio, ...peakCornerDrifts);
     });
@@ -205,12 +208,18 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       const storyIndex = storyOrder.indexOf(storyId);
       const cornerDrifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
       currentDrifts[storyId] = {
-        NW: cornerDrifts[0],
-        NE: cornerDrifts[1],
-        SW: cornerDrifts[2],
-        SE: cornerDrifts[3],
+        NW: Math.abs(cornerDrifts[0]),
+        NE: Math.abs(cornerDrifts[1]),
+        SW: Math.abs(cornerDrifts[2]),
+        SE: Math.abs(cornerDrifts[3]),
       };
-      maxCurrentRatio = Math.max(maxCurrentRatio, ...cornerDrifts);
+      maxCurrentRatio = Math.max(
+        maxCurrentRatio,
+        Math.abs(cornerDrifts[0]),
+        Math.abs(cornerDrifts[1]),
+        Math.abs(cornerDrifts[2]),
+        Math.abs(cornerDrifts[3])
+      );
     });
 
     return { currentDrifts, maxCurrentRatio };
@@ -309,7 +318,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       type: "bar" as const,
       stack: corner,
       data: storyOrderWithoutGround.map((storyId) => {
-        const peak = peakStoryDrift[storyId]?.[corner] ?? 0;
+        const peak = Math.abs(peakStoryDrift[storyId]?.[corner] || 0);
         const current = currentDrifts[storyId]?.[corner] ?? 0;
         return peak - current;
       }),

@@ -180,7 +180,17 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       initialHeight: 760,
     });
 
-    const timelinePanel = api.addPanel({
+    const interstoryDriftPanel = api.addPanel({
+      id: "interstory-drift-chart",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Interstory Drift",
+      position: { referencePanel: mainCanvas, direction: "right" },
+      params: { panelType: "Interstory Drift Chart" },
+      initialWidth: 560,
+    });
+
+    api.addPanel({
       id: "timeline",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
@@ -190,16 +200,6 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       initialHeight: 280,
     });
 
-    const interstoryDriftPanel = api.addPanel({
-      id: "interstory-drift-chart",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Interstory Drift",
-      position: { referencePanel: timelinePanel, direction: "right" },
-      params: { panelType: "Interstory Drift Chart" },
-      initialWidth: 560,
-    });
-
     api.addPanel({
       id: "floor-displacement",
       component: "magicPanel",
@@ -207,66 +207,6 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       title: "Floor Displacement",
       position: { referencePanel: interstoryDriftPanel },
       params: { panelType: "Floor Displacement" },
-      inactive: true,
-    });
-
-    api.addPanel({
-      id: "story-drift-heatmap",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Story Drift Heatmap",
-      position: { referencePanel: mainCanvas, direction: "right" },
-      params: { panelType: "Story Drift Heatmap" },
-      initialWidth: 460,
-    });
-
-    const reviewPanel = api.addPanel({
-      id: "damage-threshold",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "ISD Threshold",
-      position: { referencePanel: "story-drift-heatmap", direction: "below" },
-      params: { panelType: "ISD Threshold" },
-      initialHeight: 260,
-    });
-
-    api.addPanel({
-      id: "statistics",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Statistics",
-      position: { referencePanel: reviewPanel },
-      params: { panelType: "Statistics" },
-      inactive: true,
-    });
-
-    api.addPanel({
-      id: "peak-response-time",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Peak Response Time",
-      position: { referencePanel: reviewPanel },
-      params: { panelType: "Peak Response Time" },
-      inactive: true,
-    });
-
-    api.addPanel({
-      id: "hinge-hotspots",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Hinge Hotspots",
-      position: { referencePanel: reviewPanel },
-      params: { panelType: "Hinge Hotspots" },
-      inactive: true,
-    });
-
-    api.addPanel({
-      id: "peak-values",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Peak Values",
-      position: { referencePanel: reviewPanel },
-      params: { panelType: "Peak Values" },
       inactive: true,
     });
   }, []);

@@ -4,13 +4,12 @@
  *
  * PURPOSE:
  * Displays average displacement per floor/story in a horizontal bar chart.
- * Shows X, Y, Z components and magnitude for each story level.
+ * Shows X and Y components for each story level.
  *
  * WHAT IT SHOWS:
  * - Y-axis: Story levels from bottom to top
  * - X-axis: Displacement magnitude (inches)
- * - Bars for X (red), Y (rose), Z (blue) components
- * - Line for overall magnitude (amber)
+ * - Bars for X (red) and Y (rose) components
  *
  * DATA SOURCES:
  * - Story order: animationData.metadata.storyOrder
@@ -21,7 +20,7 @@
  *
  * UNITS:
  * - Displacement: inches
- * - Elevation: inches
+ * - Elevation: feet
  *
  * IMPORTANCE:
  * Helps engineers understand how displacement varies across building height,
@@ -37,7 +36,7 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import type { EChartsOption } from "echarts";
 import { getMetricKeyColor } from "@/lib/metrics";
-import { formatFixed3 } from "@/lib/utils";
+import { formatFixed3, formatStoryLabel } from "@/lib/utils";
 import { useViewStore } from "@/state";
 
 export function FloorDisplacementChart() {
@@ -47,16 +46,14 @@ export function FloorDisplacementChart() {
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
   const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
   const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
-  const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
-  const displacementMagColor = getMetricKeyColor("displacementMag", metricPaletteOverrides);
-
   const xAxisMax = useMemo(() => {
     const maxDisp = animationData.precomputed.maxDisplacement;
-    return Math.max(maxDisp * 1.2, 0.1);
+    return Math.max(maxDisp, 0.1);
   }, [animationData.precomputed.maxDisplacement]);
 
   const chartData = useMemo(() => {
-    const { stories, storyHeights } = animationData.metadata;
+    const { stories } = animationData.metadata;
+    const { storyElevations } = animationData.precomputed;
     const { displacementLin } = animationData;
     const frameData = displacementLin.atFrame(frameIndex);
 
@@ -67,36 +64,28 @@ export function FloorDisplacementChart() {
       elevationIn: number;
       avgX: number;
       avgY: number;
-      avgZ: number;
-      avgMag: number;
     }> = [];
 
     visibleStories.forEach((storyId) => {
       const nodes = stories[storyId] || [];
-      const elevationIn = storyHeights[storyId] || 0;
+      const elevationIn = storyElevations[storyId] || 0;
 
       let sumX = 0,
-        sumY = 0,
-        sumZ = 0;
+        sumY = 0;
       nodes.forEach((nodeIdx) => {
         const pos = frameData.at(nodeIdx);
         sumX += pos[0];
         sumY += pos[1];
-        sumZ += pos[2];
       });
       const count = nodes.length || 1;
       const avgX = sumX / count;
       const avgY = sumY / count;
-      const avgZ = sumZ / count;
-      const avgMag = Math.sqrt(avgX ** 2 + avgY ** 2 + avgZ ** 2);
 
       storyData.push({
         story: storyId,
         elevationIn,
         avgX,
         avgY,
-        avgZ,
-        avgMag,
       });
     });
 
@@ -117,16 +106,14 @@ export function FloorDisplacementChart() {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
           const data = chartData[params[0].dataIndex];
           return `
-            <div style="font-weight: 600; margin-bottom: 6px;">Story ${data.story} (${data.elevationIn.toFixed(0)} in)</div>
+            <div style="font-weight: 600; margin-bottom: 6px;">${formatStoryLabel(data.story, data.elevationIn)}</div>
             <div>X: ${data.avgX.toFixed(4)} in</div>
             <div>Y: ${data.avgY.toFixed(4)} in</div>
-            <div>Z: ${data.avgZ.toFixed(4)} in</div>
-            <div>Mag: ${data.avgMag.toFixed(4)} in</div>
           `;
         },
       },
       legend: {
-        data: ["X", "Y", "Z", "Magnitude"],
+        data: ["X", "Y"],
         right: 10,
         top: 0,
         textStyle: { fontSize: 11 },
@@ -157,11 +144,11 @@ export function FloorDisplacementChart() {
       },
       yAxis: {
         type: "category",
-        name: "Story / Elevation (in)",
+        name: "Story",
         nameLocation: "middle",
-        nameGap: 52,
+        nameGap: 44,
         nameTextStyle: { fontSize: 11, color: "#4b5563" },
-        data: chartData.map((d) => `${d.story} (${d.elevationIn.toFixed(0)} in)`),
+        data: chartData.map((d) => formatStoryLabel(d.story, d.elevationIn)),
         axisLine: { lineStyle: { color: "#d1d5db" } },
         axisLabel: { color: "#374151", fontSize: 10, fontWeight: 500 },
         axisTick: { show: false },
@@ -183,27 +170,10 @@ export function FloorDisplacementChart() {
           barGap: "0%",
           barCategoryGap: "20%",
         },
-        {
-          name: "Z",
-          type: "bar",
-          data: chartData.map((d) => d.avgZ),
-          itemStyle: { color: displacementZColor, opacity: 0.8 },
-          barGap: "0%",
-          barCategoryGap: "20%",
-        },
-        {
-          name: "Magnitude",
-          type: "line",
-          data: chartData.map((d) => d.avgMag),
-          lineStyle: { color: displacementMagColor, width: 2 },
-          symbol: "circle",
-          symbolSize: 6,
-          itemStyle: { color: displacementMagColor },
-        },
       ],
       animation: false,
     };
-  }, [chartData, displacementMagColor, displacementXColor, displacementYColor, displacementZColor, xAxisMax]);
+  }, [chartData, displacementXColor, displacementYColor, xAxisMax]);
 
   return (
     <div className="flex h-full w-full flex-col bg-white">
@@ -216,7 +186,7 @@ export function FloorDisplacementChart() {
         <span className="text-neutral-300">•</span>
         <span>X-axis: in</span>
         <span className="text-neutral-300">•</span>
-        <span>Story labels include elevation (in)</span>
+        <span>Story labels use interstory naming with floor elevation</span>
       </div>
 
       <div className="min-h-0 w-full flex-1">

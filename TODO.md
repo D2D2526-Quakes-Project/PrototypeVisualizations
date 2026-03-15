@@ -272,7 +272,7 @@
 
 ### 9.1 UI Improvements
 
-- [ ] Statistics panel needs indicate which values change based on current frame and which are static
+- [x] Statistics panel needs indicate which values change based on current frame and which are static
 - [ ] Statistics panel should show more of the precomputed values
 - [ ] Expand `Statistics` panel with maximum inter-story drift and other derived summary metrics
 - [ ] Remove all “magnitude” rows/labels from `Statistics`; replace GM Magnitude with peak ground acceleration (PGA)
@@ -556,11 +556,11 @@ _Last Updated: February 2026_
 ### 20.7 ISD Graph
 
 - [x] Change Y axis labels to show floor elevation not story height (e.g., "Floor 6 (85ft)" instead of "6 (13ft)")
-- [ ] Make interstory drift values non-negative (`ISD` should not show negative values)
-- [ ] Update interstory drift chart floor labels
+- [x] Make interstory drift values non-negative (`ISD` should not show negative values)
+- [x] Update interstory drift chart floor labels
   - Remove `Floor` prefix
   - Render numeric floor names as ordinals (e.g., `1st`, `5th`, `11th`) and preserve existing non-numeric floor labels
-- [ ] Make Floor Displacement Y-axis floor labels match interstory drift chart format (same floor naming and number formatting)
+- [x] Make Floor Displacement Y-axis floor labels match interstory drift chart format (same floor naming and number formatting)
 
 ### 20.8 Node Interaction
 
@@ -583,9 +583,9 @@ _Last Updated: February 2026_
 
 ### 20.11 Performance Level
 
-- [ ] Remove "performance level" in hinges
+- [x] Remove "performance level" in hinges
 - [ ] Preserve and expose hinge Performance Level from source data
-- [ ] Default Hinge Distribution to performance level 1 and remove its performance-level dropdown
+- [x] Default Hinge Distribution to performance level 1 and remove its performance-level dropdown
 
 ### 20.12 Precision & Display
 
@@ -609,7 +609,7 @@ _Last Updated: February 2026_
 ### 20.16 Heatmap & Charts
 
 - [ ] Improve heatmap communication (users think it's "spatial")
-- [ ] Remove `StoryDrift` heatmap from the application
+- [x] Remove `StoryDrift` heatmap from the application
 - [ ] Consider continuous time instead of discrete grid for heatmap
 - [ ] Add charts showing all floors with line chart per floor for same metrics like ISD
 
@@ -680,7 +680,7 @@ _Last Updated: February 2026_
 - [x] Delete the duplicate Hinge Performance Panel
 - [x] All Displacement Thresholds should be merged into one "Displacement Threshold" value instead of separate per MagXYZ
 - [x] Generalize threshold sharing so metric families use config-driven shared thresholds and the threshold panel renders unique threshold controls
-- [ ] Hinge Distribution panel redesign
+- [x] Hinge Distribution panel redesign
   - Remove top summary boxes/cards (filtered rows, P99s, and the other eight summary values)
   - Rename chart Y-axis from "hinge rows" to "hinge number"; use "number of hinges" as supporting label copy
   - Add slider for histogram bin count

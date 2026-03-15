@@ -110,9 +110,10 @@ export interface PeakValuesPanelState {
 }
 
 export interface HingeDistributionPanelState {
-  metric: string;
   stepType: string;
-  performanceLevel: number | "All";
+  binCount: number;
+  logScale: boolean;
+  clipPercentile: number;
 }
 
 export interface HingeHotspotsPanelState {
@@ -390,14 +391,6 @@ function getDriftAnalysisDefaultState(layout?: SerializedDockview | null): AppSt
         visibleCorners: ["NW", "NE", "SW", "SE"],
       },
     },
-    "story-drift-heatmap": {
-      type: "storyDriftHeatmap",
-      panelId: "story-drift-heatmap",
-      state: {
-        selectedCorners: ["Max"],
-        resolution: 200,
-      },
-    },
   };
 
   return {
@@ -422,14 +415,6 @@ function getAccelerationReviewDefaultState(layout?: SerializedDockview | null): 
       panelId: "timeline",
       state: {
         selectedKeys: ["x", "y", "magnitude", "avgAccelerationX", "avgAccelerationY", "avgAccelerationMag"],
-      },
-    },
-    "story-drift-heatmap": {
-      type: "storyDriftHeatmap",
-      panelId: "story-drift-heatmap",
-      state: {
-        selectedCorners: ["Max"],
-        resolution: 100,
       },
     },
   };
@@ -484,14 +469,6 @@ function getDamageScreeningDefaultState(layout?: SerializedDockview | null): App
       panelId: "interstory-drift-chart",
       state: {
         visibleCorners: ["NW", "NE", "SW", "SE"],
-      },
-    },
-    "story-drift-heatmap": {
-      type: "storyDriftHeatmap",
-      panelId: "story-drift-heatmap",
-      state: {
-        selectedCorners: ["NW", "NE", "SW", "SE"],
-        resolution: 200,
       },
     },
   };
@@ -586,9 +563,10 @@ export function getDefaultPeakValuesPanelState(): PeakValuesPanelState {
 
 export function getDefaultHingeDistributionPanelState(): HingeDistributionPanelState {
   return {
-    metric: "criticalDcr",
     stepType: "All",
-    performanceLevel: "All",
+    binCount: 24,
+    logScale: false,
+    clipPercentile: 95,
   };
 }
 

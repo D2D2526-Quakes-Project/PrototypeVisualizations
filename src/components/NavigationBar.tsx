@@ -177,8 +177,8 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
     };
   }, []);
 
-  const profileKindLabel =
-    activeProfile?.kind === "system" ? "default" : activeProfile?.kind === "ephemeral" ? "session" : "user";
+  // const profileKindLabel =
+  //   activeProfile?.kind === "system" ? "default" : activeProfile?.kind === "ephemeral" ? "session" : "user";
 
   const optionalDatasetStates = useMemo(
     () => OPTIONAL_DATASET_KEYS.map((key) => datasetStates[key]).filter((state) => state.available),
@@ -338,10 +338,10 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
           </MenubarMenu>
         </Menubar>
 
-        <div className="truncate text-sm font-medium text-neutral-700">
+        {/* <div className="truncate text-sm font-medium text-neutral-700">
           Profile: {activeProfile ? activeProfile.name : "Default View"}
           {activeProfile ? <span className="ml-2 text-xs text-neutral-500">({profileKindLabel})</span> : null}
-        </div>
+        </div> */}
       </div>
 
       <div className="flex justify-center py-1">

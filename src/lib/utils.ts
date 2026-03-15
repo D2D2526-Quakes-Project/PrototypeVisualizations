@@ -71,3 +71,30 @@ export function stringToNumber(str: string): number {
   }
   return hash;
 }
+
+export function getOrdinalSuffix(value: number): string {
+  const absValue = Math.abs(value);
+  const lastTwo = absValue % 100;
+  if (lastTwo >= 11 && lastTwo <= 13) {
+    return "th";
+  }
+  switch (absValue % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
+
+export function formatStoryLabel(storyId: string, elevationIn: number): string {
+  const trimmed = storyId.trim();
+  const floorNumber = Number(trimmed);
+  const isNumericInteger = Number.isInteger(floorNumber) && /^[-+]?\d+$/.test(trimmed);
+  const storyLabel = isNumericInteger ? `${floorNumber}${getOrdinalSuffix(floorNumber)}` : storyId;
+  const elevationFt = elevationIn / 12;
+  return `${storyLabel} (${elevationFt.toFixed(0)} ft)`;
+}

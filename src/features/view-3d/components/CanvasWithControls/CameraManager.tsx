@@ -64,6 +64,7 @@ export function CameraManager({ isOrthographic, enableSmoothing, enablePan }: Ca
   useFrame(() => {
     const controls = orbitControlsRef.current;
     if (controls) {
+      controls.object.up.set(0, 0, 1);
       stableTarget.copy(controls.target);
     }
   });

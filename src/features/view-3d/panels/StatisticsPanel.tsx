@@ -139,7 +139,7 @@ export function StatisticsPanel() {
     const avgY = sumY / nodeCount;
     const avgZ = sumZ / nodeCount;
 
-    const gm = groundMotion.at(frameIndex) ?? 0;
+    const gm = groundMotion.at(frameIndex) ?? ([0, 0, 0] as const);
     const gmMag = Math.sqrt(gm[0] ** 2 + gm[1] ** 2 + gm[2] ** 2);
 
     return {
@@ -179,7 +179,6 @@ export function StatisticsPanel() {
         <span>Displacement/velocity/acceleration in in, in/s, in/s²</span>
         <span className="text-neutral-300">•</span>
         <span>Ground motion in g</span>
-        <span className="text-neutral-300">•</span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto p-3">

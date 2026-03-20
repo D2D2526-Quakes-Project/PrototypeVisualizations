@@ -39,6 +39,7 @@ Per-panel state currently includes:
 - Histogram chart axis/metric choices
 - Data table page
 - Peak values table sort
+- Peak response time search/sort/detail toggles
 - Hinge distribution filters (metric / step type / performance level)
 - Hinge hotspots step filter
 

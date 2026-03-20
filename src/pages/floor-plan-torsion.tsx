@@ -200,7 +200,8 @@ export function FloorPlanTorsion() {
             <div>
               <h2 className="text-xl font-bold">Floor Torsion</h2>
               <p className="text-sm text-neutral-600">
-                Top-down floor rotation by story. Colors and previews show signed torsion rotation in radians (rad).
+                Top-down floor rotation by story in the X-Y plan. Colors and previews show signed torsion rotation in
+                radians (rad).
               </p>
             </div>
 
@@ -248,7 +249,7 @@ export function FloorPlanTorsion() {
               <div className="mt-2 rounded border border-neutral-200 bg-neutral-50 p-2">
                 <div className="mb-1 flex items-center justify-between text-[10px] text-neutral-600">
                   <span>Rotation (rad)</span>
-                  <span>Frame {frameIndex}</span>
+                  <span>Frame {frameIndex + 1}</span>
                 </div>
                 <div
                   className="h-2 rounded border border-neutral-200"
@@ -261,7 +262,7 @@ export function FloorPlanTorsion() {
                   <span>{maxAbsRotation.toFixed(6)}</span>
                 </div>
                 <div className="mt-1 text-[10px] text-neutral-500">
-                  Previews include X/Y plan axes. 3D panes are labeled by viewing plane.
+                  Previews include X/Y plan axes in inches (in). 3D panes are labeled by viewing plane.
                 </div>
               </div>
             </div>
@@ -288,7 +289,7 @@ export function FloorPlanTorsion() {
                           </span>
                           <span className="text-neutral-500">|Rotation|</span>
                           <span className="text-right font-mono text-neutral-700">
-                            {Math.abs(row.rotationRad).toFixed(6)}
+                            {Math.abs(row.rotationRad).toFixed(6)} rad
                           </span>
                         </div>
                       </div>

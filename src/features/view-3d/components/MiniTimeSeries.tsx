@@ -49,7 +49,7 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
           if (!point.value || !Array.isArray(point.value)) return "";
           const time = point.value[0] as number;
           const value = point.value[1] as number;
-          return `<div style="font-weight:500;">${value.toFixed(4)} ${unit}</div><div style="color:#9ca3af;">@ ${time.toFixed(3)}s</div>`;
+          return `<div style="font-weight:500;">${value.toFixed(4)} ${unit}</div><div style="color:#9ca3af;">@ ${time.toFixed(3)} s</div>`;
         },
       },
       grid: {
@@ -66,7 +66,7 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
         axisLabel: {
           color: "#9ca3af",
           fontSize: 8,
-          formatter: (v: number) => `${v.toFixed(1)}s`,
+          formatter: (v: number) => `${v.toFixed(1)} s`,
         },
         splitLine: { show: false },
       },
@@ -161,8 +161,8 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
         </div>
       </div>
       <div className="mt-0.5 flex justify-between text-[9px] text-neutral-400">
-        <span>0s</span>
-        <span>{chartData.timeRange.toFixed(1)}s</span>
+        <span>0 s</span>
+        <span>{chartData.timeRange.toFixed(1)} s</span>
       </div>
     </div>
   );

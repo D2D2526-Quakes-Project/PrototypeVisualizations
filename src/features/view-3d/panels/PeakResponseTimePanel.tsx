@@ -1,7 +1,10 @@
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useMemo, useState } from "react";
+import { getDefaultPeakResponseTimePanelState } from "@/features/view-3d/lib/statePersistence";
+import { useEffect, useMemo, useState } from "react";
 import { formatHex, interpolate } from "culori";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import type { IDockviewPanelProps } from "dockview";
+import { useViewStore } from "@/state";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue400 = formatHex("oklch(70.7% 0.165 254.624)")!;
@@ -65,17 +68,34 @@ const SortCaret = ({ active }: { active: boolean }) => (
 
 const PEAK_DRIFT_LEGEND = `linear-gradient(90deg, ${blue900} 0%, ${blue400} 25%, ${white} 50%, ${red400} 75%, ${red900} 100%)`;
 
-export function PeakResponseTimePanel() {
+function sanitizeSortKey(value: unknown): "story" | "elev" | "maxDrift" | "maxTime" | "corner" {
+  return value === "story" || value === "elev" || value === "maxDrift" || value === "maxTime" || value === "corner"
+    ? value
+    : "maxDrift";
+}
+
+function sanitizeSortDir(value: unknown): "asc" | "desc" {
+  return value === "asc" || value === "desc" ? value : "desc";
+}
+
+export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
+  const setPanelState = useViewStore((s) => s.setPanelState);
+  const panelId = api?.id ?? "peak-response-time";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultPeakResponseTimePanelState();
+  const savedState = savedPanelState?.type === "peakResponseTime" ? savedPanelState.state : defaultState;
   const storyOrderIndex = useMemo(
     () => new Map(animationData.metadata.storyOrder.map((storyId, index) => [storyId, index] as const)),
     [animationData.metadata.storyOrder]
   );
 
-  const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<"story" | "elev" | "maxDrift" | "maxTime" | "corner">("maxDrift");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [showCornerDetails, setShowCornerDetails] = useState(true);
+  const [query, setQuery] = useState(() => (typeof savedState.query === "string" ? savedState.query : ""));
+  const [sortKey, setSortKey] = useState<"story" | "elev" | "maxDrift" | "maxTime" | "corner">(() =>
+    sanitizeSortKey(savedState.sortKey)
+  );
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(() => sanitizeSortDir(savedState.sortDir));
+  const [showCornerDetails, setShowCornerDetails] = useState(() => savedState.showCornerDetails !== false);
 
   const { rows, maxDriftOverall, duration } = useMemo(() => {
     const { storyOrder, storyHeights, frameCount, dt } = animationData.metadata;
@@ -209,6 +229,10 @@ export function PeakResponseTimePanel() {
     }
   }
 
+  useEffect(() => {
+    setPanelState(panelId, "peakResponseTime", { query, sortKey, sortDir, showCornerDetails });
+  }, [panelId, query, setPanelState, showCornerDetails, sortDir, sortKey]);
+
   return (
     <div className="flex h-full w-full flex-col bg-white">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
@@ -247,7 +271,7 @@ export function PeakResponseTimePanel() {
                 <div className="mt-1 text-[10px] text-neutral-500">
                   Top story: <span className="font-medium text-neutral-700">{insights.topStory.story}</span> (
                   {insights.topStory.maxCorner},{" "}
-                  <span className="tabular-nums">{fmtCornerTime(insights.topStory.maxTime)}s</span>)
+                  <span className="tabular-nums">{fmtCornerTime(insights.topStory.maxTime)} s</span>)
                 </div>
               )}
             </div>
@@ -268,7 +292,7 @@ export function PeakResponseTimePanel() {
                 />
               </div>
               <div className="mt-1 text-[10px] text-neutral-500">
-                Duration: <span className="tabular-nums">{duration.toFixed(2)}s</span>
+                Duration: <span className="tabular-nums">{duration.toFixed(2)} s</span>
               </div>
             </div>
 
@@ -279,7 +303,7 @@ export function PeakResponseTimePanel() {
                   <>
                     Earliest: <span className="font-medium">{insights.earliest.story}</span>{" "}
                     <span className="text-neutral-400">({insights.earliest.maxCorner})</span>{" "}
-                    <span className="tabular-nums">{fmtCornerTime(insights.earliest.maxTime)}s</span>
+                    <span className="tabular-nums">{fmtCornerTime(insights.earliest.maxTime)} s</span>
                   </>
                 ) : (
                   "—"
@@ -290,7 +314,7 @@ export function PeakResponseTimePanel() {
                   <>
                     Latest: <span className="font-medium">{insights.latest.story}</span>{" "}
                     <span className="text-neutral-400">({insights.latest.maxCorner})</span>{" "}
-                    <span className="tabular-nums">{fmtCornerTime(insights.latest.maxTime)}s</span>
+                    <span className="tabular-nums">{fmtCornerTime(insights.latest.maxTime)} s</span>
                   </>
                 ) : (
                   "—"
@@ -403,7 +427,7 @@ export function PeakResponseTimePanel() {
                               className={`flex items-center gap-2 rounded-md border px-2 py-1 ${
                                 isMax ? "border-neutral-400 bg-white" : "border-neutral-200 bg-white/70"
                               }`}
-                              title={`${c} • Drift ${d.drift.toFixed(4)}% • Time ${d.time.toFixed(3)}s • Frame ${d.frame + 1}`}>
+                              title={`${c} • Drift ${d.drift.toFixed(4)}% • Time ${d.time.toFixed(3)} s • Frame ${d.frame + 1}`}>
                               <span
                                 className="h-2.5 w-2.5 rounded-sm border border-black/10"
                                 style={{ background: cBg }}
@@ -414,7 +438,7 @@ export function PeakResponseTimePanel() {
                               </span>
                               <span className="text-[11px] text-neutral-800 tabular-nums">{d.drift.toFixed(3)}%</span>
                               <span className="text-[11px] text-neutral-500 tabular-nums">
-                                {fmtCornerTime(d.time)}s
+                                {fmtCornerTime(d.time)} s
                               </span>
                             </div>
                           );
@@ -423,7 +447,7 @@ export function PeakResponseTimePanel() {
                     ) : (
                       <div className="text-[11px] text-neutral-500">
                         <span className="font-medium text-neutral-700">{r.maxCorner}</span> is max •{" "}
-                        {r.maxDrift.toFixed(3)}% at {fmtCornerTime(r.maxTime)}s
+                        {r.maxDrift.toFixed(3)}% at {fmtCornerTime(r.maxTime)} s
                       </div>
                     )}
                   </div>

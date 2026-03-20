@@ -118,7 +118,6 @@ function buildHingeHistogramOption(
         data: yData,
         itemStyle: { color: "#2563eb", borderRadius: [3, 3, 0, 0] },
         barMaxWidth: 20,
-        smooth: false,
       },
     ],
     graphic:
@@ -187,14 +186,6 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
     });
   }, [binCount, clipPercentile, effectiveStepType, logScale, panelId, setPanelState]);
 
-  if (!hingeData) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-white p-4 text-sm text-neutral-500">
-        Hinge data not loaded for this simulation.
-      </div>
-    );
-  }
-
   const allBinControls = useMemo(() => {
     return [
       {
@@ -225,6 +216,14 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
       },
     ];
   }, [binCount, clipPercentile, effectiveStepType, logScale, panelId, setPanelState]);
+
+  if (!hingeData) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-white p-4 text-sm text-neutral-500">
+        Hinge data not loaded for this simulation.
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-full flex-col bg-white">

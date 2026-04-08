@@ -13,13 +13,7 @@ import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo } from "react";
 
-const HINGE_METRICS: HingeMetricKey[] = [
-  "criticalDcr",
-  "maxPosDeformDCRatio",
-  "maxNegDeformDCRatio",
-  "r3Abs",
-  "m3Abs",
-];
+const HINGE_METRICS: HingeMetricKey[] = ["criticalDcr", "maxPosDeformDCRatio", "maxNegDeformDCRatio", "r3Abs", "m3Abs"];
 
 const DEFAULT_PERFORMANCE_LEVEL = 1;
 
@@ -148,7 +142,10 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   const defaultState = getDefaultHingeDistributionPanelState();
   const savedState = savedPanelState?.type === "hingeDistribution" ? savedPanelState.state : defaultState;
 
-  const binCount = useMemo(() => (typeof savedState.binCount === "number" ? Math.max(6, savedState.binCount) : 24), [savedState.binCount]);
+  const binCount = useMemo(
+    () => (typeof savedState.binCount === "number" ? Math.max(6, savedState.binCount) : 24),
+    [savedState.binCount]
+  );
   const logScale = useMemo(() => Boolean(savedState.logScale), [savedState.logScale]);
   const clipPercentile = useMemo(
     () => Math.min(100, Math.max(60, Number(savedState.clipPercentile) || 95)),
@@ -271,15 +268,14 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
         {rows.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm text-neutral-500">No hinge rows available.</div>
+          <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+            No hinge rows available.
+          </div>
         ) : (
           <div className="space-y-3">
             {HINGE_METRICS.map((metricKey) => {
               const histogram = histogramByMetric.get(metricKey) ?? null;
               const option = buildHingeHistogramOption(histogram, metricKey, clipPercentile, logScale);
-              const counts = histogram ? histogram.bins.map((bin) => bin.count) : [];
-              const clipCount = counts.length > 0 ? getClipCountFromPercentile(counts, clipPercentile) : 0;
-              const hasClippedData = counts.some((value) => value > clipCount);
               const metricLabel = HINGE_METRIC_LABELS[metricKey];
               const metricUnit = HINGE_METRIC_UNITS[metricKey];
 
@@ -293,13 +289,12 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
                     <div className="text-[10px] text-neutral-500">Number of hinges</div>
                   </div>
                   <div className="h-56">
-                    <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                    <ReactECharts
+                      option={option}
+                      style={{ height: "100%", width: "100%" }}
+                      opts={{ renderer: "svg" }}
+                    />
                   </div>
-                  {histogram && hasClippedData && (
-                    <div className="mt-2 text-[10px] text-neutral-500">
-                      High bins are clipped above {clipCount.toLocaleString()} for visual scaling only.
-                    </div>
-                  )}
                 </div>
               );
             })}

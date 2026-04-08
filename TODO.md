@@ -733,16 +733,16 @@ _Last Updated: February 2026_
 - [ ] Data Explorer should be virtualized list so there are no pages, just infinite scroll
 - [ ] Add the NW, NE, SW, SE, N, E, S, W directions colors to the metrics.ts so their colors are constant for use in graphs and in the 3d scene
 - [ ] Clicking the colorbar box in the collapsed view menu should open the view menu to the colorbar option dropdown
-- [ ] Mark nodepanel MiniTimeSeries with dotted line at the peak time
-- [ ] NodePanel graph toggled are not implemented. (`<ChartNoAxesCombinedIcon className="size-4 text-blue-500"></ChartNoAxesCombinedIcon>`). Needs to sotre the boolean in the global data for persistance and sharing. Graph toggle buttons and visibility states need to be applied to all metrics in the NodePanel
+- [x] Mark nodepanel MiniTimeSeries with dotted line at the peak time
+- [x] NodePanel graph toggled are not implemented. (`<ChartNoAxesCombinedIcon className="size-4 text-blue-500"></ChartNoAxesCombinedIcon>`). Needs to sotre the boolean in the global data for persistance and sharing. Graph toggle buttons and visibility states need to be applied to all metrics in the NodePanel
 
 ---
 
 ## 25. Known Issues
 
 - [ ] When the view menu is docked, the ctrl+drag selection box is visually offset
-- [ ] Optional datasets: Velocity (Translational) & (Rotational), & Acceleration (Translational) & (Rotational) will fail to load if previously loaded. I think it might be a cache issue because clicking "retry" will fail again instantly.
+- [x] Optional datasets: Velocity (Translational) & (Rotational), & Acceleration (Translational) & (Rotational) will fail to load if previously loaded. I think it might be a cache issue because clicking "retry" will fail again instantly.
 - [x] NodePanel doesn't have peak drift time. Currently is `const peakTime = 0;`.
-- [ ] FloorPanel doesn't have peak velocity, acceleration. Doesn't have timeseries for acceleration or drifts
+- [x] FloorPanel doesn't have peak velocity, acceleration. Doesn't have timeseries for acceleration or drifts
 
 _Last Updated: March 2026_

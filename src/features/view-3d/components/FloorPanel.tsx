@@ -455,7 +455,24 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
       zValues.push(frameZ / nodeIds.length);
     }
 
-    return { times, magnitudes, xValues, yValues, zValues };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return {
+      times,
+      magnitudes,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        magnitudes: getPeakTime(magnitudes),
+        x: getPeakTime(xValues),
+        y: getPeakTime(yValues),
+        z: getPeakTime(zValues),
+      },
+    };
   }, [nodeIds, animationData.metadata.frameCount, animationData.metadata.dt, animationData.displacementLin]);
 
   const velocityTimeSeries = useMemo(() => {
@@ -485,7 +502,24 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
       zValues.push(frameZ / nodeIds.length);
     }
 
-    return { times, magnitudes, xValues, yValues, zValues };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return {
+      times,
+      magnitudes,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        magnitudes: getPeakTime(magnitudes),
+        x: getPeakTime(xValues),
+        y: getPeakTime(yValues),
+        z: getPeakTime(zValues),
+      },
+    };
   }, [animationData.velocityLin, nodeIds, animationData.metadata.frameCount, animationData.metadata.dt]);
 
   const accelerationTimeSeries = useMemo(() => {
@@ -515,7 +549,24 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
       zValues.push(frameZ / nodeIds.length);
     }
 
-    return { times, magnitudes, xValues, yValues, zValues };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return {
+      times,
+      magnitudes,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        magnitudes: getPeakTime(magnitudes),
+        x: getPeakTime(xValues),
+        y: getPeakTime(yValues),
+        z: getPeakTime(zValues),
+      },
+    };
   }, [animationData.accelerationLin, nodeIds, animationData.metadata.frameCount, animationData.metadata.dt]);
 
   const driftTimeSeries = useMemo(() => {
@@ -537,7 +588,24 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
       seValues.push(drifts[3]);
     }
 
-    return { times, nwValues, neValues, swValues, seValues };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return {
+      times,
+      nwValues,
+      neValues,
+      swValues,
+      seValues,
+      peakTimes: {
+        nw: getPeakTime(nwValues),
+        ne: getPeakTime(neValues),
+        sw: getPeakTime(swValues),
+        se: getPeakTime(seValues),
+      },
+    };
   }, [animationData, storyId]);
 
   return (
@@ -772,6 +840,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   currentValue={displacementData.current.x}
                   unit="in"
                   label="Displacement X"
+                  peakTime={displacementTimeSeries.peakTimes.x}
                 />
               )}
               {nodePanelGraphVisibility[`dispY`] && (
@@ -782,6 +851,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   currentValue={displacementData.current.y}
                   unit="in"
                   label="Displacement Y"
+                  peakTime={displacementTimeSeries.peakTimes.y}
                 />
               )}
               {nodePanelGraphVisibility[`dispZ`] && (
@@ -792,6 +862,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   currentValue={displacementData.current.z}
                   unit="in"
                   label="Displacement Z"
+                  peakTime={displacementTimeSeries.peakTimes.z}
                 />
               )}
             </div>
@@ -878,6 +949,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={velocityData.current.x}
                     unit="in/s"
                     label="Velocity X"
+                    peakTime={velocityTimeSeries.peakTimes.x}
                   />
                 )}
                 {nodePanelGraphVisibility[`velY`] && (
@@ -888,6 +960,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={velocityData.current.y}
                     unit="in/s"
                     label="Velocity Y"
+                    peakTime={velocityTimeSeries.peakTimes.y}
                   />
                 )}
                 {nodePanelGraphVisibility[`velZ`] && (
@@ -898,6 +971,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={velocityData.current.z}
                     unit="in/s"
                     label="Velocity Z"
+                    peakTime={velocityTimeSeries.peakTimes.z}
                   />
                 )}
               </div>
@@ -985,6 +1059,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={accelerationData.current.x}
                     unit="in/s²"
                     label="Acceleration X"
+                    peakTime={accelerationTimeSeries.peakTimes.x}
                   />
                 )}
                 {nodePanelGraphVisibility[`accY`] && (
@@ -995,6 +1070,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={accelerationData.current.y}
                     unit="in/s²"
                     label="Acceleration Y"
+                    peakTime={accelerationTimeSeries.peakTimes.y}
                   />
                 )}
                 {nodePanelGraphVisibility[`accZ`] && (
@@ -1005,6 +1081,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={accelerationData.current.z}
                     unit="in/s²"
                     label="Acceleration Z"
+                    peakTime={accelerationTimeSeries.peakTimes.z}
                   />
                 )}
               </div>
@@ -1044,6 +1121,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={cornerDrifts.NW?.current ?? 0}
                     unit="%"
                     label="Drift NW"
+                    peakTime={driftTimeSeries.peakTimes.nw}
                   />
                 )}
                 {nodePanelGraphVisibility[`driftNE`] && (
@@ -1054,6 +1132,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={cornerDrifts.NE?.current ?? 0}
                     unit="%"
                     label="Drift NE"
+                    peakTime={driftTimeSeries.peakTimes.ne}
                   />
                 )}
                 {nodePanelGraphVisibility[`driftSW`] && (
@@ -1064,6 +1143,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={cornerDrifts.SW?.current ?? 0}
                     unit="%"
                     label="Drift SW"
+                    peakTime={driftTimeSeries.peakTimes.sw}
                   />
                 )}
                 {nodePanelGraphVisibility[`driftSE`] && (
@@ -1074,6 +1154,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     currentValue={cornerDrifts.SE?.current ?? 0}
                     unit="%"
                     label="Drift SE"
+                    peakTime={driftTimeSeries.peakTimes.se}
                   />
                 )}
               </div>

@@ -279,7 +279,24 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       yValues.push(rot[1]);
       zValues.push(rot[2]);
     }
-    return { times, magnitudes, xValues, yValues, zValues };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return {
+      times,
+      magnitudes,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        magnitudes: getPeakTime(magnitudes),
+        x: getPeakTime(xValues),
+        y: getPeakTime(yValues),
+        z: getPeakTime(zValues),
+      },
+    };
   }, [animationData.displacementRot, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   // TIME SERIES DATA FOR MINI CHARTS
@@ -298,7 +315,24 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       yValues.push(vel[1]);
       zValues.push(vel[2]);
     }
-    return { times, magnitudes, xValues, yValues, zValues };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return {
+      times,
+      magnitudes,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        magnitudes: getPeakTime(magnitudes),
+        x: getPeakTime(xValues),
+        y: getPeakTime(yValues),
+        z: getPeakTime(zValues),
+      },
+    };
   }, [animationData.velocityLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   const accelerationTimeSeries = useMemo(() => {
@@ -316,7 +350,24 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       yValues.push(acc[1]);
       zValues.push(acc[2]);
     }
-    return { times, magnitudes, xValues, yValues, zValues };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return {
+      times,
+      magnitudes,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        magnitudes: getPeakTime(magnitudes),
+        x: getPeakTime(xValues),
+        y: getPeakTime(yValues),
+        z: getPeakTime(zValues),
+      },
+    };
   }, [animationData.accelerationLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   // DISPLACEMENT TIME SERIES (for mini chart)
@@ -334,7 +385,24 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       yValues.push(disp[1]);
       zValues.push(disp[2]);
     }
-    return { times, magnitudes, xValues, yValues, zValues };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return {
+      times,
+      magnitudes,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        magnitudes: getPeakTime(magnitudes),
+        x: getPeakTime(xValues),
+        y: getPeakTime(yValues),
+        z: getPeakTime(zValues),
+      },
+    };
   }, [animationData.displacementLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
   // STRUCTURAL INFO
@@ -402,7 +470,12 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       times.push(i * animationData.metadata.dt);
       values.push(animationData.precomputed.storyDrift.getStoryDrift(storyIndex, i)[cornerIndex]);
     }
-    return { times, values };
+    const getPeakTime = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
+      return times[maxIdx];
+    };
+    return { times, values, peakTime: getPeakTime(values) };
   }, [storyDrift, animationData, storyInfo, cornerInfo]);
 
   // DISTANCE TRAVELED
@@ -638,6 +711,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   currentValue={currentDispRaw[0]}
                   unit="in"
                   label="Displacement X"
+                  peakTime={displacementTimeSeries.peakTimes.x}
                 />
               )}
               {nodePanelGraphVisibility[`dispY`] && (
@@ -648,6 +722,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   currentValue={currentDispRaw[1]}
                   unit="in"
                   label="Displacement Y"
+                  peakTime={displacementTimeSeries.peakTimes.y}
                 />
               )}
               {nodePanelGraphVisibility[`dispZ`] && (
@@ -658,6 +733,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   currentValue={currentDispRaw[2]}
                   unit="in"
                   label="Displacement Z"
+                  peakTime={displacementTimeSeries.peakTimes.z}
                 />
               )}
             </div>
@@ -759,6 +835,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                       currentValue={currentRotation.rx}
                       unit="rad"
                       label="Rotation X"
+                      peakTime={rotationTimeSeries.peakTimes.x}
                     />
                   )}
                   {nodePanelGraphVisibility[`rotY`] && (
@@ -769,6 +846,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                       currentValue={currentRotation.ry}
                       unit="rad"
                       label="Rotation Y"
+                      peakTime={rotationTimeSeries.peakTimes.y}
                     />
                   )}
                   {nodePanelGraphVisibility[`rotZ`] && (
@@ -779,6 +857,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                       currentValue={currentRotation.rz}
                       unit="rad"
                       label="Rotation Z"
+                      peakTime={rotationTimeSeries.peakTimes.z}
                     />
                   )}
                 </div>
@@ -873,6 +952,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     currentValue={currentVelocity?.x ?? 0}
                     unit="in/s"
                     label="Velocity X"
+                    peakTime={velocityTimeSeries.peakTimes.x}
                   />
                 )}
                 {nodePanelGraphVisibility[`velY`] && (
@@ -883,6 +963,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     currentValue={currentVelocity?.y ?? 0}
                     unit="in/s"
                     label="Velocity Y"
+                    peakTime={velocityTimeSeries.peakTimes.y}
                   />
                 )}
                 {nodePanelGraphVisibility[`velZ`] && (
@@ -893,6 +974,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     currentValue={currentVelocity?.z ?? 0}
                     unit="in/s"
                     label="Velocity Z"
+                    peakTime={velocityTimeSeries.peakTimes.z}
                   />
                 )}
               </div>
@@ -986,6 +1068,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     currentValue={currentAcceleration?.x ?? 0}
                     unit="in/s²"
                     label="Acceleration X"
+                    peakTime={accelerationTimeSeries.peakTimes.x}
                   />
                 )}
                 {nodePanelGraphVisibility[`accY`] && (
@@ -996,6 +1079,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     currentValue={currentAcceleration?.y ?? 0}
                     unit="in/s²"
                     label="Acceleration Y"
+                    peakTime={accelerationTimeSeries.peakTimes.y}
                   />
                 )}
                 {nodePanelGraphVisibility[`accZ`] && (
@@ -1006,6 +1090,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     currentValue={currentAcceleration?.z ?? 0}
                     unit="in/s²"
                     label="Acceleration Z"
+                    peakTime={accelerationTimeSeries.peakTimes.z}
                   />
                 )}
               </div>
@@ -1050,6 +1135,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     currentValue={storyDrift.current}
                     unit="%"
                     label="Story Drift"
+                    peakTime={storyDriftTimeSeries.peakTime}
                   />
                 )}
               </div>

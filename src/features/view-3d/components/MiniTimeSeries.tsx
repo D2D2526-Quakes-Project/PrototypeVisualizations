@@ -10,9 +10,10 @@ interface MiniTimeSeriesProps {
   currentValue: number;
   unit: string;
   label?: string;
+  peakTime: number;
 }
 
-export function MiniTimeSeries({ data, times, color, currentValue, unit, label }: MiniTimeSeriesProps) {
+export function MiniTimeSeries({ data, times, color, currentValue, unit, label, peakTime }: MiniTimeSeriesProps) {
   const { frameIndex } = usePlayback();
   const chartRef = useRef<ReactECharts>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,11 +102,32 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
             color: color,
             opacity: 0.1,
           },
+          markLine: {
+            symbol: "none",
+            animation: false,
+            data: [
+              {
+                xAxis: peakTime,
+              },
+            ],
+            lineStyle: {
+              color: "#6b7280",
+              type: "dotted",
+              width: 1.5,
+            },
+            label: {
+              show: true,
+              formatter: `${peakTime.toFixed(1)}s`,
+              fontSize: 8,
+              color: "#6b7280",
+              position: "end",
+            },
+          },
         },
       ],
       animation: false,
     };
-  }, [chartData, color, unit, label]);
+  }, [chartData, color, unit, label, peakTime]);
 
   useEffect(() => {
     const syncPlayhead = () => {
@@ -156,7 +178,7 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
         />
         <div
           ref={playheadRef}
-          className="pointer-events-none absolute top-0 bottom-5 w-0.5 bg-red-500"
+          className="pointer-events-none absolute top-0 bottom-5 w-0.5 bg-black"
           style={{
             left: "0%",
           }}

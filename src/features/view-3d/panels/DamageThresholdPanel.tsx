@@ -1,10 +1,13 @@
 import { formatHex, interpolate } from "culori";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { Slider } from "@/components/ui/slider";
+import { getMetricsForThreshold, getThresholdConfig, METRIC_CONFIGS } from "@/lib/metrics";
+import { ThresholdSlider } from "../components/CanvasWithControls/ThresholdSlider";
+import { throttle } from "@/lib/utils";
+import { ColorScaleBar } from "../components/CanvasWithControls/ColorScaleBar";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -43,20 +46,18 @@ const DAMAGE_RATIO_LEGEND_GRADIENT = `linear-gradient(90deg, ${blue900} 0%, ${bl
 function ThresholdStatusPill({ currentExceeded, everExceeded }: { currentExceeded: boolean; everExceeded: boolean }) {
   if (currentExceeded) {
     return (
-      <span className="rounded border border-red-300 bg-red-100 px-1.5 py-0.5 text-[10px] text-red-900">
-        Exceeding Now
-      </span>
+      <span className="border border-red-300 bg-red-100 px-1.5 py-0.5 text-[10px] text-red-900">Exceeding Now</span>
     );
   }
   if (everExceeded) {
     return (
-      <span className="rounded border border-yellow-300 bg-yellow-100 px-1.5 py-0.5 text-[10px] text-yellow-900">
+      <span className="border border-yellow-300 bg-yellow-100 px-1.5 py-0.5 text-[10px] text-yellow-900">
         Crossed Earlier
       </span>
     );
   }
   return (
-    <span className="rounded border border-neutral-300 bg-neutral-50 px-1.5 py-0.5 text-[10px] text-neutral-600">
+    <span className="border border-neutral-300 bg-neutral-50 px-1.5 py-0.5 text-[10px] text-neutral-600">
       Not Crossed
     </span>
   );
@@ -69,10 +70,13 @@ export function DamageThresholdPanel() {
   const { visibleFloors } = useFloorVisibility();
   const { thresholds, setThreshold } = useThresholds();
 
+  const isdConfig = getThresholdConfig("interstoryDrift");
+  const isdMetrics = getMetricsForThreshold("interstoryDrift");
   const { storyDrift, peakStoryDrift } = animationData.precomputed;
   const maxDriftThreshold = Math.max(
-    1,
-    Math.ceil(((animationData.precomputed.maxStoryDrift ?? thresholds.interstoryDrift ?? 0.5) * 1.2) / 0.05) * 0.05
+    isdConfig.getPrecomputedMax(animationData.precomputed),
+    thresholds["interstoryDrift"] || 0,
+    1
   );
   const reversedStories = useMemo(
     () => storyOrder.map((storyId, storyIndex) => ({ storyId, storyIndex })).toReversed(),
@@ -163,52 +167,31 @@ export function DamageThresholdPanel() {
     visibleCornerCapacity > 0 ? (visibleDamageSummary.everExceededCorners / visibleCornerCapacity) * 100 : 0;
 
   return (
-    <div className="skinny-scrollbar flex h-full w-full flex-col gap-4 overflow-y-auto p-4">
-      <div>
-        <h2 className="text-xl font-bold">ISD Thresholds</h2>
-        <p className="text-sm text-neutral-600">Set Story drift ratio limits to see potential damage states.</p>
-      </div>
-
+    <div className="flex h-full w-full flex-col gap-4 overflow-y-auto p-4">
       <div className="flex flex-col gap-2">
         <div className="py-1">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold">Warning Threshold</span>
-            <span className="font-mono text-sm">
-              <UnitTooltip interactive={!playing} value={thresholds.interstoryDrift} unit="%" />
-            </span>
+            <span className="font-semibold">ISD Threshold</span>
           </div>
-          <p className="mt-1 text-xs text-neutral-600">
-            Floors and corners are flagged when interstory drift exceeds this percent threshold.
-          </p>
-          <Slider
-            value={[thresholds.interstoryDrift]}
-            min={0}
+          <ThresholdSlider
+            label={isdConfig.label}
+            unit={isdConfig.unit}
             max={maxDriftThreshold}
-            step={0.01}
-            onValueChange={(values) => setThreshold("interstoryDrift", values[0] ?? thresholds.interstoryDrift)}
-            className="mt-3"
-            aria-label="Interstory drift warning threshold percent"
-          />
-          <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-neutral-500">
-            <span>0%</span>
-            <span className="text-right">
-              Max panel range: <UnitTooltip interactive={!playing} value={maxDriftThreshold} unit="%" />
-            </span>
-          </div>
+            tooltip={`Shared threshold for ${isdMetrics.map((metric) => METRIC_CONFIGS[metric].label).join(", ")}`}
+            value={thresholds["interstoryDrift"]}
+            onChange={(value) => setThreshold("interstoryDrift", value)}
+            currentlyUsed></ThresholdSlider>
         </div>
 
+        <div>
+          <ColorScaleBar
+            currentMetric={"interstoryDrift"}
+            thresholdHighlighting={true}
+            thresholds={thresholds}
+            animationData={animationData}
+          />
+        </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-600">
-          <span className="whitespace-nowrap">
-            Visible Stories:{" "}
-            <span className="font-mono text-neutral-800">
-              {visibleDamageSummary.visibleStoryCount.toLocaleString()}
-            </span>
-          </span>
-          <span className="text-neutral-300">•</span>
-          <span className="whitespace-nowrap">
-            Corners: <span className="font-mono text-neutral-800">{visibleCornerCapacity.toLocaleString()}</span>
-          </span>
-          <span className="text-neutral-300">•</span>
           <span className="whitespace-nowrap">
             Current Exceeded:{" "}
             <span className="font-mono text-neutral-800">
@@ -225,35 +208,9 @@ export function DamageThresholdPanel() {
             <span className="text-neutral-500">({everExceededPct.toFixed(1)}%)</span>
           </span>
         </div>
-
-        <div className="pt-0.5">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-600">
-            <span className="whitespace-nowrap">
-              Warning Threshold:{" "}
-              <span className="font-mono text-neutral-800">{thresholds.interstoryDrift.toFixed(2)}%</span>
-            </span>
-            <span className="text-neutral-300">•</span>
-            <span className="whitespace-nowrap">Corner Color = Current Drift / Peak Drift (ratio)</span>
-            <span className="text-neutral-300">•</span>
-            <span className="whitespace-nowrap">Status pills indicate threshold crossing state</span>
-          </div>
-          <div
-            className="mt-1.5 h-2 rounded-sm border border-neutral-200"
-            style={{ background: DAMAGE_RATIO_LEGEND_GRADIENT }}
-            title="Corner tile color is normalized by current drift divided by peak drift for that corner"
-          />
-          <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-neutral-500">
-            <span>-1.0</span>
-            <span>-0.5</span>
-            <span>0.0</span>
-            <span>+0.5</span>
-            <span>+1.0</span>
-          </div>
-        </div>
       </div>
 
       <div>
-        <h3 className="mt-4 text-lg font-bold">Story ISD Summary</h3>
         <div
           className={`mt-2 divide-x divide-neutral-300 rounded border border-neutral-300 bg-neutral-50 text-[11px] text-neutral-600 ${SUMMARY_GRID_CLASS}`}>
           <span className="min-w-0 px-2 py-1 font-semibold">Corner</span>
@@ -322,10 +279,10 @@ export function DamageThresholdPanel() {
                           <span>{corner}</span>
                         </div>
                         <span className="min-w-0 px-2 py-1 text-right font-mono whitespace-nowrap">
-                          <UnitTooltip interactive={!playing} value={current} unit="%" />
+                          <UnitTooltip value={current} unit="%" />
                         </span>
                         <span className="min-w-0 px-2 py-1 text-right font-mono whitespace-nowrap">
-                          <UnitTooltip interactive={!playing} value={peak || 0} unit="%" />
+                          <UnitTooltip value={peak || 0} unit="%" />
                         </span>
                         <div className="flex min-w-0 justify-center px-2 py-1">
                           <ThresholdStatusPill
@@ -335,16 +292,11 @@ export function DamageThresholdPanel() {
                         </div>
                         <div className="min-w-0 px-2 py-1 text-center font-mono">
                           {thresholdFrame !== null ? (
-                            <span className="inline-flex min-w-0 items-center justify-center rounded border border-yellow-300 bg-yellow-100 px-1.5 py-0.5">
-                              <UnitTooltip
-                                interactive={!playing}
-                                value={thresholdFrame * dt}
-                                unit="s"
-                                showConversions={false}
-                              />
+                            <span className="inline-flex min-w-0 items-center justify-center px-1.5 py-0.5">
+                              <UnitTooltip value={thresholdFrame * dt} unit="s" showConversions={false} />
                             </span>
                           ) : (
-                            <span className="inline-flex min-w-0 items-center justify-center rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-neutral-500">
+                            <span className="inline-flex min-w-0 items-center justify-center px-1.5 py-0.5 text-neutral-500">
                               -
                             </span>
                           )}

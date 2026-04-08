@@ -1,38 +1,38 @@
-import DataSources from "@/data/index";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import DataSources from "@/data/index";
+import {
+  getSelectionFromCurrentUrlStateOrParams,
+  OPTIONAL_DATA_LOAD_OPTION_KEYS,
+  type OptionalDataLoadOptions,
+} from "@/features/view-3d/lib/statePersistence";
 import { clearCache, fetchWithProgressAndCache, getProcessedFromCache, saveProcessedToCache } from "@/lib/dataLoader";
 import {
+  buildRequiredSerializedAnimationDataFromRaw,
   createCoreProcessedCacheKey,
   createOptionalProcessedCacheKey,
+  mergeOptionalDatasetIntoAnimationData,
+  rebuildAnimationDataFromSerializedCore,
   type OptionalWorkerRequest,
   type OptionalWorkerResponse,
   type ProcessedCacheRecord,
   type SerializedOptionalDatasetResult,
   type SerializedRequiredAnimationData,
-  buildRequiredSerializedAnimationDataFromRaw,
-  mergeOptionalDatasetIntoAnimationData,
-  rebuildAnimationDataFromSerializedCore,
 } from "@/lib/incrementalData";
 import {
   DATASET_KEYS,
   DATASET_LABELS,
-  OPTIONAL_DATASET_KEYS,
-  REQUIRED_DATASET_KEYS,
   getDatasetAvailability,
   isOptionalDatasetKey,
+  OPTIONAL_DATASET_KEYS,
+  REQUIRED_DATASET_KEYS,
   type DatasetKey,
   type DatasetLoadState,
   type OptionalDatasetKey,
 } from "@/lib/loadingTypes";
 import type { BinaryBuilding, BinarySimulation, BuildingAnimationData, Simulation } from "@/lib/types";
 import { useViewStoreRaw } from "@/state";
-import {
-  getSelectionFromCurrentUrlStateOrParams,
-  OPTIONAL_DATA_LOAD_OPTION_KEYS,
-  type OptionalDataLoadOptions,
-} from "@/features/view-3d/lib/statePersistence";
 import { CheckIcon, ChevronRightIcon, LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -378,8 +378,11 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       building: BinaryBuilding,
       simulation: BinarySimulation,
       key: OptionalDatasetKey,
-      requiredPromise: Promise<SerializedRequiredAnimationData>
+      requiredPromise: Promise<SerializedRequiredAnimationData>,
+      forceRefresh: boolean = false
     ) => {
+      if (sessionIdRef.current !== sessionId) return;
+
       const sourcePath =
         key === "beamData" ? building.beamData : key === "hingeData" ? simulation.hingeData : simulation[key];
       if (!sourcePath) return;
@@ -396,20 +399,25 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         error: null,
       });
 
-      const cached = await getProcessedFromCache<ProcessedCacheRecord<SerializedOptionalDatasetResult>>(cacheKey);
-      if (sessionIdRef.current !== sessionId) return;
+      if (!forceRefresh) {
+        const cached = await getProcessedFromCache<ProcessedCacheRecord<SerializedOptionalDatasetResult>>(cacheKey);
+        if (sessionIdRef.current !== sessionId) return;
 
-      if (cached?.payload) {
-        setAnimationData((current) =>
-          current ? mergeOptionalDatasetIntoAnimationData(current, cached.payload) : current
-        );
-        updateDatasetState(key, {
-          stage: "ready",
-          progress: 100,
-          message: "Loaded from processed cache",
-          error: null,
-        });
-        return;
+        if (cached?.payload) {
+          const payload = cached.payload;
+          if (payload.key && payload.data && payload.data.length > 0) {
+            setAnimationData((current) =>
+              current ? mergeOptionalDatasetIntoAnimationData(current, payload) : current
+            );
+            updateDatasetState(key, {
+              stage: "ready",
+              progress: 100,
+              message: "Loaded from processed cache",
+              error: null,
+            });
+            return;
+          }
+        }
       }
 
       const controller = new AbortController();
@@ -616,6 +624,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
             cornerCount: animationData.precomputed.storyDrift.cornerCount,
           },
           peakStoryDrift: animationData.precomputed.peakStoryDrift,
+          peakStoryDriftFrame: animationData.precomputed.peakStoryDriftFrame,
           peakNodeDisplacement: animationData.precomputed.peakNodeDisplacement,
           peakNodeDisplacementFrame: animationData.precomputed.peakNodeDisplacementFrame,
           peakNodeDisplacementX: animationData.precomputed.peakNodeDisplacementX,

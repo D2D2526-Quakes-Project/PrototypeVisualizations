@@ -10,7 +10,7 @@ export interface Slice extends SliceSelectionState {
 }
 
 interface SliceDockContextType {
-  openSlicePanel: (sliceId: string, storyId: string) => void;
+  openSlicePanel: (storyId: string) => void;
 }
 
 export const SliceDockContext = createContext<SliceDockContextType | undefined>(undefined);
@@ -38,7 +38,7 @@ interface SliceSelectionContextType {
   setYRange: (range: [number, number]) => void;
   setZRange: (range: [number, number]) => void;
   setDockviewApi: (api: DockviewApi) => void;
-  openSlicePanel: (sliceId: string, storyId: string) => void;
+  openSlicePanel: (storyId: string) => void;
 }
 
 const SliceSelectionContext = createContext<SliceSelectionContextType | undefined>(undefined);

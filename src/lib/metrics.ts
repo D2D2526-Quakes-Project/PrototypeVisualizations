@@ -377,6 +377,7 @@ export function formatValue(value: number, decimals: number = 3): string {
     return normalizeFixed(value.toFixed(0));
   }
   if (absValue < 0.001 && absValue !== 0) {
+    return `<0.001`;
     return value.toExponential(Math.min(effectiveDecimals, 1));
   }
   return normalizeFixed(value.toFixed(effectiveDecimals));
@@ -672,7 +673,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     thresholdKey: "displacement",
     label: "Displacement Y",
     unit: UNITS["inches"],
-    defaultPalette: "red",
+    defaultPalette: "rose",
     positiveOnly: false,
     getPrecomputedMax: get("maxDisplacementY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,

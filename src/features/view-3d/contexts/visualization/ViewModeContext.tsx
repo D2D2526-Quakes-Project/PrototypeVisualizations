@@ -5,9 +5,6 @@ import { useCallback } from "react";
 export type ViewMode =
   | "all-nodes"
   | "floor-slabs"
-  | "exterior-only"
-  | "corners-only"
-  | "vertical-connections"
   | "threshold";
 
 interface ViewModeContextType {
@@ -50,16 +47,11 @@ export function useViewMode(): ViewModeContextType {
 
       switch (mode) {
         case "all-nodes":
-        case "exterior-only":
-        case "vertical-connections":
         case "threshold":
           nodes = Array.from({ length: nodeCount }, (_, i) => i);
           break;
         case "floor-slabs":
           nodes = Object.values(metadata.stories).flat();
-          break;
-        case "corners-only":
-          nodes = Object.values(metadata.corners).flat();
           break;
         default:
           nodes = Array.from({ length: nodeCount }, (_, i) => i);

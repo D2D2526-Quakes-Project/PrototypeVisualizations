@@ -1,7 +1,6 @@
 import { getNodeColor as getNodePanelColor } from "@/features/view-3d/components/NodePanel";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { FloorSlabsRenderer } from "@/features/view-3d/components/renderers/FloorSlabsRenderer";
-import { VerticalConnectionsRenderer } from "@/features/view-3d/components/renderers/VerticalConnectionsRenderer";
 import { useCamera } from "@/features/view-3d/contexts/CameraContext";
 import { useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
 import {
@@ -380,8 +379,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       // Find which story this node belongs to
       for (const [storyId, storyNodes] of Object.entries(animationData.metadata.stories)) {
         if (storyNodes.includes(nodeId)) {
-          const sliceId = `floor-${storyId}`;
-          openSlicePanel(sliceId, storyId);
+          openSlicePanel(storyId);
           return;
         }
       }
@@ -512,32 +510,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
           {/* Render based on view mode */}
           {mode === "floor-slabs" && <FloorSlabsRenderer key={interactiveSceneKey} nodeIds={visibleNodes} />}
 
-          {mode === "vertical-connections" && (
-            <>
-              <instancedMesh
-                key={interactiveSceneKey}
-                ref={meshRef}
-                onPointerDown={handlePointerDown}
-                onPointerMove={(e) => handlePointerMove(e)}
-                onPointerOut={(e) => handlePointerOut(e)}
-                onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
-                onContextMenu={(e) => handleNodeContextMenu(e)}
-                args={[undefined, undefined, visibleNodes.length]}
-                frustumCulled={false}>
-                <sphereGeometry args={[1, 4, 2]}>
-                  <instancedBufferAttribute
-                    attach="attributes-color"
-                    args={[new Float32Array(visibleNodes.length * 3).fill(1), 3]}
-                    usage={THREE.DynamicDrawUsage}
-                  />
-                </sphereGeometry>
-                <meshBasicMaterial fog={false} vertexColors />
-              </instancedMesh>
-              <VerticalConnectionsRenderer nodeIds={visibleNodes} />
-            </>
-          )}
-
-          {(mode === "all-nodes" || mode === "corners-only" || mode === "exterior-only") && (
+          {mode === "all-nodes" && (
             <instancedMesh
               key={interactiveSceneKey}
               ref={meshRef}

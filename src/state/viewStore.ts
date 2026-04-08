@@ -193,6 +193,10 @@ export interface ViewState {
   selectSlice: (slice: SliceSelectionState) => void;
   deselectSlice: () => void;
   setHoveredSlice: (slice: SliceSelectionState | null) => void;
+
+  // Node Panel Graph Visibility
+  nodePanelGraphVisibility: Record<string, boolean>;
+  toggleNodePanelGraph: (graphKey: string) => void;
 }
 
 export const createViewStore = () =>
@@ -441,6 +445,17 @@ export const createViewStore = () =>
       selectSlice: (selectedSlice) => set({ selectedSlice }),
       deselectSlice: () => set({ selectedSlice: null }),
       setHoveredSlice: (hoveredSlice) => set({ hoveredSlice }),
+
+      nodePanelGraphVisibility: { dispX: true, dispY: true, drift: true },
+      toggleNodePanelGraph: (graphKey) =>
+        set((state) => {
+          return {
+            nodePanelGraphVisibility: {
+              ...state.nodePanelGraphVisibility,
+              [graphKey]: !state.nodePanelGraphVisibility[graphKey],
+            },
+          };
+        }),
     }))
   );
 

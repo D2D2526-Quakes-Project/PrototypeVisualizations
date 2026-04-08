@@ -8,22 +8,25 @@
 
 ### 0.1 Trim Prototype Sprawl
 
-- [ ] Reduce top-level navigation to the research-critical workflow and hide or remove legacy experiment routes from the main nav
+- [x] Reduce top-level navigation to the research-critical workflow and hide or remove legacy experiment routes from the main nav
   - Current issue: `src/main.tsx` still exposes many exploratory routes (`Data Explorer`, `Surface`, `Node Grid`, `Ribbons`, `Elevation Slice`, `Thresholds`, `Floor Torsion`, `Volumes`, `Time Volumes`) as peers of the main 3D tool.
   - Decide which routes are true product surfaces versus old experiments and move non-essential ones behind a dev/lab entry point or remove them entirely.
   - Keep the next science partner session focused on one coherent tool, not a menu of unrelated concepts.
-- [ ] Audit standalone pages that duplicate or compete with in-dock view-3d analysis panels
+- [x] Audit standalone pages that duplicate or compete with in-dock view-3d analysis panels
   - `damage-threshold`, `floor-plan-torsion`, and other standalone pages overlap with dock panels and weaken the sense of a single intentional workflow.
   - Decide whether each concept should live as a dedicated route, a dock panel, or be cut.
-- [ ] Cut or quarantine novelty visualizations that do not currently support a scientific inference path
+- [x] Cut or quarantine novelty visualizations that do not currently support a scientific inference path
   - Candidate trims based on current routes/pages: `surface`, `temporal-ribbons`, `node-grid`, `data-explorer`, `floor-time-volume`, and similar pages that mostly show alternative encodings rather than helping answer “where is the problem, how severe is it, and why?”
   - For each candidate, document the research question it answers; if none is credible, remove it from the primary experience.
-- [ ] Reduce panel-picker breadth for external demos
+- [x] Reduce panel-picker breadth for external demos
   - Current `MagicPanel` catalog presents many panels as equally important, which reinforces playground behavior.
   - Create a curated partner/demo mode that exposes only the core investigation panels needed for the current scientific question.
-- [ ] Rework default layout/copy to tell a single analysis story
+- [x] Rework default layout/copy to tell a single analysis story
   - The existing default layout already leans toward `Interstory Drift`, `Story Drift Heatmap`, `ISD Threshold`, and `Hinge Hotspots`; make that explicit in labels, captions, and panel ordering.
   - Reframe or rename generic panels whose purpose is unclear in a research walkthrough.
+- [ ] Delete or archive now-unreachable legacy route/page files once replacement surfaces are stable
+  - The nav and router now focus on `view-3d`, but old standalone route files still exist in the repo as cleanup debt.
+  - Remove dead exports/pages after verifying nothing internal still depends on them.
 
 ### 0.2 Meeting Prep And Research Framing
 
@@ -52,6 +55,9 @@
 - [ ] Strengthen the single-simulation triage workflow as the main product path
   - The current user most urgently needs to load a simulation, find the anomalous region, inspect why it stands out, and capture that state.
   - Prioritize the sequence: `load -> locate concentration -> threshold check -> inspect local evidence -> save/share/export`.
+- [ ] Tighten the new docked `Data Explorer` so it fully replaces legacy `Data Table`, `Peak Values`, and `Statistics`
+  - Add the strongest missing capabilities before deleting the old panel implementations outright.
+  - Verify sorting/filtering/state persistence matches the intended analysis workflow.
 - [ ] Support comparison only where it helps answer “what changed and why?”
   - Multi-simulation comparison is valuable, but only if the comparison view makes differences in vulnerable regions, threshold timing, and hotspot evidence legible.
   - Avoid building split-view mechanics without a clear comparison narrative.
@@ -722,8 +728,21 @@ _Last Updated: February 2026_
 
 ---
 
+## Unsorted Things:
+
+- [ ] Data Explorer should be virtualized list so there are no pages, just infinite scroll
+- [ ] Add the NW, NE, SW, SE, N, E, S, W directions colors to the metrics.ts so their colors are constant for use in graphs and in the 3d scene
+- [ ] Clicking the colorbar box in the collapsed view menu should open the view menu to the colorbar option dropdown
+- [ ] Mark nodepanel MiniTimeSeries with dotted line at the peak time
+- [ ] NodePanel graph toggled are not implemented. (`<ChartNoAxesCombinedIcon className="size-4 text-blue-500"></ChartNoAxesCombinedIcon>`). Needs to sotre the boolean in the global data for persistance and sharing. Graph toggle buttons and visibility states need to be applied to all metrics in the NodePanel
+
+---
+
 ## 25. Known Issues
 
 - [ ] When the view menu is docked, the ctrl+drag selection box is visually offset
+- [ ] Optional datasets: Velocity (Translational) & (Rotational), & Acceleration (Translational) & (Rotational) will fail to load if previously loaded. I think it might be a cache issue because clicking "retry" will fail again instantly.
+- [x] NodePanel doesn't have peak drift time. Currently is `const peakTime = 0;`.
+- [ ] FloorPanel doesn't have peak velocity, acceleration. Doesn't have timeseries for acceleration or drifts
 
 _Last Updated: March 2026_

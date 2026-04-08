@@ -44,6 +44,7 @@ export interface SerializedComputedStatsCore {
   cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
   storyDrift: SerializedStoryDrift;
   peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
+  peakStoryDriftFrame: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
   peakNodeDisplacement: Float32Array;
   peakNodeDisplacementFrame: Uint32Array;
   peakNodeDisplacementX: Float32Array;
@@ -267,7 +268,8 @@ function deserializeStoryDrift(storyDrift: SerializedStoryDrift): ComputedStats[
   return {
     ...storyDrift,
     getStoryDrift(storyIndex: number, frameIndex: number) {
-      const baseIndex = storyIndex * storyDrift.frameCount * storyDrift.cornerCount + frameIndex * storyDrift.cornerCount;
+      const baseIndex =
+        storyIndex * storyDrift.frameCount * storyDrift.cornerCount + frameIndex * storyDrift.cornerCount;
       return [
         storyDrift.data[baseIndex],
         storyDrift.data[baseIndex + 1],
@@ -396,23 +398,47 @@ function serializeRequiredComputedStats(
   let totalStoryDrift = 0;
   let storyDriftCount = 0;
 
+  const peakStoryDriftFrame: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
+
   for (let storyIdx = 1; storyIdx < storyCount; storyIdx++) {
     const storyId = metadata.storyOrder[storyIdx];
     const peak = { NW: 0, NE: 0, SW: 0, SE: 0 };
+    const peakFrame = { NW: 0, NE: 0, SW: 0, SE: 0 };
     for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
       for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
         const idx = storyIdx * frameCount * cornerCount + frameIdx * cornerCount + cornerIdx;
         const value = storyDriftData[idx] ?? 0;
-        if (cornerIdx === 0) peak.NW = Math.max(peak.NW, value);
-        if (cornerIdx === 1) peak.NE = Math.max(peak.NE, value);
-        if (cornerIdx === 2) peak.SW = Math.max(peak.SW, value);
-        if (cornerIdx === 3) peak.SE = Math.max(peak.SE, value);
+        if (cornerIdx === 0) {
+          if (value > peak.NW) {
+            peak.NW = value;
+            peakFrame.NW = frameIdx;
+          }
+        }
+        if (cornerIdx === 1) {
+          if (value > peak.NE) {
+            peak.NE = value;
+            peakFrame.NE = frameIdx;
+          }
+        }
+        if (cornerIdx === 2) {
+          if (value > peak.SW) {
+            peak.SW = value;
+            peakFrame.SW = frameIdx;
+          }
+        }
+        if (cornerIdx === 3) {
+          if (value > peak.SE) {
+            peak.SE = value;
+            peakFrame.SE = frameIdx;
+          }
+        }
         maxStoryDrift = Math.max(maxStoryDrift, value);
         totalStoryDrift += value;
         storyDriftCount += 1;
       }
     }
     peakStoryDrift[storyId] = peak;
+    peakStoryDriftFrame[storyId] = peakFrame;
   }
 
   const gmMax: [number, number, number] = [-Infinity, -Infinity, -Infinity];
@@ -526,6 +552,7 @@ function serializeRequiredComputedStats(
       cornerCount,
     },
     peakStoryDrift,
+    peakStoryDriftFrame,
     peakNodeDisplacement,
     peakNodeDisplacementFrame,
     peakNodeDisplacementX,
@@ -563,7 +590,10 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     Object.entries(buildingData.metadata.corners).map(([storyId, nodeIds]) => [normalizeStoryName(storyId), nodeIds])
   );
   const normalizedStoryHeights = Object.fromEntries(
-    Object.entries(buildingData.metadata.story_heights).map(([storyId, height]) => [normalizeStoryName(storyId), height])
+    Object.entries(buildingData.metadata.story_heights).map(([storyId, height]) => [
+      normalizeStoryName(storyId),
+      height,
+    ])
   );
 
   const metadata: AnimationMetadata = {

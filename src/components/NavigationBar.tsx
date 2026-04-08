@@ -1,21 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { AlertTriangle, Check, LogOutIcon, Plus, RotateCcw, Share2, Trash2, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Check, LogOutIcon, Share2 } from "lucide-react";
 
 import DataSources from "@/data/index";
 import { useAnimationData } from "@/lib/useAnimationData";
 import {
   copyShareableUrlToClipboard,
-  createUserProfile,
-  deleteUserProfile,
-  getActiveProfileId,
-  loadSaveProfiles,
-  PROFILES_UPDATED_EVENT,
-  resetProfileToDefault,
-  saveToLocalStorage,
-  setActiveProfile,
   type AppState,
-  type SaveProfile,
   getDefaultAppState,
   getDataSelectionFromCurrentUrl,
 } from "@/features/view-3d/lib/statePersistence";
@@ -38,12 +29,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
 
 const VERSION = "0.1.0";
-
-interface RouteItem {
-  path: string;
-  label: string;
-  icon: LucideIcon;
-}
 
 function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState {
   const state = store.getState();
@@ -73,7 +58,7 @@ function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState
   };
 }
 
-export function NavigationBar({ routes }: { routes: RouteItem[] }) {
+export function NavigationBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const store = useViewStoreRaw();
@@ -89,64 +74,12 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
     retryDatasetLoad,
   } = useAnimationData();
 
-  const [profiles, setProfiles] = useState<SaveProfile[]>(() => loadSaveProfiles());
-  const [activeProfileId, setActiveProfileId] = useState<string>(() => getActiveProfileId());
   const [activeMenu, setActiveMenu] = useState("");
   const [isCopyingLink, setIsCopyingLink] = useState(false);
-
-  const activeProfile = useMemo(
-    () => profiles.find((profile) => profile.id === activeProfileId) ?? null,
-    [profiles, activeProfileId]
-  );
-
-  const refreshProfiles = () => {
-    const loadedProfiles = loadSaveProfiles();
-    setProfiles(loadedProfiles);
-    setActiveProfileId(getActiveProfileId());
-  };
 
   const backToHome = () => {
     clearSelection();
     navigate("/");
-  };
-
-  const switchProfile = (profile: SaveProfile) => {
-    saveToLocalStorage(getCurrentAppState(store));
-
-    const changed = setActiveProfile(profile.id);
-    if (!changed) return;
-
-    setActiveProfileId(profile.id);
-    window.location.reload();
-  };
-
-  const createProfileFromCurrent = () => {
-    const name = prompt("Enter a profile name:");
-    if (!name) return;
-
-    const created = createUserProfile(name, getCurrentAppState(store));
-    if (!created) return;
-
-    setActiveProfile(created.id);
-    refreshProfiles();
-    window.location.reload();
-  };
-
-  const deleteCurrentProfile = () => {
-    if (!activeProfile || activeProfile.kind !== "user") return;
-    if (!confirm(`Delete profile "${activeProfile.name}"?`)) return;
-
-    deleteUserProfile(activeProfile.id);
-    refreshProfiles();
-    window.location.reload();
-  };
-
-  const resetCurrentProfile = () => {
-    if (!activeProfile || activeProfile.kind !== "system") return;
-    if (!confirm(`Reset "${activeProfile.name}" to defaults?`)) return;
-
-    resetProfileToDefault(activeProfile.id);
-    window.location.reload();
   };
 
   const copyLink = async () => {
@@ -161,24 +94,6 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
   const clearCurrentSelection = () => {
     store.getState().setSelectedNodes([]);
   };
-
-  const openRoute = (route: RouteItem) => {
-    navigate({ pathname: route.path, search: window.location.search });
-  };
-
-  useEffect(() => {
-    const handleProfilesUpdated = () => {
-      refreshProfiles();
-    };
-
-    window.addEventListener(PROFILES_UPDATED_EVENT, handleProfilesUpdated);
-    return () => {
-      window.removeEventListener(PROFILES_UPDATED_EVENT, handleProfilesUpdated);
-    };
-  }, []);
-
-  // const profileKindLabel =
-  //   activeProfile?.kind === "system" ? "default" : activeProfile?.kind === "ephemeral" ? "session" : "user";
 
   const optionalDatasetStates = useMemo(
     () => OPTIONAL_DATASET_KEYS.map((key) => datasetStates[key]).filter((state) => state.available),
@@ -237,10 +152,12 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
-              <MenubarItem onClick={backToHome}>
-                <LogOutIcon className="-scale-x-100" />
-                Exit to Main 3D View
-              </MenubarItem>
+              {location.pathname !== "/" && (
+                <MenubarItem onClick={backToHome}>
+                  <LogOutIcon className="-scale-x-100" />
+                  Return to 3D View
+                </MenubarItem>
+              )}
 
               <MenubarSub>
                 <MenubarSubTrigger>Simulation</MenubarSubTrigger>
@@ -249,46 +166,18 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
                 </MenubarSubContent>
               </MenubarSub>
 
-              <MenubarSeparator />
-
-              <MenubarItem onClick={createProfileFromCurrent}>
-                <Plus />
-                New Profile From Current State
+              <MenubarItem>
+                <AlertTriangle />
+                Export
               </MenubarItem>
-
-              <MenubarSub>
-                <MenubarSubTrigger>Switch Profile</MenubarSubTrigger>
-                <MenubarSubContent>
-                  {profiles.map((profile) => (
-                    <MenubarItem key={profile.id} onClick={() => switchProfile(profile)}>
-                      {profile.id === activeProfileId ? <Check /> : <span className="w-4" />}
-                      <span>{profile.name}</span>
-                      <span className="ml-auto text-xs text-neutral-500">
-                        {profile.kind === "system" ? "Default" : profile.kind === "ephemeral" ? "Session" : "User"}
-                      </span>
-                    </MenubarItem>
-                  ))}
-                </MenubarSubContent>
-              </MenubarSub>
-
-              {activeProfile?.kind === "system" && (
-                <MenubarItem onClick={resetCurrentProfile}>
-                  <RotateCcw />
-                  Reset "{activeProfile.name}" to Defaults
-                </MenubarItem>
-              )}
-
-              {activeProfile?.kind === "user" && (
-                <MenubarItem onClick={deleteCurrentProfile} variant="destructive">
-                  <Trash2 />
-                  Delete "{activeProfile.name}"
-                </MenubarItem>
-              )}
-
-              <MenubarSeparator />
-              {activeProfile?.kind === "system" && (
-                <MenubarItem onClick={resetCurrentProfile}>Reset Current Profile State</MenubarItem>
-              )}
+              <MenubarItem>
+                <AlertTriangle />
+                Add Split View
+              </MenubarItem>
+              <MenubarItem>
+                <AlertTriangle />
+                Datasets
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
 
@@ -298,25 +187,6 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
             <MenubarTrigger>Edit</MenubarTrigger>
             <MenubarContent>
               <MenubarItem onClick={clearCurrentSelection}>Clear Selection</MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
-
-          <div className="h-6 w-px shrink-0 rounded-full bg-neutral-300" />
-
-          <MenubarMenu>
-            <MenubarTrigger>View</MenubarTrigger>
-            <MenubarContent>
-              <MenubarLabel>Pages</MenubarLabel>
-              {routes.map((route) => {
-                const isActive = location.pathname === route.path;
-                const Icon = route.icon;
-                return (
-                  <MenubarItem key={route.path} onClick={() => openRoute(route)}>
-                    {isActive ? <Check /> : <Icon className="size-4" />}
-                    {route.label}
-                  </MenubarItem>
-                );
-              })}
             </MenubarContent>
           </MenubarMenu>
 
@@ -337,11 +207,6 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
             </MenubarContent>
           </MenubarMenu>
         </Menubar>
-
-        {/* <div className="truncate text-sm font-medium text-neutral-700">
-          Profile: {activeProfile ? activeProfile.name : "Default View"}
-          {activeProfile ? <span className="ml-2 text-xs text-neutral-500">({profileKindLabel})</span> : null}
-        </div> */}
       </div>
 
       <div className="flex justify-center py-1">
@@ -429,6 +294,7 @@ export function NavigationBar({ routes }: { routes: RouteItem[] }) {
                           </div>
                         </span>
                       </div>
+                      <span className="flex items-center gap-2 text-[10px] text-neutral-500">{state.error}</span>
                       {state.stage === "fetching" || state.stage === "parsing" || state.stage === "queued" ? (
                         <div className="mt-1 mb-1 h-1.5 overflow-hidden rounded-full bg-neutral-200">
                           <div

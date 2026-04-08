@@ -510,10 +510,12 @@ function calculateStats(
 
   // 5.3 Calculate peak story drift (similar to hook lines 92-123)
   const peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
+  const peakStoryDriftFrame: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
 
   for (let storyIdx = 1; storyIdx < storyCount; storyIdx++) {
     const storyId = metadata.storyOrder[storyIdx];
     const max = { NW: -Infinity, NE: -Infinity, SW: -Infinity, SE: -Infinity };
+    const maxFrame = { NW: 0, NE: 0, SW: 0, SE: 0 };
 
     for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
       for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
@@ -521,11 +523,15 @@ function calculateStats(
         const driftValue = storyDriftData[arrayIndex];
 
         const cornerNames = ["NW", "NE", "SW", "SE"] as const;
-        max[cornerNames[cornerIdx]] = Math.max(max[cornerNames[cornerIdx]], driftValue);
+        if (driftValue > max[cornerNames[cornerIdx]]) {
+          max[cornerNames[cornerIdx]] = driftValue;
+          maxFrame[cornerNames[cornerIdx]] = frameIdx;
+        }
       }
     }
 
     peakStoryDrift[storyId] = max;
+    peakStoryDriftFrame[storyId] = maxFrame;
   }
 
   // Helper accessor function
@@ -835,6 +841,7 @@ function calculateStats(
       getStoryDrift,
     },
     peakStoryDrift,
+    peakStoryDriftFrame,
     peakNodeDisplacement,
     peakNodeVelocity,
     peakNodeAcceleration,

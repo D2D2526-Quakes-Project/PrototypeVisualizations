@@ -176,8 +176,17 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       tabComponent: "magicPanelTab",
       title: "3D View",
       params: { panelType: "Main Canvas" },
-      initialWidth: 1200,
       initialHeight: 760,
+    });
+
+    api.addPanel({
+      id: "timeline",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Timeline",
+      position: { referencePanel: mainCanvas, direction: "below" },
+      params: { panelType: "Timeline" },
+      initialHeight: 200,
     });
 
     const interstoryDriftPanel = api.addPanel({
@@ -191,23 +200,12 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
     });
 
     api.addPanel({
-      id: "timeline",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Timeline",
-      position: { referencePanel: mainCanvas, direction: "below" },
-      params: { panelType: "Timeline" },
-      initialHeight: 280,
-    });
-
-    api.addPanel({
       id: "floor-displacement",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Floor Displacement",
-      position: { referencePanel: interstoryDriftPanel },
+      position: { referencePanel: interstoryDriftPanel, direction: "within" },
       params: { panelType: "Floor Displacement" },
-      inactive: true,
     });
   }, []);
 

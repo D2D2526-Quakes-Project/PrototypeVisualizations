@@ -60,15 +60,7 @@ export function ViewControls({
   docked,
 }: ViewControlsProps) {
   const { animationData } = useAnimationData();
-  const {
-    currentMetric,
-    setColorMetric,
-    metricPaletteOverrides,
-    setMetricPalette,
-    availableMetrics,
-    thresholdHighlighting,
-    setThresholdHighlighting,
-  } = useColor();
+  const { currentMetric, metricPaletteOverrides, thresholdHighlighting } = useColor();
   const { mode, setMode } = useViewMode();
   const {
     state: expandedScaleState,
@@ -500,17 +492,7 @@ export function ViewControls({
                   <ViewModeSelect mode={mode} setMode={setMode} />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <ColorPanel
-                    currentMetric={currentMetric}
-                    setColorMetric={setColorMetric}
-                    metricPaletteOverrides={metricPaletteOverrides}
-                    setMetricPalette={setMetricPalette}
-                    availableMetrics={availableMetrics}
-                    thresholdHighlighting={thresholdHighlighting}
-                    setThresholdHighlighting={setThresholdHighlighting}
-                    thresholds={thresholds}
-                    animationData={animationData}
-                  />
+                  <ColorPanel thresholds={thresholds} animationData={animationData} />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ThresholdPanel

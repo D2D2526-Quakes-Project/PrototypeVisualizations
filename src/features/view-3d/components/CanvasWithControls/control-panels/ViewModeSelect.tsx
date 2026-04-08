@@ -8,8 +8,6 @@ interface ViewModeSelectProps {
 const viewModes: { value: ViewMode; label: string }[] = [
   { value: "all-nodes", label: "All Nodes" },
   { value: "floor-slabs", label: "Floor Slabs" },
-  { value: "corners-only", label: "Corners Only" },
-  { value: "vertical-connections", label: "Vertical Connections" },
   { value: "threshold", label: "ISD Threshold" },
 ];
 

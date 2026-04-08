@@ -174,7 +174,7 @@ export interface AnimationMetadata {
   nodeCount: number;
   frameCount: number;
   dt: number; // Time step (usually 0.01)
-  /** Height of each story (story id -> height in inches) */
+  /** Height of each story (not elevation) (story id -> height in inches) */
   storyHeights: Record<string, number>;
   // Map from story id to a list of indices
   stories: Record<string, number[]>;
@@ -400,6 +400,7 @@ export interface ComputedStats {
     getStoryDrift: (storyIndex: number, frameIndex: number) => [number, number, number, number]; // [NW, NE, SW, SE]
   };
   peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }>; // Precomputed max values
+  peakStoryDriftFrame: Record<string, { NW: number; NE: number; SW: number; SE: number }>; // Frame index where peak occurred
 
   // PEAK NODE VALUES (precomputed for all nodes)
   /** Peak displacement magnitude for each node across all frames */

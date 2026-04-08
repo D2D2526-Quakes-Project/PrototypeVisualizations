@@ -1,13 +1,13 @@
 import { memo, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatValue, getConversions, CONVERSION_UNITS as UNITS } from "@/lib/metrics";
+import { usePlayback } from "@/features/playback/PlaybackContext";
 
 interface UnitTooltipProps {
   value: number;
   unit: string;
   decimals?: number;
   showConversions?: boolean;
-  interactive?: boolean;
   side?: "top" | "right" | "bottom" | "left";
   children?: React.ReactNode;
 }
@@ -56,11 +56,12 @@ function UnitTooltipComponent({
   unit,
   decimals = 2,
   showConversions = true,
-  interactive = true,
   side = "top",
   children,
 }: UnitTooltipProps) {
   const formattedValue = useMemo(() => formatValue(value, decimals), [value, decimals]);
+  const { playing } = usePlayback();
+  const interactive = !playing;
 
   const displayValue = (
     <span className={interactive ? "cursor-help" : undefined}>
@@ -92,7 +93,6 @@ function areUnitTooltipPropsEqual(prev: UnitTooltipProps, next: UnitTooltipProps
     prev.unit === next.unit &&
     prev.decimals === next.decimals &&
     prev.showConversions === next.showConversions &&
-    prev.interactive === next.interactive &&
     prev.side === next.side &&
     prev.children === next.children
   );

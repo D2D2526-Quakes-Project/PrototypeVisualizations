@@ -1,18 +1,13 @@
 import { InterstoryDriftChart } from "@/features/view-3d/panels/InterstoryDriftChart";
 import { MainCanvasPanel } from "@/features/view-3d/panels/MainCanvasPanel";
 import { HistogramChart } from "@/features/view-3d/panels/HistogramChart";
-import { PeakValuesPanel } from "@/features/view-3d/panels/PeakValuesPanel";
-import { DataTablePanel } from "@/features/view-3d/panels/DataTablePanel";
+import { DataExplorerPanel } from "@/features/view-3d/panels/DataExplorerPanel";
 import { FloorDisplacementChart } from "@/features/view-3d/panels/FloorDisplacementChart";
-import { StatisticsPanel } from "@/features/view-3d/panels/StatisticsPanel";
-import { VelocityTimeChart } from "@/features/view-3d/panels/VelocityTimeChart";
-import { RotationTimeChart } from "@/features/view-3d/panels/RotationTimeChart";
 import { PeakResponseTimePanel } from "@/features/view-3d/panels/PeakResponseTimePanel";
 import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
 import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDistributionPanel";
 import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
 import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
-import { HingeHotspotsPanel } from "@/features/view-3d/panels/HingeHotspotsPanel";
 import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,7 +25,6 @@ import {
   AlertTriangle,
   BarChart3,
   Columns,
-  Flame,
   Gauge,
   LineChart,
   Maximize2,
@@ -40,12 +34,11 @@ import {
   Plus,
   RotateCw,
   ShieldAlert,
-  Table,
   X,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
-type PanelCategory = "Canvas" | "Time Series" | "Distributions" | "Threshold / ISD" | "Summaries" | "Tables / Data";
+type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
 type PanelType = keyof typeof PANEL_DEFINITIONS;
 type MagicPanelParams = { panelType: PanelType; initialMetric?: Metric };
@@ -71,7 +64,7 @@ type PanelDataKey =
 const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   Timeline: {
     component: Timeline,
-    category: "Time Series",
+    category: "Core Analysis",
     icon: LineChart,
     description: "Playback timeline and overlays",
     requiredOptionalData: [],
@@ -79,7 +72,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   },
   "Interstory Drift Chart": {
     component: InterstoryDriftChart,
-    category: "Time Series",
+    category: "Core Analysis",
     icon: LineChart,
     description: "Per-story drift traces",
     requiredOptionalData: [],
@@ -95,58 +88,26 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   },
   "Histogram Chart": {
     component: HistogramChart,
-    category: "Distributions",
+    category: "Supporting Analysis",
     icon: BarChart3,
     description: "Threshold exceedance by position",
     requiredOptionalData: [],
     optionalEnhancementData: ["velocityLin", "accelerationLin"],
   },
-  "Peak Values": {
-    component: PeakValuesPanel,
-    category: "Summaries",
-    icon: Gauge,
-    description: "Peak values for selected nodes",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "Data Table": {
-    component: DataTablePanel,
+  "Data Explorer": {
+    component: DataExplorerPanel,
     category: "Tables / Data",
-    icon: Table,
-    description: "Raw node values table",
+    icon: Activity,
+    description: "Current values, peaks, and sortable node explorer",
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },
   "Floor Displacement": {
     component: FloorDisplacementChart,
-    category: "Time Series",
+    category: "Core Analysis",
     icon: LineChart,
     description: "Floor average displacement traces",
     requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  Statistics: {
-    component: StatisticsPanel,
-    category: "Summaries",
-    icon: Activity,
-    description: "Simulation and current-frame stats",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "Velocity Time": {
-    component: VelocityTimeChart,
-    category: "Time Series",
-    icon: LineChart,
-    description: "Velocity channels over time",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "Rotation Time": {
-    component: RotationTimeChart,
-    category: "Time Series",
-    icon: LineChart,
-    description: "Rotation channels over time",
-    requiredOptionalData: ["velocityRot"],
     optionalEnhancementData: [],
   },
   "Velocity Distribution": {
@@ -173,17 +134,9 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
     requiredOptionalData: ["hingeData"],
     optionalEnhancementData: ["beamData"],
   },
-  "Hinge Hotspots": {
-    component: HingeHotspotsPanel,
-    category: "Threshold / ISD",
-    icon: Flame,
-    description: "Static hinge hotspot ranking",
-    requiredOptionalData: ["hingeData"],
-    optionalEnhancementData: ["beamData"],
-  },
   "Floor Torsion Map": {
     component: FloorTorsionMapPanel,
-    category: "Summaries",
+    category: "Supporting Analysis",
     icon: RotateCw,
     description: "Top-down rotation preview per floor",
     requiredOptionalData: [],
@@ -191,7 +144,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   },
   "Peak Response Time": {
     component: PeakResponseTimePanel,
-    category: "Threshold / ISD",
+    category: "Core Analysis",
     icon: Gauge,
     description: "When peaks happen in response",
     requiredOptionalData: [],
@@ -199,7 +152,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
   },
   "ISD Threshold": {
     component: DamageThresholdPanel,
-    category: "Threshold / ISD",
+    category: "Core Analysis",
     icon: ShieldAlert,
     description: "Threshold evaluation summary",
     requiredOptionalData: [],
@@ -219,11 +172,10 @@ const PANEL_DATA_LABELS: Record<PanelDataKey, string> = {
 
 const PANEL_CATEGORY_ORDER: PanelCategory[] = [
   "Canvas",
+  "Core Analysis",
+  "Supporting Analysis",
   "Tables / Data",
-  "Time Series",
   "Distributions",
-  "Threshold / ISD",
-  "Summaries",
 ];
 
 function getPanelsByCategory(): Array<{ category: PanelCategory; items: PanelType[] }> {
@@ -402,13 +354,6 @@ function PanelTypePickerMenu({
 
   return (
     <div className="max-h-[70vh] overflow-y-auto p-2" aria-labelledby={titleId}>
-      <div className="mb-2 px-1">
-        <div id={titleId} className="text-xs font-semibold text-neutral-700">
-          Change Panel Type
-        </div>
-        <div className="text-[10px] text-neutral-500">Compact grouped browser</div>
-      </div>
-
       <div className="grid grid-cols-1 gap-2 pr-1">
         {groupedPanels.map((group) => (
           <div key={group.category} className="rounded-md border border-neutral-200/80 bg-white p-1.5">

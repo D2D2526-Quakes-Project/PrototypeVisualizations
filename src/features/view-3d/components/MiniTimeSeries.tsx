@@ -53,10 +53,10 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
         },
       },
       grid: {
-        left: 35,
-        right: 8,
-        top: label ? 20 : 8,
-        bottom: 20,
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
       },
       xAxis: {
         type: "value",
@@ -140,7 +140,12 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
 
   return (
     <div className="relative w-full">
-      {label && <div className="mb-1 text-[10px] text-neutral-500">{label}</div>}
+      <div className="flex justify-between">
+        <div className="mb-1 text-neutral-600">{label}</div>
+        <div className="font-mono text-[9px] text-neutral-600">
+          {currentValue.toFixed(2)} {unit}
+        </div>
+      </div>
       <div ref={containerRef} className="relative">
         <ReactECharts
           ref={chartRef}
@@ -156,13 +161,6 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
             left: "0%",
           }}
         />
-        <div className="absolute top-1 right-1 rounded border border-neutral-200 bg-white/90 px-1.5 py-0.5 font-mono text-[9px] text-neutral-600 shadow-sm">
-          {currentValue.toFixed(2)} {unit}
-        </div>
-      </div>
-      <div className="mt-0.5 flex justify-between text-[9px] text-neutral-400">
-        <span>0 s</span>
-        <span>{chartData.timeRange.toFixed(1)} s</span>
       </div>
     </div>
   );

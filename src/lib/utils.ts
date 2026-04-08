@@ -111,3 +111,20 @@ export function formatStoryLabel(storyId: string, elevationIn: number): string {
   const elevationFt = elevationIn / 12;
   return `${storyLabel} (${elevationFt.toFixed(0)} ft)`;
 }
+
+export const throttle = <T extends unknown[]>(callback: (...args: T) => void, delay: number) => {
+  let isWaiting = false;
+
+  return (...args: T) => {
+    if (isWaiting) {
+      return;
+    }
+
+    callback(...args);
+    isWaiting = true;
+
+    setTimeout(() => {
+      isWaiting = false;
+    }, delay);
+  };
+};

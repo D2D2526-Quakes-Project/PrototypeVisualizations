@@ -11,34 +11,26 @@ import {
   METRIC_PALETTES,
   type Metric,
   type MetricPaletteKey,
-  type MetricPaletteOverrides,
 } from "@/lib/metrics";
+import { useColor } from "@/features/view-3d/contexts/visualization";
 
 interface ColorPanelProps {
-  currentMetric: Metric;
-  setColorMetric: (metric: Metric) => void;
-  metricPaletteOverrides: MetricPaletteOverrides;
-  setMetricPalette: (metric: Metric, palette: MetricPaletteKey | null) => void;
-  availableMetrics: Metric[];
-  thresholdHighlighting: boolean;
-  setThresholdHighlighting: (enabled: boolean) => void;
   thresholds: ThresholdState;
   animationData: {
     precomputed: ComputedStats;
   };
 }
 
-export function ColorPanel({
-  currentMetric,
-  setColorMetric,
-  metricPaletteOverrides,
-  setMetricPalette,
-  availableMetrics,
-  thresholdHighlighting,
-  setThresholdHighlighting,
-  thresholds,
-  animationData,
-}: ColorPanelProps) {
+export function ColorPanel({ thresholds, animationData }: ColorPanelProps) {
+  const {
+    currentMetric,
+    setColorMetric,
+    metricPaletteOverrides,
+    setMetricPalette,
+    availableMetrics,
+    thresholdHighlighting,
+    setThresholdHighlighting,
+  } = useColor();
   const activePalette = getMetricColorScale(currentMetric, metricPaletteOverrides);
   const metricConfig = METRIC_CONFIGS[currentMetric];
 
@@ -84,14 +76,17 @@ export function ColorPanel({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-64 p-2">
             <div className="grid grid-cols-1 gap-1.5">
-              {(Object.entries(METRIC_PALETTES) as Array<[MetricPaletteKey, (typeof METRIC_PALETTES)[MetricPaletteKey]]>).map(
-                ([paletteKey, palette]) => {
+              {(
+                Object.entries(METRIC_PALETTES) as Array<[MetricPaletteKey, (typeof METRIC_PALETTES)[MetricPaletteKey]]>
+              ).map(([paletteKey, palette]) => {
                 const isActive = activePalette.paletteKey === paletteKey;
                 return (
                   <button
                     key={paletteKey}
                     type="button"
-                    onClick={() => setMetricPalette(currentMetric, paletteKey === metricConfig.defaultPalette ? null : paletteKey)}
+                    onClick={() =>
+                      setMetricPalette(currentMetric, paletteKey === metricConfig.defaultPalette ? null : paletteKey)
+                    }
                     className={`rounded border p-1 transition-colors ${
                       isActive ? "border-neutral-900 bg-neutral-50" : "border-neutral-200 hover:bg-neutral-50"
                     }`}

@@ -60,13 +60,13 @@ const MIN_X_AXIS_MAX = 0.01;
 
 function TooltipContent({
   storyId,
-  elevationFt,
+  elevationIn,
   corners,
   currentDrifts,
   peakDrift,
 }: {
   storyId: string;
-  elevationFt: number;
+  elevationIn: number;
   corners: Array<keyof typeof cornerColors>;
   currentDrifts: Record<string, Record<string, number>>;
   peakDrift: Record<string, Record<string, number>>;
@@ -74,7 +74,7 @@ function TooltipContent({
   return (
     <div style={{ minWidth: "200px" }}>
       <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "13px" }}>
-        {formatStoryLabel(storyId, elevationFt)}
+        {formatStoryLabel(storyId, elevationIn)}
       </div>
       <div className="text-xs text-neutral-500" style={{ marginBottom: "6px" }}>
         Interstory drift values use absolute values.
@@ -253,12 +253,11 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
           const storyIdx = params[0].dataIndex;
           const storyId = storyOrderWithoutGround[storyIdx];
           const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;
-          const heightFt = elevationIn / 12;
 
           return renderToString(
             <TooltipContent
               storyId={storyId}
-              elevationFt={heightFt}
+              elevationIn={elevationIn}
               corners={corners}
               currentDrifts={currentDrifts}
               peakDrift={peakStoryDrift}

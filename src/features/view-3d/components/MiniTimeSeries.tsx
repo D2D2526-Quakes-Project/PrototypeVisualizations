@@ -127,7 +127,7 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label, 
       ],
       animation: false,
     };
-  }, [chartData, color, unit, label, peakTime]);
+  }, [chartData, color, unit, peakTime]);
 
   useEffect(() => {
     const syncPlayhead = () => {

@@ -81,7 +81,7 @@ function SortHeader({
 
 export function PeakValuesPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
-  const { frameIndex, playing } = usePlayback();
+  const { frameIndex } = usePlayback();
   const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
   const panelId = api?.id ?? "peak-values";
@@ -201,21 +201,21 @@ export function PeakValuesPanel({ api }: IDockviewPanelProps) {
                 <td className="px-2 py-1 font-mono text-neutral-500">{idx + 1}</td>
                 <td className="px-2 py-1 font-mono text-neutral-500">{row.node}</td>
                 <td className="px-2 py-1 font-mono" style={{ color: displacementXColor }}>
-                  <UnitTooltip value={row.x} unit="in" interactive={!playing} />
+                  <UnitTooltip value={row.x} unit="in" />
                 </td>
                 <td className="px-2 py-1 font-mono" style={{ color: displacementYColor }}>
-                  <UnitTooltip value={row.y} unit="in" interactive={!playing} />
+                  <UnitTooltip value={row.y} unit="in" />
                 </td>
                 <td className="px-2 py-1 font-mono" style={{ color: displacementZColor }}>
-                  <UnitTooltip value={row.z} unit="in" interactive={!playing} />
+                  <UnitTooltip value={row.z} unit="in" />
                 </td>
                 <td className="px-2 py-1 font-mono font-medium">
-                  <UnitTooltip value={row.magnitude} unit="in" interactive={!playing} />
+                  <UnitTooltip value={row.magnitude} unit="in" />
                 </td>
                 <td className="px-2 py-1 font-mono text-neutral-500">{row.peakFrame + 1}</td>
                 <td className="px-2 py-1 font-mono text-neutral-400">
                   {currentValues[row.node] !== undefined ? (
-                    <UnitTooltip value={currentValues[row.node]!} unit="in" interactive={!playing} />
+                    <UnitTooltip value={currentValues[row.node]!} unit="in" />
                   ) : (
                     "-"
                   )}

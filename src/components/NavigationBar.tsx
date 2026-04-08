@@ -158,6 +158,10 @@ export function NavigationBar() {
                   Return to 3D View
                 </MenubarItem>
               )}
+              <MenubarItem onClick={backToHome}>
+                <LogOutIcon className="-scale-x-100" />
+                Exit to Menu
+              </MenubarItem>
 
               <MenubarSub>
                 <MenubarSubTrigger>Simulation</MenubarSubTrigger>

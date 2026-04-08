@@ -744,5 +744,6 @@ _Last Updated: February 2026_
 - [x] Optional datasets: Velocity (Translational) & (Rotational), & Acceleration (Translational) & (Rotational) will fail to load if previously loaded. I think it might be a cache issue because clicking "retry" will fail again instantly.
 - [x] NodePanel doesn't have peak drift time. Currently is `const peakTime = 0;`.
 - [x] FloorPanel doesn't have peak velocity, acceleration. Doesn't have timeseries for acceleration or drifts
+- [ ] While in Floor Slabs view mode with Story Drift color by, the floors look gray because its the values include the nodes with no data
 
 _Last Updated: March 2026_

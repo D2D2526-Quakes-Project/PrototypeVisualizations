@@ -51,6 +51,8 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const rotationZColor = getMetricKeyColor("rotationZ", metricPaletteOverrides);
   const storyDriftColor = getMetricKeyColor("interstoryDrift", metricPaletteOverrides);
 
+  console.log(animationData.metadata.storyOrder);
+
   const nodeIds = useMemo(
     () => animationData.metadata.stories[storyId] || [],
     [storyId, animationData.metadata.stories]
@@ -305,7 +307,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
         zTime: maxZFrame * animationData.metadata.dt,
       },
     };
-  }, [animationData.velocityLin, nodeIds, animationData, frameIndex]);
+  }, [nodeIds, animationData, frameIndex]);
 
   // ACCELERATION
   const accelerationData = useMemo(() => {
@@ -391,7 +393,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
         zTime: maxZFrame * animationData.metadata.dt,
       },
     };
-  }, [animationData.accelerationLin, nodeIds, animationData, frameIndex]);
+  }, [nodeIds, animationData, frameIndex]);
 
   // CORNER DRIFT VALUES
   const cornerDrifts = useMemo(() => {

@@ -1,13 +1,12 @@
-import { formatHex, interpolate } from "culori";
-import { useCallback, useMemo } from "react";
-import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useAnimationData } from "@/lib/useAnimationData";
-import { useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { usePlayback } from "@/features/playback/PlaybackContext";
+import { useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { getMetricsForThreshold, getThresholdConfig, METRIC_CONFIGS } from "@/lib/metrics";
-import { ThresholdSlider } from "../components/CanvasWithControls/ThresholdSlider";
-import { throttle } from "@/lib/utils";
+import { useAnimationData } from "@/lib/useAnimationData";
+import { formatHex, interpolate } from "culori";
+import { useMemo } from "react";
 import { ColorScaleBar } from "../components/CanvasWithControls/ColorScaleBar";
+import { ThresholdSlider } from "../components/CanvasWithControls/ThresholdSlider";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -41,7 +40,6 @@ type CornerName = "NW" | "NE" | "SW" | "SE";
 type ThresholdCrossingFrames = Record<CornerName, number | null>;
 const SUMMARY_GRID_CLASS =
   "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)] items-center";
-const DAMAGE_RATIO_LEGEND_GRADIENT = `linear-gradient(90deg, ${blue900} 0%, ${blue600} 24.5%, ${blue400} 25%, ${white} 50%, ${red400} 75%, ${red600} 75.5%, ${red900} 100%)`;
 
 function ThresholdStatusPill({ currentExceeded, everExceeded }: { currentExceeded: boolean; everExceeded: boolean }) {
   if (currentExceeded) {
@@ -66,7 +64,7 @@ function ThresholdStatusPill({ currentExceeded, everExceeded }: { currentExceede
 export function DamageThresholdPanel() {
   const { animationData } = useAnimationData();
   const { storyOrder, dt } = animationData.metadata;
-  const { frameIndex, playing } = usePlayback();
+  const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
   const { thresholds, setThreshold } = useThresholds();
 

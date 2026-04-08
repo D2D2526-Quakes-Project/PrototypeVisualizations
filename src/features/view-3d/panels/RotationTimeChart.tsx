@@ -3,6 +3,7 @@ import { useThresholds } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { getDefaultRotationTimeChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { formatFixed3 } from "@/lib/utils";
+import { formatCompactNumber } from "@/lib/utils";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
@@ -53,14 +54,14 @@ function TooltipContent({
           fontSize: "13px",
         }}>
         Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span>{" "}
-        {parseFloat(time.toString()).toFixed(3)}s
+        {formatCompactNumber(time, 1)} s
       </div>
       {values.map((item) => (
         <div key={item.name} style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color }} />
           <span style={{ color: "#6b7280", fontSize: "10px" }}>{item.name}:</span>
           <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>
-            {item.value.toFixed(4)} {item.unit}
+            {formatCompactNumber(item.value, 2)} {item.unit}
           </span>
         </div>
       ))}
@@ -429,7 +430,7 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
           <span className="text-neutral-400">|</span>
           <span className="font-mono">Frame {frameIndex + 1}</span>
           <span className="text-neutral-400">|</span>
-          <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)}s</span>
+          <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
           <span className="text-neutral-400">|</span>
           <span className="text-xs text-neutral-500">Units: rad/s</span>
         </div>

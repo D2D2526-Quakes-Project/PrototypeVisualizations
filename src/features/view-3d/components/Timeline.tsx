@@ -12,6 +12,7 @@ import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { formatFixed3 } from "@/lib/utils";
+import { formatCompactNumber } from "@/lib/utils";
 import { getDefaultTimelinePanelState } from "@/features/view-3d/lib/statePersistence";
 import { useViewStore } from "@/state";
 import { getMetricKeyColor, UNITS, type UnitConfig } from "@/lib/metrics";
@@ -241,7 +242,7 @@ function TooltipContent({
           fontSize: "13px",
         }}>
         Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span>{" "}
-        {parseFloat(time.toString()).toFixed(3)}s
+        {formatCompactNumber(time, 1)} s
       </div>
       {values.map((item) => (
         <div
@@ -267,7 +268,7 @@ function TooltipContent({
               marginLeft: "auto",
               fontFamily: "monospace",
             }}>
-            {item.value.toFixed(4)}
+            {formatCompactNumber(item.value, 2)}
             {item.unit ? ` ${item.unit.abbr}` : ""}
           </span>
         </div>
@@ -931,7 +932,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
           <span className="font-mono">{frameIndex + 1}</span>
           <span className="text-neutral-300">|</span>
           <span className="font-medium">Time:</span>
-          <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)}s</span>
+          <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
           <div className="flex flex-wrap items-center gap-2">
             {chartData.seriesData.map((item) => (
               <div

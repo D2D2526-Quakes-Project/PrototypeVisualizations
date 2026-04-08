@@ -54,7 +54,7 @@ const TooltipBody = memo(function TooltipBody({ value, unit, decimals, showConve
 function UnitTooltipComponent({
   value,
   unit,
-  decimals = 3,
+  decimals = 2,
   showConversions = true,
   interactive = true,
   side = "top",

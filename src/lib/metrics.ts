@@ -365,15 +365,21 @@ export function getConversions(value: number, unit: string): ConversionResult[] 
 }
 
 export function formatValue(value: number, decimals: number = 3): string {
+  const normalizeFixed = (fixedValue: string) => fixedValue.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");
+
   if (value === 0) return "0";
   const absValue = Math.abs(value);
+  const normalizedDecimals = Math.max(0, decimals);
+  const effectiveDecimals =
+    absValue >= 100 ? 0 : absValue >= 10 ? Math.min(normalizedDecimals, 1) : Math.min(normalizedDecimals, 2);
+
   if (absValue >= 1000) {
-    return value.toFixed(decimals);
+    return normalizeFixed(value.toFixed(0));
   }
   if (absValue < 0.001 && absValue !== 0) {
-    return value.toExponential(decimals);
+    return value.toExponential(Math.min(effectiveDecimals, 1));
   }
-  return value.toFixed(decimals);
+  return normalizeFixed(value.toFixed(effectiveDecimals));
 }
 
 export function getUnitFullName(unit: string): string {

@@ -135,7 +135,7 @@ export function ViewDamageThreshold() {
             <div className="flex flex-col gap-2">
               <label className="flex flex-col">
                 <span className="font-semibold">
-                  Warning Threshold: <UnitTooltip value={warningThreshold * 100} unit="%" decimals={3} />
+                  Warning Threshold: <UnitTooltip value={warningThreshold * 100} unit="%" />
                 </span>
                 <input
                   type="range"
@@ -223,10 +223,10 @@ export function ViewDamageThreshold() {
                             />
                             <div className="font-mono">{corner}</div>
                             <span className="w-12 shrink-0 text-right font-mono">
-                              <UnitTooltip value={current} unit="%" decimals={4} />
+                              <UnitTooltip value={current} unit="%" />
                             </span>
                             <span className="w-12 shrink-0 text-right font-mono">
-                              <UnitTooltip value={peak} unit="%" decimals={4} />
+                              <UnitTooltip value={peak} unit="%" />
                             </span>
                             <div
                               className={`w-14 rounded p-1 text-center font-mono ${thresholdFrame !== null ? "bg-yellow-200" : ""}`}>
@@ -234,7 +234,6 @@ export function ViewDamageThreshold() {
                                 <UnitTooltip
                                   value={thresholdFrame * animationData.metadata.dt}
                                   unit="s"
-                                  decimals={2}
                                   showConversions={false}
                                 />
                               ) : (

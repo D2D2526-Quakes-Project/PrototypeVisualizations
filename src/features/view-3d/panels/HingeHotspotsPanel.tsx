@@ -193,9 +193,9 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
             `<div>Step: ${row.stepType}</div>`,
             `<div>Node: ${row.nodeIndex >= 0 ? row.nodeIndex : "unknown"}</div>`,
             `<div>Severity: ${getSeverityLabel(row.criticalDcr)}</div>`,
-            `<div>Critical D/C: ${(first.value ?? row.criticalDcr).toFixed(3)}</div>`,
-            `<div>R3: ${row.r3.toFixed(5)} rad</div>`,
-            `<div>M3: ${row.m3.toFixed(3)} (source moment units)</div>`,
+            `<div>Critical D/C: ${(first.value ?? row.criticalDcr).toFixed(2)}</div>`,
+            `<div>R3: ${row.r3.toFixed(2)} rad</div>`,
+            `<div>M3: ${row.m3.toFixed(2)} (source moment units)</div>`,
           ].join("");
         },
       },
@@ -348,17 +348,17 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
             />
             <SummaryCard
               label="Top Critical D/C"
-              value={summary.maxCritical.toFixed(3)}
+              value={summary.maxCritical.toFixed(2)}
               hint={summary.top ? `E${summary.top.elementId} ${summary.top.end}` : "No hotspots"}
             />
             <SummaryCard
               label="Mean Critical D/C"
-              value={summary.meanCritical.toFixed(3)}
+              value={summary.meanCritical.toFixed(2)}
               hint="Across filtered hinges"
             />
             <SummaryCard
               label="Max |R3|"
-              value={summary.total > 0 ? `${summary.maxAbsR3.toFixed(5)} rad` : "0.00000 rad"}
+              value={summary.total > 0 ? `${summary.maxAbsR3.toFixed(2)} rad` : "0 rad"}
               hint="Rotation demand envelope"
             />
             <SummaryCard label="D/C ≥ 1" value={`${summary.ge1.toLocaleString()} (${exceedancePct.ge1.toFixed(1)}%)`} />
@@ -471,7 +471,7 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
                     <div className="text-neutral-500">Critical D/C</div>
-                    <div className="text-right font-mono text-neutral-800">{row.criticalDcr.toFixed(3)}</div>
+                    <div className="text-right font-mono text-neutral-800">{row.criticalDcr.toFixed(2)}</div>
                     <div className="text-neutral-500">Step</div>
                     <div className="text-right text-neutral-700">{row.stepType}</div>
                     <div className="text-neutral-500">Node</div>
@@ -480,13 +480,13 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
                     </div>
                     <div className="text-neutral-500">R3</div>
                     <div className="text-right font-mono text-neutral-700">
-                      <UnitTooltip value={row.r3} unit="rad" decimals={5} showConversions={false} />
+                      <UnitTooltip value={row.r3} unit="rad" decimals={2} showConversions={false} />
                     </div>
                     <div className="text-neutral-500">M3</div>
                     <div
                       className="text-right font-mono text-neutral-700"
                       title="Model output moment units from source export (dataset-dependent)">
-                      {row.m3.toFixed(3)}
+                      {row.m3.toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -538,14 +538,14 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
                         </span>
                       </td>
                       <td className="px-2 py-1 text-right font-mono">{row.nodeIndex >= 0 ? row.nodeIndex : "—"}</td>
-                      <td className="px-2 py-1 text-right font-mono">{row.criticalDcr.toFixed(3)}</td>
+                      <td className="px-2 py-1 text-right font-mono">{row.criticalDcr.toFixed(2)}</td>
                       <td className="px-2 py-1 text-right font-mono">
-                        <UnitTooltip value={row.r3} unit="rad" decimals={5} showConversions={false} />
+                        <UnitTooltip value={row.r3} unit="rad" decimals={2} showConversions={false} />
                       </td>
                       <td
                         className="px-2 py-1 text-right font-mono"
                         title="Model output moment units from source export (dataset-dependent)">
-                        {row.m3.toFixed(3)}
+                        {row.m3.toFixed(2)}
                       </td>
                     </tr>
                   ))}

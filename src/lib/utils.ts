@@ -8,7 +8,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const formatFixed3 = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(3);
+export function formatCompactNumber(value: number, maxDecimals = 2): string {
+  if (!Number.isFinite(value)) return String(value);
+  if (value === 0) return "0";
+
+  const absValue = Math.abs(value);
+  const normalizedMaxDecimals = Math.max(0, maxDecimals);
+  const effectiveDecimals =
+    absValue >= 100 ? 0 : absValue >= 10 ? Math.min(normalizedMaxDecimals, 1) : normalizedMaxDecimals;
+
+  const fixed = value.toFixed(effectiveDecimals);
+  return fixed.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");
+}
+
+export const formatFixed3 = (n: number) => `${n >= 0 ? "+" : ""}${formatCompactNumber(Math.abs(n), 2)}`;
 
 function lexicographicOrder(a: number[], b: number[]) {
   return a[0] - b[0] || a[1] - b[1];

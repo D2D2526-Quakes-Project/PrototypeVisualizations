@@ -105,8 +105,8 @@ function TooltipContent({
               <span style={{ color: "#6b7280", fontSize: "11px" }}>{corner}</span>
             </div>
             <div style={{ textAlign: "right" }}>
-              <span style={{ fontWeight: 500 }}>{current.toFixed(4)} %</span>
-              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>/ {peak.toFixed(4)} %</span>
+              <span style={{ fontWeight: 500 }}>{current.toFixed(2)} %</span>
+              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>/ {peak.toFixed(2)} %</span>
             </div>
           </div>
         );
@@ -383,7 +383,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
           },
         },
         axisLabel: {
-          formatter: (value: number) => value.toFixed(3),
+          formatter: (value: number) => value.toFixed(2),
           color: "#6b7280",
           fontSize: 10,
         },

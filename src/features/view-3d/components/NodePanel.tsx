@@ -448,13 +448,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <div>
               <span className="font-medium text-neutral-700">Elevation:</span>
               <div className="text-neutral-600">
-                <UnitTooltip interactive={!playing} value={storyInfo.elevation} unit="in" decimals={1} />
+                <UnitTooltip interactive={!playing} value={storyInfo.elevation} unit="in" decimals={0} />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Story Height:</span>
               <div className="text-neutral-600">
-                <UnitTooltip interactive={!playing} value={storyInfo.height} unit="in" decimals={1} />
+                <UnitTooltip interactive={!playing} value={storyInfo.height} unit="in" decimals={0} />
               </div>
             </div>
           </div>
@@ -499,7 +499,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="font-medium text-neutral-700">Peak Total:</span>
               <div className="font-mono text-neutral-600">
                 <UnitTooltip interactive={!playing} value={peakDisplacement.magnitude} unit="in" />
-                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.time.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.time.toFixed(2)} s</span>
               </div>
             </div>
           </div>
@@ -514,7 +514,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="text-neutral-600">Peak X:</span>
               <span className="font-mono text-neutral-800">
                 <UnitTooltip interactive={!playing} value={peakDisplacement.x} unit="in" />
-                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.xTime.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.xTime.toFixed(2)} s</span>
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1">
@@ -527,7 +527,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="text-neutral-600">Peak Y:</span>
               <span className="font-mono text-neutral-800">
                 <UnitTooltip interactive={!playing} value={peakDisplacement.y} unit="in" />
-                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.yTime.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.yTime.toFixed(2)} s</span>
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1">
@@ -540,7 +540,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="text-neutral-600">Peak Z:</span>
               <span className="font-mono text-neutral-800">
                 <UnitTooltip interactive={!playing} value={peakDisplacement.z} unit="in" />
-                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.zTime.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.zTime.toFixed(2)} s</span>
               </span>
             </div>
             <div className="mt-3 space-y-2">
@@ -589,46 +589,46 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div>
                 <span className="font-medium text-neutral-700">Current Total:</span>
                 <div className="font-mono text-neutral-600">
-                  <UnitTooltip interactive={!playing} value={currentRotation.magnitude} unit="rad" decimals={4} />
+                  <UnitTooltip interactive={!playing} value={currentRotation.magnitude} unit="rad" />
                 </div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Peak Total:</span>
                 <div className="font-mono text-neutral-600">
-                  <UnitTooltip interactive={!playing} value={peakRotation.magnitude} unit="rad" decimals={4} />
+                  <UnitTooltip interactive={!playing} value={peakRotation.magnitude} unit="rad" />
                 </div>
-                <div className="text-[9px] text-neutral-500"> @ {peakRotation.time.toFixed(2)}s</div>
+                <div className="text-[9px] text-neutral-500"> @ {peakRotation.time.toFixed(2)} s</div>
               </div>
             </div>
             <div className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
               <div>
                 <div className="text-neutral-600">Rx:</div>
                 <div className="font-mono">
-                  <UnitTooltip interactive={!playing} value={currentRotation.rx} unit="rad" decimals={4} />
+                  <UnitTooltip interactive={!playing} value={currentRotation.rx} unit="rad" />
                 </div>
                 <div className="font-mono text-neutral-500">
-                  (<UnitTooltip interactive={!playing} value={peakRotation.rx} unit="rad" decimals={4} />
-                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.rxTime.toFixed(2)}s)</span>
+                  (<UnitTooltip interactive={!playing} value={peakRotation.rx} unit="rad" />
+                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.rxTime.toFixed(2)} s)</span>
                 </div>
               </div>
               <div>
                 <div className="text-neutral-600">Ry:</div>
                 <div className="font-mono">
-                  <UnitTooltip interactive={!playing} value={currentRotation.ry} unit="rad" decimals={4} />
+                  <UnitTooltip interactive={!playing} value={currentRotation.ry} unit="rad" />
                 </div>
                 <div className="font-mono text-neutral-500">
-                  (<UnitTooltip interactive={!playing} value={peakRotation.ry} unit="rad" decimals={4} />
-                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.ryTime.toFixed(2)}s)</span>
+                  (<UnitTooltip interactive={!playing} value={peakRotation.ry} unit="rad" />
+                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.ryTime.toFixed(2)} s)</span>
                 </div>
               </div>
               <div>
                 <div className="text-neutral-600">Rz:</div>
                 <div className="font-mono">
-                  <UnitTooltip interactive={!playing} value={currentRotation.rz} unit="rad" decimals={4} />
+                  <UnitTooltip interactive={!playing} value={currentRotation.rz} unit="rad" />
                 </div>
                 <div className="font-mono text-neutral-500">
-                  (<UnitTooltip interactive={!playing} value={peakRotation.rz} unit="rad" decimals={4} />
-                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.rzTime.toFixed(2)}s)</span>
+                  (<UnitTooltip interactive={!playing} value={peakRotation.rz} unit="rad" />
+                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.rzTime.toFixed(2)} s)</span>
                 </div>
               </div>
             </div>
@@ -653,7 +653,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   <div className="font-mono text-neutral-600">
                     <UnitTooltip interactive={!playing} value={peakVelocity.magnitude} unit="in/s" />
                   </div>
-                  <div className="text-[9px] text-neutral-500"> @ {peakVelocity.time.toFixed(2)}s</div>
+                  <div className="text-[9px] text-neutral-500"> @ {peakVelocity.time.toFixed(2)} s</div>
                 </div>
               )}
             </div>
@@ -681,14 +681,14 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="mt-1 text-[9px] text-neutral-500">
                 Peak: X:{" "}
                 <UnitTooltip interactive={!playing} value={peakVelocity.x} unit="in/s" showConversions={false} />
-                <span className="text-[9px] text-neutral-500"> @ {peakVelocity.xTime.toFixed(2)}s, Y: </span>
+                <span className="text-[9px] text-neutral-500"> @ {peakVelocity.xTime.toFixed(2)} s, Y: </span>
                 <UnitTooltip interactive={!playing} value={peakVelocity.y} unit="in/s" showConversions={false} />
                 <span className="text-[9px] text-neutral-500">
-                  @ {peakVelocity.yTime.toFixed(2)}s, Z:{" "}
+                  @ {peakVelocity.yTime.toFixed(2)} s, Z:{" "}
                   <UnitTooltip interactive={!playing} value={peakVelocity.z} unit="in/s" showConversions={false} />{" "}
                   @{" "}
                 </span>
-                {peakVelocity.zTime.toFixed(2)}s
+                {peakVelocity.zTime.toFixed(2)} s
               </div>
             )}
             {velocityTimeSeries && (
@@ -724,7 +724,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   <div className="font-mono text-neutral-600">
                     <UnitTooltip interactive={!playing} value={peakAcceleration.magnitude} unit="in/s²" />
                   </div>
-                  <div className="text-[9px] text-neutral-500"> @ {peakAcceleration.time.toFixed(2)}s</div>
+                  <div className="text-[9px] text-neutral-500"> @ {peakAcceleration.time.toFixed(2)} s</div>
                 </div>
               )}
             </div>
@@ -752,11 +752,11 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="mt-1 text-[9px] text-neutral-500">
                 Peak: X:{" "}
                 <UnitTooltip interactive={!playing} value={peakAcceleration.x} unit="in/s²" showConversions={false} />
-                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.xTime.toFixed(2)}s, Y: </span>
+                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.xTime.toFixed(2)} s, Y: </span>
                 <UnitTooltip interactive={!playing} value={peakAcceleration.y} unit="in/s²" showConversions={false} />
-                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.yTime.toFixed(2)}s, Z: </span>
+                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.yTime.toFixed(2)} s, Z: </span>
                 <UnitTooltip interactive={!playing} value={peakAcceleration.z} unit="in/s²" showConversions={false} />
-                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.zTime.toFixed(2)}s</span>
+                <span className="text-[9px] text-neutral-500"> @ {peakAcceleration.zTime.toFixed(2)} s</span>
               </div>
             )}
             {accelerationTimeSeries && (
@@ -782,13 +782,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div>
                 <span className="font-medium text-neutral-700">Current:</span>
                 <div className="font-mono text-neutral-600">
-                  <UnitTooltip interactive={!playing} value={storyDrift.current} unit="%" decimals={4} />
+                  <UnitTooltip interactive={!playing} value={storyDrift.current} unit="%" />
                 </div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Peak:</span>
                 <div className="font-mono text-neutral-600">
-                  <UnitTooltip interactive={!playing} value={storyDrift.peak} unit="%" decimals={4} />
+                  <UnitTooltip interactive={!playing} value={storyDrift.peak} unit="%" />
                 </div>
               </div>
             </div>

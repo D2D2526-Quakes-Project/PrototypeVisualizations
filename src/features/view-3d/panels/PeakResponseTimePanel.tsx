@@ -59,7 +59,7 @@ function quantile(sorted: number[], q: number) {
 
 function fmtCornerTime(time: number) {
   // keep time readable in tight spaces
-  return time < 10 ? time.toFixed(2) : time.toFixed(1);
+  return time.toFixed(1).replace(/\.0$/u, "");
 }
 
 const SortCaret = ({ active }: { active: boolean }) => (
@@ -265,7 +265,7 @@ export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
             <div className="rounded-lg border border-neutral-200 bg-white p-2">
               <div className="text-[10px] text-neutral-500">Global peak drift</div>
               <div className="text-sm font-semibold tabular-nums">
-                <UnitTooltip value={insights.globalPeak} unit="%" decimals={3} />
+                <UnitTooltip value={insights.globalPeak} unit="%" />
               </div>
               {insights.topStory && (
                 <div className="mt-1 text-[10px] text-neutral-500">
@@ -280,9 +280,9 @@ export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
               <div className="text-[10px] text-neutral-500">Peak-time distribution (max corner)</div>
               <div className="text-sm font-semibold tabular-nums">
                 P50 <span className="font-normal text-neutral-400">/</span>{" "}
-                <UnitTooltip value={insights.p50MaxTime} unit="s" decimals={2} showConversions={false} />{" "}
+                <UnitTooltip value={insights.p50MaxTime} unit="s" decimals={1} showConversions={false} />{" "}
                 <span className="font-normal text-neutral-400">•</span> P90{" "}
-                <UnitTooltip value={insights.p90MaxTime} unit="s" decimals={2} showConversions={false} />
+                <UnitTooltip value={insights.p90MaxTime} unit="s" decimals={1} showConversions={false} />
               </div>
               <div className="mt-1 h-2 overflow-hidden rounded-full bg-neutral-100">
                 <div
@@ -292,7 +292,7 @@ export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
                 />
               </div>
               <div className="mt-1 text-[10px] text-neutral-500">
-                Duration: <span className="tabular-nums">{duration.toFixed(2)} s</span>
+                Duration: <span className="tabular-nums">{duration.toFixed(1).replace(/\.0$/u, "")} s</span>
               </div>
             </div>
 
@@ -394,7 +394,7 @@ export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
                       title="Normalized to global peak drift"
                     />
                     <span className="text-sm font-semibold text-neutral-800 tabular-nums">
-                      <UnitTooltip value={r.maxDrift} unit="%" decimals={3} />
+                      <UnitTooltip value={r.maxDrift} unit="%" />
                     </span>
                     <span className="text-[11px] text-neutral-500 tabular-nums">F{r.maxFrame + 1}</span>
                   </div>
@@ -408,7 +408,7 @@ export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
                   </div>
 
                   <div className="text-sm text-neutral-700 tabular-nums">
-                    <UnitTooltip value={r.maxTime} unit="s" decimals={2} showConversions={false} />
+                    <UnitTooltip value={r.maxTime} unit="s" decimals={1} showConversions={false} />
                   </div>
 
                   <div className="min-w-0">
@@ -427,7 +427,7 @@ export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
                               className={`flex items-center gap-2 rounded-md border px-2 py-1 ${
                                 isMax ? "border-neutral-400 bg-white" : "border-neutral-200 bg-white/70"
                               }`}
-                              title={`${c} • Drift ${d.drift.toFixed(4)}% • Time ${d.time.toFixed(3)} s • Frame ${d.frame + 1}`}>
+                              title={`${c} • Drift ${d.drift.toFixed(2)}% • Time ${fmtCornerTime(d.time)} s • Frame ${d.frame + 1}`}>
                               <span
                                 className="h-2.5 w-2.5 rounded-sm border border-black/10"
                                 style={{ background: cBg }}
@@ -436,7 +436,7 @@ export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
                                 className={`text-[10px] font-semibold ${cornerMeta[c].pill} rounded-full border px-1.5 py-0.5`}>
                                 {c}
                               </span>
-                              <span className="text-[11px] text-neutral-800 tabular-nums">{d.drift.toFixed(3)}%</span>
+                              <span className="text-[11px] text-neutral-800 tabular-nums">{d.drift.toFixed(2)}%</span>
                               <span className="text-[11px] text-neutral-500 tabular-nums">
                                 {fmtCornerTime(d.time)} s
                               </span>
@@ -447,7 +447,7 @@ export function PeakResponseTimePanel({ api }: IDockviewPanelProps) {
                     ) : (
                       <div className="text-[11px] text-neutral-500">
                         <span className="font-medium text-neutral-700">{r.maxCorner}</span> is max •{" "}
-                        {r.maxDrift.toFixed(3)}% at {fmtCornerTime(r.maxTime)} s
+                        {r.maxDrift.toFixed(2)}% at {fmtCornerTime(r.maxTime)} s
                       </div>
                     )}
                   </div>

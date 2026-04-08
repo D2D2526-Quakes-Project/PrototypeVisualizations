@@ -52,7 +52,7 @@ function buildHingeHistogramOption(
   const metricUnit = HINGE_METRIC_UNITS[metricKey];
   const metricLabelWithUnit = metricUnit ? `${metricLabel} (${metricUnit})` : metricLabel;
 
-  const xLabels = histogram.bins.map((bin) => `${bin.x0.toFixed(4)}-${bin.x1.toFixed(4)}`);
+  const xLabels = histogram.bins.map((bin) => `${bin.x0.toFixed(2)}-${bin.x1.toFixed(2)}`);
   const counts = histogram.bins.map((bin) => bin.count);
   const clipCount = getClipCountFromPercentile(counts, clipPercentile);
   const hasClippedData = counts.some((value) => value > clipCount);
@@ -81,7 +81,7 @@ function buildHingeHistogramOption(
         const isClipped = currentCount > clipCount;
         return [
           `<div style="font-weight:600;margin-bottom:4px">${metricLabelWithUnit}</div>`,
-          `<div>Range Bin: ${bin.x0.toFixed(4)} to ${bin.x1.toFixed(4)}${metricUnit ? ` ${metricUnit}` : ""}</div>`,
+          `<div>Range Bin: ${bin.x0.toFixed(2)} to ${bin.x1.toFixed(2)}${metricUnit ? ` ${metricUnit}` : ""}</div>`,
           `<div>Count: ${currentCount}</div>`,
           isClipped ? `<div style="margin-top:4px;color:#737373">This bin continues above ${clipCount}.</div>` : "",
         ].join("");

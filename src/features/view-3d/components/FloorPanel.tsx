@@ -412,32 +412,22 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 <div>
                   <div className="text-neutral-500">Current Rotation</div>
                   <div className="font-mono text-neutral-800">
-                    <UnitTooltip
-                      interactive={!playing}
-                      value={floorTorsion.snapshot.rotationRad}
-                      unit="rad"
-                      decimals={6}
-                    />
+                    <UnitTooltip interactive={!playing} value={floorTorsion.snapshot.rotationRad} unit="rad" />
                   </div>
                 </div>
                 <div>
                   <div className="text-neutral-500">Peak |Rotation|</div>
                   <div className="font-mono text-neutral-800">
-                    <UnitTooltip interactive={!playing} value={floorTorsionPeak.peakAbsRad} unit="rad" decimals={6} />
+                    <UnitTooltip interactive={!playing} value={floorTorsionPeak.peakAbsRad} unit="rad" />
                   </div>
                   <div className="text-neutral-400">
-                    @ {(floorTorsionPeak.peakFrameIndex * animationData.metadata.dt).toFixed(2)}s
+                    @ {(floorTorsionPeak.peakFrameIndex * animationData.metadata.dt).toFixed(2)} s
                   </div>
                 </div>
                 <div>
                   <div className="text-neutral-500">Peak Signed Rotation</div>
                   <div className="font-mono text-neutral-800">
-                    <UnitTooltip
-                      interactive={!playing}
-                      value={floorTorsionPeak.peakSignedRad}
-                      unit="rad"
-                      decimals={6}
-                    />
+                    <UnitTooltip interactive={!playing} value={floorTorsionPeak.peakSignedRad} unit="rad" />
                   </div>
                 </div>
                 <div>
@@ -447,10 +437,10 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     style={{
                       background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)",
                     }}
-                    title={`Rotation color scale ±${floorTorsion.colorScaleAbsMax.toFixed(6)} rad`}
+                    title={`Rotation color scale ±${floorTorsion.colorScaleAbsMax.toFixed(2)} rad`}
                   />
                   <div className="mt-1 font-mono text-[9px] text-neutral-500">
-                    ±{floorTorsion.colorScaleAbsMax.toFixed(6)} rad
+                    ±{floorTorsion.colorScaleAbsMax.toFixed(2)} rad
                   </div>
                 </div>
               </div>
@@ -472,7 +462,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               </div>
               <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
                 <div className="tracking-wide text-neutral-500 uppercase">Max Crit D/C</div>
-                <div className="font-mono text-neutral-800">{hingeSliceSummary.maxCritical.toFixed(3)}</div>
+                <div className="font-mono text-neutral-800">{hingeSliceSummary.maxCritical.toFixed(2)}</div>
               </div>
               <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
                 <div className="tracking-wide text-neutral-500 uppercase">D/C {">="} 1 / 2 / 4</div>
@@ -482,7 +472,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               </div>
               <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
                 <div className="tracking-wide text-neutral-500 uppercase">P95 (approx)</div>
-                <div className="font-mono text-neutral-800">{hingeSliceSummary.p95Approx.toFixed(3)}</div>
+                <div className="font-mono text-neutral-800">{hingeSliceSummary.p95Approx.toFixed(2)}</div>
               </div>
             </div>
 
@@ -498,7 +488,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     <span className="truncate text-neutral-500">
                       Beam {row.beamIndex} · Node {row.nodeIndex >= 0 ? row.nodeIndex : "?"}
                     </span>
-                    <span className="font-mono text-neutral-800">{row.criticalDcr.toFixed(3)}</span>
+                    <span className="font-mono text-neutral-800">{row.criticalDcr.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -527,7 +517,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 </div>
                 <span className="text-[9px] text-neutral-500">
                   {" "}
-                  @ {displacementData.peak.magnitudeTime.toFixed(2)}s
+                  @ {displacementData.peak.magnitudeTime.toFixed(2)} s
                 </span>
               </div>
             </div>
@@ -542,7 +532,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="font-mono text-neutral-800">
                   <UnitTooltip interactive={!playing} value={displacementData.peak.x} unit="in" />
-                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.xTime.toFixed(2)}s</span>
+                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.xTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
@@ -555,7 +545,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="font-mono text-neutral-800">
                   <UnitTooltip interactive={!playing} value={displacementData.peak.y} unit="in" />
-                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.yTime.toFixed(2)}s</span>
+                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.yTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
@@ -568,7 +558,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="font-mono text-neutral-800">
                   <UnitTooltip interactive={!playing} value={displacementData.peak.z} unit="in" />
-                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.zTime.toFixed(2)}s</span>
+                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.zTime.toFixed(2)} s</span>
                 </span>
               </div>
             </div>
@@ -726,10 +716,10 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   {data ? (
                     <div className="font-mono text-[10px] text-neutral-600">
                       <span className="mr-1">Current:</span>
-                      <UnitTooltip interactive={!playing} value={data.current} unit="%" decimals={4} />
+                      <UnitTooltip interactive={!playing} value={data.current} unit="%" />
                       <span className="mx-2 text-neutral-300">|</span>
                       <span className="mr-1">Peak:</span>
-                      <UnitTooltip interactive={!playing} value={data.peak} unit="%" decimals={4} />
+                      <UnitTooltip interactive={!playing} value={data.peak} unit="%" />
                     </div>
                   ) : (
                     <div className="text-[10px] text-neutral-400">N/A</div>

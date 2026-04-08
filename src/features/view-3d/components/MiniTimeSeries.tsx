@@ -49,7 +49,7 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label }
           if (!point.value || !Array.isArray(point.value)) return "";
           const time = point.value[0] as number;
           const value = point.value[1] as number;
-          return `<div style="font-weight:500;">${value.toFixed(4)} ${unit}</div><div style="color:#9ca3af;">@ ${time.toFixed(3)} s</div>`;
+          return `<div style="font-weight:500;">${value.toFixed(2)} ${unit}</div><div style="color:#9ca3af;">@ ${time.toFixed(1).replace(/\\.0$/u, "")} s</div>`;
         },
       },
       grid: {

@@ -104,6 +104,11 @@
   - [x] Harden `Statistics` ground-motion fallback when a frame lacks motion data
   - [x] Align `Floor Torsion Map` and legacy `Floor Torsion` page on X-Y plan labeling and 1-based frame metadata
   - [x] Normalize shared `MiniTimeSeries` tooltip/axis/footer time labels to spaced `s` units
+  - [x] Normalize `FloorPanel` local evidence cards to use spaced `s` units for peak-time readouts
+  - [x] Normalize `NodePanel` local evidence cards to use spaced `s` units for peak-time readouts
+  - [x] Normalize `Velocity Time` and `Rotation Time` tooltip headers to use spaced `s` units
+  - [x] Reduce default numeric precision in shared unit/value formatting and trim trailing `.0` noise
+  - [x] Reduce over-precise value formatting in threshold, hinge, drift, table, and torsion panels to mostly 0-2 decimals
   - [x] Normalize `Floor Displacement` story/elevation labels to inches and add explicit chart title + y-axis label
   - [x] Add a normalized drift color legend and inch-based elevation labels to `Peak Response Time`
   - [x] Clarify older table-panel metadata by labeling `Data Table` magnitude units and separating `Peak Values` rank from node id

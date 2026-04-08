@@ -174,7 +174,7 @@ export function DamageThresholdPanel() {
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold">Warning Threshold</span>
             <span className="font-mono text-sm">
-              <UnitTooltip interactive={!playing} value={thresholds.interstoryDrift} unit="%" decimals={3} />
+              <UnitTooltip interactive={!playing} value={thresholds.interstoryDrift} unit="%" />
             </span>
           </div>
           <p className="mt-1 text-xs text-neutral-600">
@@ -192,7 +192,7 @@ export function DamageThresholdPanel() {
           <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-neutral-500">
             <span>0%</span>
             <span className="text-right">
-              Max panel range: <UnitTooltip interactive={!playing} value={maxDriftThreshold} unit="%" decimals={2} />
+              Max panel range: <UnitTooltip interactive={!playing} value={maxDriftThreshold} unit="%" />
             </span>
           </div>
         </div>
@@ -230,7 +230,7 @@ export function DamageThresholdPanel() {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-600">
             <span className="whitespace-nowrap">
               Warning Threshold:{" "}
-              <span className="font-mono text-neutral-800">{thresholds.interstoryDrift.toFixed(3)}%</span>
+              <span className="font-mono text-neutral-800">{thresholds.interstoryDrift.toFixed(2)}%</span>
             </span>
             <span className="text-neutral-300">•</span>
             <span className="whitespace-nowrap">Corner Color = Current Drift / Peak Drift (ratio)</span>
@@ -322,10 +322,10 @@ export function DamageThresholdPanel() {
                           <span>{corner}</span>
                         </div>
                         <span className="min-w-0 px-2 py-1 text-right font-mono whitespace-nowrap">
-                          <UnitTooltip interactive={!playing} value={current} unit="%" decimals={4} />
+                          <UnitTooltip interactive={!playing} value={current} unit="%" />
                         </span>
                         <span className="min-w-0 px-2 py-1 text-right font-mono whitespace-nowrap">
-                          <UnitTooltip interactive={!playing} value={peak || 0} unit="%" decimals={4} />
+                          <UnitTooltip interactive={!playing} value={peak || 0} unit="%" />
                         </span>
                         <div className="flex min-w-0 justify-center px-2 py-1">
                           <ThresholdStatusPill
@@ -340,7 +340,6 @@ export function DamageThresholdPanel() {
                                 interactive={!playing}
                                 value={thresholdFrame * dt}
                                 unit="s"
-                                decimals={2}
                                 showConversions={false}
                               />
                             </span>

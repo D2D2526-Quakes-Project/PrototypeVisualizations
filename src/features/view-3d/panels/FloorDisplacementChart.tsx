@@ -107,8 +107,8 @@ export function FloorDisplacementChart() {
           const data = chartData[params[0].dataIndex];
           return `
             <div style="font-weight: 600; margin-bottom: 6px;">${formatStoryLabel(data.story, data.elevationIn)}</div>
-            <div>X: ${data.avgX.toFixed(4)} in</div>
-            <div>Y: ${data.avgY.toFixed(4)} in</div>
+            <div>X: ${data.avgX.toFixed(2)} in</div>
+            <div>Y: ${data.avgY.toFixed(2)} in</div>
           `;
         },
       },
@@ -139,7 +139,7 @@ export function FloorDisplacementChart() {
         min: -xAxisMax,
         max: xAxisMax,
         axisLine: { lineStyle: { color: "#d1d5db" } },
-        axisLabel: { color: "#6b7280", fontSize: 10, formatter: (v: number) => v.toFixed(2) },
+        axisLabel: { color: "#6b7280", fontSize: 10, formatter: (v: number) => v.toFixed(1).replace(/\.0$/u, "") },
         splitLine: { lineStyle: { color: "#e5e7eb", type: "dashed" } },
       },
       yAxis: {

@@ -8,12 +8,13 @@ import { FloorTorsionPlanPreview } from "@/features/view-3d/components/FloorTors
 import { buildFloorTorsionSnapshot } from "@/features/view-3d/lib/floorTorsion";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
+import { formatCompactNumber } from "@/lib/utils";
 import { SmallTimeline } from "@/features/playback/SmallTimeline";
 
 const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
-function formatSigned(value: number, digits = 5) {
-  return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
+function formatSigned(value: number, digits = 2) {
+  return `${value >= 0 ? "+" : ""}${formatCompactNumber(Math.abs(value), digits)}`;
 }
 
 function PlaneShapes({
@@ -254,12 +255,12 @@ export function FloorPlanTorsion() {
                 <div
                   className="h-2 rounded border border-neutral-200"
                   style={{ background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)" }}
-                  title={`Torsion rotation color scale from -${maxAbsRotation.toFixed(6)} rad to +${maxAbsRotation.toFixed(6)} rad`}
+                  title={`Torsion rotation color scale from -${formatCompactNumber(maxAbsRotation, 2)} rad to +${formatCompactNumber(maxAbsRotation, 2)} rad`}
                 />
                 <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-neutral-500">
-                  <span>{(-maxAbsRotation).toFixed(6)}</span>
-                  <span>0.000000</span>
-                  <span>{maxAbsRotation.toFixed(6)}</span>
+                  <span>{formatSigned(-maxAbsRotation, 2)}</span>
+                  <span>0</span>
+                  <span>{formatCompactNumber(maxAbsRotation, 2)}</span>
                 </div>
                 <div className="mt-1 text-[10px] text-neutral-500">
                   Previews include X/Y plan axes in inches (in). 3D panes are labeled by viewing plane.
@@ -273,7 +274,7 @@ export function FloorPlanTorsion() {
                 {torsionRows.toReversed().map((row) => {
                   const normalized = Math.max(-1, Math.min(1, row.rotationRad / maxAbsRotation));
                   const fill = formatHex(torsionColorScale((normalized + 1) / 2)) ?? "#f8fafc";
-                  const tooltip = `Story ${row.storyId}\nRotation: ${row.rotationRad.toFixed(6)} rad\nNodes: ${row.nodeCount}`;
+                  const tooltip = `Story ${row.storyId}\nRotation: ${formatCompactNumber(row.rotationRad, 2)} rad\nNodes: ${row.nodeCount}`;
 
                   return (
                     <div key={row.storyId} className="rounded border border-neutral-200 bg-white p-2" title={tooltip}>
@@ -285,11 +286,11 @@ export function FloorPlanTorsion() {
                         <div className="grid shrink-0 grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
                           <span className="text-neutral-500">Rotation (rad)</span>
                           <span className="text-right font-mono text-neutral-800">
-                            {formatSigned(row.rotationRad, 6)}
+                            {formatSigned(row.rotationRad, 2)}
                           </span>
                           <span className="text-neutral-500">|Rotation|</span>
                           <span className="text-right font-mono text-neutral-700">
-                            {Math.abs(row.rotationRad).toFixed(6)} rad
+                            {formatCompactNumber(Math.abs(row.rotationRad), 2)} rad
                           </span>
                         </div>
                       </div>

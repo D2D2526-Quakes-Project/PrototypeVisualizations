@@ -43,7 +43,7 @@ function StatRow({
   label,
   value,
   unit = "",
-  decimals = 4,
+  decimals = 2,
 }: {
   label: string;
   value: string | number;
@@ -174,7 +174,7 @@ export function StatisticsPanel() {
   return (
     <div className="flex h-full w-full flex-col overflow-auto bg-white">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-        <span>Time: {(frameIndex * animationData.metadata.dt).toFixed(3)} s</span>
+        <span>Time: {(frameIndex * animationData.metadata.dt).toFixed(1).replace(/\.0$/u, "")} s</span>
         <span className="text-neutral-300">•</span>
         <span>Displacement/velocity/acceleration in in, in/s, in/s²</span>
         <span className="text-neutral-300">•</span>
@@ -185,14 +185,14 @@ export function StatisticsPanel() {
         <StatGroup title="Simulation" scope="static">
           <StatRow label="Nodes" value={stats.nodeCount} />
           <StatRow label="Frames" value={stats.frameCount} />
-          <StatRow label="Duration" value={stats.duration} unit="s" decimals={2} />
-          <StatRow label="Time Step" value={stats.dt} unit="s" decimals={4} />
+          <StatRow label="Duration" value={stats.duration} unit="s" />
+          <StatRow label="Time Step" value={stats.dt} unit="s" />
           <StatRow label="Stories" value={stats.storyCount} />
         </StatGroup>
 
         <StatGroup title="Current Frame" scope="current">
           <StatRow label="Frame" value={stats.currentFrame + 1} />
-          <StatRow label="Time" value={stats.currentTime} unit="s" decimals={3} />
+          <StatRow label="Time" value={stats.currentTime} unit="s" decimals={1} />
         </StatGroup>
 
         <StatGroup title="Displacement Range" scope="current">
@@ -236,8 +236,8 @@ export function StatisticsPanel() {
           {stats.precomputed.maxAcceleration && (
             <StatRow label="Max Acceleration" value={stats.precomputed.maxAcceleration} unit="in/s²" />
           )}
-          <StatRow label="Max Story Drift" value={stats.precomputed.maxStoryDrift} unit="%" decimals={3} />
-          <StatRow label="Avg Story Drift" value={stats.precomputed.avgStoryDrift} unit="%" decimals={3} />
+          <StatRow label="Max Story Drift" value={stats.precomputed.maxStoryDrift} unit="%" />
+          <StatRow label="Avg Story Drift" value={stats.precomputed.avgStoryDrift} unit="%" />
           {stats.optionalPeaks.maxRotation !== null && (
             <StatRow label="Max Rotation" value={stats.optionalPeaks.maxRotation} unit="rad" />
           )}

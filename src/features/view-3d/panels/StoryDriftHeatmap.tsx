@@ -209,8 +209,8 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
           return `
             <div style="font-weight: 600;">Story ${storyId} ${corner}</div>
             <div>Frame: ${actualFrame + 1}</div>
-            <div>Time: ${time.toFixed(3)}s</div>
-            ${isMaxSelected ? `<div>Max Drift: ${value.toFixed(4)}%</div>` : `<div>${corner} Drift: ${value.toFixed(4)}%</div>`}
+            <div>Time: ${time.toFixed(1).replace(/\.0$/u, "")} s</div>
+            ${isMaxSelected ? `<div>Max Drift: ${value.toFixed(2)}%</div>` : `<div>${corner} Drift: ${value.toFixed(2)}%</div>`}
           `;
         },
       },
@@ -229,7 +229,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
           color: "#6b7280",
           fontSize: 9,
           interval: Math.floor(frameCount / 8),
-          formatter: (v: string) => `${v}s`,
+          formatter: (v: string) => `${v.replace(/\.0$/u, "")} s`,
         },
         splitArea: { show: false },
         axisLine: { lineStyle: { color: "#d1d5db" } },
@@ -270,7 +270,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
         },
         textStyle: { fontSize: 10 },
         // Drift values are already stored as percent in precomputed story drift data.
-        formatter: (v) => `${(v as number).toFixed(2)}%`,
+        formatter: (v) => `${(v as number).toFixed(1).replace(/\.0$/u, "")}%`,
       },
       series: [
         {

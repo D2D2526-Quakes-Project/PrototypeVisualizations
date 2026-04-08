@@ -2,13 +2,14 @@ import { FloorTorsionPlanPreview } from "@/features/view-3d/components/FloorTors
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { buildFloorTorsionSnapshot } from "@/features/view-3d/lib/floorTorsion";
 import { useAnimationData } from "@/lib/useAnimationData";
+import { formatCompactNumber } from "@/lib/utils";
 import { formatHex, interpolate } from "culori";
 import { useMemo } from "react";
 
 const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
-function formatSigned(value: number, digits = 5) {
-  return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
+function formatSigned(value: number, digits = 2) {
+  return `${value >= 0 ? "+" : ""}${formatCompactNumber(Math.abs(value), digits)}`;
 }
 
 export function FloorTorsionMapPanel() {
@@ -48,12 +49,12 @@ export function FloorTorsionMapPanel() {
             style={{
               background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)",
             }}
-            title={`Rotation color scale from -${maxAbsRotation.toFixed(6)} rad to +${maxAbsRotation.toFixed(6)} rad`}
+            title={`Rotation color scale from -${formatCompactNumber(maxAbsRotation, 2)} rad to +${formatCompactNumber(maxAbsRotation, 2)} rad`}
           />
           <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-neutral-500">
-            <span>{(-maxAbsRotation).toFixed(6)}</span>
-            <span>0.000000</span>
-            <span>{maxAbsRotation.toFixed(6)}</span>
+            <span>{formatSigned(-maxAbsRotation, 2)}</span>
+            <span>0</span>
+            <span>{formatCompactNumber(maxAbsRotation, 2)}</span>
           </div>
           <div className="mt-1 text-[10px] text-neutral-500">Axes: X and Y plan coordinates in inches (in)</div>
         </div>
@@ -63,7 +64,7 @@ export function FloorTorsionMapPanel() {
         {rows.map((row) => {
           const normalized = Math.max(-1, Math.min(1, row.rotationRad / maxAbsRotation));
           const fill = formatHex(torsionColorScale((normalized + 1) / 2));
-          const tooltip = `Story ${row.storyId}\nRotation: ${row.rotationRad.toFixed(6)} rad\nNodes: ${row.nodeCount}`;
+          const tooltip = `Story ${row.storyId}\nRotation: ${formatCompactNumber(row.rotationRad, 2)} rad\nNodes: ${row.nodeCount}`;
           const absRotation = Math.abs(row.rotationRad);
 
           return (
@@ -75,14 +76,14 @@ export function FloorTorsionMapPanel() {
                     {row.storyId}
                   </div>
                 </div>
-                  <div className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-1 text-[10px] leading-tight">
-                    <div className="text-neutral-500">Rotation (rad)</div>
-                    <div className="text-right font-mono text-neutral-800">{formatSigned(row.rotationRad, 6)}</div>
-                    <div className="text-neutral-500">|Rotation|</div>
-                    <div className="text-right font-mono text-neutral-700">{absRotation.toFixed(6)} rad</div>
-                    <div className="text-neutral-500">Nodes</div>
-                    <div className="text-right text-neutral-500">{row.nodeCount}</div>
-                  </div>
+                <div className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-1 text-[10px] leading-tight">
+                  <div className="text-neutral-500">Rotation (rad)</div>
+                  <div className="text-right font-mono text-neutral-800">{formatSigned(row.rotationRad, 2)}</div>
+                  <div className="text-neutral-500">|Rotation|</div>
+                  <div className="text-right font-mono text-neutral-700">{formatCompactNumber(absRotation, 2)} rad</div>
+                  <div className="text-neutral-500">Nodes</div>
+                  <div className="text-right text-neutral-500">{row.nodeCount}</div>
+                </div>
               </div>
               <div className="h-32 min-w-0 rounded border border-neutral-100 bg-neutral-50">
                 <FloorTorsionPlanPreview snapshot={row} fill={fill} className="h-full w-full" />

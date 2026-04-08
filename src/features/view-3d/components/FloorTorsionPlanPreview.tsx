@@ -92,7 +92,7 @@ function FloorTorsionPlanPreviewComponent({ snapshot, fill, className, label }: 
       preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label={label ?? `Story ${storyId} floor plan rotation preview`}>
-      <title>{`Story ${storyId}: top-down floor rotation ${rotationRad.toFixed(6)} rad (X-Y plan)`}</title>
+      <title>{`Story ${storyId}: top-down floor rotation ${rotationRad.toFixed(2)} rad (X-Y plan)`}</title>
       <MemoFloorTorsionPlanStaticLayer snapshot={snapshot} />
       <polygon
         points={pointString}

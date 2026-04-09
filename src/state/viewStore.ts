@@ -94,6 +94,8 @@ export interface ViewState {
   // View Mode
   mode: ViewMode;
   setMode: (mode: ViewMode) => void;
+  cornersOnly: boolean;
+  setCornersOnly: (value: boolean) => void;
 
   // Thresholds
   thresholds: ThresholdState;
@@ -232,6 +234,8 @@ export const createViewStore = () =>
       // View Mode
       mode: "all-nodes" as ViewMode,
       setMode: (mode) => set({ mode }),
+      cornersOnly: false,
+      setCornersOnly: (cornersOnly) => set({ cornersOnly }),
 
       // Thresholds
       thresholds: { ...DEFAULT_THRESHOLDS },

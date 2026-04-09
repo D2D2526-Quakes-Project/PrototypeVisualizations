@@ -62,6 +62,8 @@ export function ViewControls({
   const { animationData } = useAnimationData();
   const { currentMetric, metricPaletteOverrides, thresholdHighlighting } = useColor();
   const { mode, setMode } = useViewMode();
+  const cornersOnly = useViewStore((s) => s.cornersOnly);
+  const setCornersOnly = useViewStore((s) => s.setCornersOnly);
   const {
     state: expandedScaleState,
     toggleExpansion,
@@ -489,7 +491,12 @@ export function ViewControls({
                     <Grid3X3 size={12} className="text-neutral-500" />
                     <span className="text-xs font-medium text-neutral-700">View Mode</span>
                   </div>
-                  <ViewModeSelect mode={mode} setMode={setMode} />
+                  <ViewModeSelect
+                    mode={mode}
+                    setMode={setMode}
+                    cornersOnly={cornersOnly}
+                    setCornersOnly={setCornersOnly}
+                  />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ColorPanel thresholds={thresholds} animationData={animationData} />

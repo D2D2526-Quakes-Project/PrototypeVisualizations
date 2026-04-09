@@ -11,7 +11,6 @@ import {
   useSliceSelection,
   useViewMode,
 } from "@/features/view-3d/contexts/visualization";
-import { ThresholdBuildingScene } from "@/features/view-3d/scenes/ThresholdBuildingScene";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { isNodeInteractionMode, isSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
@@ -58,6 +57,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const addSelectedNodes = useViewStore((s) => s.addSelectedNodes);
   const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
   const setHoveredNodeId = useViewStore((s) => s.setHoveredNodeId);
+  const cornersOnly = useViewStore((s) => s.cornersOnly);
   const nodeInteractionEnabled = isNodeInteractionMode(mode);
   const slabInteractionEnabled = isSlabInteractionMode(mode);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -508,7 +508,9 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       <group scale={UNIT_SCALE}>
         <group position={[offsets.x, offsets.y, offsets.z]}>
           {/* Render based on view mode */}
-          {mode === "floor-slabs" && <FloorSlabsRenderer key={interactiveSceneKey} nodeIds={visibleNodes} />}
+          {mode === "floor-slabs" && (
+            <FloorSlabsRenderer key={interactiveSceneKey} nodeIds={visibleNodes} cornersOnly={cornersOnly} />
+          )}
 
           {mode === "all-nodes" && (
             <instancedMesh
@@ -531,8 +533,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
               <meshBasicMaterial fog={false} vertexColors />
             </instancedMesh>
           )}
-
-          {mode === "threshold" && <ThresholdBuildingScene />}
 
           {/* Selected node highlights - one ring per selected node */}
           {selectedNodesData.map(({ nodeId, position, color }) => (

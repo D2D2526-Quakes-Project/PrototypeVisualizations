@@ -17,6 +17,7 @@ import { SelectionShortcuts } from "./CanvasWithControls/SelectionShortcuts";
 import { ViewControls } from "./CanvasWithControls/ViewControls";
 
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { CrossSectionControls } from "./CanvasWithControls/CrossSectionControls";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
@@ -101,7 +102,7 @@ export function CanvasWithControls({
   const getDockedState = useCallback((nextContainerWidth: number, nextControlsWidth: number, expanded: boolean) => {
     setIsControlsDocked((current) => {
       if (!expanded || nextControlsWidth <= 0) return false;
-      const dockThreshold = nextControlsWidth * 3;
+      const dockThreshold = nextControlsWidth * 2;
       const hysteresis = 32;
       return current
         ? nextContainerWidth >= dockThreshold - hysteresis
@@ -289,7 +290,7 @@ export function CanvasWithControls({
   return (
     <div
       ref={containerRef}
-      className="relative flex h-full w-full min-h-0 flex-col"
+      className="relative flex h-full min-h-0 w-full flex-col"
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}>
@@ -335,6 +336,7 @@ export function CanvasWithControls({
         onExpandedWidthChange={handleExpandedWidthChange}
         docked={isControlsDocked}
       />
+      <CrossSectionControls />
       <SelectionShortcuts showPlayback={Boolean(showPlaybackControls)} />
     </div>
   );

@@ -51,8 +51,6 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const rotationZColor = getMetricKeyColor("rotationZ", metricPaletteOverrides);
   const storyDriftColor = getMetricKeyColor("interstoryDrift", metricPaletteOverrides);
 
-  console.log(animationData.metadata.storyOrder);
-
   const nodeIds = useMemo(
     () => animationData.metadata.stories[storyId] || [],
     [storyId, animationData.metadata.stories]

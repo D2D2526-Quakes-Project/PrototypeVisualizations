@@ -1,11 +1,9 @@
 import { useViewStore } from "@/state";
 import type { AnimationMetadata, IndexAccessor } from "@/lib/types";
+import { useAnimationData } from "@/lib/useAnimationData";
 import { useCallback } from "react";
 
-export type ViewMode =
-  | "all-nodes"
-  | "floor-slabs"
-  | "threshold";
+export type ViewMode = "all-nodes" | "floor-slabs";
 
 interface ViewModeContextType {
   mode: ViewMode;
@@ -28,10 +26,12 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
 export function useViewMode(): ViewModeContextType {
   const mode = useViewStore((s) => s.mode);
   const setMode = useViewStore((s) => s.setMode);
+  const cornersOnly = useViewStore((s) => s.cornersOnly);
   const sliceEnabled = useViewStore((s) => s.sliceEnabled);
   const xRange = useViewStore((s) => s.xRange);
   const yRange = useViewStore((s) => s.yRange);
   const zRange = useViewStore((s) => s.zRange);
+  const { animationData } = useAnimationData();
 
   const getVisibleNodes = useCallback(
     (
@@ -47,7 +47,6 @@ export function useViewMode(): ViewModeContextType {
 
       switch (mode) {
         case "all-nodes":
-        case "threshold":
           nodes = Array.from({ length: nodeCount }, (_, i) => i);
           break;
         case "floor-slabs":
@@ -55,6 +54,19 @@ export function useViewMode(): ViewModeContextType {
           break;
         default:
           nodes = Array.from({ length: nodeCount }, (_, i) => i);
+      }
+
+      if (cornersOnly && animationData) {
+        const cornerSet = new Set<number>();
+        for (const storyId of metadata.storyOrder) {
+          const corners = animationData.metadata.cornerNodes[storyId];
+          if (corners) {
+            Object.values(corners).forEach((id) => {
+              if (typeof id === "number" && id >= 0) cornerSet.add(id);
+            });
+          }
+        }
+        nodes = nodes.filter((id) => cornerSet.has(id));
       }
 
       const useXRange = _xRange ?? xRange;
@@ -81,7 +93,7 @@ export function useViewMode(): ViewModeContextType {
 
       return nodes;
     },
-    [mode, sliceEnabled, xRange, yRange, zRange]
+    [mode, cornersOnly, animationData, sliceEnabled, xRange, yRange, zRange]
   );
 
   return {

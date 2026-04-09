@@ -41,7 +41,6 @@ export interface SerializedComputedStatsCore {
     maxMagnitude: number;
     minMagnitude: number;
   };
-  cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
   storyDrift: SerializedStoryDrift;
   peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
   peakStoryDriftFrame: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
@@ -284,7 +283,8 @@ function serializeRequiredComputedStats(
   metadata: AnimationMetadata,
   positions: Float32Array,
   dispLin: Float32Array,
-  groundMotion: Float32Array
+  groundMotion: Float32Array,
+  cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }>
 ): SerializedComputedStatsCore {
   let minX = Infinity;
   let minY = Infinity;
@@ -338,24 +338,6 @@ function serializeRequiredComputedStats(
     }
     return Math.sqrt(maxSq);
   };
-
-  const cornerSets = {
-    NW: new Set(metadata.corners.NW),
-    NE: new Set(metadata.corners.NE),
-    SW: new Set(metadata.corners.SW),
-    SE: new Set(metadata.corners.SE),
-  };
-
-  const cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
-  metadata.storyOrder.forEach((storyId) => {
-    const nodeIndices = metadata.stories[storyId] ?? [];
-    cornerNodes[storyId] = {
-      NW: nodeIndices.find((nodeId) => cornerSets.NW.has(nodeId)) ?? -1,
-      NE: nodeIndices.find((nodeId) => cornerSets.NE.has(nodeId)) ?? -1,
-      SW: nodeIndices.find((nodeId) => cornerSets.SW.has(nodeId)) ?? -1,
-      SE: nodeIndices.find((nodeId) => cornerSets.SE.has(nodeId)) ?? -1,
-    };
-  });
 
   const storyCount = metadata.storyOrder.length;
   const frameCount = metadata.frameCount;
@@ -544,7 +526,6 @@ function serializeRequiredComputedStats(
       maxMagnitude: Math.max(...gmMagnitude),
       minMagnitude: Math.min(...gmMagnitude),
     },
-    cornerNodes,
     storyDrift: {
       data: storyDriftData,
       storyCount,
@@ -596,12 +577,30 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     ])
   );
 
+  const cornerSets = {
+    NW: new Set(normalizedCorners.NW),
+    NE: new Set(normalizedCorners.NE),
+    SW: new Set(normalizedCorners.SW),
+    SE: new Set(normalizedCorners.SE),
+  };
+  const normalizedCornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
+  normalizedStoryOrder.forEach((storyId) => {
+    const nodeIndices = normalizedStories[storyId] ?? [];
+    normalizedCornerNodes[storyId] = {
+      NW: nodeIndices.find((nodeId) => cornerSets.NW.has(nodeId)) ?? -1,
+      NE: nodeIndices.find((nodeId) => cornerSets.NE.has(nodeId)) ?? -1,
+      SW: nodeIndices.find((nodeId) => cornerSets.SW.has(nodeId)) ?? -1,
+      SE: nodeIndices.find((nodeId) => cornerSets.SE.has(nodeId)) ?? -1,
+    };
+  });
+
   const metadata: AnimationMetadata = {
     nodeCount: buildingData.metadata.count_nodes,
     frameCount: dispLinData.metadata.count_frames,
     dt: dispLinData.metadata.dt,
     stories: normalizedStories,
     corners: normalizedCorners,
+    cornerNodes: normalizedCornerNodes,
     storyHeights: normalizedStoryHeights,
     storyOrder: normalizedStoryOrder,
   };
@@ -612,7 +611,8 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
       metadata,
       buildingData.bodyView.subarray(0),
       dispLinData.bodyView.subarray(0),
-      groundMotionData.bodyView.subarray(0)
+      groundMotionData.bodyView.subarray(0),
+      normalizedCornerNodes
     ),
     initialPositions: buildingData.bodyView.subarray(0),
     displacementLin: dispLinData.bodyView.subarray(0),
@@ -622,7 +622,9 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
 
 export function rebuildAnimationDataFromSerializedCore(data: SerializedRequiredAnimationData): BuildingAnimationData {
   return {
-    metadata: data.metadata,
+    metadata: {
+      ...data.metadata,
+    },
     precomputed: {
       ...data.precomputed,
       storyDrift: deserializeStoryDrift(data.precomputed.storyDrift),

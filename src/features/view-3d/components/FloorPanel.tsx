@@ -400,7 +400,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
     const storyIndex = animationData.metadata.storyOrder.indexOf(storyId);
     if (storyIndex <= 0) return null;
 
-    const corners = ["NW", "NE", "SW", "SE"];
+    const corners = ["NW", "NE", "SW", "SE"] as const;
     const cornerNodeIds = animationData.metadata.corners;
     const cornerData: Record<string, { current: number; peak: number } | null> = {};
 

@@ -67,10 +67,10 @@ function getInitialXY(animationData: BuildingAnimationData, nodeId: number): Poi
 }
 
 function getStoryCornerNodeIds(animationData: BuildingAnimationData, storyId: string): number[] {
-  const corners = animationData.precomputed.cornerNodes[storyId];
+  const corners = animationData.metadata.cornerNodes[storyId];
   if (!corners) return [];
 
-  const ids = [corners.NW, corners.NE, corners.SE, corners.SW].filter((id): id is number => id != null);
+  const ids = [corners.NW, corners.NE, corners.SE, corners.SW].filter((id): id is number => id != null && id >= 0);
   if (ids.length < 3) return ids;
 
   let cx = 0;

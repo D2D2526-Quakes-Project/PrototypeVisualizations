@@ -183,10 +183,6 @@ export function FloorDisplacementChart() {
         <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
         <span className="text-neutral-300">•</span>
         <span>Visible stories: {chartData.length}</span>
-        <span className="text-neutral-300">•</span>
-        <span>X-axis: in</span>
-        <span className="text-neutral-300">•</span>
-        <span>Story labels use interstory naming with floor elevation</span>
       </div>
 
       <div className="min-h-0 w-full flex-1">

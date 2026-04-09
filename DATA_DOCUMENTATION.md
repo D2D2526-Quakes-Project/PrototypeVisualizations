@@ -34,16 +34,16 @@ All measurements in the binary format use **inches** for consistency. Source CSV
 
 ### Unit Conversions
 
-| Data Type            | CSV Source Units | Binary Format Units | Conversion Factor | Notes                             |
-| :------------------- | :--------------- | :------------------ | :---------------- | :-------------------------------- |
+| Data Type            | CSV Source Units | Binary Format Units | Conversion Factor               | Notes                             |
+| :------------------- | :--------------- | :------------------ | :------------------------------ | :-------------------------------- |
 | **Node Coordinates** | Inches or Feet   | Inches              | Auto-detected (`× 1` or `× 12`) | `node_data.csv` H1, H2, V columns |
-| **Story Heights**    | Feet             | Inches              | × 12              | `building_height.csv`             |
-| **Story Elevations** | Feet             | Inches              | × 12              | Cumulative height calculations    |
-| **Displacements**    | Inches           | Inches              | × 1               | Already in inches in source files |
-| **Velocity**         | Inches/second    | Inches/second       | × 1               | Already in correct units          |
-| **Acceleration**     | Inches/second²   | Inches/second²      | × 1               | Already in correct units          |
-| **Ground Motion**    | G (acceleration) | G (acceleration)    | × 1               | Acceleration values               |
-| **Time**             | Seconds          | Seconds             | × 1               | No conversion needed              |
+| **Story Heights**    | Feet             | Inches              | × 12                            | `building_height.csv`             |
+| **Story Elevations** | Feet             | Inches              | × 12                            | Cumulative height calculations    |
+| **Displacements**    | Inches           | Inches              | × 1                             | Already in inches in source files |
+| **Velocity**         | Inches/second    | Inches/second       | × 1                             | Already in correct units          |
+| **Acceleration**     | Inches/second²   | Inches/second²      | × 1                             | Already in correct units          |
+| **Ground Motion**    | G (acceleration) | G (acceleration)    | × 1                             | Acceleration values               |
+| **Time**             | Seconds          | Seconds             | × 1                             | No conversion needed              |
 
 ### Coordinate System
 
@@ -242,7 +242,8 @@ All `.bld` files follow a "Header-Body" architecture:
     "stories": {"15": [node_indices], "Roof": [...], ...},
     "corners": {"NW": [...], "NE": [...], "SW": [...], "SE": [...]},
     "story_heights": {"15": <float>, "Roof": <float>, ...},
-    "story_order": ["Ground", ...]
+    "story_order": ["Ground", ...],
+    "node_to_below": [<integer>, <integer>, ...]  // nodeIdx -> belowNodeIdx (-1 for ground/no match)
   }
   ```
 - **Binary Body**: `float32` array `[x0, y0, z0, x1, y1, z1, ...]`
@@ -489,6 +490,7 @@ Contains older format data with similar structure to main 15story data but with 
 - `acceleration_lin.bld` / `acceleration_rot.bld`: Time-series acceleration data
 - `ground_motion.bld`: Ground motion acceleration data
 - `hinge_data.bld`: Non-time-series hinge summary data with metadata distributions
+- `node_story_drift.bld`: Inter-story drift (ISD) per node, per story, per frame (percentage)
 
 **Running the Script**:
 

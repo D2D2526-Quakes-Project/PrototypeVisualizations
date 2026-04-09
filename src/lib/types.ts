@@ -93,6 +93,8 @@ export interface BuildingMetadata {
   /** Height of each story (story id -> height in inches) */
   story_heights: Record<string, number>; // Map "15" -> 156.0
   story_order: string[]; // Story order from bottom up
+  /** Node-to-below mapping for ISD calculation: nodeIdx -> belowNodeIdx (-1 for ground or no match) */
+  node_to_below: number[];
 }
 
 export interface SimulationMetadata {
@@ -179,6 +181,9 @@ export interface AnimationMetadata {
   // Map from story id to a list of indices
   stories: Record<string, number[]>;
   corners: Record<string, number[]>;
+  // Map from storyId to node index
+  cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
+  // List of storyIds
   storyOrder: string[];
 }
 
@@ -388,9 +393,7 @@ export interface ComputedStats {
     maxMagnitude: number;
     minMagnitude: number;
   };
-
   // STORY DRIFT DATA
-  cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }>; // Story ID -> corner node indices
   storyDrift: {
     // Layout: [story][frame][corner] where corners are ordered NW, NE, SW, SE
     data: Float32Array;
@@ -448,10 +451,6 @@ export interface ComputedStats {
   avgVelocityPerStory?: Float32Array;
   /** Average acceleration per story (optional) */
   avgAccelerationPerStory?: Float32Array;
-
-  // PERCENTILES
-  /** 90th percentile velocity across all nodes/frames */
-  velocityPercentile90?: number;
 
   // HINGE SUMMARY (if hinge data exists)
   hinge?: HingeSummary;

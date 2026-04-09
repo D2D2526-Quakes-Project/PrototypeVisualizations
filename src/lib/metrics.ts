@@ -1005,7 +1005,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
 
       for (let storyIndex = 0; storyIndex < storyOrder.length; storyIndex++) {
         const storyId = storyOrder[storyIndex];
-        const corners = animationData.precomputed.cornerNodes[storyId];
+        const corners = animationData.metadata.cornerNodes[storyId];
         if (!corners) continue;
 
         for (let cornerIndex = 0; cornerIndex < cornerOrder.length; cornerIndex++) {

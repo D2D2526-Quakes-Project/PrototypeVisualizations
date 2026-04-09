@@ -774,20 +774,14 @@ def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
         matched_count = int(np.count_nonzero(min_deltas <= tolerance_in))
         mean_delta = float(np.mean(min_deltas))
 
-        print(
-            f"Scale check ({scale:.1f}): matched {matched_count}/{len(story_elevations)} "
-            f"story elevations (mean abs delta={mean_delta:.3f} in)."
-        )
+        print(f"Scale check ({scale:.1f}): matched {matched_count}/{len(story_elevations)} " f"story elevations (mean abs delta={mean_delta:.3f} in).")
 
         if matched_count > best_matched or (matched_count == best_matched and mean_delta < best_mean_delta):
             best_scale = scale
             best_matched = matched_count
             best_mean_delta = mean_delta
 
-    print(
-        f"Auto-selected node scale: {best_scale:.1f} "
-        f"(matched {best_matched}/{len(story_elevations)} story elevations)"
-    )
+    print(f"Auto-selected node scale: {best_scale:.1f} " f"(matched {best_matched}/{len(story_elevations)} story elevations)")
     return best_scale
 
 
@@ -837,6 +831,147 @@ def _warn_unmatched_nodes(building_name, unmatched_nodes, story_elevations):
 
     if unmatched_count > len(sample):
         print(f"      ... and {unmatched_count - len(sample)} more.")
+
+
+def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, index_to_id, min_x, min_y, node_to_inches_scale, xz_tolerance=0.1):
+    """
+    Compute node-to-below mapping for ISD calculation.
+    For each node on each story (except ground), find the node directly below it
+    based on matching XZ position (within tolerance).
+
+    Returns:
+        node_to_below: list where node_to_below[nodeIdx] = belowNodeIdx or -1 if no match
+        unmatched_nodes: list of nodes that couldn't find a target below
+    """
+    print(f"\n--- Computing Node-to-Below Mapping (XZ tolerance: {xz_tolerance} in) ---")
+
+    node_to_below = [-1] * len(id_to_index)
+    unmatched_nodes = []
+    missing_columns = set()
+
+    # Build lookup: (x, y) -> nodeIdx for each story
+    story_positions = {}
+    for story, node_indices in stories.items():
+        positions = {}
+        for node_idx in node_indices:
+            node_id = index_to_id[node_idx]
+            row = df_nodes[df_nodes["Node ID"] == node_id].iloc[0]
+            x = row["H1"] * node_to_inches_scale - min_x
+            y = row["H2"] * node_to_inches_scale - min_y
+            # Round to avoid floating point issues
+            positions[(round(x, 4), round(y, 4))] = node_idx
+        story_positions[story] = positions
+
+    # Process stories from bottom up (skip ground floor for finding below)
+    story_order_bottom_up = list(reversed(story_order))
+    for i, story in enumerate(story_order_bottom_up):
+        if i == 0:
+            continue  # Ground floor has no story below
+        story_below = story_order_bottom_up[i - 1]
+
+        current_positions = story_positions.get(story, {})
+        below_positions = story_positions.get(story_below, {})
+
+        if not current_positions:
+            continue
+
+        matched_count = 0
+        for (x, y), node_idx in current_positions.items():
+            # Find exact match in story below (with tolerance via rounding)
+            if (x, y) in below_positions:
+                below_idx = below_positions[(x, y)]
+                node_to_below[node_idx] = below_idx
+                matched_count += 1
+            else:
+                # Check for nearby nodes (for logging missing columns)
+                nearby = False
+                for bx, by in below_positions.keys():
+                    if abs(bx - x) < xz_tolerance and abs(by - y) < xz_tolerance:
+                        nearby = True
+                        break
+                if not nearby:
+                    missing_columns.add((story, x, y))
+                unmatched_nodes.append(
+                    {
+                        "node_idx": node_idx,
+                        "story": story,
+                        "x": x,
+                        "y": y,
+                    }
+                )
+
+        print(f"  Story {story}: {matched_count}/{len(current_positions)} nodes matched to story {story_below}")
+
+    # Report unmatched nodes
+    if unmatched_nodes:
+        print(f"\n⚠ WARNING: {len(unmatched_nodes)} nodes could not find exact match below:")
+        sample = unmatched_nodes[:15]
+        for node in sample:
+            print(f"      Node {node['node_idx']} at story {node['story']}: ({node['x']:.3f}, {node['y']:.3f})")
+        if len(unmatched_nodes) > len(sample):
+            print(f"      ... and {len(unmatched_nodes) - len(sample)} more")
+
+    # Report missing columns
+    if missing_columns:
+        print(f"\n⚠ WARNING: {len(missing_columns)} column positions have no exact match below:")
+        sample = list(missing_columns)[:10]
+        for story, x, y in sample:
+            print(f"      Story {story}: ({x:.3f}, {y:.3f})")
+        if len(missing_columns) > len(sample):
+            print(f"      ... and {len(missing_columns) - len(sample)} more")
+
+    print(f"✓ Node-to-below mapping complete: {sum(1 for x in node_to_below if x >= 0)}/{len(node_to_below)} nodes mapped")
+
+    return node_to_below, unmatched_nodes, missing_columns
+
+
+def _compute_node_story_drift(node_to_below, stories, story_order, story_heights, displacement_data, num_frames, num_nodes, dtype=np.float32):
+    """
+    Precompute node story drift (ISD) for all nodes.
+
+    Returns:
+        node_story_drift: Float32Array of shape (frame_count, node_count)
+        Layout: [frameIdx * nodeCount + nodeIdx]
+    """
+    print(f"\n--- Computing Node Story Drift ---")
+
+    story_count = len(story_order)
+    story_to_idx = {story: idx for idx, story in enumerate(story_order)}
+    node_story_drift = np.zeros((num_frames, num_nodes), dtype=dtype)
+
+    for node_idx in range(num_nodes):
+        story_idx = -1
+        for s_idx, story in enumerate(story_order):
+            node_indices = stories.get(story, [])
+            if node_idx in node_indices:
+                story_idx = s_idx
+                break
+
+        if story_idx <= 0:
+            continue  # Ground floor has no drift (no story below)
+
+        story = story_order[story_idx]
+        story_height = story_heights.get(story, 1.0)
+        if story_height == 0:
+            story_height = 1.0
+
+        below_idx = node_to_below[node_idx]
+        if below_idx < 0:
+            continue  # No match below
+
+        for frame_idx in range(num_frames):
+            current_disp = displacement_data[frame_idx, node_idx]
+            below_disp = displacement_data[frame_idx, below_idx]
+
+            current_mag = np.sqrt(np.sum(current_disp**2))
+            below_mag = np.sqrt(np.sum(below_disp**2))
+
+            drift = abs(current_mag - below_mag) / story_height * 100
+            node_story_drift[frame_idx, node_idx] = drift
+
+    print(f"✓ Node story drift computed: shape {node_story_drift.shape}")
+
+    return node_story_drift
 
     if story_elevations.size > 0:
         deltas = []
@@ -979,9 +1114,19 @@ def process_building(building):
     storyOrder.reverse()
     print(f"Story order: {storyOrder}")
 
+    # 3b. Compute node-to-below mapping for ISD calculation
+    node_to_below, unmatched_nodes, missing_columns = _compute_node_to_below_mapping(stories, storyOrder, df_nodes, id_to_index, index_to_id, min_x, min_y, node_to_inches_scale, xz_tolerance=0.1)
+
     # 4. Write building binary file
     # story_heights: per-story height in inches (not cumulative elevation)
-    header = {"count_nodes": count_nodes, "stories": stories, "corners": corners, "story_heights": storyHeights, "story_order": storyOrder}
+    header = {
+        "count_nodes": count_nodes,
+        "stories": stories,
+        "corners": corners,
+        "story_heights": storyHeights,
+        "story_order": storyOrder,
+        "node_to_below": node_to_below,
+    }
 
     write_bld_file("building.bld", header, buffer.tobytes(), building_output_dir)
 

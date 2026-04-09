@@ -26,8 +26,8 @@ const rgbConverter = converter("rgb");
 
 export function ThresholdBuildingScene() {
   const { animationData } = useAnimationData();
-  const { storyOrder } = animationData.metadata;
-  const { cornerNodes, storyDrift, peakStoryDrift } = animationData.precomputed;
+  const { storyOrder, cornerNodes } = animationData.metadata;
+  const { storyDrift, peakStoryDrift } = animationData.precomputed;
   const { frameIndex } = usePlayback();
 
   const getNodePosition = (nodeIdx: number) => {

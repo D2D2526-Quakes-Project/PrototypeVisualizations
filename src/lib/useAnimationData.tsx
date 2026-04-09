@@ -616,7 +616,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           maxStoryDrift: animationData.precomputed.maxStoryDrift,
           avgStoryDrift: animationData.precomputed.avgStoryDrift,
           groundMotion: animationData.precomputed.groundMotion,
-          cornerNodes: animationData.precomputed.cornerNodes,
           storyDrift: {
             data: animationData.precomputed.storyDrift.data,
             storyCount: animationData.precomputed.storyDrift.storyCount,

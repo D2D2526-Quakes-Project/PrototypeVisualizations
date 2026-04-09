@@ -33,8 +33,8 @@ export function ThresholdBuilding({
   onToggleFloor: (storyId: string) => void;
 }) {
   const { animationData } = useAnimationData();
-  const { storyOrder } = animationData.metadata;
-  const { cornerNodes, storyDrift, peakStoryDrift } = animationData.precomputed;
+  const { storyOrder, cornerNodes } = animationData.metadata;
+  const { storyDrift, peakStoryDrift } = animationData.precomputed;
   const { frameIndex } = usePlayback();
 
   const offsetX = -animationData.precomputed.boundingBox.center[0];

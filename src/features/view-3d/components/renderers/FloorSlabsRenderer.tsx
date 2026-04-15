@@ -1,11 +1,12 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useColor, useExpandedScale, useSliceSelection } from "@/features/view-3d/contexts/visualization";
+import { useColor, useExpandedScale } from "@/features/view-3d/contexts/visualization";
 import type { BuildingAnimationData } from "@/lib/types";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { converter, formatHex, interpolate } from "culori";
 import Delaunay from "delaunator";
 import { useMemo } from "react";
 import * as THREE from "three";
+import { useCrossSectionSelection } from "../../contexts/visualization/CrossSectionSelectionContext";
 
 const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
 const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
@@ -106,9 +107,9 @@ interface FloorSlabProps {
 function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, cornersOnly = false }: FloorSlabProps) {
   const { animationData } = useAnimationData();
   const { getNodeColor } = useColor();
-  const { hoveredSlice, selectSlice, setHovered } = useSliceSelection();
+  const { hoveredCrossSection, selectCrossSection, setHovered } = useCrossSectionSelection();
 
-  const isHovered = hoveredSlice?.storyId === storyId;
+  const isHovered = hoveredCrossSection?.storyId === storyId;
 
   const geometry = useMemo(() => {
     if (nodeIds.length < 3) {
@@ -304,7 +305,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
 
   const handleClick = (e: PointerEvent) => {
     e.stopPropagation();
-    selectSlice({
+    selectCrossSection({
       id: `floor-${storyId}`,
       type: "floor",
       value: storyId,

@@ -603,7 +603,9 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     cornerNodes: normalizedCornerNodes,
     storyHeights: normalizedStoryHeights,
     storyOrder: normalizedStoryOrder,
-    node_to_below: buildingData.metadata.node_to_below ?? [],
+    nodeToBelow: buildingData.metadata.node_to_below ?? [],
+    crossSectionsX: buildingData.metadata.cross_sections_x,
+    crossSectionsY: buildingData.metadata.cross_sections_y,
   };
 
   return {

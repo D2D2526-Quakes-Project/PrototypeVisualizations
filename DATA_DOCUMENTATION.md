@@ -243,7 +243,9 @@ All `.bld` files follow a "Header-Body" architecture:
     "corners": {"NW": [...], "NE": [...], "SW": [...], "SE": [...]},
     "story_heights": {"15": <float>, "Roof": <float>, ...},
     "story_order": ["Ground", ...],
-    "node_to_below": [<integer>, <integer>, ...]  // nodeIdx -> belowNodeIdx (-1 for ground/no match)
+    "node_to_below": [<integer>, <integer>, ...],  // nodeIdx -> belowNodeIdx (-1 for ground/no match)
+    "cross_sections_x": {"0.0": [node_indices], "300.0": [...], ...}, // Nodes grouped by matching X-axis plane (6-inch tolerance)
+    "cross_sections_y": {"0.0": [node_indices], "600.0": [...], ...}  // Nodes grouped by matching Y-axis plane (6-inch tolerance)
   }
   ```
 - **Binary Body**: `float32` array `[x0, y0, z0, x1, y1, z1, ...]`
@@ -413,7 +415,9 @@ value = buffer[index];
   "stories": {"15": [0, 1, 2, ...], "Roof": [...]},
   "corners": {"NW": [0, 4, 8, ...], "NE": [...], "SW": [...], "SE": [...]},
   "story_heights": {"15": 156.0, "Roof": 156.0},
-  "story_order": ["Ground", "2", "3", ..., "Roof"]
+  "story_order": ["Ground", "2", "3", ..., "Roof"],
+  "cross_sections_x": {"0.0": [0, 5, 12, ...], "300.5": [1, 6, 13, ...]},
+  "cross_sections_y": {"0.0": [0, 1, 2, ...], "120.0": [5, 6, 7, ...]}
 }
 ```
 

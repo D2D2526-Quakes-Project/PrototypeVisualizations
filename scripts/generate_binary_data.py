@@ -981,6 +981,64 @@ def _compute_node_story_drift(node_to_below, stories, story_order, story_heights
         print(f"      Nearest-story delta stats: min={min(deltas):.4f} in, max={max(deltas):.4f} in, mean={np.mean(deltas):.4f} in")
 
 
+def _compute_cross_sections(df_nodes, id_to_index, node_scale, min_x, min_y, tol=6.0):
+    """
+    Group nodes into cross_sections (cross-sections) along the X and Y axes.
+    Nodes within `tol` inches of each other are grouped into the same cross_section.
+    """
+    print(f"\n--- Computing X/Y cross_sections (tolerance: {tol} in) ---")
+    x_nodes = []
+    y_nodes = []
+
+    for _, row in df_nodes.iterrows():
+        idx = id_to_index.get(row["Node ID"])
+        if idx is None:
+            continue
+        x = row["H1"] * node_scale - min_x
+        y = row["H2"] * node_scale - min_y
+        x_nodes.append((x, idx))
+        y_nodes.append((y, idx))
+
+    def group_1d(val_idx_list):
+        # Sort by coordinate value
+        val_idx_list.sort(key=lambda item: item[0])
+        groups = {}
+        if not val_idx_list:
+            return groups
+
+        current_group_nodes = []
+        current_group_vals = []
+        current_group_val = val_idx_list[0][0]
+
+        for val, idx in val_idx_list:
+            # Group if within tolerance of the baseline value
+            if abs(val - current_group_val) <= tol:
+                current_group_nodes.append(idx)
+                current_group_vals.append(val)
+            else:
+                # Finalize current group, use average coordinate as key string
+                avg_val = sum(current_group_vals) / len(current_group_vals)
+                groups[f"{avg_val:.1f}"] = current_group_nodes
+
+                # Start new group
+                current_group_val = val
+                current_group_nodes = [idx]
+                current_group_vals = [val]
+
+        # Finalize last group
+        if current_group_nodes:
+            avg_val = sum(current_group_vals) / len(current_group_vals)
+            groups[f"{avg_val:.1f}"] = current_group_nodes
+
+        return groups
+
+    cross_sections_x = group_1d(x_nodes)
+    cross_sections_y = group_1d(y_nodes)
+
+    print(f"✓ Found {len(cross_sections_x)} X-cross_sections and {len(cross_sections_y)} Y-cross_sections")
+    return cross_sections_x, cross_sections_y
+
+
 # --- PROCESSORS ---
 
 
@@ -1117,6 +1175,9 @@ def process_building(building):
     # 3b. Compute node-to-below mapping for ISD calculation
     node_to_below, unmatched_nodes, missing_columns = _compute_node_to_below_mapping(stories, storyOrder, df_nodes, id_to_index, index_to_id, min_x, min_y, node_to_inches_scale, xz_tolerance=0.1)
 
+    # 3c. Compute X/Y cross_sections for cross-sections
+    cross_sections_x, cross_sections_y = _compute_cross_sections(df_nodes, id_to_index, node_to_inches_scale, min_x, min_y, tol=6.0)
+
     # 4. Write building binary file
     # story_heights: per-story height in inches (not cumulative elevation)
     header = {
@@ -1126,6 +1187,8 @@ def process_building(building):
         "story_heights": storyHeights,
         "story_order": storyOrder,
         "node_to_below": node_to_below,
+        "cross_sections_x": cross_sections_x,
+        "cross_sections_y": cross_sections_y,
     }
 
     write_bld_file("building.bld", header, buffer.tobytes(), building_output_dir)

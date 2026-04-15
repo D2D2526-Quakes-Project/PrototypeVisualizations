@@ -182,12 +182,7 @@ export function DamageThresholdPanel() {
         </div>
 
         <div>
-          <ColorScaleBar
-            currentMetric={"interstoryDrift"}
-            thresholdHighlighting={true}
-            thresholds={thresholds}
-            animationData={animationData}
-          />
+          <ColorScaleBar currentMetric={"interstoryDrift"} thresholdHighlighting={true} />
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-600">
           <span className="whitespace-nowrap">

@@ -1,10 +1,9 @@
-import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { Palette } from "lucide-react";
 import { ColorScaleBar } from "../ColorScaleBar";
 
-import type { ComputedStats } from "@/lib/types";
-import type { ThresholdState } from "@/state";
+import { useColor } from "@/features/view-3d/contexts/visualization";
 import {
   getMetricColorScale,
   METRIC_CONFIGS,
@@ -12,16 +11,8 @@ import {
   type Metric,
   type MetricPaletteKey,
 } from "@/lib/metrics";
-import { useColor } from "@/features/view-3d/contexts/visualization";
 
-interface ColorPanelProps {
-  thresholds: ThresholdState;
-  animationData: {
-    precomputed: ComputedStats;
-  };
-}
-
-export function ColorPanel({ thresholds, animationData }: ColorPanelProps) {
+export function ColorPanel() {
   const {
     currentMetric,
     setColorMetric,
@@ -69,8 +60,6 @@ export function ColorPanel({ thresholds, animationData }: ColorPanelProps) {
                 currentMetric={currentMetric}
                 metricPaletteOverrides={metricPaletteOverrides}
                 thresholdHighlighting={thresholdHighlighting}
-                thresholds={thresholds}
-                animationData={animationData}
               />
             </button>
           </PopoverTrigger>

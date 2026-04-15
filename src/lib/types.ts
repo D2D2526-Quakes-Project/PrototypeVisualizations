@@ -95,6 +95,10 @@ export interface BuildingMetadata {
   story_order: string[]; // Story order from bottom up
   /** Node-to-below mapping for ISD calculation: nodeIdx -> belowNodeIdx (-1 for ground or no match) */
   node_to_below: number[];
+  /** Grouped nodes sharing an X-coordinate plane */
+  cross_sections_x: Record<string, number[]>;
+  /** Grouped nodes sharing a Y-coordinate plane */
+  cross_sections_y: Record<string, number[]>;
 }
 
 export interface SimulationMetadata {
@@ -186,7 +190,11 @@ export interface AnimationMetadata {
   // List of storyIds
   storyOrder: string[];
   /** Node-to-below mapping for ISD calculation: nodeIdx -> belowNodeIdx (-1 for ground or no match) */
-  node_to_below: number[];
+  nodeToBelow: number[];
+  /** Cross-section along X axis */
+  crossSectionsX: Record<string, number[]>;
+  /** Cross-section along Y axis */
+  crossSectionsY: Record<string, number[]>;
 }
 
 export interface BuildingAnimationData {

@@ -46,7 +46,7 @@ export function EndCapPanel(_props: IDockviewPanelProps) {
   const displacementLin = animationData.displacementLin;
   const stride = animationData.initialPositions.stride;
   const nodeCount = animationData.metadata.nodeCount;
-  const nodeToBelow = animationData.metadata.node_to_below;
+  const nodeToBelow = animationData.metadata.nodeToBelow;
 
   const boundingBox = animationData.precomputed.boundingBox;
 

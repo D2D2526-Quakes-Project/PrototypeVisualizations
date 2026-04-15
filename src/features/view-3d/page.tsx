@@ -1,21 +1,21 @@
 import { DockviewWrapper } from "@/features/view-3d/components/dockviewWrapper";
+import { FloorPanel, FloorTab } from "@/features/view-3d/components/FloorPanel";
 import { MagicPanel, MagicPanelHeaderActions, MagicPanelTab } from "@/features/view-3d/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/features/view-3d/components/NodePanel";
-import { FloorPanel, FloorTab } from "@/features/view-3d/components/FloorPanel";
 import { NodeSelectionProvider, useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
-import { useSliceSelection } from "@/features/view-3d/contexts/visualization";
 import { useAutoSave } from "@/features/view-3d/hooks/useAutoSave";
 import {
-  loadFromLocalStorage,
-  getStateFromCurrentUrl,
-  saveUrlState,
   getDefaultAppState,
+  getStateFromCurrentUrl,
+  loadFromLocalStorage,
+  saveUrlState,
   type AppState,
 } from "@/features/view-3d/lib/statePersistence";
 import { THRESHOLD_CONFIGS, type Metric, type MetricPaletteKey, type ThresholdKey } from "@/lib/metrics";
 import { useViewStoreRaw } from "@/state";
 import { type DockviewApi, type DockviewReadyEvent, type SerializedDockview } from "dockview";
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useCrossSectionSelection } from "./contexts/visualization/CrossSectionSelectionContext";
 
 const components = {
   nodePanel: NodePanel,
@@ -82,7 +82,7 @@ export function View3d() {
 
 function DockviewContainer({ initialState }: { initialState: AppState }) {
   const { setDockviewApi } = useNodeSelection();
-  const { setDockviewApi: setSliceDockviewApi } = useSliceSelection();
+  const { setDockviewApi: setCrossSectionDockviewApi } = useCrossSectionSelection();
   const store = useViewStoreRaw();
   const hasAppliedInitialStateRef = useRef(false);
   const hasReassertedCriticalStateRef = useRef(false);
@@ -157,9 +157,9 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
   const handleDockviewReady = useCallback(
     (event: DockviewReadyEvent) => {
       setDockviewApi(event.api);
-      setSliceDockviewApi(event.api);
+      setCrossSectionDockviewApi(event.api);
     },
-    [setDockviewApi, setSliceDockviewApi]
+    [setDockviewApi, setCrossSectionDockviewApi]
   );
 
   const handleLayoutChange = useCallback(

@@ -21,6 +21,7 @@ import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useCrossSectionSelection } from "../contexts/visualization/CrossSectionSelectionContext";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
@@ -39,15 +40,12 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { thresholds } = useThresholds();
   const { mode, getVisibleNodes } = useViewMode();
   const { getExpandedPosition } = useExpandedScale();
+  const { sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
   const {
-    openSlicePanel,
-    sliceEnabled,
-    xRange,
-    yRange,
-    zRange,
-    setHovered: setHoveredSlice,
-    deselectSlice,
-  } = useSliceSelection();
+    openCrossSectionPanel,
+    setHovered: setHoveredCrossSection,
+    deselectCrossSection,
+  } = useCrossSectionSelection();
   const { camera } = useThree();
   const { setEnablePan } = useCamera();
   const { getVisibleStoryOrder } = useFloorVisibility();
@@ -78,10 +76,10 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
   useEffect(() => {
     if (!slabInteractionEnabled) {
-      setHoveredSlice(null);
-      deselectSlice();
+      setHoveredCrossSection(null);
+      deselectCrossSection();
     }
-  }, [slabInteractionEnabled, setHoveredSlice, deselectSlice]);
+  }, [slabInteractionEnabled, setHoveredCrossSection, deselectCrossSection]);
 
   const offsets = useMemo(
     () => ({
@@ -385,12 +383,12 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       // Find which story this node belongs to
       for (const [storyId, storyNodes] of Object.entries(animationData.metadata.stories)) {
         if (storyNodes.includes(nodeId)) {
-          openSlicePanel(storyId);
+          openCrossSectionPanel(storyId);
           return;
         }
       }
     },
-    [visibleNodes, animationData, openSlicePanel, nodeInteractionEnabled]
+    [visibleNodes, animationData, openCrossSectionPanel, nodeInteractionEnabled]
   );
 
   const handlePointerDown = useCallback(

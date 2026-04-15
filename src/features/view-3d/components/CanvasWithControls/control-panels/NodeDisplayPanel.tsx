@@ -1,20 +1,20 @@
-import { Circle, Sliders } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useViewStore } from "@/state";
+import { Circle, Sliders } from "lucide-react";
 
 export function NodeDisplayPanel() {
   const nodeScale = useViewStore((s) => s.nodeScale);
   const nodeOpacity = useViewStore((s) => s.nodeOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
-  const belowThresholdNodeOpacity = useViewStore((s) => s.belowThresholdNodeOpacity);
+  // const belowThresholdNodeOpacity = useViewStore((s) => s.belowThresholdNodeOpacity);
   const setNodeScale = useViewStore((s) => s.setNodeScale);
   const setNodeOpacity = useViewStore((s) => s.setNodeOpacity);
   const setBelowThresholdNodeScale = useViewStore((s) => s.setBelowThresholdNodeScale);
-  const setBelowThresholdNodeOpacity = useViewStore((s) => s.setBelowThresholdNodeOpacity);
+  // const setBelowThresholdNodeOpacity = useViewStore((s) => s.setBelowThresholdNodeOpacity);
 
   return (
     <div className="space-y-1">
-      <div className="mb-1 flex items-center gap-1">
+      <div className="flex items-center gap-1">
         <Sliders size={12} className="text-neutral-500" />
         <span className="text-xs font-medium text-neutral-700">Node Display</span>
       </div>
@@ -47,7 +47,7 @@ export function NodeDisplayPanel() {
         <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{(nodeOpacity * 100).toFixed(0)}%</span>
       </div>
 
-      <div className="mt-2 border-t border-neutral-200 pt-2">
+      <div className="border-neutral-200">
         <span className="text-[10px] font-medium text-neutral-600">Below Threshold</span>
       </div>
 
@@ -67,7 +67,7 @@ export function NodeDisplayPanel() {
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <Circle size={12} className="shrink-0 text-neutral-400" />
         <span className="w-16 shrink-0 text-[10px] text-neutral-500">Opacity</span>
         <Slider
@@ -81,7 +81,7 @@ export function NodeDisplayPanel() {
         <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">
           {Math.round(belowThresholdNodeOpacity * 100)}%
         </span>
-      </div>
+      </div> */}
     </div>
   );
 }

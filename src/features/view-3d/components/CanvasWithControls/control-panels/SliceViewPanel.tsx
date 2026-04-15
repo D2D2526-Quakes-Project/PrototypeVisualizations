@@ -4,10 +4,15 @@ import { ScanEye } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { useSliceSelection } from "@/features/view-3d/contexts/visualization";
+import { useAnimationData } from "@/lib/useAnimationData";
 
 export function SliceViewPanel() {
   const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
     useSliceSelection();
+  const { animationData } = useAnimationData();
+
+  const maxBounds = animationData.precomputed.boundingBox.max;
+  const minBounds = animationData.precomputed.boundingBox.min;
 
   return (
     <>
@@ -29,7 +34,12 @@ export function SliceViewPanel() {
                 <UnitTooltip value={xRange[1]} unit="in" decimals={0} />
               </span>
             </div>
-            <Slider value={xRange} onValueChange={(val) => setXRange(val as [number, number])} className="" />
+            <Slider
+              value={xRange}
+              onValueChange={(val) => setXRange(val as [number, number])}
+              max={maxBounds[0]}
+              min={minBounds[0]}
+            />
           </div>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
@@ -39,7 +49,12 @@ export function SliceViewPanel() {
                 <UnitTooltip value={yRange[1]} unit="in" decimals={0} />
               </span>
             </div>
-            <Slider value={yRange} onValueChange={(val) => setYRange(val as [number, number])} className="" />
+            <Slider
+              value={yRange}
+              onValueChange={(val) => setYRange(val as [number, number])}
+              max={maxBounds[1]}
+              min={minBounds[1]}
+            />
           </div>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
@@ -49,7 +64,12 @@ export function SliceViewPanel() {
                 <UnitTooltip value={zRange[1]} unit="in" decimals={0} />
               </span>
             </div>
-            <Slider value={zRange} onValueChange={(val) => setZRange(val as [number, number])} className="" />
+            <Slider
+              value={zRange}
+              onValueChange={(val) => setZRange(val as [number, number])}
+              max={maxBounds[2]}
+              min={minBounds[2]}
+            />
           </div>
         </div>
       )}

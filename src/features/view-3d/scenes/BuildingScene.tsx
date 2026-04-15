@@ -565,7 +565,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
               sizeAttenuation={true}
               depthTest={true}
               depthWrite={true}
-              opacity={nodeOpacity}
+              opacity={1}
             />
             {selectedNodesData.map(({ nodeId, position, color }) => (
               <Point key={nodeId} position={position} color={color}></Point>

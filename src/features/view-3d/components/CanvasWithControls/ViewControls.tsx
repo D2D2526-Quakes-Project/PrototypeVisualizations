@@ -301,8 +301,6 @@ export function ViewControls({
                   currentMetric={currentMetric}
                   metricPaletteOverrides={metricPaletteOverrides}
                   thresholdHighlighting={thresholdHighlighting}
-                  thresholds={thresholds}
-                  animationData={animationData}
                 />
               </motion.div>
             </TooltipTrigger>
@@ -337,6 +335,22 @@ export function ViewControls({
                 exit={{ opacity: 0, y: 4 }}
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
+                {visibleSelectedCount > 0 && (
+                  <>
+                    <span className="font-mono text-[10px]">
+                      {visibleSelectedCount} <span className="font-normal">Selected</span>
+                    </span>
+                    <div className="mx-0.5 inline-block h-4 w-px bg-neutral-300" />
+                  </>
+                )}
+                {hiddenCount > 0 && (
+                  <>
+                    <span className="font-mono text-[10px]">
+                      {hiddenCount} <span className="font-normal">Hidden</span>
+                    </span>
+                    <div className="mx-0.5 inline-block h-4 w-px bg-neutral-300" />
+                  </>
+                )}
                 <Tooltip disableHoverableContent>
                   <TooltipTrigger asChild>
                     <button

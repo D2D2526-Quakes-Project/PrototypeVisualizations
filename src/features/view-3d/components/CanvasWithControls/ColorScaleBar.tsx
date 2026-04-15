@@ -1,14 +1,10 @@
 import { getMetricColorScale, getMetricConfig, type Metric, type MetricPaletteOverrides } from "@/lib/metrics";
-import type { ComputedStats } from "@/lib/types";
-import type { ThresholdState } from "@/state";
+import { useAnimationData } from "@/lib/useAnimationData";
+import { useThresholds } from "../../contexts/visualization";
 
 interface ColorScaleBarProps {
   currentMetric: Metric;
   thresholdHighlighting: boolean;
-  thresholds: ThresholdState;
-  animationData: {
-    precomputed: ComputedStats;
-  };
   metricPaletteOverrides?: MetricPaletteOverrides;
   noLabel?: boolean;
 }
@@ -90,11 +86,11 @@ function getScaleStopsAndLabels(
 export function ColorScaleBar({
   currentMetric,
   thresholdHighlighting,
-  thresholds,
-  animationData,
   metricPaletteOverrides,
   noLabel,
 }: ColorScaleBarProps) {
+  const { animationData } = useAnimationData();
+  const { thresholds } = useThresholds();
   const config = getMetricConfig(currentMetric);
   const colorScale = getMetricColorScale(currentMetric, metricPaletteOverrides);
   const maxValue = config.getPrecomputedMax(animationData.precomputed);

@@ -10,6 +10,7 @@ import {
   type ExpandedScaleState,
   type ThresholdState,
 } from "@/state/viewStore";
+import type { useViewStoreRaw } from "@/state";
 
 const STATE_VERSION = 1;
 
@@ -1373,8 +1374,11 @@ async function createShareableShortUrl(state: AppState): Promise<string | null> 
   }
 }
 
-export async function copyShareableUrlToClipboard(state: AppState): Promise<boolean> {
-  const shareableUrl = (await createShareableShortUrl(state)) ?? createShareableUrl(state);
+export async function copyShareableUrlToClipboard(store: ReturnType<typeof useViewStoreRaw>): Promise<boolean> {
+  const state = getCurrentAppState(store);
+  const shareableUrl = await createShareableShortUrl(state);
+
+  if (!shareableUrl) return false;
 
   try {
     await navigator.clipboard.writeText(shareableUrl);
@@ -1385,36 +1389,30 @@ export async function copyShareableUrlToClipboard(state: AppState): Promise<bool
   }
 }
 
-export function getStateForUrlWithDefaults(
-  state: Partial<AppState>,
-  defaults: AppState,
-  includePanelStates: boolean = false
-): AppState {
-  const stateWithLegacy = state as Partial<AppState> & { explodedView?: unknown };
-  const { explodedView: _legacyExplodedView, ...stateWithoutLegacy } = stateWithLegacy;
-  const hiddenNodeIds =
-    state.hiddenNodeIds ??
-    (state.hideSelectedNodes === true ? (state.selectedNodeIds ?? defaults.selectedNodeIds) : defaults.hiddenNodeIds);
-  const expandedScale = {
-    ...defaults.expandedScale,
-    ...getExpandedScalePatch(stateWithLegacy.explodedView),
-    ...getExpandedScalePatch(state.expandedScale),
-  };
+function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState {
+  const state = store.getState();
 
-  const mergedState: AppState = {
-    ...defaults,
-    ...stateWithoutLegacy,
-    thresholds: { ...defaults.thresholds, ...(state.thresholds ?? {}) },
-    metricPaletteOverrides: {
-      ...defaults.metricPaletteOverrides,
-      ...getMetricPaletteOverridesPatch(state.metricPaletteOverrides),
-    },
-    expandedScale,
-    camera: { ...defaults.camera, ...(state.camera ?? {}) },
-    panelStates: includePanelStates ? (state.panelStates ?? {}) : {},
-    hiddenNodeIds,
-    hideSelectedNodes: state.hideSelectedNodes ?? defaults.hideSelectedNodes,
+  return {
+    version: 1,
+    timestamp: Date.now(),
+    frameIndex: state.frameIndex,
+    currentMetric: state.currentMetric,
+    metricPaletteOverrides: state.metricPaletteOverrides,
+    thresholdHighlighting: state.thresholdHighlighting,
+    thresholds: state.thresholds,
+    visibleFloors: state.visibleFloors,
+    selectedNodeIds: state.selectedNodeIds,
+    hiddenNodeIds: state.hiddenNodeIds,
+    hideSelectedNodes: state.hideSelectedNodes,
+    expandedScale: state.expandedScale,
+    sliceEnabled: state.sliceEnabled,
+    xRange: state.xRange,
+    yRange: state.yRange,
+    zRange: state.zRange,
+    camera: state.cameraState,
+    backgroundColor: state.backgroundColor,
+    layout: state.dockviewLayout ?? getDefaultAppState().layout,
+    panelStates: state.panelStates,
+    dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,
   };
-
-  return mergedState;
 }

@@ -374,6 +374,7 @@ export const createViewStore = () =>
       hideNodes: (nodes) =>
         set((state) => ({
           hiddenNodeIds: [...new Set([...state.hiddenNodeIds, ...nodes])],
+          selectedNodeIds: [],
         })),
       showNodes: (nodes) =>
         set((state) => {

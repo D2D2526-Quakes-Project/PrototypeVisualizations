@@ -1,16 +1,7 @@
+import { AlertTriangle, Check, LogOutIcon, Share2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { AlertTriangle, Check, LogOutIcon, Share2 } from "lucide-react";
 
-import DataSources from "@/data/index";
-import { useAnimationData } from "@/lib/useAnimationData";
-import {
-  copyShareableUrlToClipboard,
-  type AppState,
-  getDefaultAppState,
-  getDataSelectionFromCurrentUrl,
-} from "@/features/view-3d/lib/statePersistence";
-import { useViewStore, useViewStoreRaw } from "@/state";
 import {
   Menubar,
   MenubarContent,
@@ -26,37 +17,16 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import DataSources from "@/data/index";
+import { usePlayback } from "@/features/playback/PlaybackContext";
+import { useColor } from "@/features/view-3d/contexts/visualization";
+import { copyShareableUrlToClipboard } from "@/features/view-3d/lib/statePersistence";
 import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
-
-const VERSION = "0.1.0";
-
-function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState {
-  const state = store.getState();
-
-  return {
-    version: 1,
-    timestamp: Date.now(),
-    frameIndex: state.frameIndex,
-    currentMetric: state.currentMetric,
-    metricPaletteOverrides: state.metricPaletteOverrides,
-    thresholdHighlighting: state.thresholdHighlighting,
-    thresholds: state.thresholds,
-    visibleFloors: state.visibleFloors,
-    selectedNodeIds: state.selectedNodeIds,
-    hiddenNodeIds: state.hiddenNodeIds,
-    hideSelectedNodes: state.hideSelectedNodes,
-    expandedScale: state.expandedScale,
-    sliceEnabled: state.sliceEnabled,
-    xRange: state.xRange,
-    yRange: state.yRange,
-    zRange: state.zRange,
-    camera: state.cameraState,
-    backgroundColor: state.backgroundColor,
-    layout: state.dockviewLayout ?? getDefaultAppState().layout,
-    panelStates: state.panelStates,
-    dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,
-  };
-}
+import { getMetricConfig } from "@/lib/metrics";
+import { useAnimationData } from "@/lib/useAnimationData";
+import { formatFixed3 } from "@/lib/utils";
+import { useViewStore, useViewStoreRaw } from "@/state";
+import { ColorScaleBar } from "../features/view-3d/components/CanvasWithControls/ColorScaleBar";
 
 export function NavigationBar() {
   const location = useLocation();
@@ -73,6 +43,9 @@ export function NavigationBar() {
     requestDatasetLoad,
     retryDatasetLoad,
   } = useAnimationData();
+  const { frameIndex } = usePlayback();
+  const { currentMetric, metricPaletteOverrides, thresholdHighlighting } = useColor();
+  const config = getMetricConfig(currentMetric);
 
   const [activeMenu, setActiveMenu] = useState("");
   const [isCopyingLink, setIsCopyingLink] = useState(false);
@@ -86,7 +59,7 @@ export function NavigationBar() {
     if (isCopyingLink) return;
     setIsCopyingLink(true);
     setActiveMenu("share");
-    await copyShareableUrlToClipboard(getCurrentAppState(store));
+    await copyShareableUrlToClipboard(store);
     setIsCopyingLink(false);
     setActiveMenu("");
   };
@@ -143,7 +116,7 @@ export function NavigationBar() {
   }, [animationData, visibleFloorCount, showAllFloors]);
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
+    <div className="grid grid-cols-[auto_auto_auto] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
       <div className="flex h-full min-w-0 items-center justify-start gap-3">
         <Menubar
           className="h-full rounded-none border-none bg-neutral-50/80 pl-2"
@@ -152,6 +125,9 @@ export function NavigationBar() {
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
+              <MenubarItem>
+                <AnimatedTitle />
+              </MenubarItem>
               {location.pathname !== "/" && (
                 <MenubarItem onClick={backToHome}>
                   <LogOutIcon className="-scale-x-100" />
@@ -213,8 +189,22 @@ export function NavigationBar() {
         </Menubar>
       </div>
 
-      <div className="flex justify-center py-1">
-        <AnimatedTitle />
+      <div className="flex items-center justify-center gap-2 py-1 text-sm whitespace-nowrap">
+        {/* <AnimatedTitle /> */}
+        <span className="font-medium">Frame:</span>
+        <span className="font-mono">{frameIndex + 1}</span>
+        <span className="text-neutral-300">|</span>
+        <span className="font-medium">Time:</span>
+        <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+        <span className="text-neutral-300">|</span>
+        <div className="font-medium">{config.label}</div>
+        <div className="w-full">
+          <ColorScaleBar
+            currentMetric={currentMetric}
+            metricPaletteOverrides={metricPaletteOverrides}
+            thresholdHighlighting={thresholdHighlighting}
+          />
+        </div>
       </div>
 
       <div className="flex min-w-0 items-center justify-end py-1 pr-2">
@@ -313,7 +303,6 @@ export function NavigationBar() {
               </PopoverContent>
             </Popover>
           ) : null}
-          <div>Quakes v{VERSION}</div>
         </div>
       </div>
     </div>

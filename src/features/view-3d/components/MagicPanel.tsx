@@ -9,6 +9,7 @@ import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDis
 import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
 import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
 import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
+import { EndCapPanel } from "@/features/view-3d/panels/EndCapPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -139,6 +140,14 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
     category: "Supporting Analysis",
     icon: RotateCw,
     description: "Top-down rotation preview per floor",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  "End Cap": {
+    component: EndCapPanel,
+    category: "Supporting Analysis",
+    icon: Maximize2,
+    description: "View of end-cap nodes (max X) with vertical connections",
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },

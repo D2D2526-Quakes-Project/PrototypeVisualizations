@@ -18,9 +18,30 @@ import { getMetricKeyColor } from "@/lib/metrics";
 import { useViewStore } from "@/state";
 
 const CHANNEL_CONFIG = {
-  rx: { id: "rx", label: "RX Angular Velocity", shortName: "RX", metric: "rotationVelocityX", unit: "rad/s", thresholdKey: "rotationVelocity" },
-  ry: { id: "ry", label: "RY Angular Velocity", shortName: "RY", metric: "rotationVelocityY", unit: "rad/s", thresholdKey: "rotationVelocity" },
-  rz: { id: "rz", label: "RZ Angular Velocity", shortName: "RZ", metric: "rotationVelocityZ", unit: "rad/s", thresholdKey: "rotationVelocity" },
+  rx: {
+    id: "rx",
+    label: "RX Angular Velocity",
+    shortName: "RX",
+    metric: "rotationVelocityX",
+    unit: "rad/s",
+    thresholdKey: "rotationVelocity",
+  },
+  ry: {
+    id: "ry",
+    label: "RY Angular Velocity",
+    shortName: "RY",
+    metric: "rotationVelocityY",
+    unit: "rad/s",
+    thresholdKey: "rotationVelocity",
+  },
+  rz: {
+    id: "rz",
+    label: "RZ Angular Velocity",
+    shortName: "RZ",
+    metric: "rotationVelocityZ",
+    unit: "rad/s",
+    thresholdKey: "rotationVelocity",
+  },
   magnitude: {
     id: "magnitude",
     label: "Angular Speed",
@@ -53,8 +74,7 @@ function TooltipContent({
           paddingBottom: "4px",
           fontSize: "13px",
         }}>
-        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span>{" "}
-        {formatCompactNumber(time, 1)} s
+        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span> {formatCompactNumber(time, 1)} s
       </div>
       {values.map((item) => (
         <div key={item.name} style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>

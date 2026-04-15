@@ -1,18 +1,16 @@
-import type { ViewMode } from "@/features/view-3d/contexts/visualization/ViewModeContext";
-
-interface ViewModeSelectProps {
-  mode: ViewMode;
-  setMode: (mode: ViewMode) => void;
-  cornersOnly: boolean;
-  setCornersOnly: (value: boolean) => void;
-}
+import { useViewMode, type ViewMode } from "@/features/view-3d/contexts/visualization/ViewModeContext";
+import { useViewStore } from "@/state";
 
 const viewModes: { value: ViewMode; label: string }[] = [
   { value: "all-nodes", label: "All Nodes" },
   { value: "floor-slabs", label: "Floor Slabs" },
 ];
 
-export function ViewModeSelect({ mode, setMode, cornersOnly, setCornersOnly }: ViewModeSelectProps) {
+export function ViewModeSelect() {
+  const { mode, setMode } = useViewMode();
+  const cornersOnly = useViewStore((s) => s.cornersOnly);
+  const setCornersOnly = useViewStore((s) => s.setCornersOnly);
+
   return (
     <div className="flex flex-col gap-2">
       <select

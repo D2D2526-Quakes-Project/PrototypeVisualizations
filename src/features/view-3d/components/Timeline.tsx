@@ -241,8 +241,7 @@ function TooltipContent({
           paddingBottom: "4px",
           fontSize: "13px",
         }}>
-        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span>{" "}
-        {formatCompactNumber(time, 1)} s
+        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span> {formatCompactNumber(time, 1)} s
       </div>
       {values.map((item) => (
         <div

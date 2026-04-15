@@ -38,18 +38,21 @@ import type { EChartsOption } from "echarts";
 import { getMetricKeyColor } from "@/lib/metrics";
 import { formatFixed3, formatStoryLabel } from "@/lib/utils";
 import { useViewStore } from "@/state";
+import { useThresholds } from "@/features/view-3d/contexts/visualization";
 
 export function FloorDisplacementChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getVisibleStoryOrder } = useFloorVisibility();
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
+  const { thresholds } = useThresholds();
   const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
   const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
+  const thresholdValue = thresholds["displacement"] ?? 0;
   const xAxisMax = useMemo(() => {
     const maxDisp = animationData.precomputed.maxDisplacement;
-    return Math.max(maxDisp, 0.1);
-  }, [animationData.precomputed.maxDisplacement]);
+    return Math.max(maxDisp, Math.abs(thresholdValue) * 1.15, 0.1);
+  }, [animationData.precomputed.maxDisplacement, thresholdValue]);
 
   const chartData = useMemo(() => {
     const { stories } = animationData.metadata;
@@ -161,6 +164,19 @@ export function FloorDisplacementChart() {
           itemStyle: { color: displacementXColor, opacity: 0.8 },
           barGap: "0%",
           barCategoryGap: "20%",
+          markLine:
+            thresholdValue > 0
+              ? {
+                  symbol: "none",
+                  data: [
+                    { xAxis: thresholdValue, name: "+Threshold" },
+                    { xAxis: -thresholdValue, name: "-Threshold" },
+                  ],
+                  lineStyle: { color: "#ef4444", width: 1, type: "dashed" as const },
+                  label: { show: false },
+                  silent: true,
+                }
+              : undefined,
         },
         {
           name: "Y",
@@ -173,7 +189,7 @@ export function FloorDisplacementChart() {
       ],
       animation: false,
     };
-  }, [chartData, displacementXColor, displacementYColor, xAxisMax]);
+  }, [chartData, displacementXColor, displacementYColor, xAxisMax, thresholdValue]);
 
   return (
     <div className="flex h-full w-full flex-col bg-white">

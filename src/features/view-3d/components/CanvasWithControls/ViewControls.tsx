@@ -16,22 +16,15 @@ import { AnimatePresence, motion, stagger } from "motion/react";
 
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  useColor,
-  useExpandedScale,
-  useFloorVisibility,
-  useSliceSelection,
-  useThresholds,
-  useViewMode,
-} from "@/features/view-3d/contexts/visualization";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useColor, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { getMetricConfig } from "@/lib/metrics";
+import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
-
 import { ColorScaleBar } from "./ColorScaleBar";
 import { ColorPanel } from "./control-panels/ColorPanel";
 import { ExpandedScalePanel } from "./control-panels/ExpandedScalePanel";
+import { NodeDisplayPanel } from "./control-panels/NodeDisplayPanel";
 import { SliceViewPanel } from "./control-panels/SliceViewPanel";
 import { FloorsPanel, ThresholdPanel } from "./control-panels/ThresholdPanel";
 import { ViewModeSelect } from "./control-panels/ViewModeSelect";
@@ -61,20 +54,8 @@ export function ViewControls({
 }: ViewControlsProps) {
   const { animationData } = useAnimationData();
   const { currentMetric, metricPaletteOverrides, thresholdHighlighting } = useColor();
-  const { mode, setMode } = useViewMode();
-  const cornersOnly = useViewStore((s) => s.cornersOnly);
-  const setCornersOnly = useViewStore((s) => s.setCornersOnly);
-  const {
-    state: expandedScaleState,
-    toggleExpansion,
-    toggleDisplacement,
-    setExpansion,
-    setDisplacementScale,
-  } = useExpandedScale();
-  const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
-    useSliceSelection();
-  const { thresholds, setThreshold } = useThresholds();
-  const { visibleFloors, setFloorVisible, showAllFloors, hideAllFloors } = useFloorVisibility();
+
+  const { thresholds } = useThresholds();
 
   const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
   const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
@@ -491,49 +472,22 @@ export function ViewControls({
                     <Grid3X3 size={12} className="text-neutral-500" />
                     <span className="text-xs font-medium text-neutral-700">View Mode</span>
                   </div>
-                  <ViewModeSelect
-                    mode={mode}
-                    setMode={setMode}
-                    cornersOnly={cornersOnly}
-                    setCornersOnly={setCornersOnly}
-                  />
+                  <ViewModeSelect />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ColorPanel thresholds={thresholds} animationData={animationData} />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <ThresholdPanel
-                    animationData={animationData}
-                    setThreshold={setThreshold}
-                    currentMetric={currentMetric}
-                  />
+                  <ThresholdPanel />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <SliceViewPanel
-                    sliceEnabled={sliceEnabled}
-                    xRange={xRange}
-                    yRange={yRange}
-                    zRange={zRange}
-                    toggleSliceEnabled={toggleSliceEnabled}
-                    setXRange={setXRange}
-                    setYRange={setYRange}
-                    setZRange={setZRange}
-                  />
+                  <SliceViewPanel />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <ExpandedScalePanel
-                    expansionEnabled={expandedScaleState.expansionEnabled}
-                    displacementEnabled={expandedScaleState.displacementEnabled}
-                    xExpansion={expandedScaleState.xExpansion}
-                    yExpansion={expandedScaleState.yExpansion}
-                    zExpansion={expandedScaleState.zExpansion}
-                    xzDisplacementScale={expandedScaleState.xzDisplacementScale}
-                    zDisplacementScale={expandedScaleState.zDisplacementScale}
-                    toggleExpansion={toggleExpansion}
-                    toggleDisplacement={toggleDisplacement}
-                    setExpansion={setExpansion}
-                    setDisplacementScale={setDisplacementScale}
-                  />
+                  <ExpandedScalePanel />
+                </motion.div>
+                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                  <NodeDisplayPanel />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 px-0 pt-2" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
@@ -561,14 +515,7 @@ export function ViewControls({
                   </div>
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <FloorsPanel
-                    visibleFloors={visibleFloors}
-                    setFloorVisible={setFloorVisible}
-                    showAllFloors={showAllFloors}
-                    hideAllFloors={hideAllFloors}
-                    storyOrder={animationData.metadata.storyOrder}
-                    storyHeights={animationData.metadata.storyHeights}
-                  />
+                  <FloorsPanel />
                 </motion.div>
               </div>
             </motion.div>

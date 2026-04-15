@@ -1,4 +1,4 @@
-import { useThresholds } from "@/features/view-3d/contexts/visualization";
+import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import {
   getMetricsForThreshold,
   getThresholdConfig,
@@ -8,24 +8,20 @@ import {
   type Metric,
   type ThresholdKey,
 } from "@/lib/metrics";
-import type { BuildingAnimationData } from "@/lib/types";
+import { useAnimationData } from "@/lib/useAnimationData";
 import { AlertTriangle, Layers, RotateCcw, Sliders } from "lucide-react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ThresholdSlider } from "../ThresholdSlider";
 
-interface ThresholdPanelProps {
-  animationData: BuildingAnimationData;
-  setThreshold: (type: ThresholdKey, value: number) => void;
-  currentMetric: Metric;
-}
-
 function isThresholdUsed(thresholdKey: ThresholdKey, currentMetric: Metric): boolean {
   return getThresholdKey(currentMetric) === thresholdKey;
 }
 
-export function ThresholdPanel({ animationData, setThreshold, currentMetric }: ThresholdPanelProps) {
-  const { thresholds, resetThresholds } = useThresholds();
+export function ThresholdPanel() {
+  const { animationData } = useAnimationData();
+  const { currentMetric } = useColor();
+  const { thresholds, setThreshold, resetThresholds } = useThresholds();
   const thresholdRows = useMemo(
     () =>
       THRESHOLD_KEY_ORDER.filter((thresholdKey) => getThresholdConfig(thresholdKey).isAvailable(animationData)).map(
@@ -75,23 +71,13 @@ export function ThresholdPanel({ animationData, setThreshold, currentMetric }: T
   );
 }
 
-interface FloorsPanelProps {
-  visibleFloors: Set<string>;
-  setFloorVisible: (storyId: string, visible: boolean) => void;
-  showAllFloors: () => void;
-  hideAllFloors: () => void;
-  storyOrder: string[];
-  storyHeights: Record<string, number>;
-}
+export function FloorsPanel() {
+  const { animationData } = useAnimationData();
 
-export function FloorsPanel({
-  visibleFloors,
-  setFloorVisible,
-  showAllFloors,
-  hideAllFloors,
-  storyOrder,
-  storyHeights,
-}: FloorsPanelProps) {
+  const storyOrder = animationData.metadata.storyOrder;
+  const storyHeights = animationData.metadata.storyHeights;
+
+  const { visibleFloors, setFloorVisible, showAllFloors, hideAllFloors } = useFloorVisibility();
   const [dragVisibility, setDragVisibility] = useState<boolean | null>(null);
   const noFloorsVisible = storyOrder.length > 0 && visibleFloors.size === 0;
 

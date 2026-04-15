@@ -38,6 +38,7 @@ import { useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { getDefaultInterstoryDriftChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { useViewStore } from "@/state";
+import { useThresholds } from "@/features/view-3d/contexts/visualization";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
@@ -123,6 +124,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
   const { precomputed } = animationData;
   const { getVisibleStoryOrder } = useFloorVisibility();
   const setPanelState = useViewStore((s) => s.setPanelState);
+  const { thresholds } = useThresholds();
   const chartRef = useRef<ReactECharts>(null);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
 
@@ -226,6 +228,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
   }, [precomputed, frameIndex, storyOrderWithoutGround, animationData.metadata.storyOrder]);
 
   const { currentDrifts, maxCurrentRatio } = chartData;
+  const thresholdValue = thresholds["interstoryDrift"] ?? 0;
 
   // Static parts of the option that don't depend on frameIndex
   const baseOption: EChartsOption = useMemo((): EChartsOption => {
@@ -334,7 +337,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
     }));
 
     // Current value series (render on top)
-    const currentSeries = corners.map((corner) => ({
+    const currentSeries = corners.map((corner, idx) => ({
       name: corner,
       type: "bar" as const,
       stack: corner,
@@ -346,10 +349,20 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       barGap: "0%",
       barCategoryGap: "20%",
       z: 2,
+      markLine:
+        idx === 0 && thresholdValue > 0
+          ? {
+              symbol: "none",
+              data: [{ xAxis: thresholdValue, name: "Threshold" }],
+              lineStyle: { color: "#ef4444", width: 1, type: "dashed" as const },
+              label: { show: false },
+              silent: true,
+            }
+          : undefined,
     }));
 
     return [...currentSeries, ...peakSeries];
-  }, [currentDrifts, storyOrderWithoutGround, peakStoryDrift]);
+  }, [currentDrifts, storyOrderWithoutGround, peakStoryDrift, thresholdValue]);
 
   const xAxisMax = Math.max(Math.max(maxCurrentRatio, maxPeakRatio) * 1.15, MIN_X_AXIS_MAX);
 
@@ -358,6 +371,11 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
     corners.forEach((corner) => {
       selected[corner] = visibleCorners.includes(corner);
     });
+
+    const markLineData: Array<{ xAxis: number; name: string }> = [];
+    if (thresholdValue > 0) {
+      markLineData.push({ xAxis: thresholdValue, name: "Threshold" });
+    }
 
     return {
       ...baseOption,
@@ -395,7 +413,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       },
       series: seriesData,
     };
-  }, [baseOption, seriesData, xAxisMax, visibleCorners]);
+  }, [baseOption, seriesData, xAxisMax, visibleCorners, thresholdValue]);
 
   return (
     <div className="h-full w-full">

@@ -185,6 +185,8 @@ export interface AnimationMetadata {
   cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
   // List of storyIds
   storyOrder: string[];
+  /** Node-to-below mapping for ISD calculation: nodeIdx -> belowNodeIdx (-1 for ground or no match) */
+  node_to_below: number[];
 }
 
 export interface BuildingAnimationData {

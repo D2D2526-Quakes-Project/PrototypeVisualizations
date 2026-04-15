@@ -199,6 +199,16 @@ export interface ViewState {
   // Node Panel Graph Visibility
   nodePanelGraphVisibility: Record<string, boolean>;
   toggleNodePanelGraph: (graphKey: string) => void;
+
+  // Node Display
+  nodeScale: number;
+  nodeOpacity: number;
+  belowThresholdNodeScale: number;
+  belowThresholdNodeOpacity: number;
+  setNodeScale: (scale: number) => void;
+  setNodeOpacity: (opacity: number) => void;
+  setBelowThresholdNodeScale: (scale: number) => void;
+  setBelowThresholdNodeOpacity: (opacity: number) => void;
 }
 
 export const createViewStore = () =>
@@ -460,6 +470,15 @@ export const createViewStore = () =>
             },
           };
         }),
+
+      nodeScale: 1,
+      nodeOpacity: 1,
+      belowThresholdNodeScale: 0.3,
+      belowThresholdNodeOpacity: 0.2,
+      setNodeScale: (nodeScale) => set({ nodeScale }),
+      setNodeOpacity: (nodeOpacity) => set({ nodeOpacity }),
+      setBelowThresholdNodeScale: (belowThresholdNodeScale) => set({ belowThresholdNodeScale }),
+      setBelowThresholdNodeOpacity: (belowThresholdNodeOpacity) => set({ belowThresholdNodeOpacity }),
     }))
   );
 

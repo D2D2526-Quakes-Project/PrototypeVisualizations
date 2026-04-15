@@ -25,7 +25,7 @@ function formatScaleValue(value: number, unitAbbr: string) {
 function LabelBox({ value, underlined = false }: { value: string; underlined?: boolean }) {
   return (
     <span
-      className={`shrink-0 whitespace-nowrap font-mono text-[9px] leading-none text-neutral-400 ${
+      className={`shrink-0 font-mono text-[9px] leading-none whitespace-nowrap text-neutral-400 ${
         underlined ? "border-b border-current pb-px text-neutral-500" : ""
       }`}>
       {value}

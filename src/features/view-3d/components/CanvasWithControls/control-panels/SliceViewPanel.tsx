@@ -3,28 +3,12 @@ import { Switch } from "@/components/ui/switch";
 import { ScanEye } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { useSliceSelection } from "@/features/view-3d/contexts/visualization";
 
-interface SliceViewPanelProps {
-  sliceEnabled: boolean;
-  xRange: [number, number];
-  yRange: [number, number];
-  zRange: [number, number];
-  toggleSliceEnabled: () => void;
-  setXRange: (range: [number, number]) => void;
-  setYRange: (range: [number, number]) => void;
-  setZRange: (range: [number, number]) => void;
-}
+export function SliceViewPanel() {
+  const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
+    useSliceSelection();
 
-export function SliceViewPanel({
-  sliceEnabled,
-  xRange,
-  yRange,
-  zRange,
-  toggleSliceEnabled,
-  setXRange,
-  setYRange,
-  setZRange,
-}: SliceViewPanelProps) {
   return (
     <>
       <div className="mb-1 flex items-center justify-between">

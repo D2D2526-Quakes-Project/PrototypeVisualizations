@@ -9,9 +9,11 @@ import {
   useExpandedScale,
   useFloorVisibility,
   useSliceSelection,
+  useThresholds,
   useViewMode,
 } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
+import { getMetricConfig } from "@/lib/metrics";
 import { UNIT_SCALE } from "@/lib/utils";
 import { isNodeInteractionMode, isSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
 import { useViewStore } from "@/state";
@@ -33,7 +35,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { selectedNodes, selectNode } = useNodeSelection();
-  const { getNodeColor } = useColor();
+  const { getNodeColor, currentMetric } = useColor();
+  const { thresholds } = useThresholds();
   const { mode, getVisibleNodes } = useViewMode();
   const { getExpandedPosition } = useExpandedScale();
   const {
@@ -58,6 +61,9 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
   const setHoveredNodeId = useViewStore((s) => s.setHoveredNodeId);
   const cornersOnly = useViewStore((s) => s.cornersOnly);
+  const nodeScale = useViewStore((s) => s.nodeScale);
+  const nodeOpacity = useViewStore((s) => s.nodeOpacity);
+  const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
   const nodeInteractionEnabled = isNodeInteractionMode(mode);
   const slabInteractionEnabled = isSlabInteractionMode(mode);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -457,8 +463,17 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
       tempObject.position.set(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
 
-      const baseNodeScale = 1 / UNIT_SCALE;
-      const scale = hoveredNodeId === nodeId ? baseNodeScale * 1.35 : baseNodeScale;
+      const metricConfig = getMetricConfig(currentMetric);
+      const thresholdValue = thresholds[metricConfig.thresholdKey] ?? 0;
+      const maxValue = metricConfig.getPrecomputedMax(animationData.precomputed);
+      const normalizedThreshold = maxValue > 0 ? thresholdValue / maxValue : 0;
+      const nodeValue = metricConfig.getValue(animationData, currentFrame, nodeId);
+      const normalizedValue = nodeValue !== undefined && maxValue > 0 ? Math.abs(nodeValue) / maxValue : 0;
+
+      const baseNodeScale = (1 / UNIT_SCALE) * nodeScale;
+      const passesThreshold = normalizedValue >= normalizedThreshold && thresholdValue > 0;
+      const effectiveScale = passesThreshold ? baseNodeScale : baseNodeScale * belowThresholdNodeScale;
+      const scale = hoveredNodeId === nodeId ? effectiveScale * 1.35 : effectiveScale;
       tempObject.scale.set(scale, scale, scale);
 
       tempObject.updateMatrix();
@@ -530,7 +545,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
                   usage={THREE.DynamicDrawUsage}
                 />
               </sphereGeometry>
-              <meshBasicMaterial fog={false} vertexColors />
+              <meshBasicMaterial fog={false} vertexColors transparent opacity={nodeOpacity} />
             </instancedMesh>
           )}
 
@@ -550,6 +565,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
               sizeAttenuation={true}
               depthTest={true}
               depthWrite={true}
+              opacity={nodeOpacity}
             />
             {selectedNodesData.map(({ nodeId, position, color }) => (
               <Point key={nodeId} position={position} color={color}></Point>

@@ -1,19 +1,19 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { buildHingeEnrichedRows } from "@/lib/hingeAnalysis";
+// import { buildHingeEnrichedRows } from "@/lib/hingeAnalysis";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { useMemo } from "react";
 import { MiniTimeSeries } from "./MiniTimeSeries";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { FloorTorsionPlanPreview } from "@/features/view-3d/components/FloorTorsionPlanPreview";
-import { buildFloorTorsionSnapshot, computeStoryPlanRotationPeak } from "@/features/view-3d/lib/floorTorsion";
+// import { FloorTorsionPlanPreview } from "@/features/view-3d/components/FloorTorsionPlanPreview";
+// import { computeStoryPlanRotationPeak } from "@/features/view-3d/lib/floorTorsion";
 import { getMetricKeyColor } from "@/lib/metrics";
 import { useViewStore } from "@/state";
-import { formatHex, interpolate } from "culori";
+// import { interpolate } from "culori";
 import { ChartNoAxesCombinedIcon, XIcon } from "lucide-react";
 import { stringToNumber } from "@/lib/utils";
 
-const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
+// const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
 // Generate a unique vibrant color based on node ID
 export function getFloorColor(storyId: string): string {
@@ -27,6 +27,7 @@ export function getFloorColor(storyId: string): string {
 export function getFloorColorLight(storyId: string): string {
   const num: number = stringToNumber(storyId);
   const hue = (num * 137.508) % 360;
+
   return `hsl(${hue}, 70%, 90%)`;
 }
 
@@ -46,9 +47,9 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const accelerationXColor = getMetricKeyColor("accelerationX", metricPaletteOverrides);
   const accelerationYColor = getMetricKeyColor("accelerationY", metricPaletteOverrides);
   const accelerationZColor = getMetricKeyColor("accelerationZ", metricPaletteOverrides);
-  const rotationXColor = getMetricKeyColor("rotationX", metricPaletteOverrides);
-  const rotationYColor = getMetricKeyColor("rotationY", metricPaletteOverrides);
-  const rotationZColor = getMetricKeyColor("rotationZ", metricPaletteOverrides);
+  // const rotationXColor = getMetricKeyColor("rotationX", metricPaletteOverrides);
+  // const rotationYColor = getMetricKeyColor("rotationY", metricPaletteOverrides);
+  // const rotationZColor = getMetricKeyColor("rotationZ", metricPaletteOverrides);
   const storyDriftColor = getMetricKeyColor("interstoryDrift", metricPaletteOverrides);
 
   const nodeIds = useMemo(
@@ -68,74 +69,74 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
     };
   }, [storyId, animationData]);
 
-  const floorTorsionPeak = useMemo(
-    () => computeStoryPlanRotationPeak(animationData, storyId),
-    [animationData, storyId]
-  );
+  // const floorTorsionPeak = useMemo(
+  //   () => computeStoryPlanRotationPeak(animationData, storyId),
+  //   [animationData, storyId]
+  // );
 
-  const floorTorsion = useMemo(() => {
-    const snapshot = buildFloorTorsionSnapshot(animationData, storyId, frameIndex);
-    if (!snapshot) return null;
+  // const floorTorsion = useMemo(() => {
+  //   const snapshot = buildFloorTorsionSnapshot(animationData, storyId, frameIndex);
+  //   if (!snapshot) return null;
 
-    const scaleMax = Math.max(Math.abs(snapshot.rotationRad), floorTorsionPeak.peakAbsRad, 1e-6);
-    const normalized = Math.max(-1, Math.min(1, snapshot.rotationRad / scaleMax));
+  //   const scaleMax = Math.max(Math.abs(snapshot.rotationRad), floorTorsionPeak.peakAbsRad, 1e-6);
+  //   const normalized = Math.max(-1, Math.min(1, snapshot.rotationRad / scaleMax));
 
-    return {
-      snapshot,
-      color: formatHex(torsionColorScale((normalized + 1) / 2)),
-      colorScaleAbsMax: scaleMax,
-    };
-  }, [animationData, storyId, frameIndex, floorTorsionPeak]);
+  //   return {
+  //     snapshot,
+  //     color: formatHex(torsionColorScale((normalized + 1) / 2)),
+  //     colorScaleAbsMax: scaleMax,
+  //   };
+  // }, [animationData, storyId, frameIndex, floorTorsionPeak]);
 
-  const hingeSliceSummary = useMemo(() => {
-    const hingeData = animationData.hingeData;
-    if (!hingeData) return null;
+  // const hingeSliceSummary = useMemo(() => {
+  //   const hingeData = animationData.hingeData;
+  //   if (!hingeData) return null;
 
-    const rows = buildHingeEnrichedRows(hingeData, animationData.beamData);
-    if (rows.length === 0) return null;
+  //   const rows = buildHingeEnrichedRows(hingeData, animationData.beamData);
+  //   if (rows.length === 0) return null;
 
-    let maxOnlyCount = 0;
-    let ge1 = 0;
-    let ge2 = 0;
-    let ge4 = 0;
-    let maxCritical = 0;
-    const topRows = rows
-      .filter((row) => row.stepType === "Max")
-      .slice()
-      .sort((a, b) => b.criticalDcr - a.criticalDcr)
-      .slice(0, 5);
+  //   let maxOnlyCount = 0;
+  //   let ge1 = 0;
+  //   let ge2 = 0;
+  //   let ge4 = 0;
+  //   let maxCritical = 0;
+  //   const topRows = rows
+  //     .filter((row) => row.stepType === "Max")
+  //     .slice()
+  //     .sort((a, b) => b.criticalDcr - a.criticalDcr)
+  //     .slice(0, 5);
 
-    for (const row of rows) {
-      if (row.stepType !== "Max") continue;
-      maxOnlyCount += 1;
-      if (row.criticalDcr > maxCritical) maxCritical = row.criticalDcr;
-      if (row.criticalDcr >= 1) ge1 += 1;
-      if (row.criticalDcr >= 2) ge2 += 1;
-      if (row.criticalDcr >= 4) ge4 += 1;
-    }
+  //   for (const row of rows) {
+  //     if (row.stepType !== "Max") continue;
+  //     maxOnlyCount += 1;
+  //     if (row.criticalDcr > maxCritical) maxCritical = row.criticalDcr;
+  //     if (row.criticalDcr >= 1) ge1 += 1;
+  //     if (row.criticalDcr >= 2) ge2 += 1;
+  //     if (row.criticalDcr >= 4) ge4 += 1;
+  //   }
 
-    const dcrSummaryMax = hingeData.metadata.summary?.metrics.max_pos_deform_dc_ratio?.max;
-    const dcrSummaryMin = hingeData.metadata.summary?.metrics.max_pos_deform_dc_ratio?.min;
-    const negDcrSummaryMax = hingeData.metadata.summary?.metrics.max_neg_deform_dc_ratio?.max;
-    const negDcrSummaryMin = hingeData.metadata.summary?.metrics.max_neg_deform_dc_ratio?.min;
-    const p95Approx = Math.max(
-      dcrSummaryMax?.p95 ?? 0,
-      dcrSummaryMin?.p95 ?? 0,
-      negDcrSummaryMax?.p95 ?? 0,
-      negDcrSummaryMin?.p95 ?? 0
-    );
+  //   const dcrSummaryMax = hingeData.metadata.summary?.metrics.max_pos_deform_dc_ratio?.max;
+  //   const dcrSummaryMin = hingeData.metadata.summary?.metrics.max_pos_deform_dc_ratio?.min;
+  //   const negDcrSummaryMax = hingeData.metadata.summary?.metrics.max_neg_deform_dc_ratio?.max;
+  //   const negDcrSummaryMin = hingeData.metadata.summary?.metrics.max_neg_deform_dc_ratio?.min;
+  //   const p95Approx = Math.max(
+  //     dcrSummaryMax?.p95 ?? 0,
+  //     dcrSummaryMin?.p95 ?? 0,
+  //     negDcrSummaryMax?.p95 ?? 0,
+  //     negDcrSummaryMin?.p95 ?? 0
+  //   );
 
-    return {
-      totalRows: rows.length,
-      maxOnlyCount,
-      ge1,
-      ge2,
-      ge4,
-      maxCritical,
-      p95Approx,
-      topRows,
-    };
-  }, [animationData.hingeData, animationData.beamData]);
+  //   return {
+  //     totalRows: rows.length,
+  //     maxOnlyCount,
+  //     ge1,
+  //     ge2,
+  //     ge4,
+  //     maxCritical,
+  //     p95Approx,
+  //     topRows,
+  //   };
+  // }, [animationData.hingeData, animationData.beamData]);
 
   // DISPLACEMENT
   const displacementData = useMemo(() => {

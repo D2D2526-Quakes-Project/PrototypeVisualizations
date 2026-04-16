@@ -1,16 +1,18 @@
 import { Slider } from "@/components/ui/slider";
 import { useViewStore } from "@/state";
-import { Circle, Sliders } from "lucide-react";
+import { Circle, Layers, Sliders } from "lucide-react";
 
 export function NodeDisplayPanel() {
   const nodeScale = useViewStore((s) => s.nodeScale);
   const nodeOpacity = useViewStore((s) => s.nodeOpacity);
+  const floorOpacity = useViewStore((s) => s.floorOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
   // const belowThresholdNodeOpacity = useViewStore((s) => s.belowThresholdNodeOpacity);
   const setNodeScale = useViewStore((s) => s.setNodeScale);
   const setNodeOpacity = useViewStore((s) => s.setNodeOpacity);
   const setBelowThresholdNodeScale = useViewStore((s) => s.setBelowThresholdNodeScale);
   // const setBelowThresholdNodeOpacity = useViewStore((s) => s.setBelowThresholdNodeOpacity);
+  const setFloorOpacity = useViewStore((s) => s.setFloorOpacity);
 
   return (
     <div className="space-y-1">
@@ -45,6 +47,22 @@ export function NodeDisplayPanel() {
           className="flex-1"
         />
         <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{(nodeOpacity * 100).toFixed(0)}%</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Layers size={12} className="shrink-0 text-neutral-400" />
+        <span className="w-16 shrink-0 text-[10px] text-neutral-500">Floor</span>
+        <Slider
+          value={[floorOpacity]}
+          onValueChange={(val) => setFloorOpacity(val[0])}
+          min={0}
+          max={1}
+          step={0.05}
+          className="flex-1"
+        />
+        <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">
+          {(floorOpacity * 100).toFixed(0)}%
+        </span>
       </div>
 
       <div className="border-neutral-200">

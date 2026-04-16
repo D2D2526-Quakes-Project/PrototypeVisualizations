@@ -31,9 +31,10 @@ const rgbConverter = converter("rgb");
 interface FloorSlabsRendererProps {
   nodeIds: number[];
   cornersOnly?: boolean;
+  floorOpacity?: number;
 }
 
-export function FloorSlabsRenderer({ nodeIds, cornersOnly = false }: FloorSlabsRendererProps) {
+export function FloorSlabsRenderer({ nodeIds, cornersOnly = false, floorOpacity = 0.2 }: FloorSlabsRendererProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getExpandedPosition } = useExpandedScale();
@@ -88,6 +89,7 @@ export function FloorSlabsRenderer({ nodeIds, cornersOnly = false }: FloorSlabsR
           getExpandedPosition={getExpandedPosition}
           offset={offset}
           cornersOnly={cornersOnly}
+          floorOpacity={floorOpacity}
         />
       ))}
     </group>
@@ -101,9 +103,18 @@ interface FloorSlabProps {
   getExpandedPosition: ReturnType<typeof useExpandedScale>["getExpandedPosition"];
   offset: [number, number, number];
   cornersOnly?: boolean;
+  floorOpacity?: number;
 }
 
-function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, cornersOnly = false }: FloorSlabProps) {
+function FloorSlab({
+  storyId,
+  nodeIds,
+  frameIndex,
+  getExpandedPosition,
+  offset,
+  cornersOnly = false,
+  floorOpacity = 0.2,
+}: FloorSlabProps) {
   const { animationData } = useAnimationData();
   const { getNodeColor } = useColor();
   const { hoveredCrossSection, selectCrossSection, setHovered } = useCrossSectionSelection();
@@ -215,7 +226,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
           new THREE.MeshBasicMaterial({
             vertexColors: true,
             transparent: true,
-            opacity: 0.2,
+            opacity: floorOpacity,
             depthWrite: false,
             side: THREE.DoubleSide,
           })
@@ -271,12 +282,22 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
       new THREE.MeshBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.2,
+        opacity: floorOpacity,
         depthWrite: false,
         side: THREE.DoubleSide,
       })
     );
-  }, [nodeIds, frameIndex, animationData, getNodeColor, getExpandedPosition, offset, cornersOnly, storyId]);
+  }, [
+    nodeIds,
+    frameIndex,
+    animationData,
+    getNodeColor,
+    getExpandedPosition,
+    offset,
+    cornersOnly,
+    storyId,
+    floorOpacity,
+  ]);
 
   const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();
@@ -309,7 +330,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
 
   if (!geometry) return null;
 
-  const opacity = isHovered ? 0.9 : 0.2;
+  const opacity = isHovered ? 0.9 : floorOpacity;
 
   const meshes = geometry instanceof THREE.Group ? geometry.children : [geometry];
 

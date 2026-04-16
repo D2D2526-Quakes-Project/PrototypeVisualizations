@@ -211,10 +211,12 @@ export interface ViewState {
   nodeOpacity: number;
   belowThresholdNodeScale: number;
   belowThresholdNodeOpacity: number;
+  floorOpacity: number;
   setNodeScale: (scale: number) => void;
   setNodeOpacity: (opacity: number) => void;
   setBelowThresholdNodeScale: (scale: number) => void;
   setBelowThresholdNodeOpacity: (opacity: number) => void;
+  setFloorOpacity: (opacity: number) => void;
 }
 
 export const createViewStore = () =>
@@ -488,10 +490,12 @@ export const createViewStore = () =>
       nodeOpacity: 1,
       belowThresholdNodeScale: 0.3,
       belowThresholdNodeOpacity: 0.2,
+      floorOpacity: 0.2,
       setNodeScale: (nodeScale) => set({ nodeScale }),
       setNodeOpacity: (nodeOpacity) => set({ nodeOpacity }),
       setBelowThresholdNodeScale: (belowThresholdNodeScale) => set({ belowThresholdNodeScale }),
       setBelowThresholdNodeOpacity: (belowThresholdNodeOpacity) => set({ belowThresholdNodeOpacity }),
+      setFloorOpacity: (floorOpacity) => set({ floorOpacity }),
     }))
   );
 

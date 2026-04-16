@@ -71,6 +71,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const slabInteractionEnabled = useSlabInteractionMode();
   const nodeScale = useViewStore((s) => s.nodeScale);
   const nodeOpacity = useViewStore((s) => s.nodeOpacity);
+  const floorOpacity = useViewStore((s) => s.floorOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
   const hiddenNodeIdSet = useMemo(() => new Set(hiddenNodeIds), [hiddenNodeIds]);
@@ -543,6 +544,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
               key={`floors-${interactiveSceneKey}`}
               nodeIds={visibleNodes}
               cornersOnly={showCornersOnly}
+              floorOpacity={floorOpacity}
             />
           )}
 

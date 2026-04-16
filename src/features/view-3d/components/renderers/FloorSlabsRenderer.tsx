@@ -1,6 +1,5 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useExpandedScale } from "@/features/view-3d/contexts/visualization";
-import type { BuildingAnimationData } from "@/lib/types";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { converter, formatHex, interpolate } from "culori";
 import Delaunay from "delaunator";
@@ -122,15 +121,10 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
         return null;
       }
 
-      const storyIndex = animationData.metadata.storyOrder.indexOf(storyId);
-      const precomputed = animationData.precomputed as BuildingAnimationData["precomputed"];
-      const drifts = precomputed.storyDrift.getStoryDrift(storyIndex, frameIndex);
-      const peaks = precomputed.peakStoryDrift[storyId] ?? { NW: 0, NE: 0, SW: 0, SE: 0 };
-
       const cornerData: { corner: string; position: THREE.Vector3; color: THREE.Color }[] = [];
       const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
 
-      cornerOrder.forEach((corner, idx) => {
+      cornerOrder.forEach((corner) => {
         const nodeId = corners[corner];
         if (typeof nodeId !== "number" || nodeId < 0) return;
 
@@ -145,8 +139,8 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
         );
         const position = new THREE.Vector3(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
 
-        const drift = drifts[idx];
-        const peak = peaks[corner];
+        const drift = animationData.storyDrift.get(frameIndex, nodeId);
+        const peak = animationData.precomputed.peakStoryDrift[nodeId];
         const ratio = drift / (peak || 0.0001);
         const colorHex = formatHex(driftColorMap(ratio));
         const rgb = rgbConverter(colorHex);
@@ -253,8 +247,6 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
     const positions = new Float32Array(triangles.length * 3);
     const colors = new Float32Array(triangles.length * 3);
 
-    const avgZ = nodePositions.reduce((sum, p) => sum + p.position.z, 0) / nodePositions.length;
-
     for (let i = 0; i < triangles.length; i++) {
       const nodeIdx = triangles[i];
       const nodeId = nodePositions[nodeIdx].nodeId;
@@ -262,7 +254,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
 
       positions[i * 3] = nodePos.x;
       positions[i * 3 + 1] = nodePos.y;
-      positions[i * 3 + 2] = avgZ;
+      positions[i * 3 + 2] = nodePos.z;
 
       const nodeColor = getNodeColor(nodeId, frameIndex);
       colors[i * 3] = nodeColor.r;

@@ -430,24 +430,11 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     return "Interior";
   }, [nodeId, animationData]);
 
-  // STORY DRIFT (if this is a corner node)
+  // STORY DRIFT
   const storyDrift = useMemo(() => {
-    if (cornerInfo === "Interior") return null;
-
-    const storyIndex = animationData.metadata.storyOrder.indexOf(storyInfo.story);
-    if (storyIndex <= 0) return null; // No drift for ground floor
-
-    // const corners = animationData.precomputed.cornerNodes[storyInfo.story];
-    const cornerOrder = ["NW", "NE", "SW", "SE"];
-    const cornerIndex = cornerOrder.indexOf(cornerInfo);
-
-    if (cornerIndex === -1) return null;
-
-    const currentDrift = animationData.precomputed.storyDrift.getStoryDrift(storyIndex, frameIndex)[cornerIndex];
-    const peakDrift =
-      animationData.precomputed.peakStoryDrift[storyInfo.story][cornerInfo as "NW" | "NE" | "SW" | "SE"];
-    const peakFrame =
-      animationData.precomputed.peakStoryDriftFrame[storyInfo.story][cornerInfo as "NW" | "NE" | "SW" | "SE"];
+    const currentDrift = animationData.storyDrift.get(frameIndex, nodeId) ?? 0;
+    const peakDrift = animationData.precomputed.peakStoryDrift[nodeId] ?? 0;
+    const peakFrame = animationData.precomputed.peakStoryDriftFrame[nodeId] ?? 0;
     const peakTime = peakFrame * animationData.metadata.dt;
 
     return {
@@ -455,28 +442,20 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       peak: peakDrift,
       peakTime: peakTime,
     };
-  }, [cornerInfo, storyInfo, frameIndex, animationData]);
+  }, [frameIndex, animationData, nodeId]);
 
   // STORY DRIFT TIME SERIES (for mini chart)
   const storyDriftTimeSeries = useMemo(() => {
     if (!storyDrift) return null;
     const times: number[] = [];
     const values: number[] = [];
-    const storyIndex = animationData.metadata.storyOrder.indexOf(storyInfo.story);
-    const cornerOrder = ["NW", "NE", "SW", "SE"];
-    const cornerIndex = cornerOrder.indexOf(cornerInfo);
-    if (cornerIndex === -1) return null;
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
       times.push(i * animationData.metadata.dt);
-      values.push(animationData.precomputed.storyDrift.getStoryDrift(storyIndex, i)[cornerIndex]);
+      values.push(animationData.storyDrift.get(i, nodeId));
     }
-    const getPeakTime = (arr: number[]) => {
-      if (arr.length === 0) return 0;
-      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
-      return times[maxIdx];
-    };
-    return { times, values, peakTime: getPeakTime(values) };
-  }, [storyDrift, animationData, storyInfo, cornerInfo]);
+    const peakTime = (animationData.precomputed.peakStoryDriftFrame[nodeId] ?? 0) * animationData.metadata.dt;
+    return { times, values, peakTime };
+  }, [animationData, storyDrift, nodeId]);
 
   // DISTANCE TRAVELED
   const totalDistanceTraveled = useMemo(() => {
@@ -585,6 +564,10 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="text-neutral-600">
                 <UnitTooltip value={storyInfo.height} unit="in" decimals={0} />
               </div>
+            </div>
+            <div>
+              <span className="font-medium text-neutral-700">Node below:</span>
+              <div className="text-neutral-600">{animationData.metadata.nodeToBelow[nodeId]}</div>
             </div>
           </div>
         </div>

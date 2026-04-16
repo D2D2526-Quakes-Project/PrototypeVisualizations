@@ -34,7 +34,6 @@ export interface SerializedComputedStatsCore {
   maxDisplacementY: number;
   maxDisplacementZ: number;
   maxStoryDrift: number;
-  avgStoryDrift: number;
   groundMotion: {
     min: [number, number, number];
     max: [number, number, number];
@@ -42,14 +41,13 @@ export interface SerializedComputedStatsCore {
     maxMagnitude: number;
     minMagnitude: number;
   };
-  storyDrift: SerializedStoryDrift;
-  peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
-  peakStoryDriftFrame: Record<string, { NW: number; NE: number; SW: number; SE: number }>;
   peakNodeDisplacement: Float32Array;
   peakNodeDisplacementFrame: Uint32Array;
   peakNodeDisplacementX: Float32Array;
   peakNodeDisplacementY: Float32Array;
   peakNodeDisplacementZ: Float32Array;
+  peakStoryDrift: Float32Array;
+  peakStoryDriftFrame: Float32Array;
   avgDisplacementPerFrame: {
     x: Float32Array;
     y: Float32Array;
@@ -277,28 +275,12 @@ function makeHingeAccessor(metadata: HingeMetadata, body: Float32Array): HingeDa
   };
 }
 
-function deserializeStoryDrift(storyDrift: SerializedStoryDrift): ComputedStats["storyDrift"] {
-  return {
-    ...storyDrift,
-    getStoryDrift(storyIndex: number, frameIndex: number) {
-      const baseIndex =
-        storyIndex * storyDrift.frameCount * storyDrift.cornerCount + frameIndex * storyDrift.cornerCount;
-      return [
-        storyDrift.data[baseIndex],
-        storyDrift.data[baseIndex + 1],
-        storyDrift.data[baseIndex + 2],
-        storyDrift.data[baseIndex + 3],
-      ];
-    },
-  };
-}
-
 function serializeRequiredComputedStats(
   metadata: AnimationMetadata,
   positions: Float32Array,
   dispLin: Float32Array,
   groundMotion: Float32Array,
-  cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }>
+  nodeStoryDrift: Float32Array
 ): SerializedComputedStatsCore {
   let minX = Infinity;
   let minY = Infinity;
@@ -355,87 +337,6 @@ function serializeRequiredComputedStats(
 
   const storyCount = metadata.storyOrder.length;
   const frameCount = metadata.frameCount;
-  const cornerCount = 4;
-  const storyDriftData = new Float32Array(storyCount * frameCount * cornerCount);
-
-  for (let storyIdx = 1; storyIdx < storyCount; storyIdx++) {
-    const storyId = metadata.storyOrder[storyIdx];
-    const belowId = metadata.storyOrder[storyIdx - 1];
-    const storyHeight = metadata.storyHeights[storyId] || 1;
-    const corners = cornerNodes[storyId];
-    const belowCorners = cornerNodes[belowId];
-    const cornerOffsets = [corners.NW * 3, corners.NE * 3, corners.SW * 3, corners.SE * 3];
-    const belowCornerOffsets = [belowCorners.NW * 3, belowCorners.NE * 3, belowCorners.SW * 3, belowCorners.SE * 3];
-
-    for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
-      const frameOffset = frameIdx * metadata.nodeCount * 3;
-      for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
-        const nodeOffset = frameOffset + cornerOffsets[cornerIdx];
-        const belowNodeOffset = frameOffset + belowCornerOffsets[cornerIdx];
-        const currentMag = Math.hypot(
-          dispLin[nodeOffset] ?? 0,
-          dispLin[nodeOffset + 1] ?? 0,
-          dispLin[nodeOffset + 2] ?? 0
-        );
-        const belowMag = Math.hypot(
-          dispLin[belowNodeOffset] ?? 0,
-          dispLin[belowNodeOffset + 1] ?? 0,
-          dispLin[belowNodeOffset + 2] ?? 0
-        );
-        const driftPercent = (Math.abs(currentMag - belowMag) / storyHeight) * 100;
-        const arrayIndex = storyIdx * frameCount * cornerCount + frameIdx * cornerCount + cornerIdx;
-        storyDriftData[arrayIndex] = driftPercent;
-      }
-    }
-  }
-
-  const peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
-  let maxStoryDrift = 0;
-  let totalStoryDrift = 0;
-  let storyDriftCount = 0;
-
-  const peakStoryDriftFrame: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
-
-  for (let storyIdx = 1; storyIdx < storyCount; storyIdx++) {
-    const storyId = metadata.storyOrder[storyIdx];
-    const peak = { NW: 0, NE: 0, SW: 0, SE: 0 };
-    const peakFrame = { NW: 0, NE: 0, SW: 0, SE: 0 };
-    for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
-      for (let cornerIdx = 0; cornerIdx < cornerCount; cornerIdx++) {
-        const idx = storyIdx * frameCount * cornerCount + frameIdx * cornerCount + cornerIdx;
-        const value = storyDriftData[idx] ?? 0;
-        if (cornerIdx === 0) {
-          if (value > peak.NW) {
-            peak.NW = value;
-            peakFrame.NW = frameIdx;
-          }
-        }
-        if (cornerIdx === 1) {
-          if (value > peak.NE) {
-            peak.NE = value;
-            peakFrame.NE = frameIdx;
-          }
-        }
-        if (cornerIdx === 2) {
-          if (value > peak.SW) {
-            peak.SW = value;
-            peakFrame.SW = frameIdx;
-          }
-        }
-        if (cornerIdx === 3) {
-          if (value > peak.SE) {
-            peak.SE = value;
-            peakFrame.SE = frameIdx;
-          }
-        }
-        maxStoryDrift = Math.max(maxStoryDrift, value);
-        totalStoryDrift += value;
-        storyDriftCount += 1;
-      }
-    }
-    peakStoryDrift[storyId] = peak;
-    peakStoryDriftFrame[storyId] = peakFrame;
-  }
 
   const gmMax: [number, number, number] = [-Infinity, -Infinity, -Infinity];
   const gmMin: [number, number, number] = [Infinity, Infinity, Infinity];
@@ -466,6 +367,10 @@ function serializeRequiredComputedStats(
   };
   const avgDisplacementPerStory = new Float32Array(storyCount * frameCount);
 
+  const peakStoryDrift = new Float32Array(metadata.nodeCount);
+  const peakStoryDriftFrame = new Float32Array(metadata.nodeCount);
+  let maxStoryDrift = 0;
+
   const storyNodeIndices = metadata.storyOrder.map((storyId) => metadata.stories[storyId] ?? []);
 
   for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
@@ -490,6 +395,15 @@ function serializeRequiredComputedStats(
       sumX += dx;
       sumY += dy;
       sumZ += dz;
+
+      const drift = nodeStoryDrift[frameOffset * metadata.nodeCount + nodeIdx];
+      if (drift > peakStoryDrift[nodeIdx]) {
+        peakStoryDrift[nodeIdx] = drift;
+        peakStoryDriftFrame[nodeIdx] = frameIdx;
+      }
+      if (drift > maxStoryDrift) {
+        maxStoryDrift = drift;
+      }
     }
 
     avgDisplacementPerFrame.x[frameIdx] = sumX / metadata.nodeCount;
@@ -535,19 +449,12 @@ function serializeRequiredComputedStats(
     maxDisplacementY,
     maxDisplacementZ,
     maxStoryDrift,
-    avgStoryDrift: storyDriftCount > 0 ? totalStoryDrift / storyDriftCount : 0,
     groundMotion: {
       min: gmMin,
       max: gmMax,
       magnitude: gmMagnitude,
       maxMagnitude: Math.max(...gmMagnitude),
       minMagnitude: Math.min(...gmMagnitude),
-    },
-    storyDrift: {
-      data: storyDriftData,
-      storyCount,
-      frameCount,
-      cornerCount,
     },
     peakStoryDrift,
     peakStoryDriftFrame,
@@ -678,7 +585,7 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
       buildingData.bodyView.subarray(0),
       dispLinData.bodyView.subarray(0),
       groundMotionData.bodyView.subarray(0),
-      normalizedCornerNodes
+      nodeStoryDrift
     ),
     initialPositions: buildingData.bodyView.subarray(0),
     displacementLin: dispLinData.bodyView.subarray(0),
@@ -694,7 +601,6 @@ export function rebuildAnimationDataFromSerializedCore(data: SerializedRequiredA
     },
     precomputed: {
       ...data.precomputed,
-      storyDrift: deserializeStoryDrift(data.precomputed.storyDrift),
     },
     initialPositions: makeAccessor(data.initialPositions, 3),
     displacementLin: makeTimeAccessor(data.displacementLin, data.metadata.nodeCount),

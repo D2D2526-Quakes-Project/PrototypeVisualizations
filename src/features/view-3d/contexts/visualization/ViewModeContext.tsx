@@ -22,7 +22,6 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useViewMode(): ViewModeContextType {
-  const showNodes = useViewStore((s) => s.renderNodes);
   const showCornersOnly = useViewStore((s) => s.showCornersOnly);
   const sliceEnabled = useViewStore((s) => s.sliceEnabled);
   const xRange = useViewStore((s) => s.xRange);
@@ -79,7 +78,7 @@ export function useViewMode(): ViewModeContextType {
 
       return nodes;
     },
-    [showNodes, showCornersOnly, animationData, sliceEnabled, xRange, yRange, zRange]
+    [showCornersOnly, animationData, sliceEnabled, xRange, yRange, zRange]
   );
 
   return {

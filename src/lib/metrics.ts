@@ -978,38 +978,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getPrecomputedMax: get("maxStoryDrift"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
-      const storyOrder = animationData.metadata.storyOrder;
-      let foundStoryIndex = -1;
-      for (let i = 0; i < storyOrder.length; i++) {
-        const storyNodes = animationData.metadata.stories[storyOrder[i]];
-        if (storyNodes.includes(nodeId)) {
-          foundStoryIndex = i;
-          break;
-        }
-      }
-      if (foundStoryIndex <= 0) return undefined;
-
-      const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
-      let cornerInfo = undefined;
-
-      for (let storyIndex = 0; storyIndex < storyOrder.length; storyIndex++) {
-        const storyId = storyOrder[storyIndex];
-        const corners = animationData.metadata.cornerNodes[storyId];
-        if (!corners) continue;
-
-        for (let cornerIndex = 0; cornerIndex < cornerOrder.length; cornerIndex++) {
-          const corner = cornerOrder[cornerIndex];
-          if (corners[corner] === nodeId) {
-            cornerInfo = { storyIndex, cornerIndex };
-          }
-        }
-      }
-
-      if (!cornerInfo) return undefined;
-
-      const { storyIndex, cornerIndex } = cornerInfo;
-      const drifts = animationData.precomputed.storyDrift.getStoryDrift(storyIndex, frameIndex);
-      return drifts[cornerIndex];
+      const drifts = animationData.storyDrift.get(frameIndex, nodeId);
+      return drifts;
     },
   },
   // Debug metrics

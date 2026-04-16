@@ -230,7 +230,6 @@ export function StatisticsPanel() {
             <StatRow label="Max Acceleration" value={stats.precomputed.maxAcceleration} unit="in/s²" />
           )}
           <StatRow label="Max Story Drift" value={stats.precomputed.maxStoryDrift} unit="%" />
-          <StatRow label="Avg Story Drift" value={stats.precomputed.avgStoryDrift} unit="%" />
           {stats.optionalPeaks.maxRotation !== null && (
             <StatRow label="Max Rotation" value={stats.optionalPeaks.maxRotation} unit="rad" />
           )}

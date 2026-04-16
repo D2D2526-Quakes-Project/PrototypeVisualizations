@@ -396,38 +396,25 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
 
   // CORNER DRIFT VALUES
   const cornerDrifts = useMemo(() => {
-    const storyIndex = animationData.metadata.storyOrder.indexOf(storyId);
-    if (storyIndex <= 0) return null;
+    const cornerNodes = animationData.metadata.cornerNodes[storyId];
 
-    const corners = ["NW", "NE", "SW", "SE"] as const;
-    const cornerNodeIds = animationData.metadata.corners;
-    const cornerData: Record<string, { current: number; peak: number } | null> = {};
+    const cornerData: Record<string, { current: number; peak: number; peakTime: number }> = {};
 
-    for (const corner of corners) {
-      const cornerNodes = cornerNodeIds[corner];
-      if (!cornerNodes || cornerNodes.length === 0) {
-        cornerData[corner] = null;
-        continue;
-      }
-
-      const nodesOnThisFloor = cornerNodes.filter((n) => nodeIds.includes(n));
-      if (nodesOnThisFloor.length === 0) {
-        cornerData[corner] = null;
-        continue;
-      }
-
-      const currentDrift = animationData.precomputed.storyDrift.getStoryDrift(storyIndex, frameIndex);
-      const cornerIndex = corners.indexOf(corner);
-      const peakDrift = animationData.precomputed.peakStoryDrift[storyId]?.[corner as "NW" | "NE" | "SW" | "SE"];
+    for (const corner in cornerNodes) {
+      const nodeId = cornerNodes[corner as keyof typeof cornerNodes];
+      const currentDrift = animationData.storyDrift.get(frameIndex, nodeId);
+      const peakDrift = animationData.precomputed.peakStoryDrift[nodeId];
+      const peakDriftFrame = animationData.precomputed.peakStoryDriftFrame[nodeId];
 
       cornerData[corner] = {
-        current: currentDrift[cornerIndex],
+        current: currentDrift ?? 0,
         peak: peakDrift ?? 0,
+        peakTime: (peakDriftFrame ?? 0) * animationData.metadata.dt,
       };
     }
 
     return cornerData;
-  }, [storyId, animationData, frameIndex, nodeIds]);
+  }, [storyId, animationData, frameIndex]);
 
   // TIME SERIES FOR MINI CHARTS
   const displacementTimeSeries = useMemo(() => {
@@ -571,41 +558,36 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   }, [animationData.accelerationLin, nodeIds, animationData.metadata.frameCount, animationData.metadata.dt]);
 
   const driftTimeSeries = useMemo(() => {
-    const storyIndex = animationData.metadata.storyOrder.indexOf(storyId);
-    if (storyIndex <= 0) return null;
-
     const times: number[] = [];
     const nwValues: number[] = [];
     const neValues: number[] = [];
     const swValues: number[] = [];
     const seValues: number[] = [];
 
+    const cornerNodes = animationData.metadata.cornerNodes[storyId];
+
     for (let f = 0; f < animationData.metadata.frameCount; f++) {
       times.push(f * animationData.metadata.dt);
-      const drifts = animationData.precomputed.storyDrift.getStoryDrift(storyIndex, f);
-      nwValues.push(drifts[0]);
-      neValues.push(drifts[1]);
-      swValues.push(drifts[2]);
-      seValues.push(drifts[3]);
+      nwValues.push(animationData.storyDrift.get(f, cornerNodes.NW));
+      neValues.push(animationData.storyDrift.get(f, cornerNodes.NE));
+      swValues.push(animationData.storyDrift.get(f, cornerNodes.SW));
+      seValues.push(animationData.storyDrift.get(f, cornerNodes.SE));
     }
 
-    const getPeakTime = (arr: number[]) => {
-      if (arr.length === 0) return 0;
-      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
-      return times[maxIdx];
+    const peakTimes = {
+      nw: (animationData.precomputed.peakStoryDriftFrame[cornerNodes.NW] ?? 0) * animationData.metadata.dt,
+      ne: (animationData.precomputed.peakStoryDriftFrame[cornerNodes.NE] ?? 0) * animationData.metadata.dt,
+      sw: (animationData.precomputed.peakStoryDriftFrame[cornerNodes.SW] ?? 0) * animationData.metadata.dt,
+      se: (animationData.precomputed.peakStoryDriftFrame[cornerNodes.SE] ?? 0) * animationData.metadata.dt,
     };
+
     return {
       times,
       nwValues,
       neValues,
       swValues,
       seValues,
-      peakTimes: {
-        nw: getPeakTime(nwValues),
-        ne: getPeakTime(neValues),
-        sw: getPeakTime(swValues),
-        se: getPeakTime(seValues),
-      },
+      peakTimes,
     };
   }, [animationData, storyId]);
 
@@ -1105,6 +1087,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                       <span className="mx-2 text-neutral-300">|</span>
                       <span className="mr-1">Peak:</span>
                       <UnitTooltip value={data.peak} unit="%" />
+                      <span className="text-[9px] text-neutral-500">@ {data.peakTime.toFixed(2)} s</span>
                     </div>
                   ) : (
                     <div className="text-[10px] text-neutral-400">N/A</div>

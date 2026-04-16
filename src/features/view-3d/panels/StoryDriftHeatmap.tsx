@@ -128,12 +128,8 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   const visibleStories = useMemo(() => getVisibleStoryOrder().slice(1), [getVisibleStoryOrder]);
 
   const heatmapData = useMemo(() => {
-    const { storyDrift, peakStoryDrift } = animationData.precomputed;
-    const storyOrder = animationData.metadata.storyOrder;
-
+    const { peakStoryDrift } = animationData.precomputed;
     const timeStep = Math.max(1, Math.floor(animationData.metadata.frameCount / resolution));
-
-    const cornerIndex: Record<Corner, number> = { NW: 0, NE: 1, SW: 2, SE: 3, Max: -1 };
 
     const data: Array<[number, number, number]> = [];
     const yAxisLabels: [string, string][] = [];
@@ -142,15 +138,14 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
 
     let yIdx = 0;
     visibleStories.forEach((storyId) => {
-      const storyIdx = storyOrder.indexOf(storyId);
       let corners = selectedCorners;
       if (isMaxSelected) {
-        corners = ["NW", "NE", "SW", "SE"];
+        corners = ["NW", "NE", "SW", "SE"] as const;
       }
-      corners.forEach((corner) => {
+      const cornerNodes = animationData.metadata.cornerNodes[storyId];
+      (corners as ("NW" | "NE" | "SW" | "SE")[]).forEach((corner) => {
         for (let frame = 0; frame < animationData.metadata.frameCount; frame += timeStep) {
-          const drifts = storyDrift.getStoryDrift(storyIdx, frame);
-          const drift = drifts[cornerIndex[corner]];
+          const drift = animationData.storyDrift.get(frame, cornerNodes[corner]);
           data.push([Math.floor(frame / timeStep), yIdx, drift]);
         }
         yAxisLabels.push([storyId, corner]);
@@ -162,15 +157,19 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
     if (isMaxSelected) {
       maxValue = Math.max(
         ...visibleStories.map((storyId) => {
-          const peaks = peakStoryDrift[storyId];
-          return peaks ? Math.max(peaks.NW, peaks.NE, peaks.SW, peaks.SE) : 0;
+          const cornerNodes = animationData.metadata.cornerNodes[storyId];
+          const nw = peakStoryDrift[cornerNodes.NW] ?? 0;
+          const ne = peakStoryDrift[cornerNodes.NE] ?? 0;
+          const sw = peakStoryDrift[cornerNodes.SW] ?? 0;
+          const se = peakStoryDrift[cornerNodes.SE] ?? 0;
+          return Math.max(nw, ne, sw, se);
         })
       );
     } else {
       maxValue = Math.max(
         ...visibleStories.flatMap((storyId) => {
-          const peaks = peakStoryDrift[storyId];
-          return peaks ? selectedCorners.map((corner) => (corner == "Max" ? 0 : peaks[corner])) : [];
+          const cornerNodes = animationData.metadata.cornerNodes[storyId];
+          return selectedCorners.map((corner) => (corner == "Max" ? 0 : (peakStoryDrift[cornerNodes[corner]] ?? 0)));
         })
       );
     }

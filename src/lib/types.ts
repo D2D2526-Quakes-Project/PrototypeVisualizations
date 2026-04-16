@@ -407,8 +407,7 @@ export interface ComputedStats {
   maxRotationAccelerationZ?: number;
 
   // STORY DRIFT
-  maxStoryDrift: number; // Max interstory drift across all stories/frames (%)
-  avgStoryDrift: number; // Average interstory drift across all stories/frames (%)
+  maxStoryDrift: number; // Max interstory drift across all nodes/frames (%)
 
   // GROUND MOTION
   groundMotion: {
@@ -418,17 +417,6 @@ export interface ComputedStats {
     maxMagnitude: number;
     minMagnitude: number;
   };
-  // STORY DRIFT DATA
-  storyDrift: {
-    // Layout: [story][frame][corner] where corners are ordered NW, NE, SW, SE
-    data: Float32Array;
-    storyCount: number;
-    frameCount: number;
-    cornerCount: number; // Always 4
-    getStoryDrift: (storyIndex: number, frameIndex: number) => [number, number, number, number]; // [NW, NE, SW, SE]
-  };
-  peakStoryDrift: Record<string, { NW: number; NE: number; SW: number; SE: number }>; // Precomputed max values
-  peakStoryDriftFrame: Record<string, { NW: number; NE: number; SW: number; SE: number }>; // Frame index where peak occurred
 
   // PEAK NODE VALUES (precomputed for all nodes)
   /** Peak displacement magnitude for each node across all frames */
@@ -445,6 +433,10 @@ export interface ComputedStats {
   peakNodeDisplacementY: Float32Array;
   /** For each node, the Z component of peak displacement */
   peakNodeDisplacementZ: Float32Array;
+  /** For each node, the peak story drift */
+  peakStoryDrift: Float32Array;
+  /** Frame index where each node reached peak displacement */
+  peakStoryDriftFrame: Float32Array;
 
   // PER-FRAME AGGREGATES (arrays of length frameCount)
   /** Average displacement per frame across all nodes */

@@ -148,25 +148,14 @@ function CrossSectionSlab({
     const positions = new Float32Array(triangles.length * 3);
     const colors = new Float32Array(triangles.length * 3);
 
-    const avgXoY =
-      crossSectionType === "x"
-        ? /*Avg X*/ nodePositions.reduce((sum, p) => sum + p.position.x, 0) / nodePositions.length
-        : /*Avg Y*/ nodePositions.reduce((sum, p) => sum + p.position.y, 0) / nodePositions.length;
-
     for (let i = 0; i < triangles.length; i++) {
       const nodeIdx = triangles[i];
       const nodeId = nodePositions[nodeIdx].nodeId;
       const nodePos = nodePositions[nodeIdx].position;
 
-      if (crossSectionType === "x") {
-        positions[i * 3] = avgXoY;
-        positions[i * 3 + 1] = nodePos.y;
-        positions[i * 3 + 2] = nodePos.z;
-      } else {
-        positions[i * 3] = nodePos.x;
-        positions[i * 3 + 1] = avgXoY;
-        positions[i * 3 + 2] = nodePos.z;
-      }
+      positions[i * 3] = nodePos.x;
+      positions[i * 3 + 1] = nodePos.y;
+      positions[i * 3 + 2] = nodePos.z;
 
       const nodeColor = getNodeColor(nodeId, frameIndex);
       colors[i * 3] = nodeColor.r;
@@ -183,7 +172,7 @@ function CrossSectionSlab({
       new THREE.MeshBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.1,
         depthWrite: false,
         side: THREE.DoubleSide,
       })
@@ -219,7 +208,7 @@ function CrossSectionSlab({
 
   if (!geometry) return null;
 
-  const opacity = isHovered ? 0.9 : 0.2;
+  const opacity = isHovered ? 0.9 : 0.1;
 
   return (
     <group onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick}>

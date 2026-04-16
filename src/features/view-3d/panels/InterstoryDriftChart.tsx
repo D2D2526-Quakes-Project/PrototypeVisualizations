@@ -121,18 +121,23 @@ const corners: Array<keyof typeof cornerColors> = ["NW", "NE", "SW", "SE"];
 export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { precomputed } = animationData;
+  const { storyHeights } = animationData.metadata;
+  const { maxStoryDrift, storyElevations } = animationData.precomputed;
   const { getVisibleStoryOrder } = useFloorVisibility();
   const setPanelState = useViewStore((s) => s.setPanelState);
-  const { thresholds } = useThresholds();
   const chartRef = useRef<ReactECharts>(null);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
+
+  const visibleStoryOrder = useMemo(() => getVisibleStoryOrder(), [getVisibleStoryOrder]);
 
   const panelId = api?.id ?? "interstory-drift-chart";
   const defaultState = getDefaultInterstoryDriftChartPanelState();
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const panelState = savedPanelState?.type === "interstoryDriftChart" ? savedPanelState.state : defaultState;
   const visibleCorners = panelState.visibleCorners;
+
+  const { thresholds } = useThresholds();
+  const thresholdValue = thresholds["interstoryDrift"] ?? 0;
 
   // Listen to legend changes from ECharts
   useEffect(() => {
@@ -156,79 +161,44 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
   }, [chartReadyVersion, panelId, setPanelState]);
 
   // Static configuration that doesn't change with frameIndex
-  const staticConfig = useMemo(() => {
-    const { storyHeights } = animationData.metadata;
-    const { storyElevations } = precomputed;
-    const { peakStoryDrift } = precomputed;
-    const visibleStoryOrder = getVisibleStoryOrder();
-    const fullStoryOrder = animationData.metadata.storyOrder;
-    const storyOrderWithoutGround = visibleStoryOrder.filter((storyId) => {
-      const storyIndex = fullStoryOrder.indexOf(storyId);
-      return storyIndex > 0 && peakStoryDrift[storyId] !== undefined;
-    });
-
-    const yAxisData = storyOrderWithoutGround.map((storyId) => {
+  const yAxisData = useMemo(() => {
+    const yAxisData = visibleStoryOrder.map((storyId) => {
       const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;
       return formatStoryLabel(storyId, elevationIn);
     });
 
-    // Pre-compute max peak ratio
-    let maxPeakRatio = 0.0001;
-    storyOrderWithoutGround.forEach((storyId) => {
-      const peakCornerDrifts = [
-        Math.abs(peakStoryDrift[storyId]?.NW || 0),
-        Math.abs(peakStoryDrift[storyId]?.NE || 0),
-        Math.abs(peakStoryDrift[storyId]?.SW || 0),
-        Math.abs(peakStoryDrift[storyId]?.SE || 0),
-      ];
-      maxPeakRatio = Math.max(maxPeakRatio, ...peakCornerDrifts);
-    });
+    return yAxisData;
+  }, [visibleStoryOrder, storyElevations, storyHeights]);
 
-    return {
-      storyOrderWithoutGround,
-      yAxisData,
-      maxPeakRatio,
-      peakStoryDrift,
-      storyHeights,
-      storyElevations,
-    };
-  }, [animationData.metadata, precomputed, getVisibleStoryOrder]);
+  const currentDrifts = useMemo(() => {
+    const drifts: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
 
-  const { storyOrderWithoutGround, yAxisData, maxPeakRatio, peakStoryDrift, storyHeights, storyElevations } =
-    staticConfig;
+    for (const storyId in animationData.metadata.cornerNodes) {
+      const corners = animationData.metadata.cornerNodes[storyId];
+      const nw = animationData.storyDrift.get(frameIndex, corners.NW);
+      const ne = animationData.storyDrift.get(frameIndex, corners.NE);
+      const sw = animationData.storyDrift.get(frameIndex, corners.SW);
+      const se = animationData.storyDrift.get(frameIndex, corners.SE);
+      drifts[storyId] = { NW: nw, NE: ne, SW: sw, SE: se };
+    }
 
-  // Current drifts that change with frameIndex
-  // const [currentDrifts, setCurrentDrifts] = useState<Record<string, Record<string, number>>>({});
+    return drifts;
+  }, [animationData.metadata.cornerNodes, animationData.storyDrift, frameIndex]);
 
-  const chartData = useMemo(() => {
-    const { storyDrift } = precomputed;
-    const storyOrder = animationData.metadata.storyOrder;
-    const currentDrifts: Record<string, Record<string, number>> = {};
-    let maxCurrentRatio = 0.0001;
+  const peakStoryDrift = useMemo(() => {
+    const peaks: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
 
-    storyOrderWithoutGround.forEach((storyId) => {
-      const storyIndex = storyOrder.indexOf(storyId);
-      const cornerDrifts = storyDrift.getStoryDrift(storyIndex, frameIndex);
-      currentDrifts[storyId] = {
-        NW: Math.abs(cornerDrifts[0]),
-        NE: Math.abs(cornerDrifts[1]),
-        SW: Math.abs(cornerDrifts[2]),
-        SE: Math.abs(cornerDrifts[3]),
-      };
-      maxCurrentRatio = Math.max(
-        maxCurrentRatio,
-        Math.abs(cornerDrifts[0]),
-        Math.abs(cornerDrifts[1]),
-        Math.abs(cornerDrifts[2]),
-        Math.abs(cornerDrifts[3])
-      );
-    });
+    for (const storyId in animationData.metadata.cornerNodes) {
+      const corners = animationData.metadata.cornerNodes[storyId];
+      const nw = animationData.precomputed.peakStoryDrift[corners.NW];
+      const ne = animationData.precomputed.peakStoryDrift[corners.NE];
+      const sw = animationData.precomputed.peakStoryDrift[corners.SW];
+      const se = animationData.precomputed.peakStoryDrift[corners.SE];
+      peaks[storyId] = { NW: nw, NE: ne, SW: sw, SE: se };
+    }
 
-    return { currentDrifts, maxCurrentRatio };
-  }, [precomputed, frameIndex, storyOrderWithoutGround, animationData.metadata.storyOrder]);
-
-  const { currentDrifts, maxCurrentRatio } = chartData;
-  const thresholdValue = thresholds["interstoryDrift"] ?? 0;
+    return peaks;
+  }, [animationData.metadata.cornerNodes, animationData.precomputed.peakStoryDrift]);
 
   // Static parts of the option that don't depend on frameIndex
   const baseOption: EChartsOption = useMemo((): EChartsOption => {
@@ -254,7 +224,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
 
           const storyIdx = params[0].dataIndex;
-          const storyId = storyOrderWithoutGround[storyIdx];
+          const storyId = visibleStoryOrder[storyIdx];
           const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;
 
           return renderToString(
@@ -310,7 +280,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       },
       animation: false,
     };
-  }, [storyOrderWithoutGround, yAxisData, storyHeights, storyElevations, peakStoryDrift, currentDrifts]);
+  }, [visibleStoryOrder, yAxisData, storyHeights, storyElevations, currentDrifts, peakStoryDrift]);
 
   // Dynamic parts that change with frameIndex
   const seriesData = useMemo(() => {
@@ -319,7 +289,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       name: `${corner}`,
       type: "bar" as const,
       stack: corner,
-      data: storyOrderWithoutGround.map((storyId) => {
+      data: visibleStoryOrder.map((storyId) => {
         const peak = Math.abs(peakStoryDrift[storyId]?.[corner] || 0);
         const current = currentDrifts[storyId]?.[corner] ?? 0;
         return peak - current;
@@ -341,7 +311,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       name: corner,
       type: "bar" as const,
       stack: corner,
-      data: storyOrderWithoutGround.map((storyId) => currentDrifts[storyId]?.[corner] ?? 0),
+      data: visibleStoryOrder.map((storyId) => currentDrifts[storyId]?.[corner] ?? 0),
       itemStyle: {
         color: cornerColors[corner],
         borderRadius: [0, 2, 2, 0] as [number, number, number, number],
@@ -362,9 +332,9 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
     }));
 
     return [...currentSeries, ...peakSeries];
-  }, [currentDrifts, storyOrderWithoutGround, peakStoryDrift, thresholdValue]);
+  }, [currentDrifts, visibleStoryOrder, thresholdValue, peakStoryDrift]);
 
-  const xAxisMax = Math.max(Math.max(maxCurrentRatio, maxPeakRatio) * 1.15, MIN_X_AXIS_MAX);
+  const xAxisMax = Math.max(maxStoryDrift * 1.15, MIN_X_AXIS_MAX);
 
   const option = useMemo(() => {
     const selected: Record<string, boolean> = {};

@@ -1,32 +1,29 @@
-import { InterstoryDriftChart } from "@/features/view-3d/panels/InterstoryDriftChart";
-import { MainCanvasPanel } from "@/features/view-3d/panels/MainCanvasPanel";
-import { HistogramChart } from "@/features/view-3d/panels/HistogramChart";
-import { DataExplorerPanel } from "@/features/view-3d/panels/DataExplorerPanel";
-import { FloorDisplacementChart } from "@/features/view-3d/panels/FloorDisplacementChart";
-import { PeakResponseTimePanel } from "@/features/view-3d/panels/PeakResponseTimePanel";
-import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
-import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDistributionPanel";
-import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
-import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
-import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
-import { EndCapPanel } from "@/features/view-3d/panels/EndCapPanel";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
+import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
+import { DataExplorerPanel } from "@/features/view-3d/panels/DataExplorerPanel";
+import { EndCapPanel } from "@/features/view-3d/panels/EndCapPanel";
+import { FloorDisplacementChart } from "@/features/view-3d/panels/FloorDisplacementChart";
+import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
+import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
+import { HistogramChart } from "@/features/view-3d/panels/HistogramChart";
+import { InterstoryDriftChart } from "@/features/view-3d/panels/InterstoryDriftChart";
+import { MainCanvasPanel } from "@/features/view-3d/panels/MainCanvasPanel";
+import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDistributionPanel";
 import type { DatasetLoadState } from "@/lib/loadingTypes";
 import type { Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
+import { useAnimationData } from "@/lib/useAnimationData";
 import { useViewStore } from "@/state";
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
-import { Timeline } from "./Timeline";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   AlertTriangle,
   BarChart3,
   Columns,
-  Gauge,
   LineChart,
   Maximize2,
   Minimize2,
@@ -38,6 +35,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+import { Timeline } from "./Timeline";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -148,14 +146,6 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
     category: "Supporting Analysis",
     icon: Maximize2,
     description: "View of end-cap nodes (max X) with vertical connections",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "Peak Response Time": {
-    component: PeakResponseTimePanel,
-    category: "Core Analysis",
-    icon: Gauge,
-    description: "When peaks happen in response",
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },
@@ -277,9 +267,14 @@ function getPanelAvailabilityInfo(
   };
 }
 
+function UnknownPanel() {
+  return <div>Panel not found</div>;
+}
+
 export const MagicPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
-  const CurrentComponent = PANEL_DEFINITIONS[currentPanelType].component;
+  const panelType = PANEL_DEFINITIONS[currentPanelType];
+  const CurrentComponent = panelType ? panelType.component : UnknownPanel;
   const { animationData, loading, datasetStates, requestDatasetLoad, retryDatasetLoad } = useAnimationData();
   const availability = getPanelAvailabilityInfo(
     currentPanelType,

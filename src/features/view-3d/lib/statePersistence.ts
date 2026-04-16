@@ -117,13 +117,6 @@ export interface DataExplorerPanelState {
   sortDir: "asc" | "desc";
 }
 
-export interface PeakResponseTimePanelState {
-  query: string;
-  sortKey: "story" | "elev" | "maxDrift" | "maxTime" | "corner";
-  sortDir: "asc" | "desc";
-  showCornerDetails: boolean;
-}
-
 export interface HingeDistributionPanelState {
   stepType: string;
   binCount: number;
@@ -146,7 +139,6 @@ export type PanelState =
   | { type: "dataTable"; state: DataTablePanelState; panelId: string }
   | { type: "peakValues"; state: PeakValuesPanelState; panelId: string }
   | { type: "dataExplorer"; state: DataExplorerPanelState; panelId: string }
-  | { type: "peakResponseTime"; state: PeakResponseTimePanelState; panelId: string }
   | { type: "hingeDistribution"; state: HingeDistributionPanelState; panelId: string }
   | { type: "hingeHotspots"; state: HingeHotspotsPanelState; panelId: string }
   | { type: "unknown"; state: Record<string, unknown>; panelId: string };
@@ -584,15 +576,6 @@ export function getDefaultDataExplorerPanelState(): DataExplorerPanelState {
     page: 0,
     sortKey: "currentMagnitude",
     sortDir: "desc",
-  };
-}
-
-export function getDefaultPeakResponseTimePanelState(): PeakResponseTimePanelState {
-  return {
-    query: "",
-    sortKey: "maxDrift",
-    sortDir: "desc",
-    showCornerDetails: true,
   };
 }
 

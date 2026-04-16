@@ -29,12 +29,6 @@ const colorMap = interpolate(
 );
 
 const DISPLAY_CORNERS = ["NE", "NW", "SW", "SE"] as const;
-const CORNER_DATA_INDEX: Record<CornerName, number> = {
-  NW: 0,
-  NE: 1,
-  SW: 2,
-  SE: 3,
-};
 
 type CornerName = "NW" | "NE" | "SW" | "SE";
 type ThresholdCrossingFrames = Record<CornerName, number | null>;
@@ -63,14 +57,15 @@ function ThresholdStatusPill({ currentExceeded, everExceeded }: { currentExceede
 
 export function DamageThresholdPanel() {
   const { animationData } = useAnimationData();
-  const { storyOrder, dt } = animationData.metadata;
+  const { storyDrift } = animationData;
+  const { storyOrder, dt, cornerNodes, frameCount } = animationData.metadata;
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
   const { thresholds, setThreshold } = useThresholds();
 
   const isdConfig = getThresholdConfig("interstoryDrift");
   const isdMetrics = getMetricsForThreshold("interstoryDrift");
-  const { storyDrift, peakStoryDrift } = animationData.precomputed;
+  const { peakStoryDrift } = animationData.precomputed;
   const maxDriftThreshold = Math.max(
     isdConfig.getPrecomputedMax(animationData.precomputed),
     thresholds["interstoryDrift"] || 0,
@@ -83,63 +78,49 @@ export function DamageThresholdPanel() {
 
   const storyThresholdFrame = useMemo(() => {
     const storyThresholds = new Map<string, ThresholdCrossingFrames>();
-    const { data, frameCount, cornerCount, storyCount } = storyDrift;
-    const storyStride = frameCount * cornerCount;
+
+    // const storyStride = frameCount * cornerCount;
     const threshold = thresholds.interstoryDrift;
 
-    // Skip ground story (index 0): parser only computes interstory drift for stories above ground.
-    for (let storyIndex = 1; storyIndex < storyCount; storyIndex++) {
-      const storyId = storyOrder[storyIndex];
-      const time: ThresholdCrossingFrames = {
-        NW: null as number | null,
-        NE: null as number | null,
-        SW: null as number | null,
-        SE: null as number | null,
-      };
-      const storyBase = storyIndex * storyStride;
+    for (let frame = 0; frame < frameCount; frame++) {
+      for (const storyId in cornerNodes) {
+        const corners = cornerNodes[storyId];
+        const time: ThresholdCrossingFrames = storyThresholds.get(storyId) ?? {
+          NW: null as number | null,
+          NE: null as number | null,
+          SW: null as number | null,
+          SE: null as number | null,
+        };
 
-      for (let frame = 0; frame < frameCount; frame++) {
-        const frameBase = storyBase + frame * cornerCount;
-        const nw = data[frameBase];
-        const ne = data[frameBase + 1];
-        const sw = data[frameBase + 2];
-        const se = data[frameBase + 3];
+        const nw = storyDrift.get(frame, corners.NW);
+        const ne = storyDrift.get(frame, corners.NE);
+        const sw = storyDrift.get(frame, corners.SW);
+        const se = storyDrift.get(frame, corners.SE);
 
-        if (nw > threshold && time.NW === null) {
-          time.NW = frame;
-        }
-        if (ne > threshold && time.NE === null) {
-          time.NE = frame;
-        }
-        if (sw > threshold && time.SW === null) {
-          time.SW = frame;
-        }
-        if (se > threshold && time.SE === null) {
-          time.SE = frame;
-        }
-        if (time.NW !== null && time.NE !== null && time.SW !== null && time.SE !== null) {
-          break;
-        }
+        if (nw > threshold && time.NW === null) time.NW = frame;
+        if (ne > threshold && time.NE === null) time.NE = frame;
+        if (sw > threshold && time.SW === null) time.SW = frame;
+        if (se > threshold && time.SE === null) time.SE = frame;
       }
-
-      storyThresholds.set(storyId, time);
     }
 
+    console.log(storyThresholds);
+
     return storyThresholds;
-  }, [storyDrift, thresholds.interstoryDrift, storyOrder]);
+  }, [thresholds.interstoryDrift, cornerNodes, frameCount, storyDrift]);
 
   const visibleDamageSummary = useMemo(() => {
     let currentExceededCorners = 0;
     let everExceededCorners = 0;
     let visibleStoryCount = 0;
-    const storyStride = storyDrift.frameCount * storyDrift.cornerCount;
 
-    for (let storyIndex = 1; storyIndex < storyOrder.length; storyIndex++) {
-      const storyId = storyOrder[storyIndex];
+    for (const storyId in cornerNodes) {
       if (!visibleFloors.has(storyId)) continue;
       visibleStoryCount += 1;
+      const corners = cornerNodes[storyId];
 
       const thresholdFrames = storyThresholdFrame.get(storyId);
+
       if (thresholdFrames) {
         if (thresholdFrames.NW !== null) everExceededCorners += 1;
         if (thresholdFrames.NE !== null) everExceededCorners += 1;
@@ -147,16 +128,18 @@ export function DamageThresholdPanel() {
         if (thresholdFrames.SE !== null) everExceededCorners += 1;
       }
 
-      const frameBase = storyIndex * storyStride + frameIndex * storyDrift.cornerCount;
-      for (let cornerIndex = 0; cornerIndex < storyDrift.cornerCount; cornerIndex++) {
-        if (storyDrift.data[frameBase + cornerIndex] > thresholds.interstoryDrift) {
-          currentExceededCorners += 1;
-        }
-      }
+      const nw = storyDrift.get(frameIndex, corners.NW);
+      const ne = storyDrift.get(frameIndex, corners.NE);
+      const sw = storyDrift.get(frameIndex, corners.SW);
+      const se = storyDrift.get(frameIndex, corners.SE);
+      if (nw > thresholds.interstoryDrift) currentExceededCorners += 1;
+      if (ne > thresholds.interstoryDrift) currentExceededCorners += 1;
+      if (sw > thresholds.interstoryDrift) currentExceededCorners += 1;
+      if (se > thresholds.interstoryDrift) currentExceededCorners += 1;
     }
 
     return { currentExceededCorners, everExceededCorners, visibleStoryCount };
-  }, [frameIndex, storyDrift, storyOrder, storyThresholdFrame, thresholds.interstoryDrift, visibleFloors]);
+  }, [frameIndex, storyThresholdFrame, thresholds.interstoryDrift, visibleFloors, cornerNodes, storyDrift]);
 
   const visibleCornerCapacity = Math.max(visibleDamageSummary.visibleStoryCount * DISPLAY_CORNERS.length, 0);
   const currentExceededPct =
@@ -218,20 +201,17 @@ export function DamageThresholdPanel() {
         </div>
 
         <div className="mt-2 space-y-2">
-          {reversedStories.map(({ storyId, storyIndex }) => {
+          {reversedStories.map(({ storyId }) => {
             if (!visibleFloors.has(storyId)) return null;
-            const frameBase =
-              storyIndex * storyDrift.frameCount * storyDrift.cornerCount + frameIndex * storyDrift.cornerCount;
-            const driftData = storyDrift.data;
-            const peaks = peakStoryDrift[storyId];
             const thresholdFrames = storyThresholdFrame.get(storyId);
 
-            if (!peaks || !thresholdFrames) return null;
+            if (!thresholdFrames) return null;
 
             let storyCurrentExceeded = 0;
             let storyEverExceeded = 0;
-            for (const corner of DISPLAY_CORNERS) {
-              const current = driftData[frameBase + CORNER_DATA_INDEX[corner]];
+            let corner: "NW" | "NE" | "SW" | "SE";
+            for (corner in cornerNodes[storyId]) {
+              const current = storyDrift.get(frameIndex, cornerNodes[storyId][corner]);
               if (current > thresholds.interstoryDrift) storyCurrentExceeded += 1;
               if (thresholdFrames[corner] !== null) storyEverExceeded += 1;
             }
@@ -252,8 +232,8 @@ export function DamageThresholdPanel() {
                 <div className="w-full px-2 py-1 text-xs text-neutral-700">
                   {DISPLAY_CORNERS.map((corner) => {
                     const thresholdFrame = thresholdFrames[corner];
-                    const peak = peaks[corner];
-                    const current = driftData[frameBase + CORNER_DATA_INDEX[corner]];
+                    const peak = peakStoryDrift[cornerNodes[storyId][corner]];
+                    const current = storyDrift.get(frameIndex, cornerNodes[storyId][corner]);
                     const peakSafe = Math.max(Math.abs(peak || 0), 1e-12);
                     const ratio = Math.max(-1, Math.min(1, current / peakSafe));
                     const currentExceeded = current > thresholds.interstoryDrift;

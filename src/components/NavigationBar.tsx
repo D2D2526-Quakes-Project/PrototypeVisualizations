@@ -19,7 +19,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import DataSources from "@/data/index";
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useColor } from "@/features/view-3d/contexts/visualization";
+import { useColor, useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import { copyShareableUrlToClipboard } from "@/features/view-3d/lib/statePersistence";
 import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
 import { getMetricConfig } from "@/lib/metrics";
@@ -32,8 +32,8 @@ export function NavigationBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const store = useViewStoreRaw();
+  const { showAllDefaultFloors } = useFloorVisibility();
   const visibleFloorCount = useViewStore((state) => state.visibleFloors.length);
-  const showAllFloors = useViewStore((state) => state.showAllFloors);
   const showAllNodes = useViewStore((state) => state.showAllNodes);
   const renderNodes = useViewStore((state) => state.renderNodes);
   const renderFloorSlabs = useViewStore((state) => state.renderFloorSlabs);
@@ -118,9 +118,9 @@ export function NavigationBar() {
     if (visibleFloorCount > 0) return null;
     return {
       totalFloorCount,
-      restore: () => showAllFloors(animationData.metadata.storyOrder),
+      restore: () => showAllDefaultFloors(),
     };
-  }, [animationData, visibleFloorCount, showAllFloors]);
+  }, [animationData, visibleFloorCount, showAllDefaultFloors]);
 
   const mostNodesHiddenWarning = useMemo(() => {
     if (hiddenNodeCount < animationData.metadata.nodeCount * 0.75) return null;
@@ -250,7 +250,7 @@ export function NavigationBar() {
           {mostNodesHiddenWarning && (
             <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] whitespace-nowrap text-amber-800">
               <AlertTriangle size={11} />
-              <span>Most nodes hidden</span>
+              <span>All nodes hidden</span>
               <button
                 type="button"
                 onClick={mostNodesHiddenWarning.restore}

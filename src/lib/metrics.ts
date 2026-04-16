@@ -377,17 +377,11 @@ export function formatValue(value: number, decimals: number = 3): string {
   if (value === 0) return "0";
   const absValue = Math.abs(value);
   const normalizedDecimals = Math.max(0, decimals);
-  const effectiveDecimals =
-    absValue >= 100 ? 0 : absValue >= 10 ? Math.min(normalizedDecimals, 1) : Math.min(normalizedDecimals, 2);
-
-  if (absValue >= 1000) {
-    return normalizeFixed(value.toFixed(0));
-  }
   if (absValue < 0.001 && absValue !== 0) {
     return `<0.001`;
-    return value.toExponential(Math.min(effectiveDecimals, 1));
+    return value.toExponential(Math.min(normalizedDecimals, 1));
   }
-  return normalizeFixed(value.toFixed(effectiveDecimals));
+  return normalizeFixed(value.toFixed(normalizedDecimals));
 }
 
 export function getUnitFullName(unit: string): string {

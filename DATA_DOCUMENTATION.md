@@ -72,7 +72,7 @@ All measurements in the binary format use **inches** for consistency. Source CSV
 - **Purpose**: Defines floor heights for the 15-story building
 - **Format**: CSV with header row
 - **Columns**:
-  - `Story level`: Floor name (Ground, 2, 3, ..., 15, Roof, Penthouse, Internal Mezzanine, Helipad)
+  - `Story level`: Floor name (Ground, 2, 3, ..., 15, Roof, Penthouse, Mezzanine, Helipad)
   - `Story Height (ft)`: Height of each floor in feet (decimal values)
 - **Sample Values**:
   - Ground: 0 ft
@@ -80,7 +80,7 @@ All measurements in the binary format use **inches** for consistency. Source CSV
   - Floor 2: 28 ft (taller floor)
   - Roof: 13 ft
   - Penthouse: 18.3333333333 ft
-  - Internal Mezzanine: 9.1666666667 ft
+  - Mezzanine: 9.1666666667 ft
   - Helipad: 10.5 ft
 
 **building_center.csv**

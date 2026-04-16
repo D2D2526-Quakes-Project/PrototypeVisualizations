@@ -145,28 +145,37 @@ def discover_buildings():
             node_data_file = os.path.join(building_path, "node_data.csv")
             height_file = os.path.join(building_path, "building_height.csv")
             beam_data_file = os.path.join(building_path, "beam_data.csv")
+            corner_positions_file = os.path.join(building_path, "corner_positions.csv")
+            hidden_floors_file = os.path.join(building_path, "hidden_floors.csv")
 
             has_node = os.path.exists(node_data_file)
             has_height = os.path.exists(height_file)
             has_beam = os.path.exists(beam_data_file)
+            has_corner_positions = os.path.exists(corner_positions_file)
+            has_hidden_floors = os.path.exists(hidden_floors_file)
 
             print(f"    node_data.csv: {'✓' if has_node else '✗'} ({node_data_file})")
             print(f"    building_height.csv: {'✓' if has_height else '✗'} ({height_file})")
             print(f"    beam_data.csv: {'✓' if has_beam else '✗'} ({beam_data_file})")
+            print(f"    corner_positions.csv: {'✓' if has_corner_positions else '✗'} ({corner_positions_file})")
+            print(f"    hidden_floors.csv: {'✓' if has_hidden_floors else '✗'} ({hidden_floors_file})")
 
             if has_node and has_height and has_beam:
-                # Convert folder name to proper case for output (e.g., "15story" -> "15Story")
-                building_name = building_folder.capitalize() if building_folder.islower() else building_folder
-                buildings.append(
-                    {
-                        "folder": building_folder,
-                        "name": building_name,
-                        "node_data": node_data_file,
-                        "height": height_file,
-                        "beam_data": beam_data_file,
-                    }
-                )
-                print(f"    → Building ACCEPTED: {building_name}")
+                building_info = {
+                    "folder": building_folder,
+                    "name": building_folder.capitalize() if building_folder.islower() else building_folder,
+                    "node_data": node_data_file,
+                    "height": height_file,
+                    "beam_data": beam_data_file,
+                }
+                if has_corner_positions:
+                    building_info["corner_positions"] = corner_positions_file
+                    print(f"    → Corner positions: WILL USE CUSTOM XY COORDINATES")
+                if has_hidden_floors:
+                    building_info["hidden_floors"] = hidden_floors_file
+                    print(f"    → Hidden floors: WILL USE CUSTOM HIDDEN FLOORS")
+                buildings.append(building_info)
+                print(f"    → Building ACCEPTED: {building_info['name']}")
             else:
                 missing = []
                 if not has_node:
@@ -1001,6 +1010,52 @@ def process_building(building):
     df_nodes = pd.read_csv(building["node_data"])
     df_height = pd.read_csv(building["height"])
 
+    # 1b. Load optional corner positions and hidden floors
+    corner_positions = None
+    hidden_floors = []
+    
+    if "corner_positions" in building:
+        corner_csv = building["corner_positions"]
+        print(f"    Loading corner positions from: {corner_csv}")
+        df_corners = pd.read_csv(corner_csv)
+        
+        corner_positions = {
+            "NW": {},
+            "NE": {},
+            "SW": {},
+            "SE": {},
+        }
+        
+        # Check if Story column exists, default to "Ground" if missing
+        has_story_col = "Story" in df_corners.columns
+        
+        for _, row in df_corners.iterrows():
+            corner_name = row["Corner"]
+            if has_story_col:
+                story = str(row["Story"]).strip() if pd.notna(row["Story"]) else "Ground"
+                if story == "" or story.lower() == "nan":
+                    story = "Ground"
+            else:
+                # Backwards compatibility: no Story column means apply to all (treat as Ground)
+                story = "Ground"
+            if corner_name in corner_positions:
+                corner_positions[corner_name][story] = {
+                    "x": float(row["X Pos"]),
+                    "y": float(row["Y Pos"]),
+                }
+        print(f"    Corner positions loaded: {corner_positions}")
+    
+    if "hidden_floors" in building:
+        hidden_floors_csv = building["hidden_floors"]
+        print(f"    Loading hidden floors from: {hidden_floors_csv}")
+        df_hidden = pd.read_csv(hidden_floors_csv)
+        # Expected column: Story or Story level
+        if "Story" in df_hidden.columns:
+            hidden_floors = df_hidden["Story"].tolist()
+        elif "Story level" in df_hidden.columns:
+            hidden_floors = df_hidden["Story level"].tolist()
+        print(f"    Hidden floors: {hidden_floors}")
+
     unique_ids = df_nodes["Node ID"].unique()
     id_to_index = {uid: i for i, uid in enumerate(unique_ids)}
     index_to_id = {i: uid for i, uid in enumerate(unique_ids)}
@@ -1060,6 +1115,46 @@ def process_building(building):
     stories = {story: [id_to_index[nid] for nid in node_indices if nid in id_to_index] for story, node_indices in stories.items()}
 
     # Now find corners for each story based on all nodes at that elevation
+    # If corner_positions.csv is provided, use those XY coordinates to find matching nodes
+    # Otherwise, fall back to auto-detection using bounding box
+    corner_tolerance = 6.0  # inches tolerance for matching XY positions
+    
+    # Get ordered list of stories (top to bottom as stored in building_height) for hierarchical lookup
+    # story_order is built bottom-to-top later, so we need to compute the correct order
+    # Use df_height to get the correct bottom-to-top order
+    story_order_list = df_height["Story level"].tolist()
+    # Reverse to get bottom-to-top (Ground first)
+    story_order_list = list(reversed(story_order_list))
+    
+    def get_corner_xy_for_story(corner_name, target_story):
+        """Get corner XY for a target story using hierarchical lookup.
+        
+        Looks for the target story in corner_positions, if not found,
+        falls back to the next story below (closer to Ground) that has positions.
+        """
+        if not corner_positions:
+            return None
+        
+        corner_specs = corner_positions.get(corner_name, {})
+        if not corner_specs:
+            return None
+        
+        # Find the index of target story in the order list
+        if target_story not in story_order_list:
+            return None
+        
+        target_idx = story_order_list.index(target_story)
+        
+        # Search from target story upward (toward ground, lower index)
+        # story_order_list is [Ground, 2, 3, ..., Roof, Penthouse, Helipad]
+        # So we search from target_idx down to 0 (toward Ground)
+        for i in range(target_idx, -1, -1):
+            story = story_order_list[i]
+            if story in corner_specs:
+                return (corner_specs[story]["x"], corner_specs[story]["y"])
+        
+        return None
+    
     for story, node_indices in stories.items():
         # Get all coordinates for nodes at this story
         story_nodes = df_nodes[df_nodes["Node ID"].isin([index_to_id[idx] for idx in node_indices])]
@@ -1067,22 +1162,46 @@ def process_building(building):
         xs = story_nodes["H1"].values * node_to_inches_scale - min_x
         ys = story_nodes["H2"].values * node_to_inches_scale - min_y
 
-        # Find the bounding box
-        max_x, min_x_story = xs.max(), xs.min()
-        max_y, min_y_story = ys.max(), ys.min()
-
-        # Define ideal corner positions
-        ideal_corners = {
-            "NW": (min_x_story, max_y),
-            "NE": (max_x, max_y),
-            "SW": (min_x_story, min_y_story),
-            "SE": (max_x, min_y_story),
-        }
+        target_corners = {}
+        
+        if corner_positions:
+            # Try to get custom corner positions for this story (with hierarchical fallback)
+            # CSV coords are absolute, so subtract min_x/min_y to get relative coords
+            for corner_name in ["NW", "NE", "SW", "SE"]:
+                xy = get_corner_xy_for_story(corner_name, story)
+                if xy:
+                    # Convert absolute coords to relative coords
+                    target_corners[corner_name] = (xy[0] - min_x, xy[1] - min_y)
+            
+            # If any corner is missing, fall back to auto-detection for those
+            if len(target_corners) < 4:
+                # Get bounding box for missing corners
+                max_x, min_x_story = xs.max(), xs.min()
+                max_y, min_y_story = ys.max(), ys.min()
+                fallback_corners = {
+                    "NW": (min_x_story, max_y),
+                    "NE": (max_x, max_y),
+                    "SW": (min_x_story, min_y_story),
+                    "SE": (max_x, min_y_story),
+                }
+                for corner_name in ["NW", "NE", "SW", "SE"]:
+                    if corner_name not in target_corners:
+                        target_corners[corner_name] = fallback_corners[corner_name]
+        else:
+            # Fall back to auto-detection using bounding box
+            max_x, min_x_story = xs.max(), xs.min()
+            max_y, min_y_story = ys.max(), ys.min()
+            target_corners = {
+                "NW": (min_x_story, max_y),
+                "NE": (max_x, max_y),
+                "SW": (min_x_story, min_y_story),
+                "SE": (max_x, min_y_story),
+            }
 
         corners = {}
-        for corner_name, (ideal_x, ideal_y) in ideal_corners.items():
-            # Find node closest to this ideal corner
-            distances = np.sqrt((xs - ideal_x) ** 2 + (ys - ideal_y) ** 2)
+        for corner_name, (target_x, target_y) in target_corners.items():
+            # Find node closest to this target corner position
+            distances = np.sqrt((xs - target_x) ** 2 + (ys - target_y) ** 2)
             closest_idx = distances.argmin()
 
             corners[corner_name] = {
@@ -1133,6 +1252,11 @@ def process_building(building):
         "cross_sections_x": cross_sections_x,
         "cross_sections_y": cross_sections_y,
     }
+    
+    # Add hidden floors if specified
+    if hidden_floors:
+        header["hidden_floors"] = hidden_floors
+        print(f"    Added hidden floors to metadata: {hidden_floors}")
 
     write_bld_file("building.bld", header, buffer.tobytes(), building_output_dir)
 

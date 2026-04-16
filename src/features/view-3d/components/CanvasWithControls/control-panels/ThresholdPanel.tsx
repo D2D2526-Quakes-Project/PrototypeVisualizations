@@ -77,7 +77,7 @@ export function FloorsPanel() {
   const storyOrder = animationData.metadata.storyOrder;
   const storyHeights = animationData.metadata.storyHeights;
 
-  const { visibleFloors, setFloorVisible, showAllFloors, hideAllFloors } = useFloorVisibility();
+  const { visibleFloors, setFloorVisible, showAllDefaultFloors, showAllFloors, hideAllFloors } = useFloorVisibility();
   const [dragVisibility, setDragVisibility] = useState<boolean | null>(null);
   const noFloorsVisible = storyOrder.length > 0 && visibleFloors.size === 0;
 
@@ -124,7 +124,7 @@ export function FloorsPanel() {
           {noFloorsVisible && (
             <button
               type="button"
-              onClick={showAllFloors}
+              onClick={showAllDefaultFloors}
               className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1 py-0.5 text-[9px] font-medium text-amber-800 hover:bg-amber-100"
               title="All floors are hidden. Show all floors.">
               <AlertTriangle size={9} />

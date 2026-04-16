@@ -99,6 +99,8 @@ export interface BuildingMetadata {
   cross_sections_x: Record<string, number[]>;
   /** Grouped nodes sharing a Y-coordinate plane */
   cross_sections_y: Record<string, number[]>;
+  /** Floors that should be hidden by default */
+  hidden_floors?: string[];
 }
 
 export interface SimulationMetadata {
@@ -195,6 +197,8 @@ export interface AnimationMetadata {
   crossSectionsX: Record<string, number[]>;
   /** Cross-section along Y axis */
   crossSectionsY: Record<string, number[]>;
+  /** Floors that should be hidden by default */
+  hiddenFloors?: string[];
 }
 
 export interface BuildingAnimationData {

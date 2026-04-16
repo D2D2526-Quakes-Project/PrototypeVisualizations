@@ -601,7 +601,7 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     frameIndex: 0,
     currentMetric: "interstoryDrift",
     metricPaletteOverrides: {},
-    thresholdHighlighting: false,
+    thresholdHighlighting: true,
     thresholds: { ...DEFAULT_THRESHOLDS },
     visibleFloors: [],
     selectedNodeIds: [],

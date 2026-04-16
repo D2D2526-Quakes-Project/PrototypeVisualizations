@@ -104,8 +104,6 @@ export function DamageThresholdPanel() {
       }
     }
 
-    console.log(storyThresholds);
-
     return storyThresholds;
   }, [thresholds.interstoryDrift, cornerNodes, frameCount, storyDrift]);
 

@@ -18,6 +18,7 @@ import { ViewControls } from "./CanvasWithControls/ViewControls";
 
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { CrossSectionControls } from "./CanvasWithControls/CrossSectionControls";
+import { useFloorVisibility } from "../contexts/visualization";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
@@ -52,7 +53,7 @@ export function CanvasWithControls({
   const { animationData } = useAnimationData();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
   const visibleFloorCount = useViewStore((s) => s.visibleFloors.length);
-  const showAllFloors = useViewStore((s) => s.showAllFloors);
+  const { showAllDefaultFloors } = useFloorVisibility();
 
   const isOrthographic =
     cameraModeOverride?.panelId === panelId
@@ -316,7 +317,7 @@ export function CanvasWithControls({
               {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
                 <button
                   type="button"
-                  onClick={() => showAllFloors(animationData.metadata.storyOrder)}
+                  onClick={() => showAllDefaultFloors()}
                   className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1.5 py-1 text-[10px] font-medium text-amber-800 shadow-sm hover:bg-amber-100"
                   title="All floors are hidden. Show all floors.">
                   <AlertTriangle size={10} />

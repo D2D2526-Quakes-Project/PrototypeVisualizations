@@ -642,6 +642,44 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         anchorY="middle">
         -X
       </Text>
+
+      {/* Diagonal Direction indicators */}
+      <Text
+        position={[100, 100, 0]}
+        rotation={[0, 0, -Math.PI / 4]}
+        fontSize={24}
+        color="#eee"
+        anchorX="center"
+        anchorY="middle">
+        NE
+      </Text>
+      <Text
+        position={[-100, 100, 0]}
+        rotation={[0, 0, Math.PI / 4]}
+        fontSize={24}
+        color="#eee"
+        anchorX="center"
+        anchorY="middle">
+        NW
+      </Text>
+      <Text
+        position={[100, -100, 0]}
+        rotation={[0, 0, (-3 * Math.PI) / 4]}
+        fontSize={24}
+        color="#eee"
+        anchorX="center"
+        anchorY="middle">
+        SE
+      </Text>
+      <Text
+        position={[-100, -100, 0]}
+        rotation={[0, 0, (3 * Math.PI) / 4]}
+        fontSize={24}
+        color="#eee"
+        anchorX="center"
+        anchorY="middle">
+        SW
+      </Text>
     </>
   );
 }

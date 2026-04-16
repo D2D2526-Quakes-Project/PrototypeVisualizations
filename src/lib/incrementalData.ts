@@ -126,10 +126,6 @@ export interface OptionalWorkerResponse {
   result: SerializedOptionalDatasetResult;
 }
 
-function normalizeStoryName(name: string): string {
-  return name === "Internal Mezzanine" ? "Mezzanine" : name;
-}
-
 export async function ensureDecompressed(raw: ArrayBuffer | string): Promise<ArrayBuffer> {
   let buffer: ArrayBuffer;
   if (typeof raw === "string") {
@@ -489,30 +485,21 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     );
   }
 
-  const normalizedStoryOrder = buildingData.metadata.story_order.map(normalizeStoryName);
-  const normalizedStories = Object.fromEntries(
-    Object.entries(buildingData.metadata.stories).map(([storyId, nodeIds]) => [normalizeStoryName(storyId), nodeIds])
-  );
-  const normalizedCorners = Object.fromEntries(
-    Object.entries(buildingData.metadata.corners).map(([storyId, nodeIds]) => [normalizeStoryName(storyId), nodeIds])
-  );
-  const normalizedStoryHeights = Object.fromEntries(
-    Object.entries(buildingData.metadata.story_heights).map(([storyId, height]) => [
-      normalizeStoryName(storyId),
-      height,
-    ])
-  );
+  const storyOrder = buildingData.metadata.story_order;
+  const stories = buildingData.metadata.stories;
+  const corners = buildingData.metadata.corners;
+  const storyHeights = buildingData.metadata.story_heights;
 
   const cornerSets = {
-    NW: new Set(normalizedCorners.NW),
-    NE: new Set(normalizedCorners.NE),
-    SW: new Set(normalizedCorners.SW),
-    SE: new Set(normalizedCorners.SE),
+    NW: new Set(corners.NW),
+    NE: new Set(corners.NE),
+    SW: new Set(corners.SW),
+    SE: new Set(corners.SE),
   };
-  const normalizedCornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
-  normalizedStoryOrder.forEach((storyId) => {
-    const nodeIndices = normalizedStories[storyId] ?? [];
-    normalizedCornerNodes[storyId] = {
+  const cornerNodes: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
+  storyOrder.forEach((storyId) => {
+    const nodeIndices = stories[storyId] ?? [];
+    cornerNodes[storyId] = {
       NW: nodeIndices.find((nodeId) => cornerSets.NW.has(nodeId)) ?? -1,
       NE: nodeIndices.find((nodeId) => cornerSets.NE.has(nodeId)) ?? -1,
       SW: nodeIndices.find((nodeId) => cornerSets.SW.has(nodeId)) ?? -1,
@@ -524,14 +511,15 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     nodeCount: buildingData.metadata.count_nodes,
     frameCount: dispLinData.metadata.count_frames,
     dt: dispLinData.metadata.dt,
-    stories: normalizedStories,
-    corners: normalizedCorners,
-    cornerNodes: normalizedCornerNodes,
-    storyHeights: normalizedStoryHeights,
-    storyOrder: normalizedStoryOrder,
+    stories: stories,
+    corners: corners,
+    cornerNodes: cornerNodes,
+    storyHeights: storyHeights,
+    storyOrder: storyOrder,
     nodeToBelow: buildingData.metadata.node_to_below ?? [],
     crossSectionsX: buildingData.metadata.cross_sections_x,
     crossSectionsY: buildingData.metadata.cross_sections_y,
+    hiddenFloors: buildingData.metadata.hidden_floors ?? [],
   };
 
   // --- Compute Node Story Drift Dynamically ---

@@ -6,6 +6,7 @@ interface FloorVisibilityContextType {
   visibleFloors: Set<string>;
   toggleFloor: (storyId: string) => void;
   setFloorVisible: (storyId: string, visible: boolean) => void;
+  showAllDefaultFloors: () => void;
   showAllFloors: () => void;
   hideAllFloors: () => void;
   isFloorVisible: (storyId: string) => boolean;
@@ -25,17 +26,24 @@ export function useFloorVisibility(): FloorVisibilityContextType {
   const initializedStoryOrderKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const storyOrder = animationData?.metadata?.storyOrder ?? [];
+    const storyOrder = animationData.metadata.storyOrder;
     if (storyOrder.length === 0) return;
 
     const storyOrderKey = storyOrder.join("|");
     if (initializedStoryOrderKeyRef.current === storyOrderKey) return;
 
     if (visibleFloorsArray.length === 0) {
-      showAllFloorsStore(storyOrder);
+      const hiddenFloorsSet = new Set(animationData.metadata.hiddenFloors ?? []);
+      const visible = storyOrder.filter((story) => !hiddenFloorsSet.has(story));
+      showAllFloorsStore(visible);
     }
     initializedStoryOrderKeyRef.current = storyOrderKey;
-  }, [animationData?.metadata?.storyOrder, visibleFloorsArray.length, showAllFloorsStore]);
+  }, [
+    animationData.metadata.storyOrder,
+    animationData.metadata.hiddenFloors,
+    visibleFloorsArray.length,
+    showAllFloorsStore,
+  ]);
 
   const actualVisibleFloors = useMemo(() => {
     return new Set(visibleFloorsArray);
@@ -57,6 +65,13 @@ export function useFloorVisibility(): FloorVisibilityContextType {
     },
     [actualVisibleFloors, toggleFloorStore]
   );
+
+  const showAllDefaultFloors = useCallback(() => {
+    const hiddenFloorsSet = new Set(animationData.metadata.hiddenFloors ?? []);
+    const storyOrder = animationData.metadata.storyOrder;
+    const visible = storyOrder.filter((story) => !hiddenFloorsSet.has(story));
+    showAllFloorsStore(visible);
+  }, [animationData.metadata.storyOrder, showAllFloorsStore, animationData.metadata.hiddenFloors]);
 
   const showAllFloors = useCallback(() => {
     showAllFloorsStore(animationData.metadata.storyOrder);
@@ -81,6 +96,7 @@ export function useFloorVisibility(): FloorVisibilityContextType {
     visibleFloors: actualVisibleFloors,
     toggleFloor,
     setFloorVisible,
+    showAllDefaultFloors,
     showAllFloors,
     hideAllFloors,
     isFloorVisible,

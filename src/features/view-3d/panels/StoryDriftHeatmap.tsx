@@ -201,7 +201,6 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
         formatter: (params) => {
           if (!params || Array.isArray(params)) return "";
           const [timeIdx, storyIdx, value] = params.data as number[];
-          // console.log(timeIdx, storyIdx, value, params.dataIndex, params.componentIndex);
           const actualFrame = timeIdx * heatmapData.timeStep;
           const time = actualFrame * animationData.metadata.dt;
           const [storyId, corner] = yAxisLabels[storyIdx];

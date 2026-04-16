@@ -863,11 +863,10 @@ def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, 
         story_positions[story] = positions
 
     # Process stories from bottom up (skip ground floor for finding below)
-    story_order_bottom_up = list(reversed(story_order))
-    for i, story in enumerate(story_order_bottom_up):
+    for i, story in enumerate(story_order):
         if i == 0:
             continue  # Ground floor has no story below
-        story_below = story_order_bottom_up[i - 1]
+        story_below = story_order[i - 1]
 
         current_positions = story_positions.get(story, {})
         below_positions = story_positions.get(story_below, {})

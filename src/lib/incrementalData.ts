@@ -396,7 +396,7 @@ function serializeRequiredComputedStats(
       sumY += dy;
       sumZ += dz;
 
-      const drift = nodeStoryDrift[frameOffset * metadata.nodeCount + nodeIdx];
+      const drift = nodeStoryDrift[frameIdx * metadata.nodeCount + nodeIdx];
       if (drift > peakStoryDrift[nodeIdx]) {
         peakStoryDrift[nodeIdx] = drift;
         peakStoryDriftFrame[nodeIdx] = frameIdx;

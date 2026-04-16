@@ -26,7 +26,11 @@ export type Metric =
   | "rotationAccelerationY"
   | "rotationAccelerationZ"
   | "rotationAccelerationMag"
-  | "interstoryDrift";
+  | "interstoryDrift"
+  | "floorIndex"
+  | "nodeZ"
+  | "crossSectionX"
+  | "crossSectionY";
 
 export type ThresholdKey =
   | "displacement"
@@ -35,7 +39,8 @@ export type ThresholdKey =
   | "rotation"
   | "rotationVelocity"
   | "rotationAcceleration"
-  | "interstoryDrift";
+  | "interstoryDrift"
+  | "inf";
 
 export interface ColorScale {
   metric: Metric;
@@ -44,13 +49,15 @@ export interface ColorScale {
   unit: string;
 }
 
-export type MetricPaletteKey = TailwindPaletteKey;
+export type MetricPaletteKey = TailwindPaletteKey | "spectrum";
 
 export interface MetricPaletteDefinition {
   label: string;
   paletteKey: MetricPaletteKey;
-  positiveColorStops: [string, string, string, string];
-  negativeColorStops: [string, string, string, string];
+  positiveColorStops: [string, string, ...string[]];
+  negativeColorStops: [string, string, ...string[]];
+  positiveThresholdColorStops: [string, string, ...string[]];
+  negativeThresholdColorStops: [string, string, ...string[]];
   keyColor: string;
 }
 
@@ -403,172 +410,147 @@ export const METRIC_PALETTES: Record<MetricPaletteKey, MetricPaletteDefinition> 
   red: {
     label: "Red",
     paletteKey: "red",
-    positiveColorStops: [
-      TAILWIND_PALETTES.red[50],
-      TAILWIND_PALETTES.red[400],
-      TAILWIND_PALETTES.red[600],
-      TAILWIND_PALETTES.red[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.red[50],
-      TAILWIND_PALETTES.red[400],
-      TAILWIND_PALETTES.red[600],
-      TAILWIND_PALETTES.red[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.red[50], TAILWIND_PALETTES.red[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.red[600], TAILWIND_PALETTES.red[900]],
+    negativeColorStops: [TAILWIND_PALETTES.red[50], TAILWIND_PALETTES.red[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.red[600], TAILWIND_PALETTES.red[900]],
     keyColor: TAILWIND_PALETTES.red[500],
   },
   rose: {
     label: "Rose",
     paletteKey: "rose",
-    positiveColorStops: [
-      TAILWIND_PALETTES.rose[50],
-      TAILWIND_PALETTES.rose[400],
-      TAILWIND_PALETTES.rose[600],
-      TAILWIND_PALETTES.rose[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.rose[50],
-      TAILWIND_PALETTES.rose[400],
-      TAILWIND_PALETTES.rose[600],
-      TAILWIND_PALETTES.rose[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.rose[50], TAILWIND_PALETTES.rose[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.rose[600], TAILWIND_PALETTES.rose[900]],
+    negativeColorStops: [TAILWIND_PALETTES.rose[50], TAILWIND_PALETTES.rose[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.rose[600], TAILWIND_PALETTES.rose[900]],
     keyColor: TAILWIND_PALETTES.rose[500],
   },
   orange: {
     label: "Orange",
     paletteKey: "orange",
-    positiveColorStops: [
-      TAILWIND_PALETTES.orange[50],
-      TAILWIND_PALETTES.orange[400],
-      TAILWIND_PALETTES.orange[600],
-      TAILWIND_PALETTES.orange[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.orange[50],
-      TAILWIND_PALETTES.orange[400],
-      TAILWIND_PALETTES.orange[600],
-      TAILWIND_PALETTES.orange[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.orange[50], TAILWIND_PALETTES.orange[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.orange[600], TAILWIND_PALETTES.orange[900]],
+    negativeColorStops: [TAILWIND_PALETTES.orange[50], TAILWIND_PALETTES.orange[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.orange[600], TAILWIND_PALETTES.orange[900]],
     keyColor: TAILWIND_PALETTES.orange[500],
   },
   amber: {
     label: "Amber",
     paletteKey: "amber",
-    positiveColorStops: [
-      TAILWIND_PALETTES.amber[50],
-      TAILWIND_PALETTES.amber[400],
-      TAILWIND_PALETTES.amber[600],
-      TAILWIND_PALETTES.amber[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.amber[50],
-      TAILWIND_PALETTES.amber[400],
-      TAILWIND_PALETTES.amber[600],
-      TAILWIND_PALETTES.amber[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.amber[50], TAILWIND_PALETTES.amber[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.amber[600], TAILWIND_PALETTES.amber[900]],
+    negativeColorStops: [TAILWIND_PALETTES.amber[50], TAILWIND_PALETTES.amber[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.amber[600], TAILWIND_PALETTES.amber[900]],
     keyColor: TAILWIND_PALETTES.amber[500],
   },
   green: {
     label: "Green",
     paletteKey: "green",
-    positiveColorStops: [
-      TAILWIND_PALETTES.green[50],
-      TAILWIND_PALETTES.green[400],
-      TAILWIND_PALETTES.green[600],
-      TAILWIND_PALETTES.green[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.green[50],
-      TAILWIND_PALETTES.green[400],
-      TAILWIND_PALETTES.green[600],
-      TAILWIND_PALETTES.green[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.green[50], TAILWIND_PALETTES.green[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.green[600], TAILWIND_PALETTES.green[900]],
+    negativeColorStops: [TAILWIND_PALETTES.green[50], TAILWIND_PALETTES.green[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.green[600], TAILWIND_PALETTES.green[900]],
     keyColor: TAILWIND_PALETTES.green[500],
   },
   blue: {
     label: "Blue",
     paletteKey: "blue",
-    positiveColorStops: [
-      TAILWIND_PALETTES.blue[50],
-      TAILWIND_PALETTES.blue[400],
-      TAILWIND_PALETTES.blue[600],
-      TAILWIND_PALETTES.blue[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.blue[50],
-      TAILWIND_PALETTES.blue[400],
-      TAILWIND_PALETTES.blue[600],
-      TAILWIND_PALETTES.blue[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.blue[50], TAILWIND_PALETTES.blue[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.blue[600], TAILWIND_PALETTES.blue[900]],
+    negativeColorStops: [TAILWIND_PALETTES.blue[50], TAILWIND_PALETTES.blue[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.blue[600], TAILWIND_PALETTES.blue[900]],
     keyColor: TAILWIND_PALETTES.blue[500],
   },
   cyan: {
     label: "Cyan",
     paletteKey: "cyan",
-    positiveColorStops: [
-      TAILWIND_PALETTES.cyan[50],
-      TAILWIND_PALETTES.cyan[400],
-      TAILWIND_PALETTES.cyan[600],
-      TAILWIND_PALETTES.cyan[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.cyan[50],
-      TAILWIND_PALETTES.cyan[400],
-      TAILWIND_PALETTES.cyan[600],
-      TAILWIND_PALETTES.cyan[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.cyan[50], TAILWIND_PALETTES.cyan[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.cyan[600], TAILWIND_PALETTES.cyan[900]],
+    negativeColorStops: [TAILWIND_PALETTES.cyan[50], TAILWIND_PALETTES.cyan[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.cyan[600], TAILWIND_PALETTES.cyan[900]],
     keyColor: TAILWIND_PALETTES.cyan[500],
   },
   teal: {
     label: "Teal",
     paletteKey: "teal",
-    positiveColorStops: [
-      TAILWIND_PALETTES.teal[50],
-      TAILWIND_PALETTES.teal[400],
-      TAILWIND_PALETTES.teal[600],
-      TAILWIND_PALETTES.teal[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.teal[50],
-      TAILWIND_PALETTES.teal[400],
-      TAILWIND_PALETTES.teal[600],
-      TAILWIND_PALETTES.teal[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.teal[50], TAILWIND_PALETTES.teal[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.teal[600], TAILWIND_PALETTES.teal[900]],
+    negativeColorStops: [TAILWIND_PALETTES.teal[50], TAILWIND_PALETTES.teal[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.teal[600], TAILWIND_PALETTES.teal[900]],
     keyColor: TAILWIND_PALETTES.teal[500],
   },
   violet: {
     label: "Violet",
     paletteKey: "violet",
-    positiveColorStops: [
-      TAILWIND_PALETTES.violet[50],
-      TAILWIND_PALETTES.violet[400],
-      TAILWIND_PALETTES.violet[600],
-      TAILWIND_PALETTES.violet[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.violet[50],
-      TAILWIND_PALETTES.violet[400],
-      TAILWIND_PALETTES.violet[600],
-      TAILWIND_PALETTES.violet[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.violet[50], TAILWIND_PALETTES.violet[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.violet[600], TAILWIND_PALETTES.violet[900]],
+    negativeColorStops: [TAILWIND_PALETTES.violet[50], TAILWIND_PALETTES.violet[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.violet[600], TAILWIND_PALETTES.violet[900]],
     keyColor: TAILWIND_PALETTES.violet[500],
   },
   purple: {
     label: "Purple",
     paletteKey: "purple",
-    positiveColorStops: [
-      TAILWIND_PALETTES.purple[50],
-      TAILWIND_PALETTES.purple[400],
-      TAILWIND_PALETTES.purple[600],
-      TAILWIND_PALETTES.purple[900],
-    ],
-    negativeColorStops: [
-      TAILWIND_PALETTES.purple[50],
-      TAILWIND_PALETTES.purple[400],
-      TAILWIND_PALETTES.purple[600],
-      TAILWIND_PALETTES.purple[900],
-    ],
+    positiveColorStops: [TAILWIND_PALETTES.purple[50], TAILWIND_PALETTES.purple[400]],
+    positiveThresholdColorStops: [TAILWIND_PALETTES.purple[600], TAILWIND_PALETTES.purple[900]],
+    negativeColorStops: [TAILWIND_PALETTES.purple[50], TAILWIND_PALETTES.purple[400]],
+    negativeThresholdColorStops: [TAILWIND_PALETTES.purple[600], TAILWIND_PALETTES.purple[900]],
     keyColor: TAILWIND_PALETTES.purple[500],
+  },
+  spectrum: {
+    label: "Spectrum",
+    paletteKey: "spectrum",
+    positiveColorStops: [
+      "#fdfdfd",
+      "#1d1d1d",
+      "#ebce2b",
+      "#702c8c",
+      "#db6917",
+      "#96cde6",
+      "#ba1c30",
+      "#c0bd7f",
+      "#7f7e80",
+      "#5fa641",
+      "#d485b2",
+      "#4277b6",
+      "#df8461",
+      "#463397",
+      "#e1a11a",
+      "#91218c",
+      "#e8e948",
+      "#7e1510",
+      "#92ae31",
+      "#6f340d",
+      "#d32b1e",
+      "#2b3514",
+    ],
+    positiveThresholdColorStops: ["#fff", "#fff"],
+    negativeColorStops: [
+      "#fdfdfd",
+      "#1d1d1d",
+      "#ebce2b",
+      "#702c8c",
+      "#db6917",
+      "#96cde6",
+      "#ba1c30",
+      "#c0bd7f",
+      "#7f7e80",
+      "#5fa641",
+      "#d485b2",
+      "#4277b6",
+      "#df8461",
+      "#463397",
+      "#e1a11a",
+      "#91218c",
+      "#e8e948",
+      "#7e1510",
+      "#92ae31",
+      "#6f340d",
+      "#d32b1e",
+      "#2b3514",
+    ],
+    negativeThresholdColorStops: ["#fff", "#fff"],
+    keyColor: "#3f3ffa",
   },
 };
 
@@ -637,6 +619,13 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
     unit: UNITS["percent"],
     getPrecomputedMax: get("maxStoryDrift"),
     isAvailable: (animationData) => !!animationData.displacementLin,
+  },
+  inf: {
+    key: "inf",
+    label: "inf",
+    unit: UNITS["inches"],
+    getPrecomputedMax: () => Infinity,
+    isAvailable: () => true,
   },
 };
 
@@ -1023,6 +1012,103 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return drifts[cornerIndex];
     },
   },
+  // Debug metrics
+  floorIndex: {
+    metric: "floorIndex",
+    thresholdKey: "inf",
+    label: "Floor Index",
+    unit: UNITS["percent"],
+    defaultPalette: "spectrum",
+    positiveOnly: true,
+    getPrecomputedMax: (stats) => {
+      // Return number of stories as max
+      return Object.keys(stats.storyHeights).length;
+    },
+    isAvailable: (animationData) => !!animationData.metadata.stories,
+    getValue: (animationData, _frameIndex, nodeId) => {
+      const { storyOrder, stories } = animationData.metadata;
+      for (let i = 0; i < storyOrder.length; i++) {
+        const storyNodes = stories[storyOrder[i]];
+        if (storyNodes && storyNodes.includes(nodeId)) {
+          return i + 1; // 1-based floor index
+        }
+      }
+      return undefined;
+    },
+  },
+  nodeZ: {
+    metric: "nodeZ",
+    thresholdKey: "inf",
+    label: "Node Z Position",
+    unit: UNITS["inches"],
+    defaultPalette: "spectrum",
+    positiveOnly: true,
+    getPrecomputedMax: (stats) => {
+      // Convert max Z from inches to feet
+      return stats.boundingBox.max[2];
+    },
+    isAvailable: (animationData) => !!animationData.initialPositions,
+    getValue: (animationData, _frameIndex, nodeId) => {
+      const pos = animationData.initialPositions.at(nodeId);
+      // Z is in inches, convert to feet
+      return pos[2];
+    },
+  },
+  crossSectionX: {
+    metric: "crossSectionX",
+    thresholdKey: "inf",
+    label: "Cross-Section X Index",
+    unit: UNITS["percent"],
+    defaultPalette: "spectrum",
+    positiveOnly: true,
+    getPrecomputedMax: (stats) => {
+      // Return number of X cross-sections as max
+      return stats.numCrossSectionsX;
+    },
+    isAvailable: (animationData) => {
+      // Available if there are cross-section definitions
+      return Object.keys(animationData.metadata.crossSectionsX).length > 0;
+    },
+    getValue: (animationData, _frameIndex, nodeId) => {
+      const { crossSectionsX } = animationData.metadata;
+      if (!crossSectionsX) return undefined;
+
+      // Find which cross-section X slice this node belongs to
+      let i = 0;
+      for (const nodes of Object.values(crossSectionsX)) {
+        i++;
+        if (nodes.includes(nodeId)) return i;
+      }
+      return undefined;
+    },
+  },
+  crossSectionY: {
+    metric: "crossSectionY",
+    thresholdKey: "inf",
+    label: "Cross-Section Y Index",
+    unit: UNITS["percent"],
+    defaultPalette: "spectrum",
+    positiveOnly: true,
+    getPrecomputedMax: (stats) => {
+      // Return number of Y cross-sections as max
+      return stats.numCrossSectionsY;
+    },
+    isAvailable: (animationData) => {
+      // Available if there are cross-section definitions
+      return Object.keys(animationData.metadata.crossSectionsY).length > 0;
+    },
+    getValue: (animationData, _frameIndex, nodeId) => {
+      const { crossSectionsY } = animationData.metadata;
+      if (!crossSectionsY) return undefined;
+
+      let i = 0;
+      for (const nodes of Object.values(crossSectionsY)) {
+        i++;
+        if (nodes.includes(nodeId)) return i;
+      }
+      return undefined;
+    },
+  },
 };
 
 export const THRESHOLD_KEY_ORDER: ThresholdKey[] = [
@@ -1058,11 +1144,8 @@ export function getMetricColorScale(metric: Metric, overrides?: MetricPaletteOve
   const paletteKey = overrides?.[metric] ?? config.defaultPalette;
   const palette = METRIC_PALETTES[paletteKey];
   return {
-    positiveColorStops: palette.positiveColorStops,
-    negativeColorStops: palette.negativeColorStops,
+    ...palette,
     paletteKey,
-    paletteLabel: palette.label,
-    keyColor: palette.keyColor,
     isDefault: paletteKey === config.defaultPalette,
   };
 }

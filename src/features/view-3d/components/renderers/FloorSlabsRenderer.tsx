@@ -290,7 +290,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
     e.stopPropagation();
     setHovered({
       id: `floor-${storyId}`,
-      type: "floor",
+      type: "Z",
       value: storyId,
       nodeIds,
       label: `Floor ${storyId}`,
@@ -307,7 +307,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
     e.stopPropagation();
     selectCrossSection({
       id: `floor-${storyId}`,
-      type: "floor",
+      type: "Z",
       value: storyId,
       nodeIds,
       label: `Floor ${storyId}`,

@@ -925,62 +925,6 @@ def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, 
     return node_to_below, unmatched_nodes, missing_columns
 
 
-def _compute_node_story_drift(node_to_below, stories, story_order, story_heights, displacement_data, num_frames, num_nodes, dtype=np.float32):
-    """
-    Precompute node story drift (ISD) for all nodes.
-
-    Returns:
-        node_story_drift: Float32Array of shape (frame_count, node_count)
-        Layout: [frameIdx * nodeCount + nodeIdx]
-    """
-    print(f"\n--- Computing Node Story Drift ---")
-
-    story_count = len(story_order)
-    story_to_idx = {story: idx for idx, story in enumerate(story_order)}
-    node_story_drift = np.zeros((num_frames, num_nodes), dtype=dtype)
-
-    for node_idx in range(num_nodes):
-        story_idx = -1
-        for s_idx, story in enumerate(story_order):
-            node_indices = stories.get(story, [])
-            if node_idx in node_indices:
-                story_idx = s_idx
-                break
-
-        if story_idx <= 0:
-            continue  # Ground floor has no drift (no story below)
-
-        story = story_order[story_idx]
-        story_height = story_heights.get(story, 1.0)
-        if story_height == 0:
-            story_height = 1.0
-
-        below_idx = node_to_below[node_idx]
-        if below_idx < 0:
-            continue  # No match below
-
-        for frame_idx in range(num_frames):
-            current_disp = displacement_data[frame_idx, node_idx]
-            below_disp = displacement_data[frame_idx, below_idx]
-
-            current_mag = np.sqrt(np.sum(current_disp**2))
-            below_mag = np.sqrt(np.sum(below_disp**2))
-
-            drift = abs(current_mag - below_mag) / story_height * 100
-            node_story_drift[frame_idx, node_idx] = drift
-
-    print(f"✓ Node story drift computed: shape {node_story_drift.shape}")
-
-    return node_story_drift
-
-    if story_elevations.size > 0:
-        deltas = []
-        for node in unmatched_nodes:
-            z = node["z"]
-            deltas.append(float(np.min(np.abs(story_elevations - z))))
-        print(f"      Nearest-story delta stats: min={min(deltas):.4f} in, max={max(deltas):.4f} in, mean={np.mean(deltas):.4f} in")
-
-
 def _compute_cross_sections(df_nodes, id_to_index, node_scale, min_x, min_y, tol=6.0):
     """
     Group nodes into cross_sections (cross-sections) along the X and Y axes.

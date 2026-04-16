@@ -12,6 +12,7 @@ import { SliceSelectionProvider } from "./features/view-3d/contexts/visualizatio
 import { ViewProvider } from "./state";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { Box } from "lucide-react";
+import { CrossSectionSelectionProvider } from "./features/view-3d/contexts/visualization/CrossSectionSelectionContext";
 
 const routes = [
   {
@@ -32,7 +33,9 @@ const router = createBrowserRouter([
               <NavigationBar />
               <PlaybackProvider>
                 <SliceSelectionProvider>
-                  <Outlet />
+                  <CrossSectionSelectionProvider>
+                    <Outlet />
+                  </CrossSectionSelectionProvider>
                 </SliceSelectionProvider>
               </PlaybackProvider>
             </TooltipProvider>

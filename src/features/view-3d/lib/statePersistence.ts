@@ -1159,6 +1159,25 @@ export function clearUrlState(): void {
   localStorage.removeItem(LAST_URL_STATE_KEY);
 }
 
+function _lastLayoutKey(): string {
+  return "last_view3d_layout";
+}
+
+export function clearAllLocalStorage(): void {
+  if (typeof window === "undefined") return;
+  const keysToRemove: string[] = [
+    AUTO_SAVE_KEY,
+    PRESETS_KEY,
+    LAST_URL_STATE_KEY,
+    SAVE_PROFILES_KEY,
+    ACTIVE_PROFILE_KEY,
+    _lastLayoutKey(),
+  ];
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key);
+  }
+}
+
 interface UrlStateResolution {
   state: AppState | null;
 }

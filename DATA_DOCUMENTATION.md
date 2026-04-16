@@ -494,7 +494,6 @@ Contains older format data with similar structure to main 15story data but with 
 - `acceleration_lin.bld` / `acceleration_rot.bld`: Time-series acceleration data
 - `ground_motion.bld`: Ground motion acceleration data
 - `hinge_data.bld`: Non-time-series hinge summary data with metadata distributions
-- `node_story_drift.bld`: Inter-story drift (ISD) per node, per story, per frame (percentage)
 
 **Running the Script**:
 

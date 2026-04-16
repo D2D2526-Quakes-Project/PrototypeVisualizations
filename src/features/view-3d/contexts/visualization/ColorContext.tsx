@@ -51,20 +51,14 @@ export function useColor(): ColorContextType {
   const { positiveInterpolator, positiveThresholdInterpolator, negativeInterpolator, negativeThresholdInterpolator } =
     useMemo(() => {
       return {
-        positiveInterpolator: interpolate(
-          [metricColorScale.positiveColorStops[0], metricColorScale.positiveColorStops[1]],
-          "oklab"
-        ),
-        positiveThresholdInterpolator: interpolate(
-          [metricColorScale.positiveColorStops[2], metricColorScale.positiveColorStops[3]],
-          "oklab"
-        ),
+        positiveInterpolator: interpolate(metricColorScale.positiveColorStops, "oklab"),
+        positiveThresholdInterpolator: interpolate(metricColorScale.positiveThresholdColorStops, "oklab"),
         negativeInterpolator: metricConfig.positiveOnly
           ? interpolate(["magenta"], "oklab")
-          : interpolate([metricColorScale.negativeColorStops[0], metricColorScale.negativeColorStops[1]], "oklab"),
+          : interpolate(metricColorScale.negativeColorStops, "oklab"),
         negativeThresholdInterpolator: metricConfig.positiveOnly
           ? interpolate(["magenta"], "oklab")
-          : interpolate([metricColorScale.negativeColorStops[2], metricColorScale.negativeColorStops[3]], "oklab"),
+          : interpolate(metricColorScale.negativeThresholdColorStops, "oklab"),
       };
     }, [metricConfig, metricColorScale]);
 

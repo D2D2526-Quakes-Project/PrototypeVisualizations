@@ -279,6 +279,14 @@ export interface BuildingAnimationData {
    *  jM3Max, jM3Min, jR3Max, jR3Min, jMaxPosDcrMax, jMaxPosDcrMin, jMaxNegDcrMax, jMaxNegDcrMin]
    */
   hingeData?: HingeDataAccessor;
+
+  /**
+   * Story Drift Data.
+   * Layout: Frame -> Node -> [d]
+   * Size: frameCount * nodeCount * 1
+   * Units: Percent
+   */
+  storyDrift: NodeValueTimeAccessor;
 }
 
 export interface IndexAccessor {
@@ -294,6 +302,13 @@ export interface TimeIndexAccessor {
   data: Float32Array;
   stride: number;
   atFrame: (idx: number) => IndexAccessor;
+}
+
+export interface NodeValueTimeAccessor {
+  data: Float32Array;
+  frameCount: number;
+  nodeCount: number;
+  get: (frameIdx: number, nodeIdx: number) => number;
 }
 
 export interface BeamRow {
@@ -464,4 +479,8 @@ export interface ComputedStats {
 
   // HINGE SUMMARY (if hinge data exists)
   hinge?: HingeSummary;
+
+  // CROSS-SECTIONS
+  numCrossSectionsX: number;
+  numCrossSectionsY: number;
 }

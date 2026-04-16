@@ -37,7 +37,9 @@ function getScaleStopsAndLabels(
   thresholdValue: number
 ) {
   const positiveStops = colorScale.positiveColorStops;
+  const positiveTStops = colorScale.positiveThresholdColorStops;
   const negativeStops = colorScale.negativeColorStops;
+  const negativeTStops = colorScale.negativeThresholdColorStops;
   const thresholdRatio = clamp01(maxValue > 0 ? thresholdValue / maxValue : 0);
 
   let stops: string[];
@@ -47,35 +49,39 @@ function getScaleStopsAndLabels(
       const thresholdPos = thresholdRatio * 100;
 
       stops = [
-        `${positiveStops[0]} 0%`,
-        `${positiveStops[1]} ${thresholdPos}%`,
-        `${positiveStops[2]} ${thresholdPos}%`,
-        `${positiveStops[3]} 100%`,
+        ...positiveStops.map((color, i) => `${color} ${(i / (positiveStops.length - 1)) * thresholdPos}%`),
+        ...positiveTStops.map(
+          (color, i) => `${color} ${(i / (positiveTStops.length - 1)) * (100 - thresholdPos) + thresholdPos}%`
+        ),
       ];
     } else {
       const posThresholdPos = thresholdRatio * 50 + 50;
       const negThresholdPos = (1 - thresholdRatio) * 50;
 
       stops = [
-        `${negativeStops[3]} 0%`,
-        `${negativeStops[2]} ${negThresholdPos}%`,
-        `${negativeStops[1]} ${negThresholdPos}%`,
-        `${negativeStops[0]} 50%`,
-        `${positiveStops[0]} 50%`,
-        `${positiveStops[1]} ${posThresholdPos}%`,
-        `${positiveStops[2]} ${posThresholdPos}%`,
-        `${positiveStops[3]} 100%`,
+        ...negativeTStops
+          .toReversed()
+          .map((color, i) => `${color} ${(i / (negativeTStops.length - 1)) * negThresholdPos}%`),
+        ...negativeStops
+          .toReversed()
+          .map(
+            (color, i) => `${color} ${(i / (negativeStops.length - 1)) * (50 - negThresholdPos) + negThresholdPos}%`
+          ),
+        ...positiveStops.map(
+          (color, i) => `${color} ${(i / (positiveStops.length - 1)) * (posThresholdPos - 50) + 50}%`
+        ),
+        ...positiveTStops.map(
+          (color, i) => `${color} ${(i / (positiveTStops.length - 1)) * (100 - posThresholdPos) + posThresholdPos}%`
+        ),
       ];
     }
   } else {
     if (positiveOnly) {
-      stops = [`${positiveStops[0]} 0%`, `${positiveStops[1]} 100%`];
+      stops = positiveStops.map((color, i) => `${color} ${(i / (positiveStops.length - 1)) * 100}%`);
     } else {
       stops = [
-        `${negativeStops[1]} 0%`,
-        `${negativeStops[0]} 50%`,
-        `${positiveStops[0]} 50%`,
-        `${positiveStops[1]} 100%`,
+        ...negativeStops.map((color, i) => `${color} ${(i / (negativeStops.length - 1)) * -50 + 50}%`),
+        ...positiveStops.map((color, i) => `${color} ${(i / (positiveStops.length - 1)) * 50 + 50}%`),
       ];
     }
   }

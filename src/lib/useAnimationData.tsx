@@ -7,7 +7,13 @@ import {
   OPTIONAL_DATA_LOAD_OPTION_KEYS,
   type OptionalDataLoadOptions,
 } from "@/features/view-3d/lib/statePersistence";
-import { clearCache, fetchWithProgressAndCache, getProcessedFromCache, saveProcessedToCache } from "@/lib/dataLoader";
+import {
+  clearCache,
+  clearProcessedCache,
+  fetchWithProgressAndCache,
+  getProcessedFromCache,
+  saveProcessedToCache,
+} from "@/lib/dataLoader";
 import {
   buildRequiredSerializedAnimationDataFromRaw,
   createCoreProcessedCacheKey,
@@ -631,10 +637,13 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           peakNodeDisplacementZ: animationData.precomputed.peakNodeDisplacementZ,
           avgDisplacementPerFrame: animationData.precomputed.avgDisplacementPerFrame,
           avgDisplacementPerStory: animationData.precomputed.avgDisplacementPerStory,
+          numCrossSectionsX: animationData.precomputed.numCrossSectionsX,
+          numCrossSectionsY: animationData.precomputed.numCrossSectionsY,
         },
         initialPositions: animationData.initialPositions.data,
         displacementLin: animationData.displacementLin.data,
         groundMotion: animationData.groundMotion.data,
+        storyDrift: animationData.storyDrift.data,
       };
 
       void loadOptionalDataset(
@@ -1135,9 +1144,14 @@ function SimulationPickerOverlay({
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className="shrink-0 rounded bg-neutral-800 px-3 py-1.5 font-medium text-neutral-100 transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-35"
+                  className="shrink-0 rounded bg-neutral-800 px-3 py-1.5 font-medium text-neutral-100 transition-colors hover:bg-neutral-700"
                   onClick={() => clearCache()}>
-                  Clear Cache
+                  Clear All Cache
+                </button>
+                <button
+                  className="shrink-0 rounded bg-neutral-800 px-3 py-1.5 font-medium text-neutral-100 transition-colors hover:bg-neutral-700"
+                  onClick={() => clearProcessedCache()}>
+                  Clear Computed Cache
                 </button>
                 <button
                   type="button"

@@ -1,4 +1,4 @@
-import { clearCache } from "@/lib/dataLoader";
+import { clearCache, clearProcessedCache } from "@/lib/dataLoader";
 import { Link, useRouteError } from "react-router";
 
 export function ErrorPage() {
@@ -53,7 +53,12 @@ export function ErrorPage() {
         <button
           className="focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 cursor-pointer items-center justify-center rounded-md border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           onClick={() => clearCache()}>
-          Clear Cache
+          Clear All Cache
+        </button>
+        <button
+          className="focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 cursor-pointer items-center justify-center rounded-md border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+          onClick={() => clearProcessedCache()}>
+          Clear Computed Cache
         </button>
       </div>
     </div>

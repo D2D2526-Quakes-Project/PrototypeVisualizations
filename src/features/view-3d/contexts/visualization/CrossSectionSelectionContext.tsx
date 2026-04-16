@@ -1,4 +1,3 @@
-import { useAnimationData } from "@/lib/useAnimationData";
 import { useViewStore, useViewStoreRaw, type CrossSectionSelectionState } from "@/state";
 import type { DockviewApi } from "dockview";
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
@@ -47,13 +46,11 @@ export function useCrossSectionSelection() {
 }
 
 export function CrossSectionSelectionProvider({ children }: { children: ReactNode }) {
-  const { animationData } = useAnimationData();
+  // const { animationData } = useAnimationData();
   const store = useViewStoreRaw();
 
   const selectedCrossSection = useViewStore((s) => s.selectedCrossSection);
   const hoveredCrossSection = useViewStore((s) => s.hoveredCrossSection);
-  const crossSectionEnabled = useViewStore((s) => s.crossSectionEnabled);
-  const setCrossSectionEnabled = useViewStore((s) => s.setCrossSectionEnabled);
   const selectCrossSectionStore = useViewStore((s) => s.selectCrossSection);
   const deselectCrossSectionStore = useViewStore((s) => s.deselectCrossSection);
   const setHoveredCrossSectionStore = useViewStore((s) => s.setHoveredCrossSection);
@@ -102,7 +99,7 @@ export function CrossSectionSelectionProvider({ children }: { children: ReactNod
   const selectCrossSection = useCallback(
     (crossSection: CrossSection) => {
       selectCrossSectionStore(crossSection);
-      if (crossSection.type === "floor" && crossSection.storyId) {
+      if (crossSection.type === "Z" && crossSection.storyId) {
         openCrossSectionPanel(crossSection.storyId);
       }
     },

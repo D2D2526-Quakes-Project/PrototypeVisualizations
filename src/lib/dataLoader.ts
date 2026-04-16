@@ -1,3 +1,5 @@
+import { clearAllLocalStorage } from "@/features/view-3d/lib/statePersistence";
+
 // lib/DataLoader.ts
 
 const DB_NAME = "QuakesCache";
@@ -79,6 +81,18 @@ export const clearCache = async () => {
     processedStore.clear();
   } catch (e) {
     console.warn("Cache write failed (likely quota exceeded)", e);
+  }
+  clearAllLocalStorage();
+};
+
+export const clearProcessedCache = async () => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(PROCESSED_STORE_NAME, "readwrite");
+    const processedStore = tx.objectStore(PROCESSED_STORE_NAME);
+    processedStore.clear();
+  } catch (e) {
+    console.warn("Processed cache clear failed", e);
   }
 };
 

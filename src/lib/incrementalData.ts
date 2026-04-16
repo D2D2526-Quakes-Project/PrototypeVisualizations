@@ -10,6 +10,7 @@ import type {
   HingeMetadata,
   HingeSummary,
   IndexAccessor,
+  NodeValueTimeAccessor,
   SimulationMetadata,
   TimeIndexAccessor,
 } from "@/lib/types";
@@ -56,6 +57,8 @@ export interface SerializedComputedStatsCore {
     mag: Float32Array;
   };
   avgDisplacementPerStory: Float32Array;
+  numCrossSectionsX: number;
+  numCrossSectionsY: number;
 }
 
 export interface SerializedRequiredAnimationData {
@@ -64,6 +67,7 @@ export interface SerializedRequiredAnimationData {
   initialPositions: Float32Array;
   displacementLin: Float32Array;
   groundMotion: Float32Array;
+  storyDrift: Float32Array;
 }
 
 export interface OptionalStatsDelta {
@@ -103,7 +107,6 @@ export interface OptionalStatsDelta {
   };
   avgVelocityPerStory?: Float32Array;
   avgAccelerationPerStory?: Float32Array;
-  velocityPercentile90?: number;
   hinge?: HingeSummary;
 }
 
@@ -193,6 +196,17 @@ function makeTimeAccessor(data: Float32Array, nodeCount: number): TimeIndexAcces
     stride: outerStride,
     atFrame(frameIdx: number) {
       return makeAccessor(data.subarray(frameIdx * outerStride, (frameIdx + 1) * outerStride), 3);
+    },
+  };
+}
+
+function makeNodeValueTimeAccessor(data: Float32Array, frameCount: number, nodeCount: number): NodeValueTimeAccessor {
+  return {
+    data,
+    frameCount,
+    nodeCount,
+    get(frameIdx: number, nodeIdx: number) {
+      return data[frameIdx * nodeCount + nodeIdx] ?? 0;
     },
   };
 }
@@ -509,6 +523,9 @@ function serializeRequiredComputedStats(
 
   const [maxDisplacementX, maxDisplacementY, maxDisplacementZ] = getMaxComp(dispLin);
 
+  const numCrossSectionsX = Object.keys(metadata.crossSectionsX).length;
+  const numCrossSectionsY = Object.keys(metadata.crossSectionsY).length;
+
   return {
     boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
     storyHeights,
@@ -541,6 +558,8 @@ function serializeRequiredComputedStats(
     peakNodeDisplacementZ,
     avgDisplacementPerFrame,
     avgDisplacementPerStory,
+    numCrossSectionsX,
+    numCrossSectionsY,
   };
 }
 
@@ -608,6 +627,50 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     crossSectionsY: buildingData.metadata.cross_sections_y,
   };
 
+  // --- Compute Node Story Drift Dynamically ---
+  const nodeCount = metadata.nodeCount;
+  const frameCount = metadata.frameCount;
+  const nodeStoryDrift = new Float32Array(frameCount * nodeCount);
+  const dispLin = dispLinData.bodyView;
+
+  // Build a fast lookup for node -> story height
+  const nodeToStoryHeight = new Float32Array(nodeCount);
+  metadata.storyOrder.forEach((storyId) => {
+    const height = metadata.storyHeights[storyId] || 1;
+    const nodes = metadata.stories[storyId] || [];
+    nodes.forEach((n) => {
+      nodeToStoryHeight[n] = height;
+    });
+  });
+
+  // Loop every frame and every node to calculate drift exactly like the python script
+  for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+    const frameOffset = frameIdx * nodeCount * 3;
+    const outOffset = frameIdx * nodeCount;
+
+    for (let nodeIdx = 0; nodeIdx < nodeCount; nodeIdx++) {
+      const belowIdx = metadata.nodeToBelow[nodeIdx];
+      if (belowIdx === undefined || belowIdx < 0) continue; // ground floor or no match
+
+      // Current node 3D magnitude
+      const nX = dispLin[frameOffset + nodeIdx * 3] ?? 0;
+      const nY = dispLin[frameOffset + nodeIdx * 3 + 1] ?? 0;
+      const nZ = dispLin[frameOffset + nodeIdx * 3 + 2] ?? 0;
+      const currentMag = Math.sqrt(nX * nX + nY * nY + nZ * nZ);
+
+      // Node directly below 3D magnitude
+      const bX = dispLin[frameOffset + belowIdx * 3] ?? 0;
+      const bY = dispLin[frameOffset + belowIdx * 3 + 1] ?? 0;
+      const bZ = dispLin[frameOffset + belowIdx * 3 + 2] ?? 0;
+      const belowMag = Math.sqrt(bX * bX + bY * bY + bZ * bZ);
+
+      const height = nodeToStoryHeight[nodeIdx] || 1;
+
+      // Calculate % difference
+      nodeStoryDrift[outOffset + nodeIdx] = (Math.abs(currentMag - belowMag) / height) * 100;
+    }
+  }
+
   return {
     metadata,
     precomputed: serializeRequiredComputedStats(
@@ -620,6 +683,7 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     initialPositions: buildingData.bodyView.subarray(0),
     displacementLin: dispLinData.bodyView.subarray(0),
     groundMotion: groundMotionData.bodyView.subarray(0),
+    storyDrift: nodeStoryDrift,
   };
 }
 
@@ -635,6 +699,7 @@ export function rebuildAnimationDataFromSerializedCore(data: SerializedRequiredA
     initialPositions: makeAccessor(data.initialPositions, 3),
     displacementLin: makeTimeAccessor(data.displacementLin, data.metadata.nodeCount),
     groundMotion: makeAccessor(data.groundMotion, 3),
+    storyDrift: makeNodeValueTimeAccessor(data.storyDrift, data.metadata.frameCount, data.metadata.nodeCount),
   };
 }
 
@@ -848,7 +913,6 @@ function calculateOptionalTimeSeriesStats(
       peakNodeVelocity: peakNode,
       avgVelocityPerFrame: avgPerFrame,
       avgVelocityPerStory: avgPerStory,
-      velocityPercentile90: magnitudes[Math.floor(magnitudes.length * 0.9)] ?? 0,
     };
   }
 

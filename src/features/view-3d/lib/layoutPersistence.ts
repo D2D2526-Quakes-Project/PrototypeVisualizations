@@ -1,7 +1,7 @@
 import type { SerializedDockview } from "dockview";
 
 const LAYOUT_URL_PARAM = "layout";
-const LAST_LAYOUT_KEY = "last_view3d_layout";
+export const LAST_LAYOUT_KEY = "last_view3d_layout";
 
 export function encodeLayoutForUrl(layout: SerializedDockview): string {
   try {

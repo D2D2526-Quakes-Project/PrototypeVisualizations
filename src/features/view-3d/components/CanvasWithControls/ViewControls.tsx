@@ -489,7 +489,7 @@ export function ViewControls({
                   <ViewModeSelect />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <ColorPanel thresholds={thresholds} animationData={animationData} />
+                  <ColorPanel />
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ThresholdPanel />

@@ -9,7 +9,7 @@ export {
   DEFAULT_CAMERA_STATE,
   type ExpandedScaleState,
   type BoxSelection,
-  type SliceSelectionState,
+  type CrossSectionSelectionState,
   type SliceType,
 } from "./viewStore";
 export { ViewProvider, useViewStore, useViewStoreRaw, ViewStoreContext } from "./ViewProvider";

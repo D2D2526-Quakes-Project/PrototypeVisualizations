@@ -22,6 +22,7 @@ export const DEFAULT_THRESHOLDS: ThresholdState = {
   rotationVelocity: 0.1,
   rotationAcceleration: 0.5,
   interstoryDrift: 0.5,
+  inf: 0,
 };
 
 export interface ExpandedScaleState {
@@ -64,9 +65,9 @@ export interface BoxSelection {
   end: { x: number; y: number };
 }
 
-export type SliceType = "floor";
+export type SliceType = "X" | "Y" | "Z";
 
-export interface SliceSelectionState {
+export interface CrossSectionSelectionState {
   id: string;
   type: SliceType;
   value: string | number;
@@ -189,12 +190,12 @@ export interface ViewState {
   removePanelState: (panelId: string) => void;
   setPanelStates: (panelStates: Record<string, PanelState>) => void;
 
-  // Slice interaction
-  selectedSlice: SliceSelectionState | null;
-  hoveredSlice: SliceSelectionState | null;
-  selectSlice: (slice: SliceSelectionState) => void;
-  deselectSlice: () => void;
-  setHoveredSlice: (slice: SliceSelectionState | null) => void;
+  // CrossSection interaction
+  selectedCrossSection: CrossSectionSelectionState | null;
+  hoveredCrossSection: CrossSectionSelectionState | null;
+  selectCrossSection: (crossSection: CrossSectionSelectionState) => void;
+  deselectCrossSection: () => void;
+  setHoveredCrossSection: (crossSection: CrossSectionSelectionState | null) => void;
 
   // Node Panel Graph Visibility
   nodePanelGraphVisibility: Record<string, boolean>;
@@ -295,7 +296,7 @@ export const createViewStore = () =>
             },
           };
         }),
-      thresholdHighlighting: false,
+      thresholdHighlighting: true,
       setThresholdHighlighting: (thresholdHighlighting) => set({ thresholdHighlighting }),
 
       // Floor Visibility
@@ -455,11 +456,11 @@ export const createViewStore = () =>
         }),
       setPanelStates: (panelStates) => set({ panelStates }),
 
-      selectedSlice: null,
-      hoveredSlice: null,
-      selectSlice: (selectedSlice) => set({ selectedSlice }),
-      deselectSlice: () => set({ selectedSlice: null }),
-      setHoveredSlice: (hoveredSlice) => set({ hoveredSlice }),
+      selectedCrossSection: null,
+      hoveredCrossSection: null,
+      selectCrossSection: (selectedCrossSection) => set({ selectedCrossSection }),
+      deselectCrossSection: () => set({ selectedCrossSection: null }),
+      setHoveredCrossSection: (hoveredCrossSection) => set({ hoveredCrossSection }),
 
       nodePanelGraphVisibility: { dispX: true, dispY: true, drift: true },
       toggleNodePanelGraph: (graphKey) =>

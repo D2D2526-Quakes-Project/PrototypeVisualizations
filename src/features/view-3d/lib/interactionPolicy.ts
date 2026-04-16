@@ -1,9 +1,14 @@
-import type { ViewMode } from "@/features/view-3d/contexts/visualization/ViewModeContext";
+import { useViewStore } from "@/state";
 
-export function isNodeInteractionMode(mode: ViewMode): boolean {
-  return mode === "all-nodes";
+export function useNodeInteractionMode() {
+  const renderNodes = useViewStore((s) => s.renderNodes);
+  const showCornersOnly = useViewStore((s) => s.showCornersOnly);
+  return renderNodes || showCornersOnly;
 }
 
-export function isSlabInteractionMode(mode: ViewMode): boolean {
-  return mode === "floor-slabs";
+export function useSlabInteractionMode() {
+  const renderFloorSlabs = useViewStore((s) => s.renderFloorSlabs);
+  const renderXCrossSectionSlabs = useViewStore((s) => s.renderXCrossSectionSlabs);
+  const renderYCrossSectionSlabs = useViewStore((s) => s.renderYCrossSectionSlabs);
+  return renderFloorSlabs || renderXCrossSectionSlabs || renderYCrossSectionSlabs;
 }

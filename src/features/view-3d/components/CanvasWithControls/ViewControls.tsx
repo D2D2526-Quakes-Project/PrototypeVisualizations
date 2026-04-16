@@ -484,7 +484,7 @@ export function ViewControls({
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
                     <Grid3X3 size={12} className="text-neutral-500" />
-                    <span className="text-xs font-medium text-neutral-700">View Mode</span>
+                    <span className="text-xs font-medium text-neutral-700">Visibility</span>
                   </div>
                   <ViewModeSelect />
                 </motion.div>

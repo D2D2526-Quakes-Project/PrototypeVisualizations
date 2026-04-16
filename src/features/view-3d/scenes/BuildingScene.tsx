@@ -1,6 +1,10 @@
 import { getNodeColor as getNodePanelColor } from "@/features/view-3d/components/NodePanel";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { FloorSlabsRenderer } from "@/features/view-3d/components/renderers/FloorSlabsRenderer";
+import {
+  XCrossSectionSlabsRenderer,
+  YCrossSectionSlabsRenderer,
+} from "@/features/view-3d/components/renderers/CrossSectionSlabsRenderer";
 import { useCamera } from "@/features/view-3d/contexts/CameraContext";
 import { useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
 import {
@@ -15,7 +19,7 @@ import {
 import { useAnimationData } from "@/lib/useAnimationData";
 import { getMetricConfig } from "@/lib/metrics";
 import { UNIT_SCALE } from "@/lib/utils";
-import { isNodeInteractionMode, isSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
+import { useNodeInteractionMode, useSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
 import { useViewStore } from "@/state";
 import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
@@ -38,7 +42,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { selectedNodes, selectNode } = useNodeSelection();
   const { getNodeColor, currentMetric } = useColor();
   const { thresholds } = useThresholds();
-  const { mode, getVisibleNodes } = useViewMode();
+  const { getVisibleNodes } = useViewMode();
   const { getExpandedPosition } = useExpandedScale();
   const { sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
   const {
@@ -58,12 +62,16 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const addSelectedNodes = useViewStore((s) => s.addSelectedNodes);
   const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
   const setHoveredNodeId = useViewStore((s) => s.setHoveredNodeId);
-  const cornersOnly = useViewStore((s) => s.cornersOnly);
+  const renderNodes = useViewStore((s) => s.renderNodes);
+  const renderFloorSlabs = useViewStore((s) => s.renderFloorSlabs);
+  const renderXCrossSectionSlabs = useViewStore((s) => s.renderXCrossSectionSlabs);
+  const renderYCrossSectionSlabs = useViewStore((s) => s.renderYCrossSectionSlabs);
+  const showCornersOnly = useViewStore((s) => s.showCornersOnly);
+  const nodeInteractionEnabled = useNodeInteractionMode();
+  const slabInteractionEnabled = useSlabInteractionMode();
   const nodeScale = useViewStore((s) => s.nodeScale);
   const nodeOpacity = useViewStore((s) => s.nodeOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
-  const nodeInteractionEnabled = isNodeInteractionMode(mode);
-  const slabInteractionEnabled = isSlabInteractionMode(mode);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
   const hiddenNodeIdSet = useMemo(() => new Set(hiddenNodeIds), [hiddenNodeIds]);
 
@@ -137,8 +145,17 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories, hiddenNodeIdSet]);
   const visibleStoriesKey = useMemo(() => getVisibleStoryOrder().join("|"), [getVisibleStoryOrder]);
   const interactiveSceneKey = useMemo(
-    () => `${mode}:${visibleStoriesKey}:${visibleNodes.length}`,
-    [mode, visibleStoriesKey, visibleNodes.length]
+    () =>
+      `${renderNodes}:${renderFloorSlabs}:${renderXCrossSectionSlabs}:${renderYCrossSectionSlabs}:${showCornersOnly}:${visibleStoriesKey}:${visibleNodes.length}`,
+    [
+      renderNodes,
+      renderFloorSlabs,
+      renderXCrossSectionSlabs,
+      renderYCrossSectionSlabs,
+      showCornersOnly,
+      visibleStoriesKey,
+      visibleNodes.length,
+    ]
   );
 
   // Keyboard handler for ctrl/cmd to control pan and enable box select mode
@@ -520,14 +537,34 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
       <group scale={UNIT_SCALE}>
         <group position={[offsets.x, offsets.y, offsets.z]}>
-          {/* Render based on view mode */}
-          {mode === "floor-slabs" && (
-            <FloorSlabsRenderer key={interactiveSceneKey} nodeIds={visibleNodes} cornersOnly={cornersOnly} />
+          {/* Render based on visibility toggles */}
+          {renderFloorSlabs && (
+            <FloorSlabsRenderer
+              key={`floors-${interactiveSceneKey}`}
+              nodeIds={visibleNodes}
+              cornersOnly={showCornersOnly}
+            />
           )}
 
-          {mode === "all-nodes" && (
+          {renderXCrossSectionSlabs && (
+            <XCrossSectionSlabsRenderer
+              key={`xsection-${interactiveSceneKey}`}
+              nodeIds={visibleNodes}
+              cornersOnly={showCornersOnly}
+            />
+          )}
+
+          {renderYCrossSectionSlabs && (
+            <YCrossSectionSlabsRenderer
+              key={`ysection-${interactiveSceneKey}`}
+              nodeIds={visibleNodes}
+              cornersOnly={showCornersOnly}
+            />
+          )}
+
+          {renderNodes && (
             <instancedMesh
-              key={interactiveSceneKey}
+              key={`nodes-${interactiveSceneKey}`}
               ref={meshRef}
               onPointerDown={handlePointerDown}
               onPointerMove={(e) => handlePointerMove(e)}

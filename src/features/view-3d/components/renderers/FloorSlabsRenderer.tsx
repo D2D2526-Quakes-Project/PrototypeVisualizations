@@ -221,7 +221,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
           new THREE.MeshBasicMaterial({
             vertexColors: true,
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.2,
             depthWrite: false,
             side: THREE.DoubleSide,
           })
@@ -279,7 +279,7 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
       new THREE.MeshBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.2,
         depthWrite: false,
         side: THREE.DoubleSide,
       })
@@ -317,38 +317,27 @@ function FloorSlab({ storyId, nodeIds, frameIndex, getExpandedPosition, offset, 
 
   if (!geometry) return null;
 
-  const opacity = isHovered ? 0.9 : 0.6;
+  const opacity = isHovered ? 0.9 : 0.2;
+
+  const meshes = geometry instanceof THREE.Group ? geometry.children : [geometry];
 
   return (
     <group onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick}>
-      {geometry instanceof THREE.Group ? (
-        geometry.children.map((mesh, i) => {
-          const child = mesh as THREE.Mesh;
-          return (
-            <mesh key={i} geometry={child.geometry}>
-              <meshBasicMaterial
-                attach="material"
-                vertexColors
-                transparent
-                opacity={opacity}
-                depthWrite={false}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          );
-        })
-      ) : (
-        <mesh geometry={geometry.geometry}>
-          <meshBasicMaterial
-            attach="material"
-            vertexColors
-            transparent
-            opacity={opacity}
-            depthWrite={false}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      )}
+      {meshes.map((mesh, i) => {
+        const child = mesh as THREE.Mesh;
+        return (
+          <mesh key={i} geometry={child.geometry}>
+            <meshBasicMaterial
+              attach="material"
+              vertexColors
+              transparent
+              opacity={opacity}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 }

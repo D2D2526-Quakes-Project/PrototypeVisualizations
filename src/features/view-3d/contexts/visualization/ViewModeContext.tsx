@@ -6,8 +6,6 @@ import { useCallback } from "react";
 export type ViewMode = "all-nodes" | "floor-slabs";
 
 interface ViewModeContextType {
-  mode: ViewMode;
-  setMode: (mode: ViewMode) => void;
   getVisibleNodes: (
     nodeCount: number,
     metadata: AnimationMetadata,
@@ -24,9 +22,8 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useViewMode(): ViewModeContextType {
-  const mode = useViewStore((s) => s.mode);
-  const setMode = useViewStore((s) => s.setMode);
-  const cornersOnly = useViewStore((s) => s.cornersOnly);
+  const showNodes = useViewStore((s) => s.renderNodes);
+  const showCornersOnly = useViewStore((s) => s.showCornersOnly);
   const sliceEnabled = useViewStore((s) => s.sliceEnabled);
   const xRange = useViewStore((s) => s.xRange);
   const yRange = useViewStore((s) => s.yRange);
@@ -43,20 +40,9 @@ export function useViewMode(): ViewModeContextType {
       _zRange?: [number, number],
       _sliceEnabled?: boolean
     ): number[] => {
-      let nodes: number[];
+      let nodes: number[] = Array.from({ length: nodeCount }, (_, i) => i);
 
-      switch (mode) {
-        case "all-nodes":
-          nodes = Array.from({ length: nodeCount }, (_, i) => i);
-          break;
-        case "floor-slabs":
-          nodes = Object.values(metadata.stories).flat();
-          break;
-        default:
-          nodes = Array.from({ length: nodeCount }, (_, i) => i);
-      }
-
-      if (cornersOnly && animationData) {
+      if (showCornersOnly && animationData) {
         const cornerSet = new Set<number>();
         for (const storyId of metadata.storyOrder) {
           const corners = animationData.metadata.cornerNodes[storyId];
@@ -93,12 +79,10 @@ export function useViewMode(): ViewModeContextType {
 
       return nodes;
     },
-    [mode, cornersOnly, animationData, sliceEnabled, xRange, yRange, zRange]
+    [showNodes, showCornersOnly, animationData, sliceEnabled, xRange, yRange, zRange]
   );
 
   return {
-    mode,
-    setMode,
     getVisibleNodes,
   };
 }

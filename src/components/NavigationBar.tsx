@@ -34,6 +34,13 @@ export function NavigationBar() {
   const store = useViewStoreRaw();
   const visibleFloorCount = useViewStore((state) => state.visibleFloors.length);
   const showAllFloors = useViewStore((state) => state.showAllFloors);
+  const showAllNodes = useViewStore((state) => state.showAllNodes);
+  const renderNodes = useViewStore((state) => state.renderNodes);
+  const renderFloorSlabs = useViewStore((state) => state.renderFloorSlabs);
+  const renderXCrossSectionSlabs = useViewStore((state) => state.renderXCrossSectionSlabs);
+  const renderYCrossSectionSlabs = useViewStore((state) => state.renderYCrossSectionSlabs);
+  const hiddenNodeCount = useViewStore((state) => state.hiddenNodeIds.length);
+  const setRenderNodes = useViewStore((state) => state.setRenderNodes);
   const {
     animationData,
     clearSelection,
@@ -114,6 +121,22 @@ export function NavigationBar() {
       restore: () => showAllFloors(animationData.metadata.storyOrder),
     };
   }, [animationData, visibleFloorCount, showAllFloors]);
+
+  const mostNodesHiddenWarning = useMemo(() => {
+    if (hiddenNodeCount < animationData.metadata.nodeCount * 0.75) return null;
+    return {
+      restore: () => showAllNodes(),
+    };
+  }, [animationData, hiddenNodeCount, showAllNodes]);
+
+  const allVisibilityHiddenWarning = useMemo(() => {
+    if (renderNodes || renderFloorSlabs || renderXCrossSectionSlabs || renderYCrossSectionSlabs) return null;
+    return {
+      restore: () => {
+        setRenderNodes(true);
+      },
+    };
+  }, [renderNodes, renderFloorSlabs, renderXCrossSectionSlabs, renderYCrossSectionSlabs, setRenderNodes]);
 
   return (
     <div className="grid grid-cols-[auto_auto_auto] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
@@ -213,14 +236,38 @@ export function NavigationBar() {
             {currentBuilding?.name} / {currentSimulation?.name}
           </div>
           {allFloorsHiddenWarning && (
-            <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] text-amber-800">
+            <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] whitespace-nowrap text-amber-800">
               <AlertTriangle size={11} />
               <span>All {allFloorsHiddenWarning.totalFloorCount} floors hidden</span>
               <button
                 type="button"
                 onClick={allFloorsHiddenWarning.restore}
                 className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-900 hover:bg-amber-100">
-                Show all floors
+                Show
+              </button>
+            </div>
+          )}
+          {mostNodesHiddenWarning && (
+            <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] whitespace-nowrap text-amber-800">
+              <AlertTriangle size={11} />
+              <span>Most nodes hidden</span>
+              <button
+                type="button"
+                onClick={mostNodesHiddenWarning.restore}
+                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-900 hover:bg-amber-100">
+                Show
+              </button>
+            </div>
+          )}
+          {allVisibilityHiddenWarning && (
+            <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] whitespace-nowrap text-amber-800">
+              <AlertTriangle size={11} />
+              <span>All views hidden</span>
+              <button
+                type="button"
+                onClick={allVisibilityHiddenWarning.restore}
+                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-900 hover:bg-amber-100">
+                Show
               </button>
             </div>
           )}
@@ -228,7 +275,7 @@ export function NavigationBar() {
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className={`inline-flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-[10px] ${
+                  className={`inline-flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-[10px] whitespace-nowrap ${
                     backgroundLoadingCount > 0
                       ? "border-amber-300 bg-amber-50 text-amber-800"
                       : "border-neutral-300 bg-white text-neutral-700"

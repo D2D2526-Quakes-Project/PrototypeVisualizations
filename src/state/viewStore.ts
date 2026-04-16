@@ -1,4 +1,3 @@
-import type { ViewMode } from "@/features/view-3d/contexts/visualization/ViewModeContext";
 import type { Metric, MetricPaletteKey, MetricPaletteOverrides, ThresholdKey } from "@/lib/metrics";
 import type { ComputedStats } from "@/lib/types";
 import type { PanelState } from "@/features/view-3d/lib/statePersistence";
@@ -93,10 +92,16 @@ export interface ViewState {
   setTotalFrames: (frames: number) => void;
 
   // View Mode
-  mode: ViewMode;
-  setMode: (mode: ViewMode) => void;
-  cornersOnly: boolean;
-  setCornersOnly: (value: boolean) => void;
+  renderNodes: boolean;
+  setRenderNodes: (value: boolean) => void;
+  renderFloorSlabs: boolean;
+  setRenderFloorSlabs: (value: boolean) => void;
+  renderXCrossSectionSlabs: boolean;
+  setRenderXCrossSectionSlabs: (value: boolean) => void;
+  renderYCrossSectionSlabs: boolean;
+  setRenderYCrossSectionSlabs: (value: boolean) => void;
+  showCornersOnly: boolean;
+  setShowCornersOnly: (value: boolean) => void;
 
   // Thresholds
   thresholds: ThresholdState;
@@ -243,10 +248,16 @@ export const createViewStore = () =>
       setTotalFrames: (totalFrames) => set({ totalFrames }),
 
       // View Mode
-      mode: "all-nodes" as ViewMode,
-      setMode: (mode) => set({ mode }),
-      cornersOnly: false,
-      setCornersOnly: (cornersOnly) => set({ cornersOnly }),
+      renderNodes: true,
+      setRenderNodes: (renderNodes) => set({ renderNodes }),
+      renderFloorSlabs: true,
+      setRenderFloorSlabs: (renderFloorSlabs) => set({ renderFloorSlabs }),
+      renderXCrossSectionSlabs: false,
+      setRenderXCrossSectionSlabs: (renderXCrossSectionSlabs) => set({ renderXCrossSectionSlabs }),
+      renderYCrossSectionSlabs: false,
+      setRenderYCrossSectionSlabs: (renderYCrossSectionSlabs) => set({ renderYCrossSectionSlabs }),
+      showCornersOnly: false,
+      setShowCornersOnly: (showCornersOnly) => set({ showCornersOnly }),
 
       // Thresholds
       thresholds: { ...DEFAULT_THRESHOLDS },
@@ -372,12 +383,12 @@ export const createViewStore = () =>
         set((state) => ({
           selectedNodeIds: [...new Set([...state.selectedNodeIds, ...nodes])],
         })),
-      hideNodes: (nodes) =>
+      hideNodes: (nodes: number[]) =>
         set((state) => ({
           hiddenNodeIds: [...new Set([...state.hiddenNodeIds, ...nodes])],
           selectedNodeIds: [],
         })),
-      showNodes: (nodes) =>
+      showNodes: (nodes: number[]) =>
         set((state) => {
           const nodesToShow = new Set(nodes);
           return {

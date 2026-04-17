@@ -10,7 +10,6 @@ interface FloorVisibilityContextType {
   showAllFloors: () => void;
   hideAllFloors: () => void;
   isFloorVisible: (storyId: string) => boolean;
-  getVisibleStoryOrder: () => string[];
 }
 
 export function FloorVisibilityProvider({ children }: { children: React.ReactNode }) {
@@ -88,10 +87,6 @@ export function useFloorVisibility(): FloorVisibilityContextType {
     [actualVisibleFloors]
   );
 
-  const getVisibleStoryOrder = useCallback(() => {
-    return animationData.metadata.storyOrder.filter((id) => actualVisibleFloors.has(id));
-  }, [animationData.metadata.storyOrder, actualVisibleFloors]);
-
   return {
     visibleFloors: actualVisibleFloors,
     toggleFloor,
@@ -100,6 +95,5 @@ export function useFloorVisibility(): FloorVisibilityContextType {
     showAllFloors,
     hideAllFloors,
     isFloorVisible,
-    getVisibleStoryOrder,
   };
 }

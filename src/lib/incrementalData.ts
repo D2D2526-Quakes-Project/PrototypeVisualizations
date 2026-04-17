@@ -27,7 +27,6 @@ export interface SerializedStoryDrift {
 
 export interface SerializedComputedStatsCore {
   boundingBox: ComputedStats["boundingBox"];
-  storyHeights: Record<string, number>;
   storyElevations: Record<string, number>;
   maxDisplacement: number;
   maxDisplacementX: number;
@@ -301,11 +300,11 @@ function serializeRequiredComputedStats(
   const radius = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2 + (maxZ - minZ) ** 2) / 2;
 
   const storyElevations: Record<string, number> = {};
-  const storyHeights = { ...metadata.storyHeights };
+  const storyHeights = metadata.storyHeights;
   let cumulativeElevation = 0;
   metadata.storyOrder.forEach((storyId) => {
-    storyElevations[storyId] = cumulativeElevation;
     cumulativeElevation += storyHeights[storyId] || 0;
+    storyElevations[storyId] = cumulativeElevation;
   });
 
   const getMaxComp = (buffer: Float32Array): [number, number, number] => {
@@ -438,7 +437,6 @@ function serializeRequiredComputedStats(
 
   return {
     boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
-    storyHeights,
     storyElevations,
     maxDisplacement: getMaxMag(dispLin),
     maxDisplacementX,

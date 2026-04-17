@@ -735,6 +735,10 @@ _Last Updated: February 2026_
 - [ ] Clicking the colorbar box in the collapsed view menu should open the view menu to the colorbar option dropdown
 - [x] Mark nodepanel MiniTimeSeries with dotted line at the peak time
 - [x] NodePanel graph toggled are not implemented. (`<ChartNoAxesCombinedIcon className="size-4 text-blue-500"></ChartNoAxesCombinedIcon>`). Needs to sotre the boolean in the global data for persistance and sharing. Graph toggle buttons and visibility states need to be applied to all metrics in the NodePanel
+- [ ] Clicking floors in ISD chart or other charts / panels should open that floor
+- [ ] Clicking reference nodes in any panels (corners included) should open that node panel
+- [ ] Node panel should link / reference have buttons for the 3 cross sections its in (floor, x, y)
+- [ ] Inset numbers mode for color bar to put the number inside the color bar
 
 ---
 

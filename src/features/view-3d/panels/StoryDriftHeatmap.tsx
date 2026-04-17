@@ -99,7 +99,7 @@ function sanitizeResolution(value: unknown): Resolution {
 export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { getVisibleStoryOrder } = useFloorVisibility();
+  const { visibleFloors } = useFloorVisibility();
   const setPanelState = useViewStore((s) => s.setPanelState);
   const chartRef = useRef<ReactECharts>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -125,7 +125,7 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
 
   const isMaxSelected = selectedCorners.includes("Max");
   const legendCorner = selectedCorners[0] ?? "Max";
-  const visibleStories = useMemo(() => getVisibleStoryOrder().slice(1), [getVisibleStoryOrder]);
+  const visibleStories = useMemo(() => Array.from(visibleFloors).slice(1), [visibleFloors]);
 
   const heatmapData = useMemo(() => {
     const { peakStoryDrift } = animationData.precomputed;

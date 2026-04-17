@@ -165,6 +165,15 @@ export interface AppState {
   layout: SerializedDockview | null;
   panelStates: Record<string, PanelState>;
   dataSelection?: DataSelection;
+
+  // Render Modes
+  renderNodes?: boolean;
+  renderFloorSlabs?: boolean;
+  renderXCrossSectionSlabs?: boolean;
+  renderYCrossSectionSlabs?: boolean;
+  showCornersOnly?: boolean;
+  renderVerticalConnections?: boolean;
+  renderHorizontalConnections?: boolean;
 }
 
 export interface DataSelection {
@@ -1416,5 +1425,14 @@ function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState
     layout: state.dockviewLayout ?? getDefaultAppState().layout,
     panelStates: state.panelStates,
     dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,
+
+    // Render Modes
+    renderNodes: state.renderNodes,
+    renderFloorSlabs: state.renderFloorSlabs,
+    renderXCrossSectionSlabs: state.renderXCrossSectionSlabs,
+    renderYCrossSectionSlabs: state.renderYCrossSectionSlabs,
+    showCornersOnly: state.showCornersOnly,
+    renderVerticalConnections: state.renderVerticalConnections,
+    renderHorizontalConnections: state.renderHorizontalConnections,
   };
 }

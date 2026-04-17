@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCompactNumber(value: number, maxDecimals = 2): string {
+export function formatCompactNumber(value: number, maxDecimals = 1): string {
   if (!Number.isFinite(value)) return String(value);
   if (value === 0) return "0";
 

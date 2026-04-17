@@ -381,6 +381,7 @@ export function formatValue(value: number, decimals: number = 3): string {
     return `<0.001`;
     return value.toExponential(Math.min(normalizedDecimals, 1));
   }
+
   return normalizeFixed(value.toFixed(normalizedDecimals));
 }
 

@@ -40,6 +40,14 @@ export function useAutoSave() {
       layout: state.dockviewLayout,
       panelStates: state.panelStates,
       dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,
+
+      renderNodes: state.renderNodes,
+      renderFloorSlabs: state.renderFloorSlabs,
+      renderXCrossSectionSlabs: state.renderXCrossSectionSlabs,
+      renderYCrossSectionSlabs: state.renderYCrossSectionSlabs,
+      showCornersOnly: state.showCornersOnly,
+      renderVerticalConnections: state.renderVerticalConnections,
+      renderHorizontalConnections: state.renderHorizontalConnections,
     };
   }, [store]);
 
@@ -93,6 +101,13 @@ export function useAutoSave() {
       "cameraState",
       "backgroundColor",
       "panelStates",
+      "renderNodes",
+      "renderFloorSlabs",
+      "renderXCrossSectionSlabs",
+      "renderYCrossSectionSlabs",
+      "showCornersOnly",
+      "renderVerticalConnections",
+      "renderHorizontalConnections",
     ] as const;
 
     stateFields.forEach((field) => {

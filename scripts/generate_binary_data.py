@@ -794,13 +794,13 @@ def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
     return best_scale
 
 
-def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scale, min_x, min_y, min_v, tol=0.5):
+def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scale, min_v, tol=0.5):
     stories = {}
     unmatched_nodes = []
 
     for _, row in df_nodes.iterrows():
-        x = row["H1"] * node_scale - min_x
-        y = row["H2"] * node_scale - min_y
+        x = row["H1"] * node_scale
+        y = row["H2"] * node_scale
         z = row["V"] * node_scale - min_v
         matches = np.where(np.isclose(story_elevations, z, atol=tol))[0]
         if len(matches) == 0:
@@ -842,7 +842,7 @@ def _warn_unmatched_nodes(building_name, unmatched_nodes, story_elevations):
         print(f"      ... and {unmatched_count - len(sample)} more.")
 
 
-def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, index_to_id, min_x, min_y, node_to_inches_scale, xz_tolerance=0.1):
+def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, index_to_id, node_to_inches_scale, xz_tolerance=0.1):
     """
     Compute node-to-below mapping for ISD calculation.
     For each node on each story (except ground), find the node directly below it
@@ -865,8 +865,8 @@ def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, 
         for node_idx in node_indices:
             node_id = index_to_id[node_idx]
             row = df_nodes[df_nodes["Node ID"] == node_id].iloc[0]
-            x = row["H1"] * node_to_inches_scale - min_x
-            y = row["H2"] * node_to_inches_scale - min_y
+            x = row["H1"] * node_to_inches_scale
+            y = row["H2"] * node_to_inches_scale
             # Round to avoid floating point issues
             positions[(round(x, 4), round(y, 4))] = node_idx
         story_positions[story] = positions
@@ -933,7 +933,7 @@ def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, 
     return node_to_below, unmatched_nodes, missing_columns
 
 
-def _compute_cross_sections(df_nodes, id_to_index, node_scale, min_x, min_y, tol=6.0):
+def _compute_cross_sections(df_nodes, id_to_index, node_scale, tol=6.0):
     """
     Group nodes into cross_sections (cross-sections) along the X and Y axes.
     Nodes within `tol` inches of each other are grouped into the same cross_section.
@@ -946,8 +946,8 @@ def _compute_cross_sections(df_nodes, id_to_index, node_scale, min_x, min_y, tol
         idx = id_to_index.get(row["Node ID"])
         if idx is None:
             continue
-        x = row["H1"] * node_scale - min_x
-        y = row["H2"] * node_scale - min_y
+        x = row["H1"] * node_scale
+        y = row["H2"] * node_scale
         x_nodes.append((x, idx))
         y_nodes.append((y, idx))
 
@@ -1013,22 +1013,22 @@ def process_building(building):
     # 1b. Load optional corner positions and hidden floors
     corner_positions = None
     hidden_floors = []
-    
+
     if "corner_positions" in building:
         corner_csv = building["corner_positions"]
         print(f"    Loading corner positions from: {corner_csv}")
         df_corners = pd.read_csv(corner_csv)
-        
+
         corner_positions = {
             "NW": {},
             "NE": {},
             "SW": {},
             "SE": {},
         }
-        
+
         # Check if Story column exists, default to "Ground" if missing
         has_story_col = "Story" in df_corners.columns
-        
+
         for _, row in df_corners.iterrows():
             corner_name = row["Corner"]
             if has_story_col:
@@ -1044,7 +1044,7 @@ def process_building(building):
                     "y": float(row["Y Pos"]),
                 }
         print(f"    Corner positions loaded: {corner_positions}")
-    
+
     if "hidden_floors" in building:
         hidden_floors_csv = building["hidden_floors"]
         print(f"    Loading hidden floors from: {hidden_floors_csv}")
@@ -1094,8 +1094,6 @@ def process_building(building):
             buffer[idx * 3 + 2] = row["V"] * node_to_inches_scale
 
     # Write node positions in inches
-    min_x = df_nodes["H1"].min() * node_to_inches_scale
-    min_y = df_nodes["H2"].min() * node_to_inches_scale
     min_v = df_nodes["V"].min() * node_to_inches_scale
     story_levels = list(storiesElevations.keys())
     story_elevations = story_elevations_array
@@ -1105,8 +1103,6 @@ def process_building(building):
         story_elevations,
         story_levels,
         node_to_inches_scale,
-        min_x,
-        min_y,
         min_v,
     )
     _warn_unmatched_nodes(building_name, unmatched_nodes, story_elevations)
@@ -1118,33 +1114,33 @@ def process_building(building):
     # If corner_positions.csv is provided, use those XY coordinates to find matching nodes
     # Otherwise, fall back to auto-detection using bounding box
     corner_tolerance = 6.0  # inches tolerance for matching XY positions
-    
+
     # Get ordered list of stories (top to bottom as stored in building_height) for hierarchical lookup
     # story_order is built bottom-to-top later, so we need to compute the correct order
     # Use df_height to get the correct bottom-to-top order
     story_order_list = df_height["Story level"].tolist()
     # Reverse to get bottom-to-top (Ground first)
     story_order_list = list(reversed(story_order_list))
-    
+
     def get_corner_xy_for_story(corner_name, target_story):
         """Get corner XY for a target story using hierarchical lookup.
-        
+
         Looks for the target story in corner_positions, if not found,
         falls back to the next story below (closer to Ground) that has positions.
         """
         if not corner_positions:
             return None
-        
+
         corner_specs = corner_positions.get(corner_name, {})
         if not corner_specs:
             return None
-        
+
         # Find the index of target story in the order list
         if target_story not in story_order_list:
             return None
-        
+
         target_idx = story_order_list.index(target_story)
-        
+
         # Search from target story upward (toward ground, lower index)
         # story_order_list is [Ground, 2, 3, ..., Roof, Penthouse, Helipad]
         # So we search from target_idx down to 0 (toward Ground)
@@ -1152,27 +1148,25 @@ def process_building(building):
             story = story_order_list[i]
             if story in corner_specs:
                 return (corner_specs[story]["x"], corner_specs[story]["y"])
-        
+
         return None
-    
+
     for story, node_indices in stories.items():
         # Get all coordinates for nodes at this story
         story_nodes = df_nodes[df_nodes["Node ID"].isin([index_to_id[idx] for idx in node_indices])]
 
-        xs = story_nodes["H1"].values * node_to_inches_scale - min_x
-        ys = story_nodes["H2"].values * node_to_inches_scale - min_y
+        xs = story_nodes["H1"].values * node_to_inches_scale
+        ys = story_nodes["H2"].values * node_to_inches_scale
 
         target_corners = {}
-        
+
         if corner_positions:
             # Try to get custom corner positions for this story (with hierarchical fallback)
-            # CSV coords are absolute, so subtract min_x/min_y to get relative coords
             for corner_name in ["NW", "NE", "SW", "SE"]:
                 xy = get_corner_xy_for_story(corner_name, story)
                 if xy:
-                    # Convert absolute coords to relative coords
-                    target_corners[corner_name] = (xy[0] - min_x, xy[1] - min_y)
-            
+                    target_corners[corner_name] = (xy[0], xy[1])
+
             # If any corner is missing, fall back to auto-detection for those
             if len(target_corners) < 4:
                 # Get bounding box for missing corners
@@ -1235,10 +1229,10 @@ def process_building(building):
     print(f"Story order: {storyOrder}")
 
     # 3b. Compute node-to-below mapping for ISD calculation
-    node_to_below, unmatched_nodes, missing_columns = _compute_node_to_below_mapping(stories, storyOrder, df_nodes, id_to_index, index_to_id, min_x, min_y, node_to_inches_scale, xz_tolerance=0.1)
+    node_to_below, unmatched_nodes, missing_columns = _compute_node_to_below_mapping(stories, storyOrder, df_nodes, id_to_index, index_to_id, node_to_inches_scale, xz_tolerance=0.1)
 
     # 3c. Compute X/Y cross_sections for cross-sections
-    cross_sections_x, cross_sections_y = _compute_cross_sections(df_nodes, id_to_index, node_to_inches_scale, min_x, min_y, tol=6.0)
+    cross_sections_x, cross_sections_y = _compute_cross_sections(df_nodes, id_to_index, node_to_inches_scale, tol=6.0)
 
     # 4. Write building binary file
     # story_heights: per-story height in inches (not cumulative elevation)
@@ -1252,7 +1246,7 @@ def process_building(building):
         "cross_sections_x": cross_sections_x,
         "cross_sections_y": cross_sections_y,
     }
-    
+
     # Add hidden floors if specified
     if hidden_floors:
         header["hidden_floors"] = hidden_floors

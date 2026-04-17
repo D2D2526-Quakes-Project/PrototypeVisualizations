@@ -43,7 +43,7 @@ import { useThresholds } from "@/features/view-3d/contexts/visualization";
 export function FloorDisplacementChart() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { getVisibleStoryOrder } = useFloorVisibility();
+  const { visibleFloors } = useFloorVisibility();
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
   const { thresholds } = useThresholds();
   const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
@@ -60,7 +60,7 @@ export function FloorDisplacementChart() {
     const { displacementLin } = animationData;
     const frameData = displacementLin.atFrame(frameIndex);
 
-    const visibleStories = getVisibleStoryOrder().slice(1);
+    const visibleStories = Array.from(visibleFloors).slice(1);
 
     const storyData: Array<{
       story: string;
@@ -93,7 +93,7 @@ export function FloorDisplacementChart() {
     });
 
     return storyData;
-  }, [animationData, frameIndex, getVisibleStoryOrder]);
+  }, [animationData, frameIndex, visibleFloors]);
 
   const option: EChartsOption = useMemo((): EChartsOption => {
     return {

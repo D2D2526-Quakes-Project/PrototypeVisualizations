@@ -371,8 +371,6 @@ export interface ComputedStats {
   };
 
   // STRUCTURAL
-  /** Height of each story (story id -> height in inches) */
-  storyHeights: Record<string, number>; // "15": 156.0 (inches)
   /** Elevation of each story from ground (story id -> elevation in inches) */
   storyElevations: Record<string, number>; // "15": 7194.0 (inches, cumulative from ground)
 

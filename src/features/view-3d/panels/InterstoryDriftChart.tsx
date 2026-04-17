@@ -123,12 +123,10 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
   const { frameIndex } = usePlayback();
   const { storyHeights } = animationData.metadata;
   const { maxStoryDrift, storyElevations } = animationData.precomputed;
-  const { getVisibleStoryOrder } = useFloorVisibility();
+  const { visibleFloors } = useFloorVisibility();
   const setPanelState = useViewStore((s) => s.setPanelState);
   const chartRef = useRef<ReactECharts>(null);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
-
-  const visibleStoryOrder = useMemo(() => getVisibleStoryOrder(), [getVisibleStoryOrder]);
 
   const panelId = api?.id ?? "interstory-drift-chart";
   const defaultState = getDefaultInterstoryDriftChartPanelState();
@@ -162,13 +160,13 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
 
   // Static configuration that doesn't change with frameIndex
   const yAxisData = useMemo(() => {
-    const yAxisData = visibleStoryOrder.map((storyId) => {
+    const yAxisData = Array.from(visibleFloors).map((storyId) => {
       const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;
       return formatStoryLabel(storyId, elevationIn);
     });
 
     return yAxisData;
-  }, [visibleStoryOrder, storyElevations, storyHeights]);
+  }, [visibleFloors, storyElevations, storyHeights]);
 
   const currentDrifts = useMemo(() => {
     const drifts: Record<string, { NW: number; NE: number; SW: number; SE: number }> = {};
@@ -224,7 +222,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
 
           const storyIdx = params[0].dataIndex;
-          const storyId = visibleStoryOrder[storyIdx];
+          const storyId = Array.from(visibleFloors)[storyIdx];
           const elevationIn = storyElevations[storyId] ?? storyHeights[storyId] ?? 0;
 
           return renderToString(
@@ -280,7 +278,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       },
       animation: false,
     };
-  }, [visibleStoryOrder, yAxisData, storyHeights, storyElevations, currentDrifts, peakStoryDrift]);
+  }, [visibleFloors, yAxisData, storyHeights, storyElevations, currentDrifts, peakStoryDrift]);
 
   // Dynamic parts that change with frameIndex
   const seriesData = useMemo(() => {
@@ -289,7 +287,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       name: `${corner}`,
       type: "bar" as const,
       stack: corner,
-      data: visibleStoryOrder.map((storyId) => {
+      data: Array.from(visibleFloors).map((storyId) => {
         const peak = Math.abs(peakStoryDrift[storyId]?.[corner] || 0);
         const current = currentDrifts[storyId]?.[corner] ?? 0;
         return peak - current;
@@ -311,7 +309,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
       name: corner,
       type: "bar" as const,
       stack: corner,
-      data: visibleStoryOrder.map((storyId) => currentDrifts[storyId]?.[corner] ?? 0),
+      data: Array.from(visibleFloors).map((storyId) => currentDrifts[storyId]?.[corner] ?? 0),
       itemStyle: {
         color: cornerColors[corner],
         borderRadius: [0, 2, 2, 0] as [number, number, number, number],
@@ -332,7 +330,7 @@ export function InterstoryDriftChart({ api }: InterstoryDriftChartProps = {}) {
     }));
 
     return [...currentSeries, ...peakSeries];
-  }, [currentDrifts, visibleStoryOrder, thresholdValue, peakStoryDrift]);
+  }, [currentDrifts, visibleFloors, thresholdValue, peakStoryDrift]);
 
   const xAxisMax = Math.max(maxStoryDrift * 1.15, MIN_X_AXIS_MAX);
 

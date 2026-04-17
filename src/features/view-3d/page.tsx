@@ -1,4 +1,5 @@
 import { DockviewWrapper } from "@/features/view-3d/components/dockviewWrapper";
+import { CrossSectionPanel, CrossSectionTab } from "@/features/view-3d/components/CrossSectionPanel";
 import { FloorPanel, FloorTab } from "@/features/view-3d/components/FloorPanel";
 import { MagicPanel, MagicPanelHeaderActions, MagicPanelTab } from "@/features/view-3d/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/features/view-3d/components/NodePanel";
@@ -21,12 +22,14 @@ const components = {
   nodePanel: NodePanel,
   magicPanel: MagicPanel,
   floorPanel: FloorPanel,
+  crossSectionPanel: CrossSectionPanel,
 };
 
 const tabComponents = {
   nodeTab: NodeTab,
   floorTab: FloorTab,
   magicPanelTab: MagicPanelTab,
+  crossSectionTab: CrossSectionTab,
 };
 
 export function View3d() {
@@ -124,6 +127,18 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
     }
 
     s.setBackgroundColor(initialState.backgroundColor);
+
+    if (initialState.renderNodes !== undefined) s.setRenderNodes(initialState.renderNodes);
+    if (initialState.renderFloorSlabs !== undefined) s.setRenderFloorSlabs(initialState.renderFloorSlabs);
+    if (initialState.renderXCrossSectionSlabs !== undefined)
+      s.setRenderXCrossSectionSlabs(initialState.renderXCrossSectionSlabs);
+    if (initialState.renderYCrossSectionSlabs !== undefined)
+      s.setRenderYCrossSectionSlabs(initialState.renderYCrossSectionSlabs);
+    if (initialState.showCornersOnly !== undefined) s.setShowCornersOnly(initialState.showCornersOnly);
+    if (initialState.renderVerticalConnections !== undefined)
+      s.setRenderVerticalConnections(initialState.renderVerticalConnections);
+    if (initialState.renderHorizontalConnections !== undefined)
+      s.setRenderHorizontalConnections(initialState.renderHorizontalConnections);
 
     if (initialState.layout) {
       s.setDockviewLayout(initialState.layout);

@@ -15,7 +15,7 @@ function clamp01(value: number) {
 }
 
 function formatScaleValue(value: number, unitAbbr: string) {
-  return `${value.toFixed(2)} ${unitAbbr}`;
+  return `${value.toFixed(1)} ${unitAbbr}`;
 }
 
 function LabelBox({ value, underlined = false }: { value: string; underlined?: boolean }) {

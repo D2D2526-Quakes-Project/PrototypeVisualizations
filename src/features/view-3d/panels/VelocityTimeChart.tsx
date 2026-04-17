@@ -83,14 +83,14 @@ function TooltipContent({
           paddingBottom: "4px",
           fontSize: "13px",
         }}>
-        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span> {formatCompactNumber(time, 1)} s
+        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span> {formatCompactNumber(time)} s
       </div>
       {values.map((item) => (
         <div key={item.name} style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color }} />
           <span style={{ color: "#6b7280", fontSize: "10px" }}>{item.name}:</span>
           <span style={{ fontWeight: 500, marginLeft: "auto", fontFamily: "monospace" }}>
-            {formatCompactNumber(item.value, 2)} {item.unit}
+            {formatCompactNumber(item.value)} {item.unit}
           </span>
         </div>
       ))}

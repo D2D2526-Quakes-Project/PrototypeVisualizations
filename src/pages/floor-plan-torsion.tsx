@@ -255,12 +255,12 @@ export function FloorPlanTorsion() {
                 <div
                   className="h-2 rounded border border-neutral-200"
                   style={{ background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)" }}
-                  title={`Torsion rotation color scale from -${formatCompactNumber(maxAbsRotation, 2)} rad to +${formatCompactNumber(maxAbsRotation, 2)} rad`}
+                  title={`Torsion rotation color scale from -${formatCompactNumber(maxAbsRotation)} rad to +${formatCompactNumber(maxAbsRotation)} rad`}
                 />
                 <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-neutral-500">
-                  <span>{formatSigned(-maxAbsRotation, 2)}</span>
+                  <span>{formatSigned(-maxAbsRotation)}</span>
                   <span>0</span>
-                  <span>{formatCompactNumber(maxAbsRotation, 2)}</span>
+                  <span>{formatCompactNumber(maxAbsRotation)}</span>
                 </div>
                 <div className="mt-1 text-[10px] text-neutral-500">
                   Previews include X/Y plan axes in inches (in). 3D panes are labeled by viewing plane.
@@ -274,7 +274,7 @@ export function FloorPlanTorsion() {
                 {torsionRows.toReversed().map((row) => {
                   const normalized = Math.max(-1, Math.min(1, row.rotationRad / maxAbsRotation));
                   const fill = formatHex(torsionColorScale((normalized + 1) / 2)) ?? "#f8fafc";
-                  const tooltip = `Story ${row.storyId}\nRotation: ${formatCompactNumber(row.rotationRad, 2)} rad\nNodes: ${row.nodeCount}`;
+                  const tooltip = `Story ${row.storyId}\nRotation: ${formatCompactNumber(row.rotationRad)} rad\nNodes: ${row.nodeCount}`;
 
                   return (
                     <div key={row.storyId} className="rounded border border-neutral-200 bg-white p-2" title={tooltip}>
@@ -285,12 +285,10 @@ export function FloorPlanTorsion() {
                         </div>
                         <div className="grid shrink-0 grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
                           <span className="text-neutral-500">Rotation (rad)</span>
-                          <span className="text-right font-mono text-neutral-800">
-                            {formatSigned(row.rotationRad, 2)}
-                          </span>
+                          <span className="text-right font-mono text-neutral-800">{formatSigned(row.rotationRad)}</span>
                           <span className="text-neutral-500">|Rotation|</span>
                           <span className="text-right font-mono text-neutral-700">
-                            {formatCompactNumber(Math.abs(row.rotationRad), 2)} rad
+                            {formatCompactNumber(Math.abs(row.rotationRad))} rad
                           </span>
                         </div>
                       </div>

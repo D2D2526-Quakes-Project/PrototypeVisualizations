@@ -1,14 +1,6 @@
 import { Slider } from "@/components/ui/slider";
 import { useViewStore } from "@/state";
-import {
-  BlendIcon,
-  ChevronsLeftRightEllipsisIcon,
-  Circle,
-  Layers,
-  MoveHorizontal,
-  MoveVertical,
-  Sliders,
-} from "lucide-react";
+import { BlendIcon, ChevronsLeftRightEllipsisIcon, Circle, Layers, MoveHorizontal, Sliders } from "lucide-react";
 
 export function NodeDisplayPanel() {
   const nodeScale = useViewStore((s) => s.nodeScale);

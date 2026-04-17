@@ -38,7 +38,6 @@ import {
   type OptionalDatasetKey,
 } from "@/lib/loadingTypes";
 import type { BinaryBuilding, BinarySimulation, BuildingAnimationData, Simulation } from "@/lib/types";
-import { useViewStoreRaw } from "@/state";
 import { CheckIcon, ChevronRightIcon, LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -175,7 +174,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS
   );
   const initializedRef = useRef(false);
-  const viewStore = useViewStoreRaw();
   const sessionIdRef = useRef(0);
   const workerRef = useRef<Worker | null>(null);
   const workerQueueRef = useRef(Promise.resolve());
@@ -506,7 +504,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
         const built = rebuildAnimationDataFromSerializedCore(serialized);
         setAnimationData(built);
-        viewStore.getState().setThresholdsFromPrecomputed(built.precomputed);
         setStartupReady(true);
 
         OPTIONAL_DATASET_KEYS.forEach((key) => {
@@ -537,7 +534,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         });
       }
     },
-    [loadOptionalDataset, loadRequiredCore, updateDatasetState, viewStore]
+    [loadOptionalDataset, loadRequiredCore, updateDatasetState]
   );
 
   const loadSelection = useCallback(

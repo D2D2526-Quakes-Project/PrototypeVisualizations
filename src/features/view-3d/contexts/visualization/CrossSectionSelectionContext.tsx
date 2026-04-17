@@ -9,7 +9,7 @@ export interface CrossSection extends CrossSectionSelectionState {
 }
 
 interface CrossSectionDockContextType {
-  openCrossSectionPanel: (storyId: string) => void;
+  openCrossSectionPanel: (crossSection: CrossSection) => void;
 }
 
 export const CrossSectionDockContext = createContext<CrossSectionDockContextType | undefined>(undefined);
@@ -29,7 +29,7 @@ interface CrossSectionSelectionContextType {
   deselectCrossSection: () => void;
   setHovered: (crossSection: CrossSection | null) => void;
   setDockviewApi: (api: DockviewApi) => void;
-  openCrossSectionPanel: (storyId: string) => void;
+  openCrossSectionPanel: (crossSection: CrossSection) => void;
 }
 
 const CrossSectionSelectionContext = createContext<CrossSectionSelectionContextType | undefined>(undefined);
@@ -74,10 +74,40 @@ export function CrossSectionSelectionProvider({ children }: { children: ReactNod
     [store]
   );
 
-  const openCrossSectionPanel = useCallback((storyId: string) => {
+  const openCrossSectionPanel = useCallback((crossSection: CrossSection) => {
     if (!dockviewApiRef) return;
 
-    const panelId = `crossSection-panel-${storyId}`;
+    const isFloor = crossSection.type === "Z";
+    const isXSection = crossSection.type === "X";
+    const isYSection = crossSection.type === "Y";
+
+    if (!isFloor && !isXSection && !isYSection) return;
+
+    let panelId: string;
+    let panelTitle: string;
+    let component: string;
+    let tabComponent: string;
+    let params: { storyId?: string; crossSectionType?: "X" | "Y"; position?: number; nodeIds?: number[] };
+
+    if (isFloor) {
+      panelId = `crossSection-panel-${crossSection.storyId}`;
+      panelTitle = `Floor ${crossSection.storyId}`;
+      component = "floorPanel";
+      tabComponent = "floorTab";
+      params = { storyId: crossSection.storyId };
+    } else {
+      const pos = Number(crossSection.value);
+      panelId = `crossSection-panel-${crossSection.type}-${pos}`;
+      panelTitle = `${crossSection.type} Section ${pos}`;
+      component = "crossSectionPanel";
+      tabComponent = "crossSectionTab";
+      params = {
+        crossSectionType: crossSection.type as "X" | "Y",
+        position: pos,
+        nodeIds: crossSection.nodeIds,
+      };
+    }
+
     const existingPanel = dockviewApiRef.getPanel(panelId);
 
     if (existingPanel) {
@@ -87,10 +117,10 @@ export function CrossSectionSelectionProvider({ children }: { children: ReactNod
 
     dockviewApiRef.addPanel({
       id: panelId,
-      component: "floorPanel",
-      tabComponent: "floorTab",
-      title: `Floor ${storyId}`,
-      params: { storyId },
+      component,
+      tabComponent,
+      title: panelTitle,
+      params,
       maximumWidth: 300,
       position: { direction: "right" },
     });
@@ -99,8 +129,12 @@ export function CrossSectionSelectionProvider({ children }: { children: ReactNod
   const selectCrossSection = useCallback(
     (crossSection: CrossSection) => {
       selectCrossSectionStore(crossSection);
-      if (crossSection.type === "Z" && crossSection.storyId) {
-        openCrossSectionPanel(crossSection.storyId);
+      if (
+        (crossSection.type === "Z" && crossSection.storyId) ||
+        crossSection.type === "X" ||
+        crossSection.type === "Y"
+      ) {
+        openCrossSectionPanel(crossSection);
       }
     },
     [openCrossSectionPanel, selectCrossSectionStore]

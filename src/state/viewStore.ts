@@ -1,8 +1,6 @@
+import type { CameraState, PanelState } from "@/features/view-3d/lib/statePersistence";
 import type { Metric, MetricPaletteKey, MetricPaletteOverrides, ThresholdKey } from "@/lib/metrics";
-import type { ComputedStats } from "@/lib/types";
-import type { PanelState } from "@/features/view-3d/lib/statePersistence";
 import type { SerializedDockview } from "dockview";
-import type { CameraState } from "@/features/view-3d/lib/statePersistence";
 import { createStore } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
@@ -14,13 +12,13 @@ function isStateDebugEnabled(): boolean {
 export type ThresholdState = Record<ThresholdKey, number>;
 
 export const DEFAULT_THRESHOLDS: ThresholdState = {
-  displacement: 0.1,
-  velocity: 1,
-  acceleration: 2,
+  displacement: 30,
+  velocity: 10,
+  acceleration: 10,
   rotation: 0.01,
   rotationVelocity: 0.1,
   rotationAcceleration: 0.5,
-  interstoryDrift: 0.5,
+  interstoryDrift: 2,
   inf: 0,
 };
 
@@ -113,7 +111,6 @@ export interface ViewState {
   defaultThresholds: ThresholdState;
   setThreshold: (type: ThresholdKey, value: number) => void;
   resetThresholds: () => void;
-  setThresholdsFromPrecomputed: (precomputed: ComputedStats) => void;
 
   // Color
   currentMetric: Metric;
@@ -286,24 +283,6 @@ export const createViewStore = () =>
         set((state) => ({
           thresholds: { ...state.defaultThresholds },
         })),
-      setThresholdsFromPrecomputed: (precomputed) =>
-        set((state) => {
-          const nextDefaults: ThresholdState = {
-            ...state.defaultThresholds,
-            displacement: precomputed.maxDisplacement / 4,
-            velocity: (precomputed.maxVelocity ?? 10) / 4,
-            acceleration: (precomputed.maxAcceleration ?? 20) / 4,
-            rotation: (precomputed.maxRotation ?? 0.05) / 4,
-            rotationVelocity: (precomputed.maxRotationVelocity ?? 0.5) / 4,
-            rotationAcceleration: (precomputed.maxRotationAcceleration ?? 2) / 4,
-            interstoryDrift: precomputed.maxStoryDrift / 4,
-          };
-
-          return {
-            defaultThresholds: nextDefaults,
-            thresholds: nextDefaults,
-          };
-        }),
 
       // Color
       currentMetric: "interstoryDrift",

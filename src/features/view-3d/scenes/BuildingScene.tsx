@@ -1,12 +1,13 @@
-import { getNodeColor as getNodePanelColor } from "@/features/view-3d/components/NodePanel";
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { FloorSlabsRenderer } from "@/features/view-3d/components/renderers/FloorSlabsRenderer";
-import { HorizontalConnectionsRenderer } from "@/features/view-3d/components/renderers/HorizontalConnectionsRenderer";
-import { VerticalConnectionsRenderer } from "@/features/view-3d/components/renderers/VerticalConnectionsRenderer";
+import { FloorTickMarks } from "@/features/view-3d/components/FloorTickMarks";
+import { getNodeColor as getNodePanelColor } from "@/features/view-3d/components/NodePanel";
 import {
   XCrossSectionSlabsRenderer,
   YCrossSectionSlabsRenderer,
 } from "@/features/view-3d/components/renderers/CrossSectionSlabsRenderer";
+import { FloorSlabsRenderer } from "@/features/view-3d/components/renderers/FloorSlabsRenderer";
+import { HorizontalConnectionsRenderer } from "@/features/view-3d/components/renderers/HorizontalConnectionsRenderer";
+import { VerticalConnectionsRenderer } from "@/features/view-3d/components/renderers/VerticalConnectionsRenderer";
 import { useCamera } from "@/features/view-3d/contexts/CameraContext";
 import { useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
 import {
@@ -18,10 +19,10 @@ import {
   useThresholds,
   useViewMode,
 } from "@/features/view-3d/contexts/visualization";
-import { useAnimationData } from "@/lib/useAnimationData";
-import { getMetricConfig } from "@/lib/metrics";
-import { UNIT_SCALE } from "@/lib/utils";
 import { useNodeInteractionMode, useSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
+import { getMetricConfig } from "@/lib/metrics";
+import { useAnimationData } from "@/lib/useAnimationData";
+import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
 import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
@@ -50,7 +51,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { setHovered: setHoveredCrossSection, deselectCrossSection } = useCrossSectionSelection();
   const { camera } = useThree();
   const { setEnablePan } = useCamera();
-  const { getVisibleStoryOrder } = useFloorVisibility();
+  const { visibleFloors } = useFloorVisibility();
   const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
   const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
   const startBoxSelection = useViewStore((s) => s.startBoxSelection);
@@ -127,15 +128,12 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
   // Filter by floor visibility
   const visibleNodes = useMemo(() => {
-    const visibleStoryOrder = getVisibleStoryOrder();
-    const visibleStorySet = new Set(visibleStoryOrder);
-
     return visibleNodesBasedOnMode.filter((nodeId) => {
       if (hiddenNodeIdSet.has(nodeId)) {
         return false;
       }
       // Check which floor this node belongs to
-      for (const storyId of visibleStorySet) {
+      for (const storyId of visibleFloors) {
         const storyNodes = animationData.metadata.stories[storyId];
         if (storyNodes && storyNodes.includes(nodeId)) {
           return true;
@@ -145,8 +143,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       // But for nodes not in any story (like corner nodes), show them
       return false;
     });
-  }, [visibleNodesBasedOnMode, getVisibleStoryOrder, animationData.metadata.stories, hiddenNodeIdSet]);
-  const visibleStoriesKey = useMemo(() => getVisibleStoryOrder().join("|"), [getVisibleStoryOrder]);
+  }, [visibleNodesBasedOnMode, visibleFloors, animationData.metadata.stories, hiddenNodeIdSet]);
+  const visibleStoriesKey = useMemo(() => Array.from(visibleFloors).join("|"), [visibleFloors]);
   const interactiveSceneKey = useMemo(
     () =>
       `${renderNodes}:${renderFloorSlabs}:${renderXCrossSectionSlabs}:${renderYCrossSectionSlabs}:${showCornersOnly}:${visibleStoriesKey}:${visibleNodes.length}`,
@@ -613,6 +611,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       </group>
 
       <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 20]} />
+
+      <FloorTickMarks />
 
       {/* Direction indicators */}
       <Text position={[0, 116, 0]} fontSize={32} color="#fff" anchorX="center" anchorY="middle">

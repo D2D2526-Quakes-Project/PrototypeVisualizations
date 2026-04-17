@@ -1,7 +1,17 @@
 import { useViewStore } from "@/state";
-import { Columns2Icon, LayersIcon, MaximizeIcon, Rows2Icon, Share2Icon } from "lucide-react";
+import { useAnimationData } from "@/lib/useAnimationData";
+import {
+  Columns2Icon,
+  LayersIcon,
+  MaximizeIcon,
+  MoveHorizontalIcon,
+  MoveVerticalIcon,
+  Rows2Icon,
+  Share2Icon,
+} from "lucide-react";
 
 export function ViewModeSelect() {
+  const { animationData } = useAnimationData();
   const renderNodes = useViewStore((s) => s.renderNodes);
   const setRenderNodes = useViewStore((s) => s.setRenderNodes);
   const renderFloorSlabs = useViewStore((s) => s.renderFloorSlabs);
@@ -12,6 +22,12 @@ export function ViewModeSelect() {
   const setRenderYCrossSectionSlabs = useViewStore((s) => s.setRenderYCrossSectionSlabs);
   const showCornersOnly = useViewStore((s) => s.showCornersOnly);
   const setShowCornersOnly = useViewStore((s) => s.setShowCornersOnly);
+  const renderVerticalConnections = useViewStore((s) => s.renderVerticalConnections);
+  const setRenderVerticalConnections = useViewStore((s) => s.setRenderVerticalConnections);
+  const renderHorizontalConnections = useViewStore((s) => s.renderHorizontalConnections);
+  const setRenderHorizontalConnections = useViewStore((s) => s.setRenderHorizontalConnections);
+
+  const hasBeamData = Boolean(animationData?.beamData);
 
   const options = [
     {
@@ -44,14 +60,28 @@ export function ViewModeSelect() {
       setter: setShowCornersOnly,
       icon: MaximizeIcon,
     },
+    {
+      label: "Vert",
+      value: renderVerticalConnections,
+      setter: setRenderVerticalConnections,
+      icon: MoveVerticalIcon,
+    },
+    {
+      label: "Horiz",
+      value: renderHorizontalConnections,
+      setter: setRenderHorizontalConnections,
+      icon: MoveHorizontalIcon,
+      disabled: !hasBeamData,
+      disabledReason: "Beam data not loaded",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-5 gap-2 p-1">
-      {options.map(({ label, value, setter, icon: Icon }) => (
-        <button className="" key={label} onClick={() => setter(!value)}>
+    <div className="gap-y- grid grid-cols-4 justify-items-center gap-x-2">
+      {options.map(({ label, value, setter, icon: Icon, disabled }) => (
+        <button className="" key={label} onClick={() => !disabled && setter(!value)} disabled={disabled}>
           <div
-            className={`relative flex flex-col items-center justify-center gap-2 rounded border p-2 text-center transition-colors ${value ? "border-blue-400 text-blue-400" : "border-border text-muted-foreground hover:border-border/80"}`}>
+            className={`relative flex w-fit flex-col items-center justify-center gap-2 rounded border p-2 px-3 text-center transition-colors ${value ? "border-blue-400 text-blue-400" : disabled ? "border-border cursor-not-allowed text-neutral-300" : "border-border text-muted-foreground hover:border-border/80"}`}>
             <Icon className="size-4" />
             <span
               className={`bg-background absolute -right-[7px] -bottom-[7px] flex h-4 w-4 items-center justify-center rounded-[4px] border-[1.5px] transition-colors ${value ? "border-blue-400 bg-blue-400" : "border-border"} `}>
@@ -68,7 +98,7 @@ export function ViewModeSelect() {
               )}
             </span>
           </div>
-          <span className="text-[11px] leading-tight">{label}</span>
+          <span className={`text-[11px] leading-tight ${disabled ? "text-neutral-300" : ""}`}>{label}</span>
         </button>
       ))}
     </div>

@@ -1,6 +1,8 @@
 import { getNodeColor as getNodePanelColor } from "@/features/view-3d/components/NodePanel";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { FloorSlabsRenderer } from "@/features/view-3d/components/renderers/FloorSlabsRenderer";
+import { HorizontalConnectionsRenderer } from "@/features/view-3d/components/renderers/HorizontalConnectionsRenderer";
+import { VerticalConnectionsRenderer } from "@/features/view-3d/components/renderers/VerticalConnectionsRenderer";
 import {
   XCrossSectionSlabsRenderer,
   YCrossSectionSlabsRenderer,
@@ -63,12 +65,16 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const renderXCrossSectionSlabs = useViewStore((s) => s.renderXCrossSectionSlabs);
   const renderYCrossSectionSlabs = useViewStore((s) => s.renderYCrossSectionSlabs);
   const showCornersOnly = useViewStore((s) => s.showCornersOnly);
+  const renderVerticalConnections = useViewStore((s) => s.renderVerticalConnections);
+  const renderHorizontalConnections = useViewStore((s) => s.renderHorizontalConnections);
   const nodeInteractionEnabled = useNodeInteractionMode();
   const slabInteractionEnabled = useSlabInteractionMode();
   const nodeScale = useViewStore((s) => s.nodeScale);
   const nodeOpacity = useViewStore((s) => s.nodeOpacity);
   const floorOpacity = useViewStore((s) => s.floorOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
+  const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
+  const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
   const hiddenNodeIdSet = useMemo(() => new Set(hiddenNodeIds), [hiddenNodeIds]);
 
@@ -536,6 +542,28 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
               nodeIds={visibleNodes}
               cornersOnly={showCornersOnly}
             />
+          )}
+
+          {renderVerticalConnections && (
+            <VerticalConnectionsRenderer
+              key={`vertical-${interactiveSceneKey}`}
+              nodeIds={visibleNodes}
+              lineWidth={connectionLineWidth}
+              lineOpacity={connectionLineOpacity}
+            />
+          )}
+
+          {renderHorizontalConnections && (
+            <HorizontalConnectionsRenderer
+              key={`horizontal-${interactiveSceneKey}`}
+              nodeIds={visibleNodes}
+              lineWidth={connectionLineWidth}
+              lineOpacity={connectionLineOpacity}
+            />
+          )}
+
+          {renderHorizontalConnections && (
+            <HorizontalConnectionsRenderer key={`horizontal-${interactiveSceneKey}`} nodeIds={visibleNodes} />
           )}
 
           {renderNodes && (

@@ -4,17 +4,17 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import * as THREE from "three";
 
-interface VerticalConnectionsRendererProps {
+interface HorizontalConnectionsRendererProps {
   nodeIds: number[];
   lineWidth?: number;
   lineOpacity?: number;
 }
 
-export function VerticalConnectionsRenderer({
+export function HorizontalConnectionsRenderer({
   nodeIds,
   lineWidth = 2,
   lineOpacity = 0.6,
-}: VerticalConnectionsRendererProps) {
+}: HorizontalConnectionsRendererProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getExpandedPosition } = useExpandedScale();
@@ -30,33 +30,24 @@ export function VerticalConnectionsRenderer({
   );
 
   const connections = useMemo(() => {
-    const nodePositions = new Map<string, number[]>();
-
-    nodeIds.forEach((nodeId) => {
-      const pos = animationData.initialPositions.at(nodeId);
-      const key = `${pos[0].toFixed(2)},${pos[1].toFixed(2)}`;
-      if (!nodePositions.has(key)) {
-        nodePositions.set(key, []);
-      }
-      nodePositions.get(key)!.push(nodeId);
-    });
+    const beamData = animationData.beamData;
+    if (!beamData) return [];
 
     const result: Array<{ nodeA: number; nodeB: number }> = [];
+    const nodeIdSet = new Set(nodeIds);
 
-    nodePositions.forEach((ids) => {
-      const sorted = ids.sort((a, b) => {
-        const posA = animationData.initialPositions.at(a);
-        const posB = animationData.initialPositions.at(b);
-        return posA[2] - posB[2];
-      });
+    for (let i = 0; i < beamData.count; i++) {
+      const row = beamData.getRow(i);
+      const iNode = row.iNodeIndex;
+      const jNode = row.jNodeIndex;
 
-      for (let i = 0; i < sorted.length - 1; i++) {
-        result.push({ nodeA: sorted[i], nodeB: sorted[i + 1] });
+      if (iNode >= 0 && jNode >= 0 && nodeIdSet.has(iNode) && nodeIdSet.has(jNode)) {
+        result.push({ nodeA: iNode, nodeB: jNode });
       }
-    });
+    }
 
     return result;
-  }, [nodeIds, animationData]);
+  }, [nodeIds, animationData.beamData]);
 
   return (
     <group>

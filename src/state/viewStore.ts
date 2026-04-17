@@ -482,7 +482,7 @@ export const createViewStore = () =>
 
       nodeScale: 1,
       nodeOpacity: 1,
-      belowThresholdNodeScale: 0.3,
+      belowThresholdNodeScale: 0.5,
       belowThresholdNodeOpacity: 0.2,
       floorOpacity: 0.2,
       connectionLineWidth: 2,

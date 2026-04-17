@@ -366,6 +366,7 @@ export interface ComputedStats {
   boundingBox: {
     min: [number, number, number];
     max: [number, number, number];
+    span: [number, number, number];
     center: [number, number, number];
     radius: number; // Radius of bounding sphere (for camera zoom)
   };

@@ -560,10 +560,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
             />
           )}
 
-          {renderHorizontalConnections && (
-            <HorizontalConnectionsRenderer key={`horizontal-${interactiveSceneKey}`} nodeIds={visibleNodes} />
-          )}
-
           {renderNodes && (
             <instancedMesh
               key={`nodes-${interactiveSceneKey}`}

@@ -1,7 +1,7 @@
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFloorVisibility } from "../contexts/visualization";
 
@@ -96,16 +96,16 @@ export function FloorTickMarks() {
     () =>
       zPositions.map((zPos) => {
         return (
-          <>
-            <mesh key={`z1-${zPos}`} position={[-offset[1], offset[0], zPos]} rotation={[0, Math.PI / 2, Math.PI / 2]}>
+          <React.Fragment key={`z-${zPos}`}>
+            <mesh position={[-offset[1], offset[0], zPos]} rotation={[0, Math.PI / 2, Math.PI / 2]}>
               <planeGeometry args={[TICK_LENGTH, TICK_THICKNESS]} />
               <meshBasicMaterial color={TICK_COLOR} side={THREE.DoubleSide} />
             </mesh>
-            <mesh key={`z2-${zPos}`} position={[offset[1], -offset[0], zPos]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[offset[1], -offset[0], zPos]} rotation={[Math.PI / 2, 0, 0]}>
               <planeGeometry args={[TICK_LENGTH, TICK_THICKNESS]} />
               <meshBasicMaterial color={TICK_COLOR} side={THREE.DoubleSide} />
             </mesh>
-          </>
+          </React.Fragment>
         );
       }),
     [zPositions, offset]

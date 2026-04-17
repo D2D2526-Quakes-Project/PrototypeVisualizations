@@ -435,8 +435,12 @@ function serializeRequiredComputedStats(
   const numCrossSectionsX = Object.keys(metadata.crossSectionsX).length;
   const numCrossSectionsY = Object.keys(metadata.crossSectionsY).length;
 
+  const spanX = maxX - minX;
+  const spanY = maxY - minY;
+  const spanZ = maxZ - minZ;
+
   return {
-    boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius },
+    boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius, span: [spanX, spanY, spanZ] },
     storyElevations,
     maxDisplacement: getMaxMag(dispLin),
     maxDisplacementX,

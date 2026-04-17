@@ -1,12 +1,13 @@
-import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useAnimationData } from "@/lib/useAnimationData";
-import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
-import { useMemo } from "react";
-import { MiniTimeSeries } from "./MiniTimeSeries";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { usePlayback } from "@/features/playback/PlaybackContext";
 import { getMetricKeyColor } from "@/lib/metrics";
+import { useAnimationData } from "@/lib/useAnimationData";
 import { useViewStore } from "@/state";
+import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { ChartNoAxesCombinedIcon, XIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CrossSectionVisualization } from "./CrossSectionVisualization";
+import { MiniTimeSeries } from "./MiniTimeSeries";
 
 interface CrossSectionParams {
   crossSectionType: "X" | "Y";
@@ -435,22 +436,44 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
     return { times, xValues, yValues, zValues, peakTimes };
   }, [nodeIds, animationData]);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState(300);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width } = containerRef.current.getBoundingClientRect();
+        setDimensions(width);
+      }
+    };
+
+    updateDimensions();
+    const observer = new ResizeObserver(updateDimensions);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3">
+      <div className="flex-1 space-y-2 overflow-y-auto p-3 text-xs">
+        {/* 3D VISUALIZATION */}
+        <div className="animate-fade-in w-full" ref={containerRef}>
+          <CrossSectionVisualization nodeIds={nodeIds} crossSectionType={crossSectionType} width={dimensions} />
+        </div>
+
         {/* LOCATION INFO */}
-        <div className="animate-fade-in">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="font-medium text-neutral-700">{crossSectionType} Position:</span>
-              <div className="text-neutral-600">
-                <UnitTooltip value={position} unit="in" decimals={1} />
-              </div>
+        <div className="animate-fade-in grid grid-cols-2 gap-2">
+          <div>
+            <span className="font-medium text-neutral-700">{crossSectionType} Position:</span>
+            <div className="text-neutral-600">
+              <UnitTooltip value={position} unit="in" decimals={1} />
             </div>
-            <div>
-              <span className="font-medium text-neutral-700">Nodes:</span>
-              <div className="text-neutral-600">{nodeIds.length}</div>
-            </div>
+          </div>
+          <div>
+            <span className="font-medium text-neutral-700">Nodes:</span>
+            <div className="text-neutral-600">{nodeIds.length}</div>
           </div>
         </div>
 

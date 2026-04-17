@@ -81,29 +81,27 @@ export function useColor(): ColorContextType {
       const normalizedValue = Math.min(1, Math.max(0, Math.abs(value / maxValue)));
       const normalizedThreshold = Math.min(1, Math.max(0, thresholdValue / maxValue));
 
-      let rgbColor: [number, number, number];
+      // if (normalizedValue === 0) {
+      //   rgbColor = [1, 1, 1];
+      // } else {
+      let t: number = normalizedValue;
+      let interpolator: (t: number) => FindColorByMode<"oklab">;
 
-      if (normalizedValue === 0) {
-        rgbColor = [1, 1, 1];
-      } else {
-        let t: number = normalizedValue;
-        let interpolator: (t: number) => FindColorByMode<"oklab">;
+      if (negative) interpolator = negativeInterpolator;
+      else interpolator = positiveInterpolator;
 
-        if (negative) interpolator = negativeInterpolator;
-        else interpolator = positiveInterpolator;
-
-        if (thresholdHighlighting) {
-          if (normalizedValue < normalizedThreshold) {
-            t = normalizedValue / normalizedThreshold;
-          } else {
-            t = (normalizedValue - normalizedThreshold) / (1 - normalizedThreshold);
-            if (negative) interpolator = negativeThresholdInterpolator;
-            else interpolator = positiveThresholdInterpolator;
-          }
+      if (thresholdHighlighting) {
+        if (normalizedValue < normalizedThreshold) {
+          t = normalizedValue / normalizedThreshold;
+        } else {
+          t = (normalizedValue - normalizedThreshold) / (1 - normalizedThreshold);
+          if (negative) interpolator = negativeThresholdInterpolator;
+          else interpolator = positiveThresholdInterpolator;
         }
-
-        rgbColor = interpolateColor(interpolator, t);
       }
+
+      const rgbColor: [number, number, number] = interpolateColor(interpolator, t);
+      // }
 
       return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);
     },

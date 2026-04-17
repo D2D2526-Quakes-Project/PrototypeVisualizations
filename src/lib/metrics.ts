@@ -1,5 +1,6 @@
 import type { BuildingAnimationData, ComputedStats } from "@/lib/types";
 import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
+import { MATPLOTLIB_PALETTES, type MatplotlibPaletteKey } from "./colors/matplotlibColors";
 
 export type Metric =
   | "displacementX"
@@ -49,7 +50,7 @@ export interface ColorScale {
   unit: string;
 }
 
-export type MetricPaletteKey = TailwindPaletteKey | "spectrum";
+export type MetricPaletteKey = TailwindPaletteKey | "spectrum" | MatplotlibPaletteKey;
 
 export interface MetricPaletteDefinition {
   label: string;
@@ -491,6 +492,51 @@ export const METRIC_PALETTES: Record<MetricPaletteKey, MetricPaletteDefinition> 
     negativeColorStops: [TAILWIND_PALETTES.purple[50], TAILWIND_PALETTES.purple[400]],
     negativeThresholdColorStops: [TAILWIND_PALETTES.purple[600], TAILWIND_PALETTES.purple[900]],
     keyColor: TAILWIND_PALETTES.purple[500],
+  },
+  viridis: {
+    label: "Viridis",
+    paletteKey: "viridis",
+    positiveColorStops: MATPLOTLIB_PALETTES.viridis,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.viridis,
+    negativeColorStops: MATPLOTLIB_PALETTES.viridis,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.viridis,
+    keyColor: MATPLOTLIB_PALETTES.viridis[2],
+  },
+  plasma: {
+    label: "Plasma",
+    paletteKey: "plasma",
+    positiveColorStops: MATPLOTLIB_PALETTES.plasma,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.plasma,
+    negativeColorStops: MATPLOTLIB_PALETTES.plasma,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.plasma,
+    keyColor: MATPLOTLIB_PALETTES.plasma[2],
+  },
+  inferno: {
+    label: "Inferno",
+    paletteKey: "inferno",
+    positiveColorStops: MATPLOTLIB_PALETTES.inferno,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.inferno,
+    negativeColorStops: MATPLOTLIB_PALETTES.inferno,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.inferno,
+    keyColor: MATPLOTLIB_PALETTES.inferno[2],
+  },
+  magma: {
+    label: "Magma",
+    paletteKey: "magma",
+    positiveColorStops: MATPLOTLIB_PALETTES.magma,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.magma,
+    negativeColorStops: MATPLOTLIB_PALETTES.magma,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.magma,
+    keyColor: MATPLOTLIB_PALETTES.magma[2],
+  },
+  cividis: {
+    label: "Cividis",
+    paletteKey: "cividis",
+    positiveColorStops: MATPLOTLIB_PALETTES.cividis,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.cividis,
+    negativeColorStops: MATPLOTLIB_PALETTES.cividis,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.cividis,
+    keyColor: MATPLOTLIB_PALETTES.cividis[2],
   },
   spectrum: {
     label: "Spectrum",

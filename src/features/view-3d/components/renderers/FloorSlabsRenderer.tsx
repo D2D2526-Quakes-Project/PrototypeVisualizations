@@ -1,32 +1,10 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useExpandedScale } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { converter, formatHex, interpolate } from "culori";
 import Delaunay from "delaunator";
 import { useMemo } from "react";
 import * as THREE from "three";
 import { useCrossSectionSelection } from "../../contexts/visualization/CrossSectionSelectionContext";
-
-const blue900 = formatHex("oklch(37.9% 0.146 265.522)")!;
-const blue600 = formatHex("oklch(54.6% 0.245 262.881)")!;
-const blue400 = formatHex("oklch(70.7% 0.165 254.624)")!;
-const white = formatHex("#fff")!;
-const red400 = formatHex("oklch(70.4% 0.191 22.216)")!;
-const red600 = formatHex("oklch(57.7% 0.245 27.325)")!;
-const red900 = formatHex("oklch(39.6% 0.141 25.723)")!;
-const driftColorMap = interpolate(
-  [
-    [blue900, -1],
-    [blue600, -0.51],
-    [blue400, -0.5],
-    [white, 0],
-    [red400, 0.5],
-    [red600, 0.51],
-    [red900, 1],
-  ],
-  "oklab"
-);
-const rgbConverter = converter("rgb");
 
 interface FloorSlabsRendererProps {
   nodeIds: number[];
@@ -150,14 +128,8 @@ function FloorSlab({
         );
         const position = new THREE.Vector3(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
 
-        const drift = animationData.storyDrift.get(frameIndex, nodeId);
-        const peak = animationData.precomputed.peakStoryDrift[nodeId];
-        const ratio = drift / (peak || 0.0001);
-        const colorHex = formatHex(driftColorMap(ratio));
-        const rgb = rgbConverter(colorHex);
-        const color = rgb ? new THREE.Color(rgb.r, rgb.g, rgb.b) : new THREE.Color(1, 1, 1);
-
-        cornerData.push({ corner, position, color });
+        const nodeColor = getNodeColor(nodeId, frameIndex);
+        cornerData.push({ corner, position, color: nodeColor });
       });
 
       if (cornerData.length < 4) {

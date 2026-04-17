@@ -130,7 +130,7 @@ export function ShortcutsBar(ctx: ShortcutContext) {
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.15 }}
           className="flex w-full flex-col gap-1 p-1">
-          <div className="flex min-h-[10px] flex-nowrap items-center gap-0.5 overflow-hidden">
+          <div className="flex min-h-2.5 flex-nowrap items-center gap-0.5 overflow-hidden">
             <Keyboard size={10} className="mr-0.5 shrink-0 text-neutral-500" />
             {activeMode.shortcuts.map((s, i) => (
               <span key={`${activeMode.id}-${i}`} className="flex shrink-0 items-center gap-0.5">
@@ -143,7 +143,7 @@ export function ShortcutsBar(ctx: ShortcutContext) {
               </span>
             ))}
           </div>
-          <div className="flex min-h-[10px] flex-nowrap items-center gap-0.5 overflow-hidden">
+          <div className="flex min-h-2.5 flex-nowrap items-center gap-0.5 overflow-hidden">
             <Mouse size={10} className="mr-0.5 shrink-0 text-neutral-500" />
             {mouseShortcuts.map((s, i) => (
               <span key={`mouse-${i}`} className="flex shrink-0 items-center gap-0.5">

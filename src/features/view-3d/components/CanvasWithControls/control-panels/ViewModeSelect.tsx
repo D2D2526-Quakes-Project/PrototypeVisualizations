@@ -84,7 +84,7 @@ export function ViewModeSelect() {
             className={`relative flex w-fit flex-col items-center justify-center gap-2 rounded border p-2 px-3 text-center transition-colors ${value ? "border-blue-400 text-blue-400" : disabled ? "border-border cursor-not-allowed text-neutral-300" : "border-border text-muted-foreground hover:border-border/80"}`}>
             <Icon className="size-4" />
             <span
-              className={`bg-background absolute -right-[7px] -bottom-[7px] flex h-4 w-4 items-center justify-center rounded-[4px] border-[1.5px] transition-colors ${value ? "border-blue-400 bg-blue-400" : "border-border"} `}>
+              className={`bg-background absolute -right-1.75 -bottom-1.75 flex h-4 w-4 items-center justify-center rounded-lg border-[1.5px] transition-colors ${value ? "border-blue-400 bg-blue-400" : "border-border"} `}>
               {value && (
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <polyline

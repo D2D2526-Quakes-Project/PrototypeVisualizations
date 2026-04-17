@@ -255,7 +255,7 @@ export function CrossSectionControls() {
             <span>Slices</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[420px] p-0" side="top">
+        <PopoverContent align="end" className="w-105 p-0" side="top">
           <div className="border-b px-3 py-2">
             <span className="text-sm font-medium">Cross-Section Navigator</span>
           </div>
@@ -278,7 +278,7 @@ export function CrossSectionControls() {
             </ToggleGroup>
           </div>
 
-          <div className="max-h-[300px] overflow-y-auto p-3">
+          <div className="max-h-75 overflow-y-auto p-3">
             <div className="grid grid-cols-3 gap-2">
               {slices.map((slice) => (
                 <SliceItem

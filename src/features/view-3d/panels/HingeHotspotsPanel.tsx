@@ -506,7 +506,7 @@ export function HingeHotspotsPanel({ api }: IDockviewPanelProps) {
               overflow if needed.
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-xs">
+              <table className="w-full min-w-190 text-xs">
                 <thead className="sticky top-0 border-b border-neutral-200 bg-neutral-50">
                   <tr className="text-left text-neutral-600">
                     <th className="px-2 py-1.5">Rank</th>

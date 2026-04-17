@@ -22,7 +22,7 @@ import { UNIT_SCALE } from "@/lib/utils";
 import { useNodeInteractionMode, useSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
 import { useViewStore } from "@/state";
 import { Point, PointMaterial, Points, Text } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useCrossSectionSelection } from "../contexts/visualization/CrossSectionSelectionContext";
@@ -45,11 +45,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { getVisibleNodes } = useViewMode();
   const { getExpandedPosition } = useExpandedScale();
   const { sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
-  const {
-    openCrossSectionPanel,
-    setHovered: setHoveredCrossSection,
-    deselectCrossSection,
-  } = useCrossSectionSelection();
+  const { setHovered: setHoveredCrossSection, deselectCrossSection } = useCrossSectionSelection();
   const { camera } = useThree();
   const { setEnablePan } = useCamera();
   const { getVisibleStoryOrder } = useFloorVisibility();
@@ -387,28 +383,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     [selectNode, visibleNodes, nodeInteractionEnabled]
   );
 
-  const handleNodeContextMenu = useCallback(
-    (event: { instanceId?: number; stopPropagation: () => void; nativeEvent: { button: number } }) => {
-      if (!nodeInteractionEnabled) return;
-      event.stopPropagation();
-
-      if (event.instanceId === undefined) return;
-      if (event.nativeEvent.button !== 2) return; // Only right-click
-
-      const nodeId = visibleNodes[event.instanceId];
-      if (nodeId === undefined) return;
-
-      // Find which story this node belongs to
-      for (const [storyId, storyNodes] of Object.entries(animationData.metadata.stories)) {
-        if (storyNodes.includes(nodeId)) {
-          openCrossSectionPanel(storyId);
-          return;
-        }
-      }
-    },
-    [visibleNodes, animationData, openCrossSectionPanel, nodeInteractionEnabled]
-  );
-
   const handlePointerDown = useCallback(
     (event: { instanceId?: number; stopPropagation: () => void }) => {
       if (!nodeInteractionEnabled) return;
@@ -419,7 +393,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   );
 
   const handlePointerMove = useCallback(
-    (event: { instanceId?: number; stopPropagation: () => void }) => {
+    (event: ThreeEvent<PointerEvent>) => {
       if (!nodeInteractionEnabled) return;
       event.stopPropagation();
       if (event.instanceId === undefined) {
@@ -427,7 +401,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         return;
       }
       const nodeId = visibleNodes[event.instanceId];
-      setHoveredNodeId(nodeId ?? null);
+      setHoveredNodeId(nodeId ?? null, { x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY });
     },
     [nodeInteractionEnabled, setHoveredNodeId, visibleNodes]
   );
@@ -572,7 +546,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
               onPointerMove={(e) => handlePointerMove(e)}
               onPointerOut={(e) => handlePointerOut(e)}
               onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
-              onContextMenu={(e) => handleNodeContextMenu(e)}
               args={[undefined, undefined, visibleNodes.length]}
               frustumCulled={false}>
               <sphereGeometry args={[1, 4, 2]}>

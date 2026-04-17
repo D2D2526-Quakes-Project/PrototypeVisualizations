@@ -187,6 +187,7 @@ function CrossSectionSlab({
       value: crossSectionPos,
       nodeIds,
       label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,
+      screenPos: { x: e.offsetX, y: e.offsetY },
     });
   };
 

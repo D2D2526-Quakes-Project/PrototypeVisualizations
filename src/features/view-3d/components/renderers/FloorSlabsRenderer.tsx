@@ -308,6 +308,7 @@ function FloorSlab({
       nodeIds,
       label: `Floor ${storyId}`,
       storyId,
+      screenPos: { x: e.offsetX, y: e.offsetY },
     });
   };
 

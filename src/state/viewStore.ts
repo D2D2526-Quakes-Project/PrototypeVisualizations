@@ -73,6 +73,7 @@ export interface CrossSectionSelectionState {
   nodeIds: number[];
   label: string;
   storyId?: string;
+  screenPos?: { x: number; y: number };
 }
 
 export interface ViewState {
@@ -102,6 +103,10 @@ export interface ViewState {
   setRenderYCrossSectionSlabs: (value: boolean) => void;
   showCornersOnly: boolean;
   setShowCornersOnly: (value: boolean) => void;
+  renderVerticalConnections: boolean;
+  setRenderVerticalConnections: (value: boolean) => void;
+  renderHorizontalConnections: boolean;
+  setRenderHorizontalConnections: (value: boolean) => void;
 
   // Thresholds
   thresholds: ThresholdState;
@@ -175,7 +180,8 @@ export interface ViewState {
   updateBoxSelection: (end: { x: number; y: number }, panelId?: string) => void;
   endBoxSelection: (panelId?: string) => void;
   hoveredNodeId: number | null;
-  setHoveredNodeId: (nodeId: number | null) => void;
+  hoveredNodeScreenPos: { x: number; y: number } | null;
+  setHoveredNodeId: (nodeId: number | null, screenPos?: { x: number; y: number }) => void;
 
   // Dockview Layout
   dockviewLayout: SerializedDockview | null;
@@ -260,6 +266,10 @@ export const createViewStore = () =>
       setRenderYCrossSectionSlabs: (renderYCrossSectionSlabs) => set({ renderYCrossSectionSlabs }),
       showCornersOnly: false,
       setShowCornersOnly: (showCornersOnly) => set({ showCornersOnly }),
+      renderVerticalConnections: false,
+      setRenderVerticalConnections: (renderVerticalConnections) => set({ renderVerticalConnections }),
+      renderHorizontalConnections: false,
+      setRenderHorizontalConnections: (renderHorizontalConnections) => set({ renderHorizontalConnections }),
 
       // Thresholds
       thresholds: { ...DEFAULT_THRESHOLDS },
@@ -440,7 +450,8 @@ export const createViewStore = () =>
           return { isBoxSelecting: false, boxSelection: null, boxSelectionPanelId: null };
         }),
       hoveredNodeId: null,
-      setHoveredNodeId: (hoveredNodeId) => set({ hoveredNodeId }),
+      hoveredNodeScreenPos: null,
+      setHoveredNodeId: (nodeId, screenPos) => set({ hoveredNodeId: nodeId, hoveredNodeScreenPos: screenPos ?? null }),
 
       // Dockview Layout
       dockviewLayout: null,

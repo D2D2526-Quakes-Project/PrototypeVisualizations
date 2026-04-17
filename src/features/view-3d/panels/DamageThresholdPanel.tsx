@@ -66,11 +66,7 @@ export function DamageThresholdPanel() {
   const isdConfig = getThresholdConfig("interstoryDrift");
   const isdMetrics = getMetricsForThreshold("interstoryDrift");
   const { peakStoryDrift } = animationData.precomputed;
-  const maxDriftThreshold = Math.max(
-    isdConfig.getPrecomputedMax(animationData.precomputed),
-    thresholds["interstoryDrift"] || 0,
-    1
-  );
+  const maxDriftThreshold = Math.max(isdConfig.getPrecomputedMax(animationData), thresholds["interstoryDrift"] || 0, 1);
   const reversedStories = useMemo(
     () => storyOrder.map((storyId, storyIndex) => ({ storyId, storyIndex })).toReversed(),
     [storyOrder]

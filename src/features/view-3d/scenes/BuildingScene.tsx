@@ -459,7 +459,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
 
       const metricConfig = getMetricConfig(currentMetric);
       const thresholdValue = thresholds[metricConfig.thresholdKey] ?? 0;
-      const maxValue = metricConfig.getPrecomputedMax(animationData.precomputed);
+      const maxValue = metricConfig.getPrecomputedMax(animationData);
       const normalizedThreshold = maxValue > 0 ? thresholdValue / maxValue : 0;
       const nodeValue = metricConfig.getValue(animationData, currentFrame, nodeId);
       const normalizedValue = nodeValue !== undefined && maxValue > 0 ? Math.abs(nodeValue) / maxValue : 0;

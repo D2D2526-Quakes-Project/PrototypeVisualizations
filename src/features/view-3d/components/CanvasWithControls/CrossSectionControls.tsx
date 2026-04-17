@@ -144,8 +144,8 @@ export function CrossSectionControls() {
   const metricColorScale = useMemo(() => getMetricColorScale(currentMetric, {}), [currentMetric]);
   const maxValue = useMemo(() => {
     const config = getMetricConfig(currentMetric);
-    return config.getPrecomputedMax(animationData.precomputed);
-  }, [animationData.precomputed, currentMetric]);
+    return config.getPrecomputedMax(animationData);
+  }, [animationData, currentMetric]);
 
   const uniquePositions = useMemo(() => {
     const xSet = new Set<number>();

@@ -63,8 +63,8 @@ export function useColor(): ColorContextType {
     }, [metricConfig, metricColorScale]);
 
   const maxValue = useMemo(() => {
-    return metricConfig.getPrecomputedMax(animationData.precomputed);
-  }, [animationData.precomputed, metricConfig]);
+    return metricConfig.getPrecomputedMax(animationData);
+  }, [animationData, metricConfig]);
 
   const thresholdValue = useMemo(() => {
     return thresholds[metricConfig.thresholdKey];

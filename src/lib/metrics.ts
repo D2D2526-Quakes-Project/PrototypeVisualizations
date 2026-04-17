@@ -395,7 +395,7 @@ export type MetricConfig = {
   label: string;
   unit: UnitConfig;
   defaultPalette: MetricPaletteKey;
-  getPrecomputedMax: (stats: ComputedStats) => number;
+  getPrecomputedMax: (stats: BuildingAnimationData) => number;
   getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => number | undefined;
   isAvailable: (animationData: BuildingAnimationData) => boolean;
   positiveOnly: boolean;
@@ -553,15 +553,17 @@ type NumericKeys<T> = {
   [K in keyof T]: T[K] extends number | undefined ? K : never;
 }[keyof T];
 
-function get<T extends NumericKeys<ComputedStats> & keyof ComputedStats>(stat: T): (stats: ComputedStats) => number {
-  return (stats) => stats[stat] ?? 0;
+function get<T extends NumericKeys<ComputedStats> & keyof ComputedStats>(
+  stat: T
+): (animationData: BuildingAnimationData) => number {
+  return (animationData) => animationData.precomputed[stat] ?? 0;
 }
 
 export interface ThresholdConfig {
   key: ThresholdKey;
   label: string;
   unit: UnitConfig;
-  getPrecomputedMax: (stats: ComputedStats) => number;
+  getPrecomputedMax: (animationData: BuildingAnimationData) => number;
   isAvailable: (animationData: BuildingAnimationData) => boolean;
 }
 
@@ -985,9 +987,9 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     unit: UNITS["percent"],
     defaultPalette: "spectrum",
     positiveOnly: true,
-    getPrecomputedMax: (stats) => {
+    getPrecomputedMax: (animationData) => {
       // Return number of stories as max
-      return Object.keys(stats.storyHeights).length;
+      return Object.keys(animationData.precomputed.storyElevations).length;
     },
     isAvailable: (animationData) => !!animationData.metadata.stories,
     getValue: (animationData, _frameIndex, nodeId) => {
@@ -1008,9 +1010,9 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     unit: UNITS["inches"],
     defaultPalette: "spectrum",
     positiveOnly: true,
-    getPrecomputedMax: (stats) => {
+    getPrecomputedMax: (animationData) => {
       // Convert max Z from inches to feet
-      return stats.boundingBox.max[2];
+      return animationData.precomputed.boundingBox.max[2];
     },
     isAvailable: (animationData) => !!animationData.initialPositions,
     getValue: (animationData, _frameIndex, nodeId) => {
@@ -1026,9 +1028,9 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     unit: UNITS["percent"],
     defaultPalette: "spectrum",
     positiveOnly: true,
-    getPrecomputedMax: (stats) => {
+    getPrecomputedMax: (animationData) => {
       // Return number of X cross-sections as max
-      return stats.numCrossSectionsX;
+      return animationData.precomputed.numCrossSectionsX;
     },
     isAvailable: (animationData) => {
       // Available if there are cross-section definitions
@@ -1054,9 +1056,9 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     unit: UNITS["percent"],
     defaultPalette: "spectrum",
     positiveOnly: true,
-    getPrecomputedMax: (stats) => {
+    getPrecomputedMax: (animationData) => {
       // Return number of Y cross-sections as max
-      return stats.numCrossSectionsY;
+      return animationData.precomputed.numCrossSectionsY;
     },
     isAvailable: (animationData) => {
       // Available if there are cross-section definitions

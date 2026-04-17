@@ -72,7 +72,7 @@ export function ViewControls({
   const expandedLayoutRef = useRef<HTMLDivElement>(null);
 
   const config = getMetricConfig(currentMetric);
-  const maxValue = config.getPrecomputedMax(animationData.precomputed);
+  const maxValue = config.getPrecomputedMax(animationData);
   const unit = config.unit;
   const positiveOnly = config.positiveOnly;
   const thresholdValue = thresholds[config.thresholdKey] ?? 0;

@@ -99,7 +99,7 @@ export function ColorScaleBar({
   const { thresholds } = useThresholds();
   const config = getMetricConfig(currentMetric);
   const colorScale = getMetricColorScale(currentMetric, metricPaletteOverrides);
-  const maxValue = config.getPrecomputedMax(animationData.precomputed);
+  const maxValue = config.getPrecomputedMax(animationData);
   const positiveOnly = config.positiveOnly;
   const thresholdValue = thresholds[config.thresholdKey] ?? 0;
 

@@ -610,7 +610,6 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         metadata: animationData.metadata,
         precomputed: {
           boundingBox: animationData.precomputed.boundingBox,
-          storyHeights: animationData.precomputed.storyHeights,
           storyElevations: animationData.precomputed.storyElevations,
           maxDisplacement: animationData.precomputed.maxDisplacement,
           maxDisplacementX: animationData.precomputed.maxDisplacementX,

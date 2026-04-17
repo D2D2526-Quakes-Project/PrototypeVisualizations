@@ -1,4 +1,7 @@
-export const MATPLOTLIB_PALETTES: Record<string, [string, string, string, string, string]> = {
+export const MATPLOTLIB_PALETTES: Record<
+  "viridis" | "plasma" | "inferno" | "magma" | "cividis",
+  [string, string, string, string, string]
+> = {
   viridis: ["#440154", "#3b528b", "#21918c", "#5ec962", "#fde725"],
   plasma: ["#0d0887", "#7e03a8", "#cc4778", "#f89540", "#f0f921"],
   inferno: ["#000004", "#57106e", "#bc3754", "#f98e09", "#fcffa4"],

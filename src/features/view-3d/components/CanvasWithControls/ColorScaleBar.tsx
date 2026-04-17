@@ -80,7 +80,7 @@ function getScaleStopsAndLabels(
       stops = positiveStops.map((color, i) => `${color} ${(i / (positiveStops.length - 1)) * 100}%`);
     } else {
       stops = [
-        ...negativeStops.map((color, i) => `${color} ${(i / (negativeStops.length - 1)) * -50 + 50}%`),
+        ...negativeStops.toReversed().map((color, i) => `${color} ${(i / (negativeStops.length - 1)) * 50}%`),
         ...positiveStops.map((color, i) => `${color} ${(i / (positiveStops.length - 1)) * 50 + 50}%`),
       ];
     }

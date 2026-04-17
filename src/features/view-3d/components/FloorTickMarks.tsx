@@ -97,11 +97,11 @@ export function FloorTickMarks() {
       zPositions.map((zPos) => {
         return (
           <>
-            <mesh key={`z-${zPos}-1`} position={[-offset[1], offset[0], zPos]} rotation={[0, Math.PI / 2, Math.PI / 2]}>
+            <mesh key={`z1-${zPos}`} position={[-offset[1], offset[0], zPos]} rotation={[0, Math.PI / 2, Math.PI / 2]}>
               <planeGeometry args={[TICK_LENGTH, TICK_THICKNESS]} />
               <meshBasicMaterial color={TICK_COLOR} side={THREE.DoubleSide} />
             </mesh>
-            <mesh key={`z-${zPos}-2`} position={[offset[1], -offset[0], zPos]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh key={`z2-${zPos}`} position={[offset[1], -offset[0], zPos]} rotation={[Math.PI / 2, 0, 0]}>
               <planeGeometry args={[TICK_LENGTH, TICK_THICKNESS]} />
               <meshBasicMaterial color={TICK_COLOR} side={THREE.DoubleSide} />
             </mesh>

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
+import { CornerMetricChart } from "@/features/view-3d/panels/CornerMetricChart";
 import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
 import { DataExplorerPanel } from "@/features/view-3d/panels/DataExplorerPanel";
 import { EndCapPanel } from "@/features/view-3d/panels/EndCapPanel";
@@ -9,7 +10,6 @@ import { FloorDisplacementChart } from "@/features/view-3d/panels/FloorDisplacem
 import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
 import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
 import { HistogramChart } from "@/features/view-3d/panels/HistogramChart";
-import { InterstoryDriftChart } from "@/features/view-3d/panels/InterstoryDriftChart";
 import { MainCanvasPanel } from "@/features/view-3d/panels/MainCanvasPanel";
 import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDistributionPanel";
 import type { DatasetLoadState } from "@/lib/loadingTypes";
@@ -39,8 +39,8 @@ import { Timeline } from "./Timeline";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
-type PanelType = keyof typeof PANEL_DEFINITIONS;
-type MagicPanelParams = { panelType: PanelType; initialMetric?: Metric };
+export type PanelType = keyof typeof PANEL_DEFINITIONS;
+export type MagicPanelParams = { panelType: PanelType; initialMetric?: Metric };
 
 type PanelDefinition = {
   component: React.ComponentType<IDockviewPanelProps>;
@@ -60,7 +60,11 @@ type PanelDataKey =
   | "accelerationLin"
   | "accelerationRot";
 
-const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
+function check<T extends Record<string, PanelDefinition>>(obj: T): T {
+  return obj;
+}
+
+const PANEL_DEFINITIONS = check({
   Timeline: {
     component: Timeline,
     category: "Core Analysis",
@@ -69,13 +73,13 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
     requiredOptionalData: [],
     optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot"],
   },
-  "Interstory Drift Chart": {
-    component: InterstoryDriftChart,
+  "Corner Metric Chart": {
+    component: CornerMetricChart,
     category: "Core Analysis",
     icon: LineChart,
-    description: "Per-story drift traces",
+    description: "Per-story corner values for a selected metric",
     requiredOptionalData: [],
-    optionalEnhancementData: [],
+    optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot", "velocityRot", "accelerationRot"],
   },
   "Main Canvas": {
     component: MainCanvasPanel,
@@ -157,7 +161,7 @@ const PANEL_DEFINITIONS: Record<string, PanelDefinition> = {
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },
-} as const;
+});
 
 const PANEL_DATA_LABELS: Record<PanelDataKey, string> = {
   beamData: "beam connectivity data",

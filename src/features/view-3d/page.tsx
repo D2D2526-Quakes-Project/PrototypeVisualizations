@@ -1,7 +1,12 @@
 import { DockviewWrapper } from "@/features/view-3d/components/dockviewWrapper";
 import { CrossSectionPanel, CrossSectionTab } from "@/features/view-3d/components/CrossSectionPanel";
 import { FloorPanel, FloorTab } from "@/features/view-3d/components/FloorPanel";
-import { MagicPanel, MagicPanelHeaderActions, MagicPanelTab } from "@/features/view-3d/components/MagicPanel";
+import {
+  MagicPanel,
+  MagicPanelHeaderActions,
+  MagicPanelTab,
+  type MagicPanelParams,
+} from "@/features/view-3d/components/MagicPanel";
 import { NodePanel, NodeTab } from "@/features/view-3d/components/NodePanel";
 import { NodeSelectionProvider, useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
 import { useAutoSave } from "@/features/view-3d/hooks/useAutoSave";
@@ -185,7 +190,7 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
   );
 
   const createDefaultLayout = useCallback((api: DockviewApi) => {
-    const mainCanvas = api.addPanel({
+    const mainCanvas = api.addPanel<MagicPanelParams>({
       id: "main-canvas",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
@@ -194,7 +199,7 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       initialHeight: 760,
     });
 
-    api.addPanel({
+    api.addPanel<MagicPanelParams>({
       id: "timeline",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
@@ -204,23 +209,32 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       initialHeight: 200,
     });
 
-    const interstoryDriftPanel = api.addPanel({
+    const interstoryDriftPanel = api.addPanel<MagicPanelParams>({
       id: "interstory-drift-chart",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Interstory Drift",
       position: { referencePanel: mainCanvas, direction: "right" },
-      params: { panelType: "Interstory Drift Chart" },
+      params: { panelType: "Corner Metric Chart" },
       initialWidth: 560,
     });
 
-    api.addPanel({
+    api.addPanel<MagicPanelParams>({
       id: "floor-displacement",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Floor Displacement",
       position: { referencePanel: interstoryDriftPanel, direction: "within" },
       params: { panelType: "Floor Displacement" },
+    });
+
+    api.addPanel<MagicPanelParams>({
+      id: "corner-metric-chart",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      title: "Corner Metric",
+      position: { referencePanel: interstoryDriftPanel, direction: "within" },
+      params: { panelType: "Corner Metric Chart" },
     });
   }, []);
 

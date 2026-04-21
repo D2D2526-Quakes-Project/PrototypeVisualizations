@@ -81,6 +81,14 @@ export function createShareableUrl(layout: SerializedDockview): string {
   return url.toString();
 }
 
+export function clearLayoutFromLocalStorage(): void {
+  try {
+    localStorage.removeItem(LAST_LAYOUT_KEY);
+  } catch (error) {
+    console.error("Failed to clear layout from localStorage:", error);
+  }
+}
+
 export function copyShareableUrlToClipboard(layout: SerializedDockview): Promise<boolean> {
   const shareableUrl = createShareableUrl(layout);
 

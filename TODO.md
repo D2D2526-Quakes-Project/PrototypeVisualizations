@@ -478,6 +478,7 @@ _Last Updated: February 2026_
 
 - [ ] Improve heatmap communication (users think it's "spatial")
 - [ ] Consider continuous time instead of discrete grid for heatmap
+- [x] Add a single-select corner metric chart based on the Interstory Drift chart
 - [ ] Add charts showing all floors with line chart per floor for same metrics like ISD
 
 ### 20.17 Floor Wide Values

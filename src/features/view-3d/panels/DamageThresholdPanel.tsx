@@ -62,6 +62,7 @@ export function DamageThresholdPanel() {
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
   const { thresholds, setThreshold } = useThresholds();
+  const threshold = thresholds.interstoryDrift;
 
   const isdConfig = getThresholdConfig("interstoryDrift");
   const isdMetrics = getMetricsForThreshold("interstoryDrift");
@@ -72,11 +73,10 @@ export function DamageThresholdPanel() {
     [storyOrder]
   );
 
+  // console.log(cornerNodes);
+
   const storyThresholdFrame = useMemo(() => {
     const storyThresholds = new Map<string, ThresholdCrossingFrames>();
-
-    // const storyStride = frameCount * cornerCount;
-    const threshold = thresholds.interstoryDrift;
 
     for (let frame = 0; frame < frameCount; frame++) {
       for (const storyId in cornerNodes) {
@@ -101,45 +101,45 @@ export function DamageThresholdPanel() {
     }
 
     return storyThresholds;
-  }, [thresholds.interstoryDrift, cornerNodes, frameCount, storyDrift]);
+  }, [cornerNodes, frameCount, storyDrift, threshold]);
 
-  const visibleDamageSummary = useMemo(() => {
-    let currentExceededCorners = 0;
-    let everExceededCorners = 0;
-    let visibleStoryCount = 0;
+  // const visibleDamageSummary = useMemo(() => {
+  //   let currentExceededCorners = 0;
+  //   let everExceededCorners = 0;
+  //   let visibleStoryCount = 0;
 
-    for (const storyId in cornerNodes) {
-      if (!visibleFloors.has(storyId)) continue;
-      visibleStoryCount += 1;
-      const corners = cornerNodes[storyId];
+  //   for (const storyId in cornerNodes) {
+  //     if (!visibleFloors.has(storyId)) continue;
+  //     visibleStoryCount += 1;
+  //     const corners = cornerNodes[storyId];
 
-      const thresholdFrames = storyThresholdFrame.get(storyId);
+  //     const thresholdFrames = storyThresholdFrame.get(storyId);
 
-      if (thresholdFrames) {
-        if (thresholdFrames.NW !== null) everExceededCorners += 1;
-        if (thresholdFrames.NE !== null) everExceededCorners += 1;
-        if (thresholdFrames.SW !== null) everExceededCorners += 1;
-        if (thresholdFrames.SE !== null) everExceededCorners += 1;
-      }
+  //     if (thresholdFrames) {
+  //       if (thresholdFrames.NW !== null) everExceededCorners += 1;
+  //       if (thresholdFrames.NE !== null) everExceededCorners += 1;
+  //       if (thresholdFrames.SW !== null) everExceededCorners += 1;
+  //       if (thresholdFrames.SE !== null) everExceededCorners += 1;
+  //     }
 
-      const nw = storyDrift.get(frameIndex, corners.NW);
-      const ne = storyDrift.get(frameIndex, corners.NE);
-      const sw = storyDrift.get(frameIndex, corners.SW);
-      const se = storyDrift.get(frameIndex, corners.SE);
-      if (nw > thresholds.interstoryDrift) currentExceededCorners += 1;
-      if (ne > thresholds.interstoryDrift) currentExceededCorners += 1;
-      if (sw > thresholds.interstoryDrift) currentExceededCorners += 1;
-      if (se > thresholds.interstoryDrift) currentExceededCorners += 1;
-    }
+  //     const nw = storyDrift.get(frameIndex, corners.NW);
+  //     const ne = storyDrift.get(frameIndex, corners.NE);
+  //     const sw = storyDrift.get(frameIndex, corners.SW);
+  //     const se = storyDrift.get(frameIndex, corners.SE);
+  //     if (nw > thresholds.interstoryDrift) currentExceededCorners += 1;
+  //     if (ne > thresholds.interstoryDrift) currentExceededCorners += 1;
+  //     if (sw > thresholds.interstoryDrift) currentExceededCorners += 1;
+  //     if (se > thresholds.interstoryDrift) currentExceededCorners += 1;
+  //   }
 
-    return { currentExceededCorners, everExceededCorners, visibleStoryCount };
-  }, [frameIndex, storyThresholdFrame, thresholds.interstoryDrift, visibleFloors, cornerNodes, storyDrift]);
+  //   return { currentExceededCorners, everExceededCorners, visibleStoryCount };
+  // }, [frameIndex, storyThresholdFrame, thresholds.interstoryDrift, visibleFloors, cornerNodes, storyDrift]);
 
-  const visibleCornerCapacity = Math.max(visibleDamageSummary.visibleStoryCount * DISPLAY_CORNERS.length, 0);
-  const currentExceededPct =
-    visibleCornerCapacity > 0 ? (visibleDamageSummary.currentExceededCorners / visibleCornerCapacity) * 100 : 0;
-  const everExceededPct =
-    visibleCornerCapacity > 0 ? (visibleDamageSummary.everExceededCorners / visibleCornerCapacity) * 100 : 0;
+  // const visibleCornerCapacity = Math.max(visibleDamageSummary.visibleStoryCount * DISPLAY_CORNERS.length, 0);
+  // const currentExceededPct =
+  //   visibleCornerCapacity > 0 ? (visibleDamageSummary.currentExceededCorners / visibleCornerCapacity) * 100 : 0;
+  // const everExceededPct =
+  //   visibleCornerCapacity > 0 ? (visibleDamageSummary.everExceededCorners / visibleCornerCapacity) * 100 : 0;
 
   return (
     <div className="flex h-full w-full flex-col gap-4 overflow-y-auto p-4">
@@ -165,17 +165,17 @@ export function DamageThresholdPanel() {
           <span className="whitespace-nowrap">
             Current Exceeded:{" "}
             <span className="font-mono text-neutral-800">
-              {visibleDamageSummary.currentExceededCorners.toLocaleString()}
+              {/* {visibleDamageSummary.currentExceededCorners.toLocaleString()} */}
             </span>{" "}
-            <span className="text-neutral-500">({currentExceededPct.toFixed(1)}%)</span>
+            {/* <span className="text-neutral-500">({currentExceededPct.toFixed(1)}%)</span> */}
           </span>
           <span className="text-neutral-300">•</span>
           <span className="whitespace-nowrap">
             Ever Crossed:{" "}
             <span className="font-mono text-neutral-800">
-              {visibleDamageSummary.everExceededCorners.toLocaleString()}
+              {/* {visibleDamageSummary.everExceededCorners.toLocaleString()} */}
             </span>{" "}
-            <span className="text-neutral-500">({everExceededPct.toFixed(1)}%)</span>
+            {/* <span className="text-neutral-500">({everExceededPct.toFixed(1)}%)</span> */}
           </span>
         </div>
       </div>

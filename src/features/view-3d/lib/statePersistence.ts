@@ -88,6 +88,11 @@ export interface InterstoryDriftChartPanelState {
   visibleCorners: string[];
 }
 
+export interface CornerMetricChartPanelState {
+  visibleCorners: string[];
+  metric: Metric;
+}
+
 export interface VelocityTimeChartPanelState {
   selectedKeys: ("x" | "y" | "z" | "magnitude")[];
 }
@@ -133,6 +138,7 @@ export type PanelState =
   | { type: "timeline"; state: TimelinePanelState; panelId: string }
   | { type: "storyDriftHeatmap"; state: StoryDriftHeatmapPanelState; panelId: string }
   | { type: "interstoryDriftChart"; state: InterstoryDriftChartPanelState; panelId: string }
+  | { type: "cornerMetricChart"; state: CornerMetricChartPanelState; panelId: string }
   | { type: "velocityTimeChart"; state: VelocityTimeChartPanelState; panelId: string }
   | { type: "rotationTimeChart"; state: RotationTimeChartPanelState; panelId: string }
   | { type: "histogramChart"; state: HistogramChartPanelState; panelId: string }
@@ -544,6 +550,13 @@ export function getDefaultStoryDriftHeatmapPanelState(): StoryDriftHeatmapPanelS
 export function getDefaultInterstoryDriftChartPanelState(): InterstoryDriftChartPanelState {
   return {
     visibleCorners: ["NW", "NE", "SW", "SE"],
+  };
+}
+
+export function getDefaultCornerMetricChartPanelState(): CornerMetricChartPanelState {
+  return {
+    visibleCorners: ["NW", "NE", "SW", "SE"],
+    metric: "interstoryDrift",
   };
 }
 

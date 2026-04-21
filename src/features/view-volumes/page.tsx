@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { CanvasWithControls } from "@/features/view-3d/components/CanvasWithControls";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/resizable";
-import { InterstoryDriftChart } from "@/features/view-3d/panels/InterstoryDriftChart";
 import { SmallTimeline } from "@/features/playback/SmallTimeline";
 import { VolumeScene } from "./VolumeScene";
 
@@ -64,9 +63,7 @@ export function ViewVolumes() {
           <div className="h-1/2 border-b-2 border-neutral-300">
             <SmallTimeline />
           </div>
-          <div className="h-1/2">
-            <InterstoryDriftChart />
-          </div>
+          <div className="h-1/2">{/* <InterstoryDriftChart /> */}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

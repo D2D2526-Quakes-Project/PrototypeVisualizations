@@ -16,12 +16,9 @@ import { AnimatePresence, motion, stagger } from "motion/react";
 
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useColor, useThresholds } from "@/features/view-3d/contexts/visualization";
-import { getMetricConfig } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
-import { ColorScaleBar } from "./ColorScaleBar";
 import { ColorPanel } from "./control-panels/ColorPanel";
 import { ExpandedScalePanel } from "./control-panels/ExpandedScalePanel";
 import { NodeDisplayPanel } from "./control-panels/NodeDisplayPanel";
@@ -53,9 +50,6 @@ export function ViewControls({
   docked,
 }: ViewControlsProps) {
   const { animationData } = useAnimationData();
-  const { currentMetric, metricPaletteOverrides, thresholdHighlighting } = useColor();
-
-  const { thresholds } = useThresholds();
 
   const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
   const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
@@ -70,12 +64,6 @@ export function ViewControls({
   const buildingVerticalCenter =
     (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
   const expandedLayoutRef = useRef<HTMLDivElement>(null);
-
-  const config = getMetricConfig(currentMetric);
-  const maxValue = config.getPrecomputedMax(animationData);
-  const unit = config.unit;
-  const positiveOnly = config.positiveOnly;
-  const thresholdValue = thresholds[config.thresholdKey] ?? 0;
 
   const resetView = (viewType: ViewPresetMode) => {
     if (orbitControlsRef?.current) {
@@ -288,44 +276,6 @@ export function ViewControls({
             </Tooltip>
           </motion.div>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <motion.div
-                key="collapsed-colorbar"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.15 }}
-                className="w-full gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
-                <div className="mb-0.5 text-[10px] font-medium text-neutral-700">{config.label}</div>
-                <ColorScaleBar
-                  currentMetric={currentMetric}
-                  metricPaletteOverrides={metricPaletteOverrides}
-                  thresholdHighlighting={thresholdHighlighting}
-                />
-              </motion.div>
-            </TooltipTrigger>
-            <TooltipContent side="left" sideOffset={8}>
-              <div className="mb-1 font-semibold">{config.label}</div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                <span className="text-neutral-400">Max:</span>
-                <span>
-                  {positiveOnly ? maxValue.toFixed(2) : `+${maxValue.toFixed(2)}`} {unit.abbr}
-                </span>
-                <span className="text-neutral-400">Min:</span>
-                <span>
-                  {positiveOnly ? "0" : `-${maxValue.toFixed(2)}`} {unit.abbr}
-                </span>
-                {thresholdHighlighting && thresholdValue > 0 && (
-                  <>
-                    <span className="text-neutral-400">Threshold:</span>
-                    <span>
-                      {thresholdValue.toFixed(2)} {unit.abbr}
-                    </span>
-                  </>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
           <AnimatePresence>
             {showNodeVisibilityMenu && (
               <motion.div

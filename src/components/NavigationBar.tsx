@@ -26,7 +26,7 @@ import { getMetricConfig } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { formatFixed3 } from "@/lib/utils";
 import { useViewStore, useViewStoreRaw } from "@/state";
-import { ColorScaleBar } from "../features/view-3d/components/CanvasWithControls/ColorScaleBar";
+import { ColorScaleBarTooltip } from "../features/view-3d/components/CanvasWithControls/ColorScaleBar";
 
 export function NavigationBar() {
   const location = useLocation();
@@ -222,10 +222,11 @@ export function NavigationBar() {
         <span className="text-neutral-300">|</span>
         <div className="font-medium">{config.label}</div>
         <div className="w-full">
-          <ColorScaleBar
+          <ColorScaleBarTooltip
             currentMetric={currentMetric}
             metricPaletteOverrides={metricPaletteOverrides}
             thresholdHighlighting={thresholdHighlighting}
+            insideLabel
           />
         </div>
       </div>

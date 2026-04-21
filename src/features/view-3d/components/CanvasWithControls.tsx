@@ -13,11 +13,9 @@ import { AlertTriangle } from "lucide-react";
 import { BoxSelectionOverlay } from "./CanvasWithControls/BoxSelectionOverlay";
 import { CameraManager } from "./CanvasWithControls/CameraManager";
 import { OrientationCube } from "./CanvasWithControls/OrientationCube";
-import { SelectionShortcuts } from "./CanvasWithControls/SelectionShortcuts";
 import { ViewControls } from "./CanvasWithControls/ViewControls";
 
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { CrossSectionControls } from "./CanvasWithControls/CrossSectionControls";
 import { useFloorVisibility } from "../contexts/visualization";
 
 interface CanvasWithControlsProps {
@@ -337,8 +335,7 @@ export function CanvasWithControls({
         onExpandedWidthChange={handleExpandedWidthChange}
         docked={isControlsDocked}
       />
-      <CrossSectionControls />
-      <SelectionShortcuts showPlayback={Boolean(showPlaybackControls)} />
+      {/* <SelectionShortcuts showPlayback={Boolean(showPlaybackControls)} /> */}
     </div>
   );
 }

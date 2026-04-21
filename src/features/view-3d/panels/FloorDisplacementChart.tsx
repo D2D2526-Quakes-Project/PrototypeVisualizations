@@ -1,208 +1,394 @@
-/**
- * FloorDisplacementChart Component
- * =============================================================================
- *
- * PURPOSE:
- * Displays average displacement per floor/story in a horizontal bar chart.
- * Shows X and Y components for each story level.
- *
- * WHAT IT SHOWS:
- * - Y-axis: Story levels from bottom to top
- * - X-axis: Displacement magnitude (inches)
- * - Bars for X (red) and Y (rose) components
- *
- * DATA SOURCES:
- * - Story order: animationData.metadata.storyOrder
- * - Node-to-story mapping: animationData.metadata.stories
- * - Story heights: animationData.metadata.storyHeights
- * - Displacement data: animationData.displacementLin
- * - Max displacement: animationData.precomputed.maxDisplacement (for stable axis)
- *
- * UNITS:
- * - Displacement: inches
- * - Elevation: feet
- *
- * IMPORTANCE:
- * Helps engineers understand how displacement varies across building height,
- * identifying which floors experience the most movement. Critical for
- * assessing interstory drift and overall building response.
- * =============================================================================
- */
-
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import ReactECharts from "echarts-for-react";
-import { useMemo } from "react";
+import { useColor, useFloorVisibility } from "@/features/view-3d/contexts/visualization";
+import { getDefaultFloorDisplacementChartPanelState } from "@/features/view-3d/lib/statePersistence";
+import { formatValue, getMetricConfig, getMetricKeyColor, type Metric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useFloorVisibility } from "@/features/view-3d/contexts/visualization";
-import type { EChartsOption } from "echarts";
-import { getMetricKeyColor } from "@/lib/metrics";
-import { formatFixed3, formatStoryLabel } from "@/lib/utils";
+import { formatStoryLabel } from "@/lib/utils";
 import { useViewStore } from "@/state";
-import { useThresholds } from "@/features/view-3d/contexts/visualization";
+import type { IDockviewPanelProps } from "dockview";
+import type { EChartsOption } from "echarts";
+import ReactECharts from "echarts-for-react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-export function FloorDisplacementChart() {
+type MetricOption = {
+  metric: Metric;
+  label: string;
+  shortName: string;
+  color: string;
+};
+
+const MIN_X_AXIS_MAX = 0.01;
+
+function sanitizeSelectedMetrics(value: unknown, availableMetrics: Metric[]): Metric[] {
+  if (!Array.isArray(value)) {
+    return availableMetrics.slice(0, Math.min(2, availableMetrics.length));
+  }
+
+  const valid = value.filter(
+    (entry): entry is Metric => typeof entry === "string" && availableMetrics.includes(entry as Metric)
+  );
+  const unique = Array.from(new Set(valid));
+
+  if (unique.length > 0) {
+    return unique;
+  }
+
+  return availableMetrics.slice(0, Math.min(2, availableMetrics.length));
+}
+
+function MetricSelect({
+  options,
+  selected,
+  onChange,
+}: {
+  options: MetricOption[];
+  selected: Metric[];
+  onChange: (metrics: Metric[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const toggleOption = (metric: Metric) => {
+    if (selected.includes(metric)) {
+      if (selected.length > 1) {
+        onChange(selected.filter((entry) => entry !== metric));
+      }
+      return;
+    }
+
+    onChange([...selected, metric]);
+  };
+
+  const labelText = selected.length + " selected";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="max-w-full min-w-20">
+          <span className="text-foreground flex-1 truncate">{labelText || "Select Metrics"}</span>
+          <ChevronDown
+            className={`h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-1">
+        <div className="flex max-h-80 flex-col gap-0.5 overflow-auto">
+          {options.map((option) => {
+            const isChecked = selected.includes(option.metric);
+            return (
+              <Label
+                key={option.metric}
+                className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
+                <Checkbox
+                  checked={isChecked}
+                  onCheckedChange={() => toggleOption(option.metric)}
+                  className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
+                />
+                <span className="flex-1">{option.label}</span>
+                <span
+                  className="h-3 w-3 rounded-full border border-black/10"
+                  style={{ backgroundColor: option.color }}
+                />
+              </Label>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export function FloorDisplacementChart({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
+  const { availableMetrics } = useColor();
+  const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-  const { thresholds } = useThresholds();
-  const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
-  const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
-  const thresholdValue = thresholds["displacement"] ?? 0;
-  const xAxisMax = useMemo(() => {
-    const maxDisp = animationData.precomputed.maxDisplacement;
-    return Math.max(maxDisp, Math.abs(thresholdValue) * 1.15, 0.1);
-  }, [animationData.precomputed.maxDisplacement, thresholdValue]);
 
-  const chartData = useMemo(() => {
-    const { stories } = animationData.metadata;
-    const { storyElevations } = animationData.precomputed;
-    const { displacementLin } = animationData;
-    const frameData = displacementLin.atFrame(frameIndex);
+  const panelId = api?.id ?? "floor-displacement";
+  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const defaultState = getDefaultFloorDisplacementChartPanelState();
+  const panelState = savedPanelState?.type === "floorDisplacementChart" ? savedPanelState.state : defaultState;
 
-    const visibleStories = Array.from(visibleFloors).slice(1);
+  const metricOptions = useMemo<MetricOption[]>(() => {
+    const metrics = availableMetrics.length > 0 ? availableMetrics : defaultState.selectedMetrics;
+    return metrics.map((metric) => {
+      const config = getMetricConfig(metric);
+      return {
+        metric,
+        label: config.label,
+        shortName: config.shortLabel,
+        color: getMetricKeyColor(metric, metricPaletteOverrides),
+      };
+    });
+  }, [availableMetrics, defaultState.selectedMetrics, metricPaletteOverrides]);
 
-    const storyData: Array<{
-      story: string;
-      elevationIn: number;
-      avgX: number;
-      avgY: number;
-    }> = [];
+  const effectiveSelectedMetrics = useMemo(
+    () =>
+      sanitizeSelectedMetrics(
+        panelState.selectedMetrics,
+        metricOptions.map((option) => option.metric)
+      ),
+    [metricOptions, panelState.selectedMetrics]
+  );
 
-    visibleStories.forEach((storyId) => {
-      const nodes = stories[storyId] || [];
-      const elevationIn = storyElevations[storyId] || 0;
+  useEffect(() => {
+    const sameLength = panelState.selectedMetrics.length === effectiveSelectedMetrics.length;
+    const sameOrder =
+      sameLength && panelState.selectedMetrics.every((metric, index) => metric === effectiveSelectedMetrics[index]);
+    if (sameOrder) return;
 
-      let sumX = 0,
-        sumY = 0;
-      nodes.forEach((nodeIdx) => {
-        const pos = frameData.at(nodeIdx);
-        sumX += pos[0];
-        sumY += pos[1];
+    setPanelState(panelId, "floorDisplacementChart", {
+      selectedMetrics: effectiveSelectedMetrics,
+    });
+  }, [effectiveSelectedMetrics, panelId, panelState.selectedMetrics, setPanelState]);
+
+  const storyIds = useMemo(() => Array.from(visibleFloors).slice(1), [visibleFloors]);
+
+  const metricStoryData = useMemo(() => {
+    const results = new Map<
+      Metric,
+      Array<{
+        storyId: string;
+        elevationIn: number;
+        value: number;
+      }>
+    >();
+
+    for (const metric of effectiveSelectedMetrics) {
+      const metricConfig = getMetricConfig(metric);
+      const rows = storyIds.map((storyId) => {
+        const nodes = animationData.metadata.stories[storyId] || [];
+        const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
+
+        if (nodes.length === 0) {
+          return { storyId, elevationIn, value: 0 };
+        }
+
+        let sum = 0;
+        let count = 0;
+
+        for (const nodeIdx of nodes) {
+          const value = metricConfig.getValue(animationData, frameIndex, nodeIdx);
+          if (value === undefined || Number.isNaN(value)) continue;
+          sum += value;
+          count += 1;
+        }
+
+        return {
+          storyId,
+          elevationIn,
+          value: count > 0 ? sum / count : 0,
+        };
       });
-      const count = nodes.length || 1;
-      const avgX = sumX / count;
-      const avgY = sumY / count;
 
-      storyData.push({
-        story: storyId,
-        elevationIn,
-        avgX,
-        avgY,
-      });
+      results.set(metric, rows);
+    }
+
+    return results;
+  }, [animationData, effectiveSelectedMetrics, frameIndex, storyIds]);
+
+  const option = useMemo((): EChartsOption => {
+    const legendData = effectiveSelectedMetrics.map((metric) => {
+      const option = metricOptions.find((entry) => entry.metric === metric);
+      const config = getMetricConfig(metric);
+      return {
+        name: `${config.shortLabel} (${config.unit.abbr})`,
+        icon: "roundRect",
+        itemStyle: { color: option?.color ?? "#6b7280" },
+      };
     });
 
-    return storyData;
-  }, [animationData, frameIndex, visibleFloors]);
+    const storyRows = storyIds.map((storyId) => {
+      const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
+      return {
+        storyId,
+        elevationIn,
+        label: formatStoryLabel(storyId, elevationIn),
+      };
+    });
 
-  const option: EChartsOption = useMemo((): EChartsOption => {
+    let axisMax = MIN_X_AXIS_MAX;
+
+    effectiveSelectedMetrics.forEach((metric) => {
+      const metricConfig = getMetricConfig(metric);
+      // const rows = metricStoryData.get(metric) ?? [];
+      // for (const row of rows) {
+      //   // axisMax = Math.max(axisMax, row.value, Math.abs(row.value));
+      //   // axisMin = Math.min(axisMin, row.value);
+      // }
+      axisMax = Math.max(axisMax, metricConfig.getPrecomputedMax(animationData));
+    });
+
+    const paddedMax = Math.max(axisMax * 1.15, MIN_X_AXIS_MAX);
+    const paddedMin = -paddedMax;
+
+    const uniqueUnits = Array.from(
+      new Set(effectiveSelectedMetrics.map((metric) => getMetricConfig(metric).unit.abbr))
+    );
+
+    const series: NonNullable<EChartsOption["series"]> = effectiveSelectedMetrics.map((metric) => {
+      const metricConfig = getMetricConfig(metric);
+      const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
+      return {
+        name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
+        type: "bar",
+        data: (metricStoryData.get(metric) ?? []).map((row) => row.value),
+        barMaxWidth: 18,
+        itemStyle: {
+          color: metricColor,
+          opacity: 0.85,
+          borderRadius: [3, 3, 3, 3],
+        },
+        emphasis: {
+          itemStyle: {
+            opacity: 1,
+          },
+        },
+        tooltip: {
+          valueFormatter: (value) => `${formatValue(Number(value), 3)} ${metricConfig.unit.abbr}`,
+        },
+      };
+    });
+
     return {
+      title: {
+        text: "Floor Response by Story",
+        subtext: `Average value across floor at the current frame.\n${effectiveSelectedMetrics.map((metric) => getMetricConfig(metric).label).join(", ")}`,
+        left: 0,
+        top: 0,
+        itemGap: 3,
+        textStyle: { fontSize: 13, fontWeight: 600, color: "#111827" },
+        subtextStyle: { fontSize: 10, color: "#6b7280" },
+      },
+      legend: {
+        data: legendData,
+        top: 52,
+        right: 0,
+        orient: "vertical",
+        itemGap: 8,
+        selectedMode: false,
+        textStyle: {
+          fontSize: 11,
+          color: "#374151",
+        },
+      },
       tooltip: {
         trigger: "axis",
+        axisPointer: { type: "shadow" },
         backgroundColor: "rgba(255, 255, 255, 0.98)",
         borderColor: "#d1d5db",
         borderWidth: 1,
         padding: 10,
         textStyle: { color: "#374151", fontSize: 11 },
-        axisPointer: { type: "shadow" },
         formatter: (params) => {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
-          const data = chartData[params[0].dataIndex];
-          return `
-            <div style="font-weight: 600; margin-bottom: 6px;">${formatStoryLabel(data.story, data.elevationIn)}</div>
-            <div>X: ${data.avgX.toFixed(2)} in</div>
-            <div>Y: ${data.avgY.toFixed(2)} in</div>
-          `;
+          const first = params[0];
+          const row = storyRows[first.dataIndex];
+          if (!row) return "";
+
+          const lines = [`<div style="font-weight:600;margin-bottom:6px">${row.label}</div>`];
+
+          for (const param of params) {
+            if (typeof param.seriesIndex !== "number") continue;
+            const metric = effectiveSelectedMetrics[param.seriesIndex];
+            if (!metric) continue;
+            const metricConfig = getMetricConfig(metric);
+            const metricRows = metricStoryData.get(metric) ?? [];
+            const metricRow = metricRows[param.dataIndex];
+            if (!metricRow) continue;
+
+            lines.push(
+              `<div style="display:flex;align-items:center;gap:8px;margin-top:2px">` +
+                `<span style="width:8px;height:8px;border-radius:9999px;background:${param.color}"></span>` +
+                `<span style="color:#6b7280">${metricConfig.label}:</span>` +
+                `<span style="margin-left:auto;font-weight:600">${formatValue(metricRow.value, 3)} ${metricConfig.unit.abbr}</span>` +
+                `</div>`
+            );
+          }
+
+          return lines.join("");
         },
       },
-      legend: {
-        data: ["X", "Y"],
-        right: 10,
-        top: 0,
-        textStyle: { fontSize: 11 },
-      },
       grid: {
-        left: 60,
-        right: 20,
-        top: 54,
-        bottom: 30,
-      },
-      title: {
-        text: "Average Story Displacement by Elevation",
-        left: 60,
-        top: 6,
-        textStyle: { fontSize: 12, fontWeight: "bold", color: "#374151" },
+        left: 0,
+        right: 0,
+        top: 62,
+        bottom: 0,
+        containLabel: false,
       },
       xAxis: {
         type: "value",
-        name: "Displacement (in)",
+        name: uniqueUnits.length === 1 ? `Average Value (${uniqueUnits[0]})` : "Average Value",
         nameLocation: "middle",
-        nameGap: 25,
-        nameTextStyle: { fontSize: 11, color: "#4b5563" },
-        min: -xAxisMax,
-        max: xAxisMax,
-        axisLine: { lineStyle: { color: "#d1d5db" } },
-        axisLabel: { color: "#6b7280", fontSize: 10, formatter: (v: number) => v.toFixed(1).replace(/\.0$/u, "") },
-        splitLine: { lineStyle: { color: "#e5e7eb", type: "dashed" } },
+        nameGap: 28,
+        nameTextStyle: {
+          fontSize: 10,
+          color: "#4b5563",
+          fontWeight: 500,
+        },
+        min: paddedMin,
+        max: paddedMax,
+        axisLine: {
+          lineStyle: { color: "#d1d5db" },
+        },
+        axisLabel: {
+          color: "#6b7280",
+          fontSize: 10,
+          formatter: (value: number) => formatValue(value, 2),
+        },
+        splitLine: {
+          lineStyle: { color: "#e5e7eb", type: "dashed" as const },
+        },
       },
       yAxis: {
         type: "category",
         name: "Story",
-        nameLocation: "middle",
-        nameGap: 44,
-        nameTextStyle: { fontSize: 11, color: "#4b5563" },
-        data: chartData.map((d) => formatStoryLabel(d.story, d.elevationIn)),
-        axisLine: { lineStyle: { color: "#d1d5db" } },
-        axisLabel: { color: "#374151", fontSize: 10, fontWeight: 500 },
+        nameLocation: "end",
+        nameGap: 4,
+        nameTextStyle: {
+          fontSize: 10,
+          color: "#4b5563",
+          fontWeight: 500,
+        },
+        data: storyRows.map((row) => row.label),
+        axisLine: {
+          lineStyle: { color: "#d1d5db" },
+        },
+        axisLabel: {
+          color: "#374151",
+          fontSize: 10,
+          fontWeight: 500,
+        },
         axisTick: { show: false },
       },
-      series: [
-        {
-          name: "X",
-          type: "bar",
-          data: chartData.map((d) => d.avgX),
-          itemStyle: { color: displacementXColor, opacity: 0.8 },
-          barGap: "0%",
-          barCategoryGap: "20%",
-          markLine:
-            thresholdValue > 0
-              ? {
-                  symbol: "none",
-                  data: [
-                    { xAxis: thresholdValue, name: "+Threshold" },
-                    { xAxis: -thresholdValue, name: "-Threshold" },
-                  ],
-                  lineStyle: { color: "#ef4444", width: 1, type: "dashed" as const },
-                  label: { show: false },
-                  silent: true,
-                }
-              : undefined,
-        },
-        {
-          name: "Y",
-          type: "bar",
-          data: chartData.map((d) => d.avgY),
-          itemStyle: { color: displacementYColor, opacity: 0.8 },
-          barGap: "0%",
-          barCategoryGap: "20%",
-        },
-      ],
+      series,
       animation: false,
     };
-  }, [chartData, displacementXColor, displacementYColor, xAxisMax, thresholdValue]);
+  }, [animationData, effectiveSelectedMetrics, metricOptions, metricStoryData, storyIds]);
 
   return (
-    <div className="flex h-full w-full flex-col bg-white">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-        <span>Frame {frameIndex + 1}</span>
-        <span className="text-neutral-300">•</span>
-        <span>{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
-        <span className="text-neutral-300">•</span>
-        <span>Visible stories: {chartData.length}</span>
+    <div className="relative flex h-full w-full flex-col bg-white">
+      <div className="absolute right-0 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-[10px] text-neutral-500">
+        <MetricSelect
+          options={metricOptions}
+          selected={effectiveSelectedMetrics}
+          onChange={(selectedMetrics) => setPanelState(panelId, "floorDisplacementChart", { selectedMetrics })}
+        />
       </div>
 
       <div className="min-h-0 w-full flex-1">
-        <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+        <ReactECharts
+          option={option}
+          replaceMerge={["series", "legend"]}
+          style={{ height: "100%", width: "100%" }}
+          opts={{ renderer: "svg" }}
+        />
       </div>
     </div>
   );

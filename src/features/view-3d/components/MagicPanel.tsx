@@ -313,6 +313,7 @@ function getPanelParams(panelType: PanelType, currentMetric: Metric): MagicPanel
 export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
   const isActive = props.api.isActive;
+  const isTabGroup = props.api.group.panels.length > 1;
   const [, setRenderTick] = useState(0);
 
   useEffect(() => {
@@ -332,7 +333,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
 
   return (
     <div
-      className={`z-10 flex h-full w-full items-center transition-colors ${
+      className={`group z-10 flex h-full w-full cursor-grab items-center transition-colors ${
         isActive ? "bg-amber-50/90 text-amber-900" : "bg-neutral-200/80"
       }`}>
       <span
@@ -343,6 +344,18 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
         })()}
         {currentPanelType}
       </span>
+      {isTabGroup && (
+        <Button
+          variant="secondary"
+          size="icon-xs"
+          className="absolute right-1 mr-1 h-5 w-5 opacity-0 group-hover:opacity-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            props.api.close();
+          }}>
+          <X />
+        </Button>
+      )}
     </div>
   );
 };

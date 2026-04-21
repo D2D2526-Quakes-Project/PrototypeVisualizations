@@ -93,6 +93,10 @@ export interface CornerMetricChartPanelState {
   metric: Metric;
 }
 
+export interface FloorDisplacementChartPanelState {
+  selectedMetrics: Metric[];
+}
+
 export interface VelocityTimeChartPanelState {
   selectedKeys: ("x" | "y" | "z" | "magnitude")[];
 }
@@ -139,6 +143,7 @@ export type PanelState =
   | { type: "storyDriftHeatmap"; state: StoryDriftHeatmapPanelState; panelId: string }
   | { type: "interstoryDriftChart"; state: InterstoryDriftChartPanelState; panelId: string }
   | { type: "cornerMetricChart"; state: CornerMetricChartPanelState; panelId: string }
+  | { type: "floorDisplacementChart"; state: FloorDisplacementChartPanelState; panelId: string }
   | { type: "velocityTimeChart"; state: VelocityTimeChartPanelState; panelId: string }
   | { type: "rotationTimeChart"; state: RotationTimeChartPanelState; panelId: string }
   | { type: "histogramChart"; state: HistogramChartPanelState; panelId: string }
@@ -557,6 +562,12 @@ export function getDefaultCornerMetricChartPanelState(): CornerMetricChartPanelS
   return {
     visibleCorners: ["NW", "NE", "SW", "SE"],
     metric: "interstoryDrift",
+  };
+}
+
+export function getDefaultFloorDisplacementChartPanelState(): FloorDisplacementChartPanelState {
+  return {
+    selectedMetrics: ["displacementX", "displacementY"],
   };
 }
 

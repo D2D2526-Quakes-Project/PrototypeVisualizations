@@ -3,7 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useColor, useFloorVisibility } from "@/features/view-3d/contexts/visualization";
+import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { getDefaultFloorDisplacementChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { formatValue, getMetricConfig, getMetricKeyColor, type Metric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
@@ -107,6 +107,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
   const { availableMetrics } = useColor();
+  const { thresholds } = useThresholds();
   const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
 
@@ -194,15 +195,15 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   }, [animationData, effectiveSelectedMetrics, frameIndex, storyIds]);
 
   const option = useMemo((): EChartsOption => {
-    const legendData = effectiveSelectedMetrics.map((metric) => {
-      const option = metricOptions.find((entry) => entry.metric === metric);
-      const config = getMetricConfig(metric);
-      return {
-        name: `${config.shortLabel} (${config.unit.abbr})`,
-        icon: "roundRect",
-        itemStyle: { color: option?.color ?? "#6b7280" },
-      };
-    });
+    // const legendData = effectiveSelectedMetrics.map((metric) => {
+    //   const option = metricOptions.find((entry) => entry.metric === metric);
+    //   const config = getMetricConfig(metric);
+    //   return {
+    //     name: `${config.shortLabel} (${config.unit.abbr})`,
+    //     icon: "roundRect",
+    //     itemStyle: { color: option?.color ?? "#6b7280" },
+    //   };
+    // });
 
     const storyRows = storyIds.map((storyId) => {
       const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
@@ -230,30 +231,50 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       };
     });
 
-    const series: NonNullable<EChartsOption["series"]> = effectiveSelectedMetrics.map((metric) => {
+    const series: NonNullable<EChartsOption["series"]> = effectiveSelectedMetrics.flatMap((metric, idx) => {
       const metricConfig = getMetricConfig(metric);
       const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
       const xAxisIndex = unitGroups.findIndex((g) => g.unit === metricConfig.unit.abbr);
-      return {
-        name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
-        type: "bar",
-        xAxisIndex: xAxisIndex,
-        data: (metricStoryData.get(metric) ?? []).map((row) => row.value),
-        barMaxWidth: 18,
-        itemStyle: {
-          color: metricColor,
-          opacity: 0.85,
-          borderRadius: [3, 3, 3, 3],
-        },
-        emphasis: {
+      const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
+      return [
+        {
+          name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
+          type: "bar",
+          xAxisIndex: xAxisIndex,
+          data: (metricStoryData.get(metric) ?? []).map((row) => row.value),
+          barMaxWidth: 18,
           itemStyle: {
-            opacity: 1,
+            color: metricColor,
+            opacity: 0.85,
+            borderRadius: [3, 3, 3, 3],
+          },
+          emphasis: {
+            itemStyle: {
+              opacity: 1,
+            },
+          },
+          tooltip: {
+            valueFormatter: (value) => `${formatValue(Number(value), 3)} ${metricConfig.unit.abbr}`,
           },
         },
-        tooltip: {
-          valueFormatter: (value) => `${formatValue(Number(value), 3)} ${metricConfig.unit.abbr}`,
+        {
+          name: "Threshold",
+          type: "line",
+          data: [],
+          symbol: "line",
+          lineStyle: { color: "#dc2626", width: 2 },
+          markLine:
+            idx === 0 && thresholdValue > 0
+              ? {
+                  symbol: "none",
+                  data: [{ xAxis: thresholdValue, name: "Threshold" }],
+                  lineStyle: { color: "#dc2626", width: 2, type: "solid" as const },
+                  label: { show: false },
+                  silent: true,
+                }
+              : undefined,
         },
-      };
+      ];
     });
 
     // const axisColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b"];
@@ -270,7 +291,6 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
         subtextStyle: { fontSize: 10, color: "#6b7280" },
       },
       legend: {
-        data: legendData,
         top: 52,
         right: 0,
         orient: "vertical",
@@ -383,7 +403,15 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       series,
       animation: false,
     };
-  }, [animationData, effectiveSelectedMetrics, metricOptions, metricStoryData, metricPaletteOverrides, storyIds]);
+  }, [
+    animationData,
+    effectiveSelectedMetrics,
+    metricOptions,
+    metricStoryData,
+    metricPaletteOverrides,
+    storyIds,
+    thresholds,
+  ]);
 
   return (
     <div className="relative flex h-full w-full flex-col bg-white">

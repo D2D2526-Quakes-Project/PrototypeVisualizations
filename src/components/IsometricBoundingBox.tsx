@@ -42,9 +42,6 @@ export function IsometricBoundingBox({
   const sy = highlightSliceY == undefined ? 0 : (highlightSliceY / maxSide) * 2;
   const sz = highlightSliceZ == undefined ? 0 : (highlightSliceZ / maxSide) * 2 - hz;
 
-  console.log(highlightSliceX, highlightSliceY, highlightSliceZ);
-  console.log(sx, sy, sz);
-
   const corners: [number, number, number][] = [
     [-hx, -hy, -hz], // 0
     [hx, -hy, -hz], // 1

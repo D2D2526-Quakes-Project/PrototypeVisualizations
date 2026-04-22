@@ -6,7 +6,7 @@ import { CornerMetricChart } from "@/features/view-3d/panels/CornerMetricChart";
 import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
 import { DataExplorerPanel } from "@/features/view-3d/panels/DataExplorerPanel";
 import { EndCapPanel } from "@/features/view-3d/panels/EndCapPanel";
-import { FloorDisplacementChart } from "@/features/view-3d/panels/FloorDisplacementChart";
+import { FloorAverageMetricChart } from "@/features/view-3d/panels/FloorAverageMetricChart";
 import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
 import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
 import { HistogramChart } from "@/features/view-3d/panels/HistogramChart";
@@ -105,11 +105,11 @@ const PANEL_DEFINITIONS = check({
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },
-  "Floor Displacement": {
-    component: FloorDisplacementChart,
+  "Floor Average Metric": {
+    component: FloorAverageMetricChart,
     category: "Core Analysis",
     icon: LineChart,
-    description: "Floor average displacement traces",
+    description: "Average Metrics for a Floor",
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },

@@ -102,7 +102,7 @@ function MetricSelect({
   );
 }
 
-export function FloorDisplacementChart({ api }: IDockviewPanelProps) {
+export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();

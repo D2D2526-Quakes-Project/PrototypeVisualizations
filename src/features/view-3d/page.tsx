@@ -194,7 +194,6 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       id: "main-canvas",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
-      title: "3D View",
       params: { panelType: "Main Canvas" },
       initialHeight: 760,
     });
@@ -203,17 +202,15 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       id: "timeline",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
-      title: "Timeline",
       position: { referencePanel: mainCanvas, direction: "below" },
       params: { panelType: "Timeline" },
       initialHeight: 200,
     });
 
     const interstoryDriftPanel = api.addPanel<MagicPanelParams>({
-      id: "interstory-drift-chart",
+      id: "corner-metric-chart",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
-      title: "Interstory Drift",
       position: { referencePanel: mainCanvas, direction: "right" },
       params: { panelType: "Corner Metric Chart" },
       initialWidth: 560,
@@ -223,18 +220,8 @@ function DockviewContainer({ initialState }: { initialState: AppState }) {
       id: "floor-displacement",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
-      title: "Floor Displacement",
       position: { referencePanel: interstoryDriftPanel, direction: "within" },
-      params: { panelType: "Floor Displacement" },
-    });
-
-    api.addPanel<MagicPanelParams>({
-      id: "corner-metric-chart",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      title: "Corner Metric",
-      position: { referencePanel: interstoryDriftPanel, direction: "within" },
-      params: { panelType: "Corner Metric Chart" },
+      params: { panelType: "Floor Average Metric" },
     });
   }, []);
 

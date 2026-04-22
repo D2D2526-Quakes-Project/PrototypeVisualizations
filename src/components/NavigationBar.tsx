@@ -1,5 +1,5 @@
-import { AlertTriangle, Check, LogOutIcon, Share2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertTriangle, Check, Keyboard, LogOutIcon, Share2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import {
@@ -27,6 +27,8 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { formatFixed3 } from "@/lib/utils";
 import { useViewStore, useViewStoreRaw } from "@/state";
 import { ColorScaleBarTooltip } from "../features/view-3d/components/CanvasWithControls/ColorScaleBar";
+import { SelectionShortcuts } from "../features/view-3d/components/CanvasWithControls/SelectionShortcuts";
+import { Sheet, SheetContent } from "./ui/sheet";
 
 export function NavigationBar() {
   const location = useLocation();
@@ -56,6 +58,7 @@ export function NavigationBar() {
 
   const [activeMenu, setActiveMenu] = useState("");
   const [isCopyingLink, setIsCopyingLink] = useState(false);
+  const [helpDrawerOpen, setHelpDrawerOpen] = useState(false);
 
   const backToHome = () => {
     clearSelection();
@@ -138,6 +141,17 @@ export function NavigationBar() {
     };
   }, [renderNodes, renderFloorSlabs, renderXCrossSectionSlabs, renderYCrossSectionSlabs, setRenderNodes]);
 
+  useEffect(() => {
+    // Ctrl+? for help
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        setHelpDrawerOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setHelpDrawerOpen]);
+
   return (
     <div className="grid grid-cols-[auto_auto_auto] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
       <div className="flex h-full min-w-0 items-center justify-start gap-3">
@@ -181,23 +195,13 @@ export function NavigationBar() {
                 <AlertTriangle />
                 Datasets
               </MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
 
-          <div className="h-6 w-px shrink-0 rounded-full bg-neutral-300" />
+              <MenubarSeparator />
 
-          <MenubarMenu>
-            <MenubarTrigger>Edit</MenubarTrigger>
-            <MenubarContent>
               <MenubarItem onClick={clearCurrentSelection}>Clear Selection</MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
 
-          <div className="h-6 w-px shrink-0 rounded-full bg-neutral-300" />
+              <MenubarSeparator />
 
-          <MenubarMenu value="share">
-            <MenubarTrigger>Share</MenubarTrigger>
-            <MenubarContent>
               <MenubarItem
                 disabled={isCopyingLink}
                 onSelect={(event) => {
@@ -207,10 +211,24 @@ export function NavigationBar() {
                 <Share2 />
                 {isCopyingLink ? "Copying..." : "Copy Shareable Link"}
               </MenubarItem>
+              <MenubarItem onClick={() => setHelpDrawerOpen(true)}>
+                <Keyboard />
+                Help
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
+
+          <div className="h-6 w-px shrink-0 rounded-full bg-neutral-300" />
         </Menubar>
       </div>
+
+      <Sheet open={helpDrawerOpen} onOpenChange={setHelpDrawerOpen}>
+        <SheetContent className="h-[35vh] max-h-[50vh]" side="bottom">
+          <div className="flex h-full flex-col overflow-y-auto">
+            <SelectionShortcuts showPlayback={true} />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <div className="flex items-center justify-center gap-2 py-1 text-sm whitespace-nowrap">
         {/* <AnimatedTitle /> */}

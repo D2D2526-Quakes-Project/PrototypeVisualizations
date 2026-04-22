@@ -64,7 +64,7 @@
         {
           "name": "station3139",
           "folder": "station3139",
-          "size": 165146552,
+          "size": 90618861,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/acceleration_lin.bld",
           "accelerationRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/acceleration_rot.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/displacement_lin.bld",
@@ -76,9 +76,9 @@
           "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/velocity_rot.bld"
         }
       ],
-      "size": 364078632,
+      "size": 289550941,
       "beamData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/beam_data.bld"
     }
   ],
-  "size": 4502256677
+  "size": 4427728986
 }

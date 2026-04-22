@@ -27,9 +27,9 @@ const router = createBrowserRouter([
   {
     element: (
       <>
-        <ViewProvider>
-          <AnimationDataProvider>
-            <TooltipProvider>
+        <TooltipProvider>
+          <ViewProvider>
+            <AnimationDataProvider>
               <NavigationBar />
               <PlaybackProvider>
                 <SliceSelectionProvider>
@@ -38,9 +38,9 @@ const router = createBrowserRouter([
                   </CrossSectionSelectionProvider>
                 </SliceSelectionProvider>
               </PlaybackProvider>
-            </TooltipProvider>
-          </AnimationDataProvider>
-        </ViewProvider>
+            </AnimationDataProvider>
+          </ViewProvider>
+        </TooltipProvider>
       </>
     ),
     errorElement: <ErrorPage />,

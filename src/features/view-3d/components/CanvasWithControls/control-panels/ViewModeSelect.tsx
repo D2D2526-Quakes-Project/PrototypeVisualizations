@@ -9,6 +9,7 @@ import {
   Rows2Icon,
   Share2Icon,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function ViewModeSelect() {
   const { animationData } = useAnimationData();
@@ -80,24 +81,33 @@ export function ViewModeSelect() {
     <div className="gap-y- grid grid-cols-4 justify-items-center gap-x-2">
       {options.map(({ label, value, setter, icon: Icon, disabled }) => (
         <button className="cursor-pointer" key={label} onClick={() => !disabled && setter(!value)} disabled={disabled}>
-          <div
-            className={`relative flex w-fit flex-col items-center justify-center gap-2 rounded-sm border p-2 px-3 text-center transition-colors ${value ? "border-blue-400 text-blue-400" : disabled ? "border-border cursor-not-allowed text-neutral-300" : "border-border text-muted-foreground hover:border-border/80"}`}>
-            <Icon className="size-4" />
-            <span
-              className={`bg-background absolute -right-1.75 -bottom-1.75 flex h-4 w-4 items-center justify-center rounded-[4px] border-[1.5px] transition-colors ${value ? "border-blue-400 bg-blue-400" : "border-border"} `}>
-              {value && (
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <polyline
-                    points="2,5 4,7.5 8,3"
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </span>
-          </div>
+          <Tooltip key={label} disableHoverableContent>
+            <TooltipTrigger asChild>
+              <div
+                className={`relative flex w-fit flex-col items-center justify-center gap-2 rounded-sm border p-2 px-3 text-center transition-colors ${value ? "border-blue-400 text-blue-400" : disabled ? "border-border cursor-not-allowed text-neutral-300" : "border-border text-muted-foreground hover:border-border/80"}`}>
+                <Icon className="size-4" />
+                <span
+                  className={`bg-background absolute -right-1.75 -bottom-1.75 flex h-4 w-4 items-center justify-center rounded-[4px] border-[1.5px] transition-colors ${value ? "border-blue-400 bg-blue-400" : "border-border"} `}>
+                  {value && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <polyline
+                        points="2,5 4,7.5 8,3"
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </span>
+              </div>
+            </TooltipTrigger>
+            {disabled && (
+              <TooltipContent side="bottom" sideOffset={8}>
+                You need to load beam data to use this view mode.
+              </TooltipContent>
+            )}
+          </Tooltip>
           <span className={`text-[11px] leading-tight ${disabled ? "text-neutral-300" : ""}`}>{label}</span>
         </button>
       ))}

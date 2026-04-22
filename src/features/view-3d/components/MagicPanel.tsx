@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
 import { CornerMetricChart } from "@/features/view-3d/panels/CornerMetricChart";
-import { DamageThresholdPanel } from "@/features/view-3d/panels/DamageThresholdPanel";
+import { ISDThresholdPanel } from "@/features/view-3d/panels/ISDThresholdPanel";
 import { DataExplorerPanel } from "@/features/view-3d/panels/DataExplorerPanel";
 import { EndCapPanel } from "@/features/view-3d/panels/EndCapPanel";
 import { FloorAverageMetricChart } from "@/features/view-3d/panels/FloorAverageMetricChart";
@@ -156,7 +156,7 @@ const PANEL_DEFINITIONS = check({
     optionalEnhancementData: [],
   },
   "ISD Threshold": {
-    component: DamageThresholdPanel,
+    component: ISDThresholdPanel,
     category: "Core Analysis",
     icon: ShieldAlert,
     description: "Threshold evaluation summary",

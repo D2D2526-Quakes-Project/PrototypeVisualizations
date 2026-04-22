@@ -55,7 +55,7 @@ function ThresholdStatusPill({ currentExceeded, everExceeded }: { currentExceede
   );
 }
 
-export function DamageThresholdPanel() {
+export function ISDThresholdPanel() {
   const { animationData } = useAnimationData();
   const { storyDrift } = animationData;
   const { storyOrder, dt, cornerNodes, frameCount } = animationData.metadata;

@@ -10,7 +10,7 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { formatStoryLabel } from "@/lib/utils";
 import { useViewStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview";
-import type { EChartsOption, XAXisComponentOption } from "echarts";
+import type { EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -231,50 +231,61 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       };
     });
 
-    const series: NonNullable<EChartsOption["series"]> = effectiveSelectedMetrics.flatMap((metric, idx) => {
+    const series: SeriesOption[] = effectiveSelectedMetrics.flatMap((metric) => {
       const metricConfig = getMetricConfig(metric);
       const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
       const xAxisIndex = unitGroups.findIndex((g) => g.unit === metricConfig.unit.abbr);
       const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
-      return [
-        {
-          name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
-          type: "bar",
-          xAxisIndex: xAxisIndex,
-          data: (metricStoryData.get(metric) ?? []).map((row) => row.value),
-          barMaxWidth: 18,
+      const isPositiveOnly = metricConfig.positiveOnly ?? true;
+
+      const barSeries: SeriesOption = {
+        name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
+        type: "bar" as const,
+        xAxisIndex,
+        data: (metricStoryData.get(metric) ?? []).map((row) => row.value),
+        barMaxWidth: 18,
+        itemStyle: {
+          color: metricColor,
+          opacity: 0.85,
+          borderRadius: [3, 3, 3, 3] as [number, number, number, number],
+        },
+        emphasis: {
           itemStyle: {
-            color: metricColor,
-            opacity: 0.85,
-            borderRadius: [3, 3, 3, 3],
+            opacity: 1,
           },
-          emphasis: {
-            itemStyle: {
-              opacity: 1,
+        },
+        tooltip: {
+          valueFormatter: (value) => `${formatValue(Number(value), 3)} ${metricConfig.unit.abbr}`,
+        },
+      };
+
+      if (thresholdValue > 0) {
+        const markLineData = [{ xAxis: thresholdValue, name: `Threshold +${metricConfig.unit.abbr}` }];
+        if (!isPositiveOnly) {
+          markLineData.push({ xAxis: -thresholdValue, name: `Threshold -${metricConfig.unit.abbr}` });
+        }
+
+        return [
+          barSeries,
+          {
+            name: `Threshold (${metricConfig.unit.abbr})`,
+            type: "line" as const,
+            xAxisIndex,
+            data: [],
+            symbol: "line" as const,
+            lineStyle: { color: metricColor, width: 2, type: "solid" as const },
+            markLine: {
+              symbol: "none",
+              data: markLineData,
+              lineStyle: { color: metricColor, width: 2, type: "solid" as const },
+              label: { show: false },
+              silent: true,
             },
-          },
-          tooltip: {
-            valueFormatter: (value) => `${formatValue(Number(value), 3)} ${metricConfig.unit.abbr}`,
-          },
-        },
-        {
-          name: "Threshold",
-          type: "line",
-          data: [],
-          symbol: "line",
-          lineStyle: { color: "#dc2626", width: 2 },
-          markLine:
-            idx === 0 && thresholdValue > 0
-              ? {
-                  symbol: "none",
-                  data: [{ xAxis: thresholdValue, name: "Threshold" }],
-                  lineStyle: { color: "#dc2626", width: 2, type: "solid" as const },
-                  label: { show: false },
-                  silent: true,
-                }
-              : undefined,
-        },
-      ];
+          } as SeriesOption,
+        ];
+      }
+
+      return [barSeries];
     });
 
     // const axisColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b"];
@@ -291,6 +302,14 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
         subtextStyle: { fontSize: 10, color: "#6b7280" },
       },
       legend: {
+        data: (series as Array<{ name?: string; markLine?: unknown }>)
+          .filter((s): s is { name: string } => !!s.name && !s.name.startsWith("Threshold"))
+          .map((s) => s.name)
+          .concat(
+            (series as Array<{ name?: string; markLine?: unknown }>)
+              .filter((s): s is { name: string } => !!s.name?.startsWith("Threshold") && !!s.markLine)
+              .map((s) => s.name)
+          ) as string[],
         top: 52,
         right: 0,
         orient: "vertical",

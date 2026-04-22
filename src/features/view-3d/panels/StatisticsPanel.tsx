@@ -166,14 +166,6 @@ export function StatisticsPanel() {
 
   return (
     <div className="flex h-full w-full flex-col overflow-auto bg-white">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-neutral-500">
-        <span>Time: {(frameIndex * animationData.metadata.dt).toFixed(1).replace(/\.0$/u, "")} s</span>
-        <span className="text-neutral-300">•</span>
-        <span>Displacement/velocity/acceleration in in, in/s, in/s²</span>
-        <span className="text-neutral-300">•</span>
-        <span>Ground motion in g</span>
-      </div>
-
       <div className="min-h-0 flex-1 overflow-auto p-3">
         <StatGroup title="Simulation" scope="static">
           <StatRow label="Nodes" value={stats.nodeCount} />
@@ -219,26 +211,119 @@ export function StatisticsPanel() {
           <StatRow label="Magnitude" value={stats.groundMotion.magnitude} unit="g" />
         </StatGroup>
 
-        <StatGroup title="Precomputed Peaks" scope="static">
-          <StatRow label="Max Displacement" value={stats.precomputed.maxDisplacement} unit="in" />
-          <StatRow label="Max GM Magnitude" value={stats.precomputed.groundMotion.maxMagnitude} unit="g" />
-          <StatRow label="Min GM Magnitude" value={stats.precomputed.groundMotion.minMagnitude} unit="g" />
+        <StatGroup title="Bounding Box" scope="static">
+          <StatRow label="Span X" value={stats.precomputed.boundingBox.span[0]} unit="in" />
+          <StatRow label="Span Y" value={stats.precomputed.boundingBox.span[1]} unit="in" />
+          <StatRow label="Span Z" value={stats.precomputed.boundingBox.span[2]} unit="in" />
+          <StatRow label="Center X" value={stats.precomputed.boundingBox.center[0]} unit="in" />
+          <StatRow label="Center Y" value={stats.precomputed.boundingBox.center[1]} unit="in" />
+          <StatRow label="Center Z" value={stats.precomputed.boundingBox.center[2]} unit="in" />
+        </StatGroup>
+
+        <StatGroup title="Maximum Displacement" scope="static">
+          <StatRow label="Magnitude" value={stats.precomputed.maxDisplacement} unit="in" />
+          <StatRow label="X Component" value={stats.precomputed.maxDisplacementX} unit="in" />
+          <StatRow label="Y Component" value={stats.precomputed.maxDisplacementY} unit="in" />
+          <StatRow label="Z Component" value={stats.precomputed.maxDisplacementZ} unit="in" />
+        </StatGroup>
+
+        <StatGroup title="Ground Motion Peaks" scope="static">
+          <StatRow label="Max X" value={stats.precomputed.groundMotion.max[0]} unit="g" />
+          <StatRow label="Max Y" value={stats.precomputed.groundMotion.max[1]} unit="g" />
+          <StatRow label="Max Z" value={stats.precomputed.groundMotion.max[2]} unit="g" />
+          <StatRow label="Min X" value={stats.precomputed.groundMotion.min[0]} unit="g" />
+          <StatRow label="Min Y" value={stats.precomputed.groundMotion.min[1]} unit="g" />
+          <StatRow label="Min Z" value={stats.precomputed.groundMotion.min[2]} unit="g" />
+          <StatRow label="Max Magnitude" value={stats.precomputed.groundMotion.maxMagnitude} unit="g" />
+          <StatRow label="Min Magnitude" value={stats.precomputed.groundMotion.minMagnitude} unit="g" />
+        </StatGroup>
+
+        <StatGroup title="Velocity Peaks" scope="static">
           {stats.precomputed.maxVelocity && (
-            <StatRow label="Max Velocity" value={stats.precomputed.maxVelocity} unit="in/s" />
+            <>
+              <StatRow label="Magnitude" value={stats.precomputed.maxVelocity} unit="in/s" />
+              {stats.precomputed.maxVelocityX !== undefined && (
+                <StatRow label="X Component" value={stats.precomputed.maxVelocityX} unit="in/s" />
+              )}
+              {stats.precomputed.maxVelocityY !== undefined && (
+                <StatRow label="Y Component" value={stats.precomputed.maxVelocityY} unit="in/s" />
+              )}
+              {stats.precomputed.maxVelocityZ !== undefined && (
+                <StatRow label="Z Component" value={stats.precomputed.maxVelocityZ} unit="in/s" />
+              )}
+            </>
           )}
+        </StatGroup>
+
+        <StatGroup title="Acceleration Peaks" scope="static">
           {stats.precomputed.maxAcceleration && (
-            <StatRow label="Max Acceleration" value={stats.precomputed.maxAcceleration} unit="in/s²" />
+            <>
+              <StatRow label="Magnitude" value={stats.precomputed.maxAcceleration} unit="in/s²" />
+              {stats.precomputed.maxAccelerationX !== undefined && (
+                <StatRow label="X Component" value={stats.precomputed.maxAccelerationX} unit="in/s²" />
+              )}
+              {stats.precomputed.maxAccelerationY !== undefined && (
+                <StatRow label="Y Component" value={stats.precomputed.maxAccelerationY} unit="in/s²" />
+              )}
+              {stats.precomputed.maxAccelerationZ !== undefined && (
+                <StatRow label="Z Component" value={stats.precomputed.maxAccelerationZ} unit="in/s²" />
+              )}
+            </>
           )}
-          <StatRow label="Max Story Drift" value={stats.precomputed.maxStoryDrift} unit="%" />
+        </StatGroup>
+
+        <StatGroup title="Story Drift" scope="static">
+          <StatRow label="Max Drift" value={stats.precomputed.maxStoryDrift} unit="%" />
+        </StatGroup>
+
+        <StatGroup title="Rotation Peaks" scope="static">
           {stats.optionalPeaks.maxRotation !== null && (
-            <StatRow label="Max Rotation" value={stats.optionalPeaks.maxRotation} unit="rad" />
+            <>
+              <StatRow label="Magnitude" value={stats.optionalPeaks.maxRotation} unit="rad" />
+              {stats.precomputed.maxRotationX !== undefined && (
+                <StatRow label="X" value={stats.precomputed.maxRotationX} unit="rad" />
+              )}
+              {stats.precomputed.maxRotationY !== undefined && (
+                <StatRow label="Y" value={stats.precomputed.maxRotationY} unit="rad" />
+              )}
+              {stats.precomputed.maxRotationZ !== undefined && (
+                <StatRow label="Z" value={stats.precomputed.maxRotationZ} unit="rad" />
+              )}
+            </>
           )}
           {stats.optionalPeaks.maxRotationVelocity !== null && (
-            <StatRow label="Max Rot. Velocity" value={stats.optionalPeaks.maxRotationVelocity} unit="rad/s" />
+            <>
+              <StatRow label="Velocity" value={stats.optionalPeaks.maxRotationVelocity} unit="rad/s" />
+              {stats.precomputed.maxRotationVelocityX !== undefined && (
+                <StatRow label="Velocity X" value={stats.precomputed.maxRotationVelocityX} unit="rad/s" />
+              )}
+              {stats.precomputed.maxRotationVelocityY !== undefined && (
+                <StatRow label="Velocity Y" value={stats.precomputed.maxRotationVelocityY} unit="rad/s" />
+              )}
+              {stats.precomputed.maxRotationVelocityZ !== undefined && (
+                <StatRow label="Velocity Z" value={stats.precomputed.maxRotationVelocityZ} unit="rad/s" />
+              )}
+            </>
           )}
           {stats.optionalPeaks.maxRotationAcceleration !== null && (
-            <StatRow label="Max Rot. Accel." value={stats.optionalPeaks.maxRotationAcceleration} unit="rad/s²" />
+            <>
+              <StatRow label="Acceleration" value={stats.optionalPeaks.maxRotationAcceleration} unit="rad/s²" />
+              {stats.precomputed.maxRotationAccelerationX !== undefined && (
+                <StatRow label="Accel X" value={stats.precomputed.maxRotationAccelerationX} unit="rad/s²" />
+              )}
+              {stats.precomputed.maxRotationAccelerationY !== undefined && (
+                <StatRow label="Accel Y" value={stats.precomputed.maxRotationAccelerationY} unit="rad/s²" />
+              )}
+              {stats.precomputed.maxRotationAccelerationZ !== undefined && (
+                <StatRow label="Accel Z" value={stats.precomputed.maxRotationAccelerationZ} unit="rad/s²" />
+              )}
+            </>
           )}
+        </StatGroup>
+
+        <StatGroup title="Cross Sections" scope="static">
+          <StatRow label="X Count" value={stats.precomputed.numCrossSectionsX} />
+          <StatRow label="Y Count" value={stats.precomputed.numCrossSectionsY} />
         </StatGroup>
       </div>
     </div>

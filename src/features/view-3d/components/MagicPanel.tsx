@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   BarChart3,
   Columns,
+  Grid2X2Icon,
   LineChart,
   Maximize2,
   Minimize2,
@@ -36,6 +37,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Timeline } from "./Timeline";
+import { StatisticsPanel } from "../panels/StatisticsPanel";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -158,6 +160,14 @@ const PANEL_DEFINITIONS = check({
     category: "Core Analysis",
     icon: ShieldAlert,
     description: "Threshold evaluation summary",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  Statistics: {
+    component: StatisticsPanel,
+    category: "Core Analysis",
+    icon: Grid2X2Icon,
+    description: "Simulation overview",
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },

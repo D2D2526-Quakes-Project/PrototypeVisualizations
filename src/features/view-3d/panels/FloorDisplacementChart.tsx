@@ -10,7 +10,7 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { formatStoryLabel } from "@/lib/utils";
 import { useViewStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview";
-import type { EChartsOption } from "echarts";
+import type { EChartsOption, XAXisComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -213,31 +213,31 @@ export function FloorDisplacementChart({ api }: IDockviewPanelProps) {
       };
     });
 
-    let axisMax = MIN_X_AXIS_MAX;
-
-    effectiveSelectedMetrics.forEach((metric) => {
-      const metricConfig = getMetricConfig(metric);
-      // const rows = metricStoryData.get(metric) ?? [];
-      // for (const row of rows) {
-      //   // axisMax = Math.max(axisMax, row.value, Math.abs(row.value));
-      //   // axisMin = Math.min(axisMin, row.value);
-      // }
-      axisMax = Math.max(axisMax, metricConfig.getPrecomputedMax(animationData));
+    const unitGroups = Array.from(
+      new Map(
+        effectiveSelectedMetrics.map((metric) => {
+          const config = getMetricConfig(metric);
+          return [config.unit.abbr, { metric, config }];
+        })
+      ).entries()
+    ).map(([unit, { metric, config }]) => {
+      const max = config.getPrecomputedMax(animationData);
+      return {
+        unit,
+        metric,
+        paddedMin: -Math.max(max * 1.15, MIN_X_AXIS_MAX),
+        paddedMax: Math.max(max * 1.15, MIN_X_AXIS_MAX),
+      };
     });
-
-    const paddedMax = Math.max(axisMax * 1.15, MIN_X_AXIS_MAX);
-    const paddedMin = -paddedMax;
-
-    const uniqueUnits = Array.from(
-      new Set(effectiveSelectedMetrics.map((metric) => getMetricConfig(metric).unit.abbr))
-    );
 
     const series: NonNullable<EChartsOption["series"]> = effectiveSelectedMetrics.map((metric) => {
       const metricConfig = getMetricConfig(metric);
       const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
+      const xAxisIndex = unitGroups.findIndex((g) => g.unit === metricConfig.unit.abbr);
       return {
         name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
         type: "bar",
+        xAxisIndex: xAxisIndex,
         data: (metricStoryData.get(metric) ?? []).map((row) => row.value),
         barMaxWidth: 18,
         itemStyle: {
@@ -255,6 +255,9 @@ export function FloorDisplacementChart({ api }: IDockviewPanelProps) {
         },
       };
     });
+
+    // const axisColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b"];
+    // const axisSplitColors = ["#e0e7ff", "#e0f2fe", "#d1fae5", "#fef3c7"];
 
     return {
       title: {
@@ -319,33 +322,43 @@ export function FloorDisplacementChart({ api }: IDockviewPanelProps) {
         left: 0,
         right: 0,
         top: 62,
-        bottom: 0,
+        bottom: unitGroups.length * 30,
         containLabel: false,
       },
-      xAxis: {
-        type: "value",
-        name: uniqueUnits.length === 1 ? `Average Value (${uniqueUnits[0]})` : "Average Value",
-        nameLocation: "middle",
-        nameGap: 28,
-        nameTextStyle: {
-          fontSize: 10,
-          color: "#4b5563",
-          fontWeight: 500,
-        },
-        min: paddedMin,
-        max: paddedMax,
-        axisLine: {
-          lineStyle: { color: "#d1d5db" },
-        },
-        axisLabel: {
-          color: "#6b7280",
-          fontSize: 10,
-          formatter: (value: number) => formatValue(value, 2),
-        },
-        splitLine: {
-          lineStyle: { color: "#e5e7eb", type: "dashed" as const },
-        },
-      },
+
+      xAxis: unitGroups.map(
+        (group, idx) =>
+          ({
+            type: "value",
+            xAxisId: String(idx),
+            offset: idx * 30,
+            name: group.unit,
+            nameLocation: "middle",
+            nameGap: 18,
+            nameTextStyle: {
+              fontSize: 10,
+              color: getMetricKeyColor(group.metric, metricPaletteOverrides),
+              fontWeight: 500,
+            },
+            min: group.paddedMin,
+            max: group.paddedMax,
+            position: "bottom",
+            axisLine: {
+              lineStyle: { color: getMetricKeyColor(group.metric, metricPaletteOverrides) },
+            },
+            axisLabel: {
+              color: getMetricKeyColor(group.metric, metricPaletteOverrides),
+              fontSize: 10,
+              formatter: (value: number) => formatValue(value, 2),
+            },
+            splitLine: {
+              lineStyle: {
+                color: getMetricKeyColor(group.metric, metricPaletteOverrides) + "40",
+                type: "dashed" as const,
+              },
+            },
+          }) as XAXisComponentOption
+      ),
       yAxis: {
         type: "category",
         name: "Story",
@@ -370,7 +383,7 @@ export function FloorDisplacementChart({ api }: IDockviewPanelProps) {
       series,
       animation: false,
     };
-  }, [animationData, effectiveSelectedMetrics, metricOptions, metricStoryData, storyIds]);
+  }, [animationData, effectiveSelectedMetrics, metricOptions, metricStoryData, metricPaletteOverrides, storyIds]);
 
   return (
     <div className="relative flex h-full w-full flex-col bg-white">
@@ -385,7 +398,7 @@ export function FloorDisplacementChart({ api }: IDockviewPanelProps) {
       <div className="min-h-0 w-full flex-1">
         <ReactECharts
           option={option}
-          replaceMerge={["series", "legend"]}
+          replaceMerge={["series", "legend", "xAxis"]}
           style={{ height: "100%", width: "100%" }}
           opts={{ renderer: "svg" }}
         />

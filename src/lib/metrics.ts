@@ -498,45 +498,45 @@ export const METRIC_PALETTES: Record<MetricPaletteKey, MetricPaletteDefinition> 
     label: "Viridis",
     paletteKey: "viridis",
     positiveColorStops: MATPLOTLIB_PALETTES.viridis,
-    positiveThresholdColorStops: MATPLOTLIB_PALETTES.viridis,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.viridisInverted,
     negativeColorStops: MATPLOTLIB_PALETTES.viridis,
-    negativeThresholdColorStops: MATPLOTLIB_PALETTES.viridis,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.viridisInverted,
     keyColor: MATPLOTLIB_PALETTES.viridis[2],
   },
   plasma: {
     label: "Plasma",
     paletteKey: "plasma",
     positiveColorStops: MATPLOTLIB_PALETTES.plasma,
-    positiveThresholdColorStops: MATPLOTLIB_PALETTES.plasma,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.plasmaInverted,
     negativeColorStops: MATPLOTLIB_PALETTES.plasma,
-    negativeThresholdColorStops: MATPLOTLIB_PALETTES.plasma,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.plasmaInverted,
     keyColor: MATPLOTLIB_PALETTES.plasma[2],
   },
   inferno: {
     label: "Inferno",
     paletteKey: "inferno",
     positiveColorStops: MATPLOTLIB_PALETTES.inferno,
-    positiveThresholdColorStops: MATPLOTLIB_PALETTES.inferno,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.infernoInverted,
     negativeColorStops: MATPLOTLIB_PALETTES.inferno,
-    negativeThresholdColorStops: MATPLOTLIB_PALETTES.inferno,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.infernoInverted,
     keyColor: MATPLOTLIB_PALETTES.inferno[2],
   },
   magma: {
     label: "Magma",
     paletteKey: "magma",
     positiveColorStops: MATPLOTLIB_PALETTES.magma,
-    positiveThresholdColorStops: MATPLOTLIB_PALETTES.magma,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.magmaInverted,
     negativeColorStops: MATPLOTLIB_PALETTES.magma,
-    negativeThresholdColorStops: MATPLOTLIB_PALETTES.magma,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.magmaInverted,
     keyColor: MATPLOTLIB_PALETTES.magma[2],
   },
   cividis: {
     label: "Cividis",
     paletteKey: "cividis",
     positiveColorStops: MATPLOTLIB_PALETTES.cividis,
-    positiveThresholdColorStops: MATPLOTLIB_PALETTES.cividis,
+    positiveThresholdColorStops: MATPLOTLIB_PALETTES.cividisInverted,
     negativeColorStops: MATPLOTLIB_PALETTES.cividis,
-    negativeThresholdColorStops: MATPLOTLIB_PALETTES.cividis,
+    negativeThresholdColorStops: MATPLOTLIB_PALETTES.cividisInverted,
     keyColor: MATPLOTLIB_PALETTES.cividis[2],
   },
   spectrum: {
@@ -615,6 +615,13 @@ export interface ThresholdConfig {
 }
 
 export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
+  interstoryDrift: {
+    key: "interstoryDrift",
+    label: "ISD",
+    unit: UNITS["percent"],
+    getPrecomputedMax: get("maxStoryDrift"),
+    isAvailable: (animationData) => !!animationData.displacementLin,
+  },
   displacement: {
     key: "displacement",
     label: "Displacement",
@@ -657,13 +664,6 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
     getPrecomputedMax: get("maxRotationAcceleration"),
     isAvailable: (animationData) => !!animationData.accelerationRot,
   },
-  interstoryDrift: {
-    key: "interstoryDrift",
-    label: "ISD",
-    unit: UNITS["percent"],
-    getPrecomputedMax: get("maxStoryDrift"),
-    isAvailable: (animationData) => !!animationData.displacementLin,
-  },
   inf: {
     key: "inf",
     label: "inf",
@@ -674,6 +674,21 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
 };
 
 export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
+  interstoryDrift: {
+    metric: "interstoryDrift",
+    thresholdKey: "interstoryDrift",
+    label: "Story Drift",
+    shortLabel: "Story Drift",
+    unit: UNITS["percent"],
+    defaultPalette: "red",
+    positiveOnly: true,
+    getPrecomputedMax: get("maxStoryDrift"),
+    isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
+    getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
+      const drifts = animationData.storyDrift.get(frameIndex, nodeId);
+      return drifts;
+    },
+  },
   displacementMag: {
     metric: "displacementMag",
     thresholdKey: "displacement",
@@ -1036,21 +1051,6 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
     },
   },
-  interstoryDrift: {
-    metric: "interstoryDrift",
-    thresholdKey: "interstoryDrift",
-    label: "Story Drift",
-    shortLabel: "Story Drift",
-    unit: UNITS["percent"],
-    defaultPalette: "red",
-    positiveOnly: true,
-    getPrecomputedMax: get("maxStoryDrift"),
-    isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
-    getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
-      const drifts = animationData.storyDrift.get(frameIndex, nodeId);
-      return drifts;
-    },
-  },
   // Debug metrics
   floorIndex: {
     metric: "floorIndex",
@@ -1155,13 +1155,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
 };
 
 export const THRESHOLD_KEY_ORDER: ThresholdKey[] = [
+  "interstoryDrift",
   "displacement",
   "rotation",
   "velocity",
   "rotationVelocity",
   "acceleration",
   "rotationAcceleration",
-  "interstoryDrift",
 ];
 
 export function getThresholdConfig(thresholdKey: ThresholdKey): ThresholdConfig {

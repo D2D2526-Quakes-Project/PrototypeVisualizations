@@ -41,6 +41,8 @@ export function NavigationBar() {
   const renderFloorSlabs = useViewStore((state) => state.renderFloorSlabs);
   const renderXCrossSectionSlabs = useViewStore((state) => state.renderXCrossSectionSlabs);
   const renderYCrossSectionSlabs = useViewStore((state) => state.renderYCrossSectionSlabs);
+  const renderVerticalConnections = useViewStore((state) => state.renderVerticalConnections);
+  const renderHorizontalConnections = useViewStore((state) => state.renderHorizontalConnections);
   const hiddenNodeCount = useViewStore((state) => state.hiddenNodeIds.length);
   const setRenderNodes = useViewStore((state) => state.setRenderNodes);
   const {
@@ -133,13 +135,29 @@ export function NavigationBar() {
   }, [animationData, hiddenNodeCount, showAllNodes]);
 
   const allVisibilityHiddenWarning = useMemo(() => {
-    if (renderNodes || renderFloorSlabs || renderXCrossSectionSlabs || renderYCrossSectionSlabs) return null;
+    if (
+      renderNodes ||
+      renderFloorSlabs ||
+      renderXCrossSectionSlabs ||
+      renderYCrossSectionSlabs ||
+      renderVerticalConnections ||
+      renderHorizontalConnections
+    )
+      return null;
     return {
       restore: () => {
         setRenderNodes(true);
       },
     };
-  }, [renderNodes, renderFloorSlabs, renderXCrossSectionSlabs, renderYCrossSectionSlabs, setRenderNodes]);
+  }, [
+    renderNodes,
+    renderFloorSlabs,
+    renderXCrossSectionSlabs,
+    renderYCrossSectionSlabs,
+    setRenderNodes,
+    renderVerticalConnections,
+    renderHorizontalConnections,
+  ]);
 
   useEffect(() => {
     // Ctrl+? for help

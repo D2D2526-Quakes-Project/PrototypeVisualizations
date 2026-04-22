@@ -12,6 +12,7 @@ import { useViewStore } from "@/state";
 // import { interpolate } from "culori";
 import { ChartNoAxesCombinedIcon, XIcon } from "lucide-react";
 import { stringToNumber } from "@/lib/utils";
+import { IsometricBuilding } from "@/components/IsometricBoundingBox";
 
 // const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
@@ -1159,6 +1160,9 @@ export function FloorTab(props: IDockviewPanelHeaderProps<{ storyId: string }>) 
   const storyId = props.params.storyId;
   const color = getFloorColor(storyId);
   const lightColor = getFloorColorLight(storyId);
+  const { animationData } = useAnimationData();
+  const storyElevations = animationData.precomputed.storyElevations;
+  console.log(storyId, storyElevations);
 
   const handleClose = () => {
     props.api.close();
@@ -1172,6 +1176,9 @@ export function FloorTab(props: IDockviewPanelHeaderProps<{ storyId: string }>) 
         <span className="text-sm font-semibold" style={{ color }}>
           Floor {storyId}
         </span>
+        <div className="size-5">
+          <IsometricBuilding highlightSliceZ={storyElevations[storyId] ?? undefined} />
+        </div>
       </div>
 
       <div className="flex items-center gap-1">

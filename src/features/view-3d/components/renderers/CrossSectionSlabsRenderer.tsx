@@ -200,7 +200,7 @@ function CrossSectionSlab({
     e.stopPropagation();
     selectCrossSection({
       id: crossSectionId,
-      type: crossSectionType === "x" ? "Y" : "X",
+      type: crossSectionType === "x" ? "X" : "Y",
       value: crossSectionPos,
       nodeIds,
       label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,

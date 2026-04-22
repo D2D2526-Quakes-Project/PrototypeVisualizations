@@ -8,6 +8,7 @@ import { ChartNoAxesCombinedIcon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CrossSectionVisualization } from "./CrossSectionVisualization";
 import { MiniTimeSeries } from "./MiniTimeSeries";
+import { IsometricBuilding } from "@/components/IsometricBoundingBox";
 
 interface CrossSectionParams {
   crossSectionType: "X" | "Y";
@@ -457,7 +458,7 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex-1 space-y-2 overflow-y-auto p-3 text-xs">
+      <div className="flex-1 space-y-2 overflow-y-scroll p-3 text-xs">
         {/* 3D VISUALIZATION */}
         <div className="animate-fade-in w-full" ref={containerRef}>
           <CrossSectionVisualization nodeIds={nodeIds} crossSectionType={crossSectionType} width={dimensions} />
@@ -815,13 +816,19 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
 }
 
 export function CrossSectionTab(props: IDockviewPanelHeaderProps<CrossSectionParams>) {
-  const { crossSectionType, position } = props.params;
-  const color = getCrossSectionColor(crossSectionType, position);
-  const lightColor = getCrossSectionColorLight(crossSectionType, position);
+  const { crossSectionType, position: dataPosition } = props.params;
+  const color = getCrossSectionColor(crossSectionType, dataPosition);
+  const lightColor = getCrossSectionColorLight(crossSectionType, dataPosition);
+  const { animationData } = useAnimationData();
+  const boundingBox = animationData.precomputed.boundingBox;
 
   const handleClose = () => {
     props.api.close();
   };
+
+  const position = Math.trunc(
+    crossSectionType == "X" ? dataPosition - boundingBox.center[0] : dataPosition - boundingBox.center[1]
+  );
 
   return (
     <div
@@ -831,6 +838,12 @@ export function CrossSectionTab(props: IDockviewPanelHeaderProps<CrossSectionPar
         <span className="text-sm font-semibold" style={{ color }}>
           {crossSectionType} Section {position}
         </span>
+        <div className="size-5">
+          <IsometricBuilding
+            highlightSliceX={crossSectionType == "X" ? position : undefined}
+            highlightSliceY={crossSectionType == "Y" ? position : undefined}
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-1">

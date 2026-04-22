@@ -91,6 +91,7 @@ export interface InterstoryDriftChartPanelState {
 export interface CornerMetricChartPanelState {
   visibleCorners: string[];
   metric: Metric;
+  displayMode: "bar" | "line";
 }
 
 export interface FloorDisplacementChartPanelState {
@@ -562,6 +563,7 @@ export function getDefaultCornerMetricChartPanelState(): CornerMetricChartPanelS
   return {
     visibleCorners: ["NW", "NE", "SW", "SE"],
     metric: "interstoryDrift",
+    displayMode: "bar",
   };
 }
 

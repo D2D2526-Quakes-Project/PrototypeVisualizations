@@ -145,7 +145,7 @@ export function CrossSectionVisualization({ nodeIds, crossSectionType, width }: 
   const { animationData } = useAnimationData();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
   const boundingBox = useMemo(() => animationData.precomputed.boundingBox, [animationData.precomputed.boundingBox]);
-  const widthSpan = crossSectionType == "X" ? boundingBox.span[0] : boundingBox.span[1];
+  const widthSpan = crossSectionType == "X" ? boundingBox.span[1] : boundingBox.span[0];
   const aspect = boundingBox.span[2] / widthSpan;
   const height = width * aspect;
   return (
@@ -158,7 +158,7 @@ export function CrossSectionVisualization({ nodeIds, crossSectionType, width }: 
         flat
         camera={{
           zoom: 0.9,
-          position: crossSectionType == "X" ? [0, -100, 0] : [-100, 0, 0],
+          position: crossSectionType == "X" ? [-100, 0, 0] : [0, -100, 0],
           up: [0, 0, 1],
           // near: -1000,
           // far: 1000,

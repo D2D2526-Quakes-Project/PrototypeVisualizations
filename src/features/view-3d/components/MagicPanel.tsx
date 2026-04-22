@@ -34,6 +34,7 @@ import {
   RotateCw,
   ShieldAlert,
   X,
+  XIcon,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Timeline } from "./Timeline";
@@ -343,11 +344,11 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
 
   return (
     <div
-      className={`group z-10 flex h-full w-full cursor-grab items-center transition-colors ${
+      className={`group z-10 flex h-full w-full cursor-grab items-center gap-1 p-3 py-0 transition-colors ${
         isActive ? "bg-amber-50/90 text-amber-900" : "bg-neutral-200/80"
       }`}>
       <span
-        className={`flex items-center gap-1.5 px-4 py-0 text-sm font-medium ${isActive ? "text-amber-900" : "text-neutral-700"}`}>
+        className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-amber-900" : "text-neutral-700"}`}>
         {(() => {
           const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
           return <Icon className={`size-3.5 ${isActive ? "text-amber-700" : "text-neutral-500"}`} />;
@@ -355,16 +356,26 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
         {currentPanelType}
       </span>
       {isTabGroup && (
-        <Button
-          variant="secondary"
-          size="icon-xs"
-          className="absolute right-1 mr-1 h-5 w-5 opacity-0 group-hover:opacity-100"
+        // <Button
+        //   variant="secondary"
+        //   size="icon-xs"
+        //   className="absolute right-1 mr-1 h-5 w-5 opacity-0 group-hover:opacity-100"
+        //   onClick={(e) => {
+        //     e.stopPropagation();
+        //     props.api.close();
+        //   }}>
+        //   <X />
+        // </Button>
+
+        <button
           onClick={(e) => {
             e.stopPropagation();
             props.api.close();
-          }}>
-          <X />
-        </Button>
+          }}
+          className="rounded p-1 transition-colors hover:bg-white/50"
+          title="Close">
+          <XIcon className="size-3" />
+        </button>
       )}
     </div>
   );

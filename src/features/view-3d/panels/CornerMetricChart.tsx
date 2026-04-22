@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { getDefaultCornerMetricChartPanelState } from "@/features/view-3d/lib/statePersistence";
@@ -139,6 +140,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
   }, [availableMetrics, defaultState.metric]);
 
   const selectedMetric = sanitizeMetric(panelState.metric, selectableMetrics);
+  const displayMode = panelState.displayMode || "bar";
 
   useEffect(() => {
     if (panelState.metric === selectedMetric) return;
@@ -146,8 +148,9 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
     setPanelState(panelId, "cornerMetricChart", {
       visibleCorners: panelState.visibleCorners,
       metric: selectedMetric,
+      displayMode: panelState.displayMode,
     });
-  }, [panelId, panelState.metric, panelState.visibleCorners, selectedMetric, setPanelState]);
+  }, [panelId, panelState.metric, panelState.visibleCorners, panelState.displayMode, selectedMetric, setPanelState]);
 
   const metricConfig = useMemo(() => getMetricConfig(selectedMetric), [selectedMetric]);
   const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
@@ -168,6 +171,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
       setPanelState(panelId, "cornerMetricChart", {
         visibleCorners: selected,
         metric: selectedMetric,
+        displayMode: panelState.displayMode,
       });
     };
 
@@ -175,7 +179,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
     return () => {
       chart.off("legendselectchanged", handleLegendChange);
     };
-  }, [chartReadyVersion, panelId, selectedMetric, setPanelState]);
+  }, [chartReadyVersion, panelId, panelState.displayMode, selectedMetric, setPanelState]);
 
   const yAxisData = useMemo(() => {
     return storyIds.map((storyId) => {
@@ -236,7 +240,10 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
     return {
       title: {
         text: `Corner ${metricConfig.label} by Story`,
-        subtext: `Current frame vs. peak for each floor corner`,
+        subtext:
+          displayMode === "line"
+            ? "Current & peak values per floor corner"
+            : "Current frame vs. peak for each floor corner",
         left: 0,
         top: 0,
         itemGap: 3,
@@ -288,10 +295,14 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
         },
       },
       legend: {
-        data: corners.map((corner) => ({
-          name: corner,
-          itemStyle: { color: cornerColors[corner] },
-        })),
+        data: corners.flatMap((corner) =>
+          displayMode === "line"
+            ? [
+                { name: corner, itemStyle: { color: cornerColors[corner] } },
+                { name: `${corner} Peak`, itemStyle: { color: cornerColors[corner], opacity: 0.5 } },
+              ]
+            : [{ name: corner, itemStyle: { color: cornerColors[corner] } }]
+        ),
         right: 0,
         top: 52,
         orient: "vertical",
@@ -341,6 +352,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
     animationData.metadata.storyHeights,
     animationData.precomputed.storyElevations,
     currentValues,
+    displayMode,
     metricConfig.label,
     metricConfig.unit.abbr,
     peakValues,
@@ -349,6 +361,55 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
   ]);
 
   const seriesData = useMemo(() => {
+    if (displayMode === "line") {
+      const currentLineSeries = corners.map((corner, idx) => ({
+        name: corner,
+        type: "line" as const,
+        data: storyIds.map((storyId) => Math.abs(currentValues[storyId]?.[corner] || 0)),
+        itemStyle: {
+          color: cornerColors[corner],
+        },
+        lineStyle: {
+          width: 2,
+          color: cornerColors[corner],
+        },
+        symbol: "circle",
+        symbolSize: 6,
+        z: 2,
+        markLine:
+          idx === 0 && thresholdValue > 0
+            ? {
+                symbol: "none",
+                data: [{ xAxis: thresholdValue, name: "Threshold" }],
+                lineStyle: { color: "#ef4444", width: 1, type: "dashed" as const },
+                label: { show: false },
+                silent: true,
+              }
+            : undefined,
+      }));
+
+      const peakLineSeries = corners.map((corner) => ({
+        name: `${corner} Peak`,
+        type: "line" as const,
+        data: storyIds.map((storyId) => Math.abs(peakValues[storyId]?.[corner] || 0)),
+        itemStyle: {
+          color: cornerColors[corner],
+          opacity: 0.5,
+        },
+        lineStyle: {
+          width: 1,
+          type: "dashed" as const,
+          color: cornerColors[corner],
+        },
+        symbol: "emptyCircle",
+        symbolSize: 5,
+        z: 1,
+        silent: true,
+      }));
+
+      return [...currentLineSeries, ...peakLineSeries];
+    }
+
     const peakSeries = corners.map((corner) => ({
       name: corner,
       type: "bar" as const,
@@ -395,7 +456,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
     }));
 
     return [...currentSeries, ...peakSeries];
-  }, [currentValues, peakValues, storyIds, thresholdValue]);
+  }, [currentValues, displayMode, peakValues, storyIds, thresholdValue]);
 
   const xAxisMax = useMemo(() => {
     let maxValue = MIN_X_AXIS_MAX;
@@ -466,6 +527,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
             setPanelState(panelId, "cornerMetricChart", {
               visibleCorners: panelState.visibleCorners,
               metric: event.target.value as Metric,
+              displayMode: panelState.displayMode,
             })
           }
           className="h-8 min-w-0 flex-1 text-xs">
@@ -475,6 +537,22 @@ export function CornerMetricChart({ api }: CornerMetricChartProps = {}) {
             </NativeSelectOption>
           ))}
         </NativeSelect>
+        <ToggleGroup
+          type="single"
+          size="sm"
+          variant="outline"
+          value={displayMode}
+          onValueChange={(value) => {
+            if (!value) return;
+            setPanelState(panelId, "cornerMetricChart", {
+              visibleCorners: panelState.visibleCorners,
+              metric: panelState.metric,
+              displayMode: value as "bar" | "line",
+            });
+          }}>
+          <ToggleGroupItem value="bar">Bar</ToggleGroupItem>
+          <ToggleGroupItem value="line">Line</ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       <div className="min-h-0 flex-1">

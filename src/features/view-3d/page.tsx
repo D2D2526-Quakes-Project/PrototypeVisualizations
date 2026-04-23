@@ -20,7 +20,7 @@ import {
 import { THRESHOLD_CONFIGS, type Metric, type MetricPaletteKey, type ThresholdKey } from "@/lib/metrics";
 import { useViewStoreRaw } from "@/state";
 import { type DockviewApi, type DockviewReadyEvent, type SerializedDockview } from "dockview";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { useCrossSectionSelection } from "./contexts/visualization/CrossSectionSelectionContext";
 
 const components = {
@@ -80,22 +80,31 @@ export function View3d() {
   }, []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <NodeSelectionProvider>
-        {isReady && initialState && <DockviewContainer initialState={initialState} />}
-      </NodeSelectionProvider>
-    </div>
+    isReady && initialState ? <View3dWorkspace initialState={initialState} /> : <div className="flex min-h-0 flex-1 flex-col" />
   );
 }
 
-function DockviewContainer({ initialState }: { initialState: AppState }) {
+export const View3dWorkspace = forwardRef<
+  HTMLDivElement,
+  { initialState: AppState; autoSave?: boolean; className?: string }
+>(function View3dWorkspace({ initialState, autoSave = true, className }, ref) {
+  return (
+    <div ref={ref} className={className ?? "flex min-h-0 flex-1 flex-col"}>
+      <NodeSelectionProvider>
+        <DockviewContainer initialState={initialState} autoSave={autoSave} />
+      </NodeSelectionProvider>
+    </div>
+  );
+});
+
+function DockviewContainer({ initialState, autoSave = true }: { initialState: AppState; autoSave?: boolean }) {
   const { setDockviewApi } = useNodeSelection();
   const { setDockviewApi: setCrossSectionDockviewApi } = useCrossSectionSelection();
   const store = useViewStoreRaw();
   const hasAppliedInitialStateRef = useRef(false);
   const hasReassertedCriticalStateRef = useRef(false);
 
-  useAutoSave();
+  useAutoSave(autoSave);
 
   useEffect(() => {
     if (hasAppliedInitialStateRef.current) return;

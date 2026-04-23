@@ -8,6 +8,7 @@ import { AnimationDataProvider } from "./lib/useAnimationData";
 import "./index.css";
 import { View3d } from "./pages";
 import { PlaybackProvider } from "./features/playback/PlaybackContext";
+import { ExportProvider } from "./features/export/ExportProvider";
 import { SliceSelectionProvider } from "./features/view-3d/contexts/visualization";
 import { ViewProvider } from "./state";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -30,14 +31,16 @@ const router = createBrowserRouter([
         <TooltipProvider>
           <ViewProvider>
             <AnimationDataProvider>
-              <NavigationBar />
-              <PlaybackProvider>
-                <SliceSelectionProvider>
-                  <CrossSectionSelectionProvider>
-                    <Outlet />
-                  </CrossSectionSelectionProvider>
-                </SliceSelectionProvider>
-              </PlaybackProvider>
+              <ExportProvider>
+                <NavigationBar />
+                <PlaybackProvider>
+                  <SliceSelectionProvider>
+                    <CrossSectionSelectionProvider>
+                      <Outlet />
+                    </CrossSectionSelectionProvider>
+                  </SliceSelectionProvider>
+                </PlaybackProvider>
+              </ExportProvider>
             </AnimationDataProvider>
           </ViewProvider>
         </TooltipProvider>

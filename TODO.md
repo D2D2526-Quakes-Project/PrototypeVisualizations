@@ -116,11 +116,20 @@
 - [ ] Add canvas image export (PNG, high-res)
 - [ ] Add chart image export
 - [ ] Add GIF recording for playback
-- [ ] Add video export (MP4/WebM)
+- [x] Add video export (MP4/WebM)
+  - Initial slice shipped as browser-native WebM workspace export with an isolated preview, frame-range controls, and quality presets.
+  - Follow up with panel-only export and comparison/split-view export once the ffmpeg-based MP4/WebM path is validated in use.
 - [ ] Add data table CSV export
-- [ ] Prioritize exports that preserve analytical context over exhaustive export permutations
+- [x] Prioritize exports that preserve analytical context over exhaustive export permutations
   - First-class need: export the exact finding state with the relevant panels and comparison context.
   - Lower priority: every possible panel-format-resolution combination.
+- [ ] Improve export capture robustness for mixed DOM + Three.js + ECharts workspaces
+  - Validate the current DOM-to-canvas rasterization path against more panel combinations and larger layouts.
+  - Add targeted fallbacks only where a specific panel type renders incorrectly in export.
+  - Confirm ffmpeg.wasm performance/compatibility across Chrome, Safari, and lower-memory machines.
+- [ ] Add panel-only and comparison export modes to the new export workflow
+  - Reuse the isolated preview/export session model instead of building a second export path.
+  - Split/comparison export should wait on the broader multi-simulation workspace architecture.
 
 ---
 

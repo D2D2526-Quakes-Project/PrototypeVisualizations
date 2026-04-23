@@ -13,6 +13,10 @@
     "format": "prettier --check ."
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/types": "^0.12.4",
+    "@ffmpeg/util": "^0.12.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@tailwindcss/vite": "^4.2.0",

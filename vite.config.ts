@@ -23,4 +23,7 @@ export default defineConfig({
       ignored: ["**/*.ottotime", "data/**", "scripts/**", "**/*.md"],
     },
   },
+  optimizeDeps: {
+    exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/core"],
+  },
 });

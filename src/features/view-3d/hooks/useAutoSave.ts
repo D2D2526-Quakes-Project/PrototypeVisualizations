@@ -9,7 +9,7 @@ import {
 const AUTO_SAVE_DEBOUNCE_MS = 2000;
 const PLAYBACK_SAVE_DEBOUNCE_MS = 5000;
 
-export function useAutoSave() {
+export function useAutoSave(enabled = true) {
   const store = useViewStoreRaw();
   const debounceTimerRef = useRef<number | null>(null);
   const lastSavedStateRef = useRef<string | null>(null);
@@ -81,6 +81,7 @@ export function useAutoSave() {
   );
 
   useEffect(() => {
+    if (!enabled) return;
     const unsubscribers: (() => void)[] = [];
 
     const stateFields = [
@@ -138,9 +139,10 @@ export function useAutoSave() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [store, scheduleSave]);
+  }, [enabled, store, scheduleSave]);
 
   useEffect(() => {
+    if (!enabled) return;
     const unsubscribe = store.subscribe(
       (state) => state.playing,
       (playing) => {
@@ -152,9 +154,10 @@ export function useAutoSave() {
     );
 
     return () => unsubscribe();
-  }, [store, scheduleSave]);
+  }, [enabled, store, scheduleSave]);
 
   useEffect(() => {
+    if (!enabled) return;
     const flushSave = () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -178,7 +181,7 @@ export function useAutoSave() {
       window.removeEventListener("pagehide", flushSave);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [performSave]);
+  }, [enabled, performSave]);
 
   return { performSave };
 }

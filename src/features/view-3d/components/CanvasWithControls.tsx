@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouse
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 
+import { useExportRenderMode } from "@/features/export/renderMode";
 import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
 import { useCamera } from "@/features/view-3d/contexts/CameraContext";
 import { getDefaultCanvasPanelState } from "@/features/view-3d/lib/statePersistence";
@@ -49,6 +50,7 @@ export function CanvasWithControls({
   const hasPersistedCameraModeRef = useRef(false);
   const { orbitControlsRef, getCameraState } = useCamera();
   const { animationData } = useAnimationData();
+  const exportRenderMode = useExportRenderMode();
   const backgroundColor = useViewStore((s) => s.backgroundColor);
   const visibleFloorCount = useViewStore((s) => s.visibleFloors.length);
   const { showAllDefaultFloors } = useFloorVisibility();
@@ -308,8 +310,8 @@ export function CanvasWithControls({
           <OrientationCube />
         </Canvas>
         <BoxSelectionOverlay panelId={panelId} />
-        {showPlaybackControls && (
-          <div className="absolute bottom-2 left-2 z-50">
+        {showPlaybackControls && !(exportRenderMode.active && exportRenderMode.hideTransientUi) && (
+          <div className="absolute bottom-2 left-2 z-50" data-export-hide="transient">
             <div className="flex items-start gap-1">
               <SmallPlaybackControls />
               {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
@@ -326,15 +328,22 @@ export function CanvasWithControls({
           </div>
         )}
       </div>
-      <ViewControls
-        orbitControlsRef={orbitControlsRef}
-        isOrthographic={isOrthographic}
-        setIsOrthographic={handleSetIsOrthographic}
-        isExpanded={isViewControlsExpanded}
-        setIsExpanded={handleSetIsViewControlsExpanded}
-        onExpandedWidthChange={handleExpandedWidthChange}
-        docked={isControlsDocked}
-      />
+      {!(exportRenderMode.active && exportRenderMode.hideTransientUi) && (
+        <div data-export-hide="transient">
+          <ViewControls
+            orbitControlsRef={orbitControlsRef}
+            isOrthographic={isOrthographic}
+            setIsOrthographic={handleSetIsOrthographic}
+            isExpanded={isViewControlsExpanded}
+            setIsExpanded={handleSetIsViewControlsExpanded}
+            onExpandedWidthChange={handleExpandedWidthChange}
+            docked={isControlsDocked}
+          />
+        </div>
+      )}
+      {exportRenderMode.active && exportRenderMode.blockInteractions ? (
+        <div data-export-hide="transient" className="absolute inset-0 z-[180] bg-transparent" />
+      ) : null}
       {/* <SelectionShortcuts showPlayback={Boolean(showPlaybackControls)} /> */}
     </div>
   );

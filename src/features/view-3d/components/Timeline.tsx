@@ -7,6 +7,7 @@ import { renderToString } from "react-dom/server";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
 import { Button } from "@/components/ui/button";
@@ -373,6 +374,7 @@ function CheckSelect({
 }
 
 export function Timeline({ api }: IDockviewPanelProps) {
+  const exportRenderMode = useExportRenderMode();
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const chartRef = useRef<ReactECharts>(null);
@@ -921,12 +923,18 @@ export function Timeline({ api }: IDockviewPanelProps) {
     <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
       {/* Top Bar Row 1: Controls & Time */}
       <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
-        <div className="float-right mt-0.5 ml-2">
-          <CheckSelect options={availableChannelOptions} selected={effectiveSelectedKeys} onChange={setSelectedKeys} />
-        </div>
+        {!(exportRenderMode.active && exportRenderMode.hideTransientUi) && (
+          <div className="float-right mt-0.5 ml-2" data-export-hide="transient">
+            <CheckSelect options={availableChannelOptions} selected={effectiveSelectedKeys} onChange={setSelectedKeys} />
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700">
-          <SmallPlaybackControls inline />
-          <span className="text-neutral-300">|</span>
+          {!(exportRenderMode.active && exportRenderMode.hideTransientUi) && (
+            <>
+              <SmallPlaybackControls inline />
+              <span className="text-neutral-300">|</span>
+            </>
+          )}
           <span className="font-medium">Frame:</span>
           <span className="font-mono">{frameIndex + 1}</span>
           <span className="text-neutral-300">|</span>

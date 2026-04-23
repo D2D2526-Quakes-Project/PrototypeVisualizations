@@ -32,6 +32,8 @@ import { useCrossSectionSelection } from "../contexts/visualization/CrossSection
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
+const SCENE_LABEL_FONT = "/Atkinson_Hyperlegible_Next/AtkinsonHyperlegibleNext-VariableFont_wght.ttf";
+const SCENE_LABEL_CHARACTERS = "+-XYNESW";
 
 function clampToViewport(value: number): number {
   if (value < 0) return 0;
@@ -611,11 +613,20 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       <FloorTickMarks />
 
       {/* Direction indicators */}
-      <Text position={[0, 116, 0]} fontSize={32} color="#fff" anchorX="center" anchorY="middle">
+      <Text
+        position={[0, 116, 0]}
+        font={SCENE_LABEL_FONT}
+        characters={SCENE_LABEL_CHARACTERS}
+        fontSize={32}
+        color="#fff"
+        anchorX="center"
+        anchorY="middle">
         +Y
       </Text>
       <Text
         position={[0, -116, 0]}
+        font={SCENE_LABEL_FONT}
+        characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, Math.PI]}
         fontSize={32}
         color="#fff"
@@ -625,6 +636,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       </Text>
       <Text
         position={[116, 0, 0]}
+        font={SCENE_LABEL_FONT}
+        characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, -Math.PI / 2]}
         fontSize={32}
         color="#fff"
@@ -634,6 +647,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       </Text>
       <Text
         position={[-116, 0, 0]}
+        font={SCENE_LABEL_FONT}
+        characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, Math.PI / 2]}
         fontSize={32}
         color="#fff"
@@ -645,6 +660,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       {/* Diagonal Direction indicators */}
       <Text
         position={[100, 100, 0]}
+        font={SCENE_LABEL_FONT}
+        characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, -Math.PI / 4]}
         fontSize={24}
         color="#eee"
@@ -654,6 +671,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       </Text>
       <Text
         position={[-100, 100, 0]}
+        font={SCENE_LABEL_FONT}
+        characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, Math.PI / 4]}
         fontSize={24}
         color="#eee"
@@ -663,6 +682,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       </Text>
       <Text
         position={[100, -100, 0]}
+        font={SCENE_LABEL_FONT}
+        characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, (-3 * Math.PI) / 4]}
         fontSize={24}
         color="#eee"
@@ -672,6 +693,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       </Text>
       <Text
         position={[-100, -100, 0]}
+        font={SCENE_LABEL_FONT}
+        characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, (3 * Math.PI) / 4]}
         fontSize={24}
         color="#eee"

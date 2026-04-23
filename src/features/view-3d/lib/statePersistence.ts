@@ -1412,7 +1412,7 @@ async function createShareableShortUrl(state: AppState): Promise<string | null> 
 }
 
 export async function copyShareableUrlToClipboard(store: ReturnType<typeof useViewStoreRaw>): Promise<boolean> {
-  const state = getCurrentAppState(store);
+  const state = getCurrentAppStateSnapshot(store);
   const shareableUrl = await createShareableShortUrl(state);
 
   if (!shareableUrl) return false;
@@ -1426,7 +1426,7 @@ export async function copyShareableUrlToClipboard(store: ReturnType<typeof useVi
   }
 }
 
-function getCurrentAppState(store: ReturnType<typeof useViewStoreRaw>): AppState {
+export function getCurrentAppStateSnapshot(store: ReturnType<typeof useViewStoreRaw>): AppState {
   const state = store.getState();
 
   return {

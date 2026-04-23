@@ -1,4 +1,5 @@
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
+import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "./PlaybackContext";
 
 export function PlaybackControls() {
@@ -36,9 +37,15 @@ export function PlaybackControls() {
 
 export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) {
   const { playing, handlePlayPause, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
+  const exportRenderMode = useExportRenderMode();
+
+  if (exportRenderMode.active && exportRenderMode.hideTransientUi) {
+    return null;
+  }
 
   return (
     <div
+      data-export-hide="transient"
       className={
         inline
           ? "flex items-center gap-0.5"

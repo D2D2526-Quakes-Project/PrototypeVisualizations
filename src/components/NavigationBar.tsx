@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Keyboard, LogOutIcon, Share2 } from "lucide-react";
+import { AlertTriangle, Check, Film, Keyboard, LogOutIcon, Share2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
@@ -19,6 +19,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import DataSources from "@/data/index";
 import { usePlayback } from "@/features/playback/PlaybackContext";
+import { useExportVideo } from "@/features/export/ExportProvider";
 import { useColor, useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import { copyShareableUrlToClipboard } from "@/features/view-3d/lib/statePersistence";
 import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
@@ -55,6 +56,7 @@ export function NavigationBar() {
     retryDatasetLoad,
   } = useAnimationData();
   const { frameIndex } = usePlayback();
+  const { openExportPanel } = useExportVideo();
   const { currentMetric, metricPaletteOverrides, thresholdHighlighting } = useColor();
   const config = getMetricConfig(currentMetric);
 
@@ -201,8 +203,8 @@ export function NavigationBar() {
                 </MenubarSubContent>
               </MenubarSub>
 
-              <MenubarItem>
-                <AlertTriangle />
+              <MenubarItem onSelect={openExportPanel}>
+                <Film />
                 Export
               </MenubarItem>
               <MenubarItem>

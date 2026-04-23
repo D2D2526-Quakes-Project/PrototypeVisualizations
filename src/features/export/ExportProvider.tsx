@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Download, Film, LoaderCircle, Video } from "lucide-react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,12 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { canvasToPngBytes, getFfmpegEncoder, type ExportVideoFormat } from "@/features/export/ffmpegEncoder";
 import { rasterizeElementToCanvas } from "@/features/export/domCapture";
+import { canvasToPngBytes, getFfmpegEncoder, type ExportVideoFormat } from "@/features/export/ffmpegEncoder";
 import { ExportRenderModeProvider } from "@/features/export/renderMode";
 import { PlaybackProvider } from "@/features/playback/PlaybackContext";
-import { CrossSectionSelectionProvider } from "@/features/view-3d/contexts/visualization/CrossSectionSelectionContext";
 import { SliceSelectionProvider } from "@/features/view-3d/contexts/visualization";
+import { CrossSectionSelectionProvider } from "@/features/view-3d/contexts/visualization/CrossSectionSelectionContext";
 import { getCurrentAppStateSnapshot, type AppState } from "@/features/view-3d/lib/statePersistence";
 import { View3dWorkspace } from "@/features/view-3d/page";
 import { useAnimationData } from "@/lib/useAnimationData";
@@ -397,7 +397,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
           className="w-screen max-w-none border-l border-neutral-300 bg-neutral-100 p-0 sm:max-w-none"
           showCloseButton>
           <div className="flex min-h-0 flex-1">
-            <div className="flex w-[340px] shrink-0 flex-col border-r border-neutral-300 bg-white">
+            <div className="flex w-85 shrink-0 flex-col border-r border-neutral-300 bg-white">
               <SheetHeader className="border-b border-neutral-200">
                 <SheetTitle className="flex items-center gap-2">
                   <Video className="size-4" />
@@ -673,7 +673,7 @@ function ExportPreviewWorkspaceInner({
         autoSave={false}
         className="flex min-h-0 flex-1 flex-col bg-neutral-200"
       />
-      <div className="absolute inset-0 z-[200] bg-transparent" />
+      <div className="absolute inset-0 z-200 bg-transparent" />
     </div>
   );
 }

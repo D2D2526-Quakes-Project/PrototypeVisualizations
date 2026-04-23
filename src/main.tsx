@@ -14,6 +14,7 @@ import { ViewProvider } from "./state";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { Box } from "lucide-react";
 import { CrossSectionSelectionProvider } from "./features/view-3d/contexts/visualization/CrossSectionSelectionContext";
+import { ExportRenderModeProvider } from "./features/export/renderMode";
 
 const routes = [
   {
@@ -32,14 +33,20 @@ const router = createBrowserRouter([
           <ViewProvider>
             <AnimationDataProvider>
               <ExportProvider>
-                <NavigationBar />
-                <PlaybackProvider>
-                  <SliceSelectionProvider>
-                    <CrossSectionSelectionProvider>
-                      <Outlet />
-                    </CrossSectionSelectionProvider>
-                  </SliceSelectionProvider>
-                </PlaybackProvider>
+                <ExportRenderModeProvider
+                  value={{
+                    showPanelHeaders: true,
+                    showTransientUi: true,
+                  }}>
+                  <NavigationBar />
+                  <PlaybackProvider>
+                    <SliceSelectionProvider>
+                      <CrossSectionSelectionProvider>
+                        <Outlet />
+                      </CrossSectionSelectionProvider>
+                    </SliceSelectionProvider>
+                  </PlaybackProvider>
+                </ExportRenderModeProvider>
               </ExportProvider>
             </AnimationDataProvider>
           </ViewProvider>

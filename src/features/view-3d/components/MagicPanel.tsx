@@ -3,13 +3,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccelerationDistributionPanel } from "@/features/view-3d/panels/AccelerationDistributionPanel";
 import { CornerMetricChart } from "@/features/view-3d/panels/CornerMetricChart";
-import { ISDThresholdPanel } from "@/features/view-3d/panels/ISDThresholdPanel";
 import { DataExplorerPanel } from "@/features/view-3d/panels/DataExplorerPanel";
 import { EndCapPanel } from "@/features/view-3d/panels/EndCapPanel";
 import { FloorAverageMetricChart } from "@/features/view-3d/panels/FloorAverageMetricChart";
 import { FloorTorsionMapPanel } from "@/features/view-3d/panels/FloorTorsionMapPanel";
 import { HingeDistributionPanel } from "@/features/view-3d/panels/HingeDistributionPanel";
 import { HistogramChart } from "@/features/view-3d/panels/HistogramChart";
+import { ISDThresholdPanel } from "@/features/view-3d/panels/ISDThresholdPanel";
 import { MainCanvasPanel } from "@/features/view-3d/panels/MainCanvasPanel";
 import { VelocityDistributionPanel } from "@/features/view-3d/panels/VelocityDistributionPanel";
 import type { DatasetLoadState } from "@/lib/loadingTypes";
@@ -21,8 +21,8 @@ import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewP
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
-  AlertTriangle,
   BarChart3,
+  CircleDotDashed,
   Columns,
   Grid2X2Icon,
   LineChart,
@@ -37,8 +37,8 @@ import {
   XIcon,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { Timeline } from "./Timeline";
 import { StatisticsPanel } from "../panels/StatisticsPanel";
+import { Timeline } from "./Timeline";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -299,7 +299,11 @@ export const MagicPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   );
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      className="relative h-full w-full"
+      data-export-panel-root="true"
+      data-export-panel-id={props.api.id}
+      data-export-panel-title={currentPanelType}>
       {availability.isAvailable ? (
         <div className="h-full w-full">
           <CurrentComponent {...props} />
@@ -447,7 +451,7 @@ function PanelTypePickerMenu({
                         </div>
                       </div>
                       {hasMissingOptionalEnhancements ? (
-                        <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                        <CircleDotDashed className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
                       ) : null}
                     </div>
                   </button>

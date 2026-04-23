@@ -5,6 +5,7 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { formatCompactNumber } from "@/lib/utils";
 import { formatHex, interpolate } from "culori";
 import { useMemo } from "react";
+import { useFloorVisibility } from "../contexts/visualization";
 
 const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
@@ -15,13 +16,16 @@ function formatSigned(value: number, digits = 1) {
 export function FloorTorsionMapPanel() {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
+  const { visibleFloors } = useFloorVisibility();
 
   const rows = useMemo(
     () =>
       animationData.metadata.storyOrder
+        .filter((storyId) => visibleFloors.has(storyId))
         .map((storyId) => buildFloorTorsionSnapshot(animationData, storyId, frameIndex))
-        .filter((row): row is NonNullable<typeof row> => row !== null),
-    [animationData, frameIndex]
+        .filter((row): row is NonNullable<typeof row> => row !== null)
+        .toReversed(),
+    [animationData, frameIndex, visibleFloors]
   );
 
   const maxAbsRotation = useMemo(() => {
@@ -34,59 +38,72 @@ export function FloorTorsionMapPanel() {
 
   return (
     <div className="flex h-full w-full flex-col bg-white">
+      {/* Header */}
       <div className="shrink-0 border-b border-neutral-100 px-3 py-2">
-        <div className="text-sm text-neutral-700">
-          <span className="font-medium">Floor Torsion Map</span>
-          <span className="ml-2 text-neutral-400">Top-down floor rotation by story (X-Y plan, rad)</span>
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-medium text-neutral-700">Floor Torsion Map</span>
+          <span className="text-[10px] text-neutral-400">Frame {frameIndex + 1}</span>
         </div>
-        <div className="mt-2 rounded border border-neutral-200 bg-neutral-50 p-2">
-          <div className="mb-1 flex items-center justify-between text-[10px] text-neutral-600">
-            <span>Color Bar: Rotation (rad)</span>
-            <span>Frame {frameIndex + 1}</span>
-          </div>
+        <p className="mt-0.5 text-[10px] text-neutral-400">Top-down floor rotation by story · X-Y plan · rad</p>
+
+        {/* Color bar */}
+        <div className="mt-2.5 px-0.5">
           <div
-            className="h-2 rounded border border-neutral-200"
-            style={{
-              background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)",
-            }}
-            title={`Rotation color scale from -${formatCompactNumber(maxAbsRotation)} rad to +${formatCompactNumber(maxAbsRotation)} rad`}
+            className="h-2 w-full rounded-sm"
+            style={{ background: "linear-gradient(90deg, #2563eb 0%, #f8fafc 50%, #dc2626 100%)" }}
           />
-          <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-neutral-500">
-            <span>{formatSigned(-maxAbsRotation, 2)}</span>
+          <div className="mt-1 flex justify-between font-mono text-[9px] text-neutral-400">
+            <span className="text-blue-500">{formatSigned(-maxAbsRotation, 2)}</span>
             <span>0</span>
-            <span>{formatCompactNumber(maxAbsRotation)}</span>
+            <span className="text-red-500">{formatSigned(maxAbsRotation, 2)}</span>
           </div>
-          <div className="mt-1 text-[10px] text-neutral-500">Axes: X and Y plan coordinates in inches (in)</div>
         </div>
       </div>
 
-      <div className="skinny-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
+      {/* Story list */}
+      <div className="skinny-scrollbar min-h-0 flex-1 divide-y divide-neutral-100 overflow-y-auto">
         {rows.map((row) => {
           const normalized = Math.max(-1, Math.min(1, row.rotationRad / maxAbsRotation));
           const fill = formatHex(torsionColorScale((normalized + 1) / 2));
-          const tooltip = `Story ${row.storyId}\nRotation: ${formatCompactNumber(row.rotationRad)} rad\nNodes: ${row.nodeCount}`;
-          const absRotation = Math.abs(row.rotationRad);
+          const isNeg = row.rotationRad < 0;
 
           return (
-            <div key={row.storyId} className="rounded border border-neutral-200 bg-white p-2" title={tooltip}>
-              <div className="mb-2 flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-[10px] text-neutral-500">Story</div>
-                  <div className="truncate font-mono text-xs text-neutral-800" title={row.storyId}>
+            <div key={row.storyId} className="flex gap-3 p-2.5">
+              <div className="h-28 w-48 shrink-0 overflow-hidden rounded-xs bg-neutral-50 ring-1 ring-neutral-200">
+                <FloorTorsionPlanPreview snapshot={row} fill={fill} className="h-full w-full" />
+              </div>
+
+              <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
+                <div>
+                  <div className="truncate text-xs font-semibold text-neutral-800" title={row.storyId}>
                     {row.storyId}
                   </div>
+                  <div className="mt-0.5 text-[10px] text-neutral-400">{row.nodeCount} nodes</div>
                 </div>
-                <div className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-1 text-[10px] leading-tight">
-                  <div className="text-neutral-500">Rotation (rad)</div>
-                  <div className="text-right font-mono text-neutral-800">{formatSigned(row.rotationRad)}</div>
-                  <div className="text-neutral-500">|Rotation|</div>
-                  <div className="text-right font-mono text-neutral-700">{formatCompactNumber(absRotation)} rad</div>
-                  <div className="text-neutral-500">Nodes</div>
-                  <div className="text-right text-neutral-500">{row.nodeCount}</div>
+
+                {/* Rotation value */}
+                <div>
+                  <div className="text-[9px] tracking-wide text-neutral-400 uppercase">Rotation</div>
+                  <div
+                    className={`font-mono text-sm font-semibold tabular-nums ${
+                      isNeg ? "text-blue-600" : "text-red-500"
+                    }`}>
+                    {formatSigned(row.rotationRad, 4)} rad
+                  </div>
                 </div>
-              </div>
-              <div className="h-32 min-w-0 rounded border border-neutral-100 bg-neutral-50">
-                <FloorTorsionPlanPreview snapshot={row} fill={fill} className="h-full w-full" />
+
+                <div className="relative h-1 w-full overflow-hidden rounded-full bg-neutral-100">
+                  <div
+                    className="absolute top-0 h-full rounded-full transition-[width,left] duration-150 ease-out"
+                    style={{
+                      width: `${Math.abs(normalized) * 50}%`,
+                      left: isNeg ? `${50 - Math.abs(normalized) * 50}%` : "50%",
+                      background: isNeg ? "#2563eb" : "#dc2626",
+                    }}
+                  />
+                  {/* Center tick */}
+                  <div className="absolute top-0 left-1/2 h-full w-px -translate-x-px bg-neutral-300" />
+                </div>
               </div>
             </div>
           );

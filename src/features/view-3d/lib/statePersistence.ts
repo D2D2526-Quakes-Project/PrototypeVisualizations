@@ -175,17 +175,18 @@ export interface AppState {
   camera: CameraState;
   backgroundColor: string;
   layout: SerializedDockview | null;
-  panelStates: Record<string, PanelState>;
+  panelStates: Partial<Record<string, PanelState>>;
   dataSelection?: DataSelection;
 
   // Render Modes
-  renderNodes?: boolean;
-  renderFloorSlabs?: boolean;
-  renderXCrossSectionSlabs?: boolean;
-  renderYCrossSectionSlabs?: boolean;
-  showCornersOnly?: boolean;
-  renderVerticalConnections?: boolean;
-  renderHorizontalConnections?: boolean;
+  renderNodes: boolean;
+  renderFloorSlabs: boolean;
+  renderXCrossSectionSlabs: boolean;
+  renderYCrossSectionSlabs: boolean;
+  showCornersOnly: boolean;
+  renderVerticalConnections: boolean;
+  renderHorizontalConnections: boolean;
+  nodePanelGraphVisibility: Record<string, boolean>;
 }
 
 export interface DataSelection {
@@ -652,6 +653,14 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     layout: layout ?? null,
     panelStates: {},
     dataSelection: undefined,
+    renderNodes: true,
+    renderFloorSlabs: true,
+    renderXCrossSectionSlabs: false,
+    renderYCrossSectionSlabs: false,
+    showCornersOnly: false,
+    renderVerticalConnections: false,
+    renderHorizontalConnections: false,
+    nodePanelGraphVisibility: {},
   };
 }
 
@@ -1460,5 +1469,6 @@ export function getCurrentAppStateSnapshot(store: ReturnType<typeof useViewStore
     showCornersOnly: state.showCornersOnly,
     renderVerticalConnections: state.renderVerticalConnections,
     renderHorizontalConnections: state.renderHorizontalConnections,
+    nodePanelGraphVisibility: state.nodePanelGraphVisibility,
   };
 }

@@ -39,6 +39,7 @@ export function useAutoSave(enabled = true) {
       backgroundColor: state.backgroundColor,
       layout: state.dockviewLayout,
       panelStates: state.panelStates,
+      nodePanelGraphVisibility: state.nodePanelGraphVisibility,
       dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,
 
       renderNodes: state.renderNodes,
@@ -102,6 +103,7 @@ export function useAutoSave(enabled = true) {
       "cameraState",
       "backgroundColor",
       "panelStates",
+      "nodePanelGraphVisibility",
       "renderNodes",
       "renderFloorSlabs",
       "renderXCrossSectionSlabs",

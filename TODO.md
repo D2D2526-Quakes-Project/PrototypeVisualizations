@@ -118,6 +118,7 @@
 - [ ] Add GIF recording for playback
 - [x] Add video export (MP4/WebM)
   - Initial slice shipped as browser-native WebM workspace export with an isolated preview, frame-range controls, and quality presets.
+  - Added lazy-loaded ffmpeg export, split FPS/scale controls, ETA, stage-sized preview, auto-download, and separate-panel batch export.
   - Follow up with panel-only export and comparison/split-view export once the ffmpeg-based MP4/WebM path is validated in use.
 - [ ] Add data table CSV export
 - [x] Prioritize exports that preserve analytical context over exhaustive export permutations

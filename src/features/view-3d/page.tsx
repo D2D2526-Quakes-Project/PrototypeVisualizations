@@ -16,6 +16,7 @@ import {
   loadFromLocalStorage,
   saveUrlState,
   type AppState,
+  type PanelState,
 } from "@/features/view-3d/lib/statePersistence";
 import { THRESHOLD_CONFIGS, type Metric, type MetricPaletteKey, type ThresholdKey } from "@/lib/metrics";
 import { useViewStoreRaw } from "@/state";
@@ -36,6 +37,12 @@ const tabComponents = {
   magicPanelTab: MagicPanelTab,
   crossSectionTab: CrossSectionTab,
 };
+
+function sanitizePanelStates(initialPanelStates: AppState["panelStates"]): Record<string, PanelState> {
+  return Object.fromEntries(
+    Object.entries(initialPanelStates ?? {}).filter((entry): entry is [string, PanelState] => Boolean(entry[1]))
+  ) as Record<string, PanelState>;
+}
 
 export function View3d() {
   const [isReady, setIsReady] = useState(false);
@@ -158,7 +165,7 @@ function DockviewContainer({ initialState, autoSave = true }: { initialState: Ap
       s.setDockviewLayout(initialState.layout);
     }
 
-    s.setPanelStates(initialState.panelStates ?? {});
+    s.setPanelStates(sanitizePanelStates(initialState.panelStates));
   }, [store, initialState]);
 
   useEffect(() => {
@@ -168,7 +175,7 @@ function DockviewContainer({ initialState, autoSave = true }: { initialState: Ap
 
       const s = store.getState();
       s.setFrameIndex(initialState.frameIndex);
-      s.setPanelStates({ ...(initialState.panelStates ?? {}) });
+      s.setPanelStates(sanitizePanelStates(initialState.panelStates));
 
       if (new URLSearchParams(window.location.search).get("debugState") === "1") {
         console.debug("[restore] reasserted critical state", {

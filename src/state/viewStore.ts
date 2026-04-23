@@ -189,7 +189,7 @@ export interface ViewState {
   setCameraState: (state: CameraState) => void;
 
   // Per-panel state
-  panelStates: Record<string, PanelState>;
+  panelStates: Partial<Record<string, PanelState>>;
   setPanelState: <T extends PanelState["type"]>(
     panelId: string,
     panelType: T,

@@ -923,13 +923,17 @@ export function Timeline({ api }: IDockviewPanelProps) {
     <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
       {/* Top Bar Row 1: Controls & Time */}
       <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
-        {!(exportRenderMode.active && exportRenderMode.hideTransientUi) && (
-          <div className="float-right mt-0.5 ml-2" data-export-hide="transient">
-            <CheckSelect options={availableChannelOptions} selected={effectiveSelectedKeys} onChange={setSelectedKeys} />
+        {exportRenderMode.showTransientUi && (
+          <div className="float-right mt-0.5 ml-2">
+            <CheckSelect
+              options={availableChannelOptions}
+              selected={effectiveSelectedKeys}
+              onChange={setSelectedKeys}
+            />
           </div>
         )}
         <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700">
-          {!(exportRenderMode.active && exportRenderMode.hideTransientUi) && (
+          {exportRenderMode.showTransientUi && (
             <>
               <SmallPlaybackControls inline />
               <span className="text-neutral-300">|</span>

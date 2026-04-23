@@ -310,8 +310,8 @@ export function CanvasWithControls({
           <OrientationCube />
         </Canvas>
         <BoxSelectionOverlay panelId={panelId} />
-        {showPlaybackControls && !(exportRenderMode.active && exportRenderMode.hideTransientUi) && (
-          <div className="absolute bottom-2 left-2 z-50" data-export-hide="transient">
+        {showPlaybackControls && exportRenderMode.showTransientUi && (
+          <div className="absolute bottom-2 left-2 z-50">
             <div className="flex items-start gap-1">
               <SmallPlaybackControls />
               {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
@@ -328,8 +328,8 @@ export function CanvasWithControls({
           </div>
         )}
       </div>
-      {!(exportRenderMode.active && exportRenderMode.hideTransientUi) && (
-        <div data-export-hide="transient">
+      {exportRenderMode.showTransientUi && (
+        <div>
           <ViewControls
             orbitControlsRef={orbitControlsRef}
             isOrthographic={isOrthographic}
@@ -341,9 +341,6 @@ export function CanvasWithControls({
           />
         </div>
       )}
-      {exportRenderMode.active && exportRenderMode.blockInteractions ? (
-        <div data-export-hide="transient" className="absolute inset-0 z-[180] bg-transparent" />
-      ) : null}
       {/* <SelectionShortcuts showPlayback={Boolean(showPlaybackControls)} /> */}
     </div>
   );

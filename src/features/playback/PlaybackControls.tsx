@@ -39,13 +39,10 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
   const { playing, handlePlayPause, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
   const exportRenderMode = useExportRenderMode();
 
-  if (exportRenderMode.active && exportRenderMode.hideTransientUi) {
-    return null;
-  }
+  if (!exportRenderMode.showTransientUi) return null;
 
   return (
     <div
-      data-export-hide="transient"
       className={
         inline
           ? "flex items-center gap-0.5"

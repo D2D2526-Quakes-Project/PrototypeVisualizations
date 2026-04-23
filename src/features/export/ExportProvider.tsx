@@ -26,8 +26,8 @@ interface VideoExportSpec {
   endFrame: number;
   fps: 15 | 30 | 60;
   scale: 1 | 1.5 | 2;
-  hideTransientUi: boolean;
-  includePanelHeaders: boolean;
+  showTransientUi: boolean;
+  showPanelHeaders: boolean;
 }
 
 interface ExportContextValue {
@@ -64,8 +64,8 @@ function buildDefaultSpec(frameIndex: number, totalFrames: number): VideoExportS
     endFrame: Math.min(totalFrames - 1, frameIndex + 299),
     fps: QUALITY_PRESETS.standard.fps,
     scale: QUALITY_PRESETS.standard.scale,
-    hideTransientUi: true,
-    includePanelHeaders: true,
+    showTransientUi: false,
+    showPanelHeaders: false,
   };
 }
 
@@ -394,7 +394,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent
           side="right"
-          className="w-[min(94vw,1500px)] border-l border-neutral-300 bg-neutral-100 p-0 sm:max-w-none"
+          className="w-screen max-w-none border-l border-neutral-300 bg-neutral-100 p-0 sm:max-w-none"
           showCloseButton>
           <div className="flex min-h-0 flex-1">
             <div className="flex w-[340px] shrink-0 flex-col border-r border-neutral-300 bg-white">
@@ -404,18 +404,11 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                   Export Video
                 </SheetTitle>
                 <SheetDescription>
-                  Record the current workspace from an isolated preview without disturbing the live investigation.
+                  {currentBuilding?.name ?? "No building"} / {currentSimulation?.name ?? "No simulation"}
                 </SheetDescription>
               </SheetHeader>
 
               <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-                <div className="space-y-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <div className="text-sm font-medium text-neutral-900">Workspace</div>
-                  <div className="text-xs text-neutral-600">
-                    {currentBuilding?.name ?? "No building"} / {currentSimulation?.name ?? "No simulation"}
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="export-quality">Quality</Label>
                   <NativeSelect
@@ -440,9 +433,6 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                     <NativeSelectOption value="mp4">MP4</NativeSelectOption>
                     <NativeSelectOption value="webm">WebM</NativeSelectOption>
                   </NativeSelect>
-                  <div className="text-xs text-neutral-500">
-                    Encoding runs fully in-browser through a lazy-loaded ffmpeg.wasm core.
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -503,21 +493,21 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                   <div className="text-sm font-medium text-neutral-900">Interface</div>
                   <label className="flex items-start gap-2 text-sm text-neutral-700">
                     <Checkbox
-                      checked={spec.hideTransientUi}
+                      checked={spec.showTransientUi}
                       onCheckedChange={(checked) =>
-                        setSpec((current) => ({ ...current, hideTransientUi: checked === true }))
+                        setSpec((current) => ({ ...current, showTransientUi: checked === true }))
                       }
                     />
-                    <span>Hide transient UI like hover affordances, playback controls, and chart dropdowns</span>
+                    <span>Show transient UI like playback controls, and dropdown menus</span>
                   </label>
                   <label className="flex items-start gap-2 text-sm text-neutral-700">
                     <Checkbox
-                      checked={spec.includePanelHeaders}
+                      checked={spec.showPanelHeaders}
                       onCheckedChange={(checked) =>
-                        setSpec((current) => ({ ...current, includePanelHeaders: checked === true }))
+                        setSpec((current) => ({ ...current, showPanelHeaders: checked === true }))
                       }
                     />
-                    <span>Include panel tab bars and dock headers in the export</span>
+                    <span>Show panel tab bars and dock headers in the export</span>
                   </label>
                 </div>
 
@@ -588,8 +578,8 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                 {previewState ? (
                   <ExportPreviewWorkspace
                     initialState={previewState}
-                    hideTransientUi={spec.hideTransientUi}
-                    includePanelHeaders={spec.includePanelHeaders}
+                    showTransientUi={spec.showTransientUi}
+                    showPanelHeaders={spec.showPanelHeaders}
                     onPreviewReady={(nextStore, nextRoot) => {
                       previewStoreRef.current = nextStore;
                       previewRootRef.current = nextRoot;
@@ -607,13 +597,13 @@ export function ExportProvider({ children }: { children: ReactNode }) {
 
 function ExportPreviewWorkspace({
   initialState,
-  hideTransientUi,
-  includePanelHeaders,
+  showTransientUi,
+  showPanelHeaders,
   onPreviewReady,
 }: {
   initialState: AppState;
-  hideTransientUi: boolean;
-  includePanelHeaders: boolean;
+  showTransientUi: boolean;
+  showPanelHeaders: boolean;
   onPreviewReady: (store: ViewStore, rootElement: HTMLDivElement) => void;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -625,15 +615,11 @@ function ExportPreviewWorkspace({
           <CrossSectionSelectionProvider>
             <ExportRenderModeProvider
               value={{
-                active: true,
-                hideTransientUi,
-                includePanelHeaders,
-                blockInteractions: true,
+                showTransientUi: showTransientUi,
+                showPanelHeaders: showPanelHeaders,
               }}>
               <ExportPreviewWorkspaceInner
                 initialState={initialState}
-                hideTransientUi={hideTransientUi}
-                includePanelHeaders={includePanelHeaders}
                 rootRef={rootRef}
                 onPreviewReady={onPreviewReady}
               />
@@ -647,14 +633,10 @@ function ExportPreviewWorkspace({
 
 function ExportPreviewWorkspaceInner({
   initialState,
-  hideTransientUi,
-  includePanelHeaders,
   rootRef,
   onPreviewReady,
 }: {
   initialState: AppState;
-  hideTransientUi: boolean;
-  includePanelHeaders: boolean;
   rootRef: React.RefObject<HTMLDivElement | null>;
   onPreviewReady: (store: ViewStore, rootElement: HTMLDivElement) => void;
 }) {
@@ -683,23 +665,6 @@ function ExportPreviewWorkspaceInner({
           [data-export-preview="true"] [data-slot="select-content"],
           [data-export-preview="true"] [data-slot="context-menu-content"] {
             display: none !important;
-          }
-          ${hideTransientUi ? `[data-export-preview="true"] [data-export-hide="transient"] { display: none !important; }` : ""}
-          ${
-            includePanelHeaders
-              ? ""
-              : `[data-export-preview="true"] .dv-tabs-container,
-                 [data-export-preview="true"] .dv-groupview-header,
-                 [data-export-preview="true"] .dv-groupview-tabs-container,
-                 [data-export-preview="true"] .dv-groupview-panel-tabs {
-                   display: none !important;
-                   height: 0 !important;
-                   min-height: 0 !important;
-                   overflow: hidden !important;
-                   border: 0 !important;
-                   padding: 0 !important;
-                   margin: 0 !important;
-                 }`
           }
         `}
       </style>

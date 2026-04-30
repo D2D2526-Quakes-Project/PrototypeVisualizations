@@ -303,23 +303,23 @@ export function CanvasWithControls({
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}>
-      <div
-        className="relative min-h-0 flex-1"
-        style={rightPadding > 0 ? { paddingRight: `${rightPadding}px` } : undefined}>
-        <Canvas
-          frameloop="demand"
-          linear
-          flat
-          onCreated={({ scene }) => {
-            scene.fog = null;
-          }}>
-          <LayoutSizeSync />
-          <color attach="background" args={[backgroundColor]} />
-          {children}
-          <CameraManager isOrthographic={isOrthographic} enableSmoothing={false} enablePan />
-          <OrientationCube />
-        </Canvas>
-        <BoxSelectionOverlay panelId={panelId} />
+      <div className="min-h-0 flex-1" style={rightPadding > 0 ? { paddingRight: `${rightPadding}px` } : undefined}>
+        <div className="relative h-full w-full">
+          <Canvas
+            frameloop="demand"
+            linear
+            flat
+            onCreated={({ scene }) => {
+              scene.fog = null;
+            }}>
+            <LayoutSizeSync />
+            <color attach="background" args={[backgroundColor]} />
+            {children}
+            <CameraManager isOrthographic={isOrthographic} enableSmoothing={false} enablePan />
+            <OrientationCube />
+          </Canvas>
+          <BoxSelectionOverlay panelId={panelId} />
+        </div>
         {showPlaybackControls && exportRenderMode.showTransientUi && (
           <div className="absolute bottom-2 left-2 z-50">
             <div className="flex items-start gap-1">

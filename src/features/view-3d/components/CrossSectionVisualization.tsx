@@ -1,6 +1,6 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useExpandedScale, useThresholds } from "@/features/view-3d/contexts/visualization";
-import { getMetricConfig } from "@/lib/metrics";
+import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
@@ -27,10 +27,12 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
   const { thresholds } = useThresholds();
   const nodeScale = useViewStore((s) => s.nodeScale);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
+  const hingeNodeScale = useViewStore((s) => s.hingeNodeScale);
   const renderVerticalConnections = useViewStore((s) => s.renderVerticalConnections);
   const renderHorizontalConnections = useViewStore((s) => s.renderHorizontalConnections);
   const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
   const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
+  const renderHingeNodes = isHingeMetric(currentMetric);
 
   const offsets = useMemo(
     () => ({
@@ -53,7 +55,40 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
     return positions;
   }, [nodeIds, animationData.initialPositions]);
 
+  const hingeNodeGeometry = useMemo(() => {
+    if (!animationData.hingeData || !animationData.beamData) return null;
+    if (nodeIds.length === 0) return null;
+
+    const visibleNodeSet = new Set(nodeIds);
+    const visibleNodesWithHinges = [];
+    for (let i = 0; i < animationData.hingeData.count; i++) {
+      const row = animationData.hingeData.getRow(i);
+      const beamIndex = row.beamIndex;
+
+      const beam = animationData.beamData.getRow(beamIndex);
+      const iNode = beam.iNodeIndex;
+      const jNode = beam.jNodeIndex;
+
+      if (visibleNodeSet.has(iNode) && visibleNodeSet.has(jNode)) {
+        const iNodePosFloat = animationData.initialPositions.at(iNode);
+        const jNodePosFloat = animationData.initialPositions.at(jNode);
+
+        const iNodePos = [iNodePosFloat[0], iNodePosFloat[1], iNodePosFloat[2]];
+        const jNodePos = [jNodePosFloat[0], jNodePosFloat[1], jNodePosFloat[2]];
+
+        visibleNodesWithHinges.push({ hingeIdx: i, endCap: 1, pos: iNodePos, otherPos: jNodePos });
+        visibleNodesWithHinges.push({ hingeIdx: i, endCap: 2, pos: jNodePos, otherPos: iNodePos });
+      }
+    }
+
+    return {
+      count: visibleNodesWithHinges.length,
+      visibleNodesWithHinges,
+    };
+  }, [animationData.hingeData, animationData.beamData, nodeIds, animationData.initialPositions]);
+
   const meshRef = useRef<THREE.InstancedMesh>(null);
+  const hingeNodesMeshRef = useRef<THREE.InstancedMesh>(null);
 
   useFrame(() => {
     if (!meshRef.current || nodeIds.length === 0) return;
@@ -66,7 +101,6 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
     for (let i = 0; i < nodeIds.length; i++) {
       const nodeId = nodeIds[i];
 
-      // Compute displaced position directly
       const initX = basePositions[i * 3 + 0];
       const initY = basePositions[i * 3 + 1];
       const initZ = basePositions[i * 3 + 2];
@@ -96,13 +130,57 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
       tempObject.updateMatrix();
       meshRef.current.setMatrixAt(i, tempObject.matrix);
 
-      // Compute color directly in the loop
       const color = getNodeColor(nodeId, currentFrame);
       tempColor.setRGB(color.r, color.g, color.b);
       tempColor.toArray(colorAttr.array, i * 3);
     }
 
     meshRef.current.instanceMatrix.needsUpdate = true;
+    colorAttr.needsUpdate = true;
+  });
+
+  useFrame(() => {
+    if (!hingeNodesMeshRef.current) return;
+    if (!hingeNodeGeometry) return;
+
+    const { visibleNodesWithHinges } = hingeNodeGeometry;
+
+    const geometry = hingeNodesMeshRef.current.geometry;
+    const colorAttr = geometry.attributes.color;
+    if (!colorAttr) return;
+
+    for (let i = 0; i < visibleNodesWithHinges.length; i += 1) {
+      const { hingeIdx, endCap, pos, otherPos } = visibleNodesWithHinges[i];
+      const dx = otherPos[0] - pos[0];
+      const dy = otherPos[1] - pos[1];
+      const dz = otherPos[2] - pos[2];
+
+      const expandedPosition = getExpandedPosition(
+        [pos[0], pos[1], pos[2]],
+        [0, 0, 0],
+        [offsets.x, offsets.y, offsets.z],
+        animationData.metadata
+      );
+
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+      const nudge = Math.max(nodeScale / UNIT_SCALE, hingeNodeScale / UNIT_SCALE / 5);
+      const nudgedPos = [
+        expandedPosition[0] + (dx / dist) * nudge,
+        expandedPosition[1] + (dy / dist) * nudge,
+        expandedPosition[2] + (dz / dist) * nudge,
+      ];
+
+      tempObject.scale.set(hingeNodeScale, hingeNodeScale, hingeNodeScale);
+      tempObject.rotation.set(0, 0, Math.atan2(dy, dx) - Math.PI / 2);
+      tempObject.position.set(nudgedPos[0], nudgedPos[1], nudgedPos[2]);
+      tempObject.updateMatrix();
+      hingeNodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
+
+      const color = getNodeColor(hingeIdx, endCap);
+      tempColor.setRGB(color.r, color.g, color.b);
+      tempColor.toArray(colorAttr.array, i * 3);
+    }
+    hingeNodesMeshRef.current.instanceMatrix.needsUpdate = true;
     colorAttr.needsUpdate = true;
   });
 
@@ -135,6 +213,22 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
           </sphereGeometry>
           <meshBasicMaterial fog={false} vertexColors />
         </instancedMesh>
+
+        {renderHingeNodes && hingeNodeGeometry && (
+          <instancedMesh
+            ref={hingeNodesMeshRef}
+            args={[undefined, undefined, hingeNodeGeometry.count]}
+            frustumCulled={false}>
+            <coneGeometry args={[16, 30, 4]}>
+              <instancedBufferAttribute
+                attach="attributes-color"
+                args={[new Float32Array(hingeNodeGeometry.count * 3).fill(1), 3]}
+                usage={THREE.DynamicDrawUsage}
+              />
+            </coneGeometry>
+            <meshBasicMaterial fog={false} vertexColors transparent />
+          </instancedMesh>
+        )}
       </group>
     </group>
   );

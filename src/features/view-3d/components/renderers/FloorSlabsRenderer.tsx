@@ -1,5 +1,5 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useColor, useExpandedScale } from "@/features/view-3d/contexts/visualization";
+import { useColor, useExpandedScale, useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
 import Delaunay from "delaunator";
 import { useMemo } from "react";
@@ -16,6 +16,7 @@ export function FloorSlabsRenderer({ nodeIds, cornersOnly = false, floorOpacity 
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getExpandedPosition } = useExpandedScale();
+  const { visibleFloors } = useFloorVisibility();
 
   const offset = useMemo(
     (): [number, number, number] => [
@@ -26,35 +27,15 @@ export function FloorSlabsRenderer({ nodeIds, cornersOnly = false, floorOpacity 
     [animationData.precomputed.boundingBox]
   );
 
-  const stories = useMemo(() => {
-    if (cornersOnly) {
-      return animationData.metadata.storyOrder.map((storyId) => {
-        const corners = animationData.metadata.cornerNodes[storyId];
-        const nodeIds = corners
-          ? Object.values(corners).filter((id): id is number => typeof id === "number" && id >= 0)
-          : [];
-        return [storyId, nodeIds] as [string, number[]];
-      });
-    }
-
-    const storyMap = new Map<string, number[]>();
-
-    nodeIds.forEach((nodeId) => {
-      for (const [storyId, nodes] of Object.entries(animationData.metadata.stories)) {
-        if (nodes.includes(nodeId)) {
-          if (!storyMap.has(storyId)) {
-            storyMap.set(storyId, []);
-          }
-          storyMap.get(storyId)!.push(nodeId);
-          break;
-        }
-      }
+  const stories: [string, number[]][] = useMemo(() => {
+    const visibles = Object.entries(animationData.metadata.stories).filter(([storyId]) => visibleFloors.has(storyId));
+    const allNodes = new Set(nodeIds);
+    return visibles.map(([storyId, nodes]) => {
+      const thisFloor = new Set(nodes);
+      const intersection = thisFloor.intersection(allNodes);
+      return [storyId, Array.from(intersection)];
     });
-
-    return Array.from(storyMap.entries()).sort((a, b) => {
-      return animationData.metadata.storyOrder.indexOf(a[0]) - animationData.metadata.storyOrder.indexOf(b[0]);
-    });
-  }, [nodeIds, animationData.metadata, cornersOnly]);
+  }, [animationData.metadata, visibleFloors, nodeIds]);
 
   return (
     <group>
@@ -104,112 +85,20 @@ function FloorSlab({
       return null;
     }
 
+    let floorNodes;
+
     if (cornersOnly) {
       const corners = animationData.metadata.cornerNodes[storyId];
       if (!corners) {
         return null;
       }
 
-      const cornerData: { corner: string; position: THREE.Vector3; color: THREE.Color }[] = [];
-      const cornerOrder = ["NW", "NE", "SW", "SE"] as const;
-
-      cornerOrder.forEach((corner) => {
-        const nodeId = corners[corner];
-        if (typeof nodeId !== "number" || nodeId < 0) return;
-
-        const pos = animationData.initialPositions.at(nodeId);
-        const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
-        const expandedPosition = getExpandedPosition(
-          [pos[0], pos[1], pos[2]],
-          [disp[0], disp[1], disp[2]],
-          offset,
-          animationData.metadata
-        );
-        const position = new THREE.Vector3(expandedPosition[0], expandedPosition[1], expandedPosition[2]);
-
-        const nodeColor = getNodeColor(nodeId, frameIndex);
-        cornerData.push({ corner, position, color: nodeColor });
-      });
-
-      if (cornerData.length < 4) {
-        return null;
-      }
-
-      const center = new THREE.Vector3(0, 0, 0);
-      cornerData.forEach((c) => center.add(c.position));
-      center.divideScalar(cornerData.length);
-
-      const geometryGroup = new THREE.Group();
-
-      const quadDefinitions = [
-        { corner: "NW", xEdge: center.x, yEdge: center.y },
-        { corner: "NE", xEdge: center.x, yEdge: center.y },
-        { corner: "SW", xEdge: center.x, yEdge: center.y },
-        { corner: "SE", xEdge: center.x, yEdge: center.y },
-      ];
-
-      quadDefinitions.forEach((quadDef) => {
-        const cornerPos = cornerData.find((c) => c.corner === quadDef.corner)?.position;
-        const cornerColor = cornerData.find((c) => c.corner === quadDef.corner)?.color;
-        if (!cornerPos || !cornerColor) return;
-
-        const z = cornerPos.z;
-
-        const pCorner = cornerPos;
-        const pXEdge = new THREE.Vector3(quadDef.xEdge, cornerPos.y, z);
-        const pYEdge = new THREE.Vector3(cornerPos.x, quadDef.yEdge, z);
-        const pCenter = center;
-
-        const positions = new Float32Array([
-          pCorner.x,
-          pCorner.y,
-          pCorner.z,
-          pXEdge.x,
-          pXEdge.y,
-          pXEdge.z,
-          pCenter.x,
-          pCenter.y,
-          pCenter.z,
-          pCorner.x,
-          pCorner.y,
-          pCorner.z,
-          pYEdge.x,
-          pYEdge.y,
-          pYEdge.z,
-          pCenter.x,
-          pCenter.y,
-          pCenter.z,
-        ]);
-
-        const colors = new Float32Array(18);
-        for (let i = 0; i < 6; i++) {
-          colors[i * 3] = cornerColor.r;
-          colors[i * 3 + 1] = cornerColor.g;
-          colors[i * 3 + 2] = cornerColor.b;
-        }
-
-        const geom = new THREE.BufferGeometry();
-        geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-        const mesh = new THREE.Mesh(
-          geom,
-          new THREE.MeshBasicMaterial({
-            vertexColors: true,
-            transparent: true,
-            opacity: floorOpacity,
-            depthWrite: false,
-            side: THREE.DoubleSide,
-          })
-        );
-
-        geometryGroup.add(mesh);
-      });
-
-      return geometryGroup;
+      floorNodes = [corners.NE, corners.NW, corners.SE, corners.SW];
+    } else {
+      floorNodes = nodeIds;
     }
 
-    const nodePositions = nodeIds.map((nodeId) => {
+    const nodePositions = floorNodes.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
       const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       const expandedPosition = getExpandedPosition(

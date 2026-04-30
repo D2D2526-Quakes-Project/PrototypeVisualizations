@@ -4,8 +4,8 @@ import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { HorizontalConnectionsRenderer } from "./renderers/HorizontalConnectionsRenderer";
 import { VerticalConnectionsRenderer } from "./renderers/VerticalConnectionsRenderer";
@@ -19,12 +19,14 @@ interface FloorVisualizationProps {
 }
 
 function FloorScene({ nodeIds }: { nodeIds: number[] }) {
+  const { invalidate } = useThree();
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getExpandedPosition } = useExpandedScale();
   const { getNodeColor, currentMetric } = useColor();
   const { thresholds } = useThresholds();
   const nodeScale = useViewStore((s) => s.nodeScale);
+  const nodeOpacity = useViewStore((s) => s.nodeOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
   const hingeNodeScale = useViewStore((s) => s.hingeNodeScale);
   const renderVerticalConnections = useViewStore((s) => s.renderVerticalConnections);
@@ -32,6 +34,10 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
   const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
   const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
   const renderHingeNodes = isHingeMetric(currentMetric);
+
+  useEffect(() => {
+    invalidate();
+  }, [nodeScale, nodeOpacity, belowThresholdNodeScale, hingeNodeScale, renderHingeNodes, invalidate]);
 
   const offsets = useMemo(
     () => ({
@@ -210,7 +216,7 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
               usage={THREE.DynamicDrawUsage}
             />
           </sphereGeometry>
-          <meshBasicMaterial fog={false} vertexColors />
+          <meshBasicMaterial fog={false} vertexColors transparent opacity={nodeOpacity} />
         </instancedMesh>
 
         {renderHingeNodes && hingeNodeGeometry && (

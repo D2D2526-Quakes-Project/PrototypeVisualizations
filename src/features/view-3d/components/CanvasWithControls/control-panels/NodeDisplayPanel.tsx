@@ -9,6 +9,7 @@ import {
   Layers,
   MoveHorizontal,
   Sliders,
+  SquaresIntersectIcon,
   WorkflowIcon,
 } from "lucide-react";
 
@@ -127,14 +128,13 @@ export function NodeDisplayPanel() {
         <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{hingeNodeScale.toFixed(1)}x</span>
       </div>
 
-      <div className="flex items-center justify-between gap-2 rounded-sm border border-neutral-200 px-2 py-1.5">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <WorkflowIcon size={12} className="shrink-0 text-neutral-400" />
+          <SquaresIntersectIcon size={12} className="shrink-0 text-neutral-400" />
           <div className="min-w-0">
             <Label htmlFor="visual-interpolation" className="text-[10px] font-medium text-neutral-700">
               Visual Fill
             </Label>
-            <div className="text-[10px] text-neutral-500">Floor-average displacement for nodes with no source data</div>
           </div>
         </div>
         <Checkbox

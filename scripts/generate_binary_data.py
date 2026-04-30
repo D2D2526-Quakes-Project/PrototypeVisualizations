@@ -1143,7 +1143,7 @@ def process_building(building):
 
         # Search from target story upward (toward ground, lower index)
         # story_order_list is [Ground, 2, 3, ..., Roof, Penthouse, Helipad]
-        # So we search from target_idx down to 0 (toward Ground)
+        # So we search from target_idx down to 0 (toward Ground))
         for i in range(target_idx, -1, -1):
             story = story_order_list[i]
             if story in corner_specs:

@@ -962,7 +962,6 @@ function SimulationPickerOverlay({
   const [optionalLoads, setOptionalLoads] = useState<OptionalDataLoadOptions>(() =>
     normalizeOptionalDataLoadOptions(initialOptionalLoadOptions)
   );
-  const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
   const toggleBuilding = (buildingFolder: string) => {
     setExpandedBuildings((current) =>
@@ -1077,8 +1076,6 @@ function SimulationPickerOverlay({
                               type="button"
                               whileTap={{ scale: 0.98 }}
                               onClick={() => setPendingSelection({ building: b, simulation: s })}
-                              onMouseEnter={() => setHoveredStation(s.folder)}
-                              onMouseLeave={() => setHoveredStation(null)}
                               className={`cursor-pointer rounded-md border px-3 py-2 text-left transition-colors ${
                                 isSelected
                                   ? "border-amber-400 bg-amber-50/90"
@@ -1108,31 +1105,12 @@ function SimulationPickerOverlay({
           </div>
 
           <div className="sticky top-4 w-48 shrink-0 rounded-lg border border-neutral-300 bg-neutral-100/60 p-2">
-            <div
-              className="overflow-hidden rounded-sm"
-              style={{
-                background:
-                  "linear-gradient(309deg,rgba(247, 245, 186, 1) 0%, rgba(226, 95, 90, 1) 83%, rgba(200, 73, 117, 1) 100%)",
-              }}>
-              <svg viewBox="0 0 180 175" xmlns="http://www.w3.org/2000/svg" className="w-full">
-                <circle
-                  cx="100"
-                  cy="75"
-                  r={hoveredStation === "station3138" ? 8 : 5.5}
-                  fill="#BA7517"
-                  opacity="0.9"
-                  style={{ transition: "r 0.15s" }}
-                />
-                <circle
-                  cx="68"
-                  cy="83"
-                  r={hoveredStation === "station3139" ? 8 : 5.5}
-                  fill="#185FA5"
-                  opacity="0.9"
-                  style={{ transition: "r 0.15s" }}
-                />
-              </svg>
-            </div>
+            <img className="overflow-hidden rounded-sm bg-contain" src="/stations-map.webp" alt="Station map" />
+            <span
+              title="Wang, Zijia & Zhang, Wenqiang & Taymaz, Tuncay & He, Zhongqiu & Xu, Tianhong & Zhang, Zhenguo. (2023). Dynamic Rupture Process of the 2023 Mw 7.8 Kahramanmaraş Earthquake (SE Türkiye): Variable Rupture Speed and Implications for Seismic Hazard. Geophysical Research Letters. 50. 10.1029/2023GL104787."
+              className="text-xs text-neutral-500 underline">
+              Wang, Et. Al. 2023
+            </span>
           </div>
         </div>
 

@@ -5,7 +5,7 @@ import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { getDefaultCornerMetricChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { formatStoryLabel } from "@/lib/utils";
-import { formatValue, getMetricConfig, type Metric } from "@/lib/metrics";
+import { formatValue, getMetricConfig, isHingeMetric, type Metric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useViewStore } from "@/state";
 import type { EChartsOption } from "echarts";
@@ -135,7 +135,8 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   const panelState = savedPanelState?.type === "cornerMetricChart" ? savedPanelState.state : defaultState;
 
   const selectableMetrics = useMemo(() => {
-    return availableMetrics.length > 0 ? availableMetrics : [defaultState.metric];
+    const supportedMetrics = availableMetrics.filter((metric) => !isHingeMetric(metric));
+    return supportedMetrics.length > 0 ? supportedMetrics : [defaultState.metric];
   }, [availableMetrics, defaultState.metric]);
 
   const selectedMetric = sanitizeMetric(panelState.metric, selectableMetrics);

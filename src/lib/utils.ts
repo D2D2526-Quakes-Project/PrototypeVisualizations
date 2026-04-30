@@ -15,7 +15,13 @@ export function formatCompactNumber(value: number, maxDecimals = 1): string {
   const absValue = Math.abs(value);
   const normalizedMaxDecimals = Math.max(0, maxDecimals);
   const effectiveDecimals =
-    absValue >= 100 ? 0 : absValue >= 10 ? Math.min(normalizedMaxDecimals, 1) : normalizedMaxDecimals;
+    absValue >= 100
+      ? 0
+      : absValue >= 10
+        ? Math.min(normalizedMaxDecimals, 1)
+        : absValue < 1
+          ? Math.max(normalizedMaxDecimals, 2)
+          : normalizedMaxDecimals;
 
   const fixed = value.toFixed(effectiveDecimals);
   return fixed.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");

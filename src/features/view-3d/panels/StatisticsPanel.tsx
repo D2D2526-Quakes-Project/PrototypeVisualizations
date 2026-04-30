@@ -36,6 +36,7 @@ import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { getGlobalHingeSummary } from "@/lib/hingeMetrics";
 
 type StatScope = "current" | "static";
 
@@ -161,6 +162,7 @@ export function StatisticsPanel() {
         maxRotationAcceleration: precomputed.maxRotationAcceleration ?? null,
       },
       precomputed,
+      hingeSummary: getGlobalHingeSummary(animationData),
     };
   }, [animationData, frameIndex]);
 
@@ -228,6 +230,22 @@ export function StatisticsPanel() {
         <StatGroup title="Story Drift" scope="static">
           <StatRow label="Max Drift" value={stats.precomputed.maxStoryDrift} unit="%" />
         </StatGroup>
+
+        {stats.hingeSummary && (
+          <StatGroup title="Static Hinge Rotation" scope="static">
+            <StatRow
+              label="Hinge Nodes"
+              value={`${stats.hingeSummary.hingeNodes} (${stats.hingeSummary.coveragePct.toFixed(1)}%)`}
+            />
+            <StatRow label="Hinge Ends" value={stats.hingeSummary.totalHingeEnds} />
+            {stats.hingeSummary.governingMaxNode?.maxRotation !== undefined && (
+              <StatRow label="Governing Max" value={stats.hingeSummary.governingMaxNode.maxRotation} unit="rad" />
+            )}
+            {stats.hingeSummary.governingMinNode?.minRotation !== undefined && (
+              <StatRow label="Governing Min" value={stats.hingeSummary.governingMinNode.minRotation} unit="rad" />
+            )}
+          </StatGroup>
+        )}
 
         {(stats.optionalPeaks.maxRotation !== null ||
           stats.optionalPeaks.maxRotationVelocity !== null ||

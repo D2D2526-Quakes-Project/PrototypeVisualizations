@@ -73,7 +73,12 @@
 
 ### 6.1.2 Hinge Visualization UI Integration (Current Sprint)
 
-- [ ] Use `beam_data.bld` + story node membership to localize hinge rows to floors/slices in UI
+- [x] Use `beam_data.bld` + story node membership to localize hinge rows to floors/slices in UI
+- [x] Treat hinge rotations as static node metrics that can drive scene/floor/slice coloring
+- [x] Make hinge metric selection force static presentation mode (`frameIndex = 0`, playback off, undeformed geometry)
+- [x] Integrate static hinge rotation summaries into floor, slice, node, statistics, and floor-average analysis surfaces
+- [ ] Decide whether any corner/threshold-oriented panels should gain hinge-specific variants
+  - Static hinge node metrics now participate in shared rotation thresholds for scene/floor/slice coloring, but hinge metrics are still intentionally excluded from corner and threshold histogram workflows because sparse hinge-bearing node coverage makes those surfaces misleading without new hinge-specific semantics.
 - [ ] Add hinge/beam mapping diagnostics (missing joins, duplicate side rows, missing Max/Min side entries) to generation summary
 - [ ] Preserve and expose hinge `Performance Level` from source data instead of hardcoding PL1 in analysis helpers/panels
   - Current behavior hardcodes `performanceLevel: 1` in `buildHingeEnrichedRows`, so filters/labels imply more fidelity than the data model currently carries.
@@ -499,6 +504,9 @@ _Last Updated: February 2026_
 - [ ] Clicking reference nodes in any panels (corners included) should open that node panel
 - [ ] Node panel should link / reference have buttons for the 3 cross sections its in (floor, x, y)
 - [ ] Inset numbers mode for color bar to put the number inside the color bar
+- [ ] FFTs on the motion, maybe
+- [ ] Laplace transforms on the motion, maybe
+- [ ] Make cursor + on timeline
 
 ---
 
@@ -508,5 +516,7 @@ _Last Updated: February 2026_
 - [ ] While in Floor Slabs view mode with Story Drift color by, the floors look gray because its the values include the nodes with no data
 - [ ] When loading the app and the previously selected color by metric was from optional data and that data is no longer loaded, then it doesn't default back to ISD instead its in a weird broken state.
 - [ ] Elevation is off by one story I think. Ground is 0 and 2nd is 0.
+- [ ] Hinge to assignment allocation is wrong
+- [ ] The topdown motion graph of per-node motion is offset or wrong or not centered or bounds are wrong.
 
 _Last Updated: March 2026_

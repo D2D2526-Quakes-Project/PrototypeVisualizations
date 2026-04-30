@@ -1,15 +1,20 @@
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "./PlaybackContext";
+import { useViewStore } from "@/state";
+import { isHingeMetric } from "@/lib/metrics";
 
 export function PlaybackControls() {
   const { playing, handlePlayPause, skipToStart, skipToEnd } = usePlayback();
+  const currentMetric = useViewStore((s) => s.currentMetric);
+  const hingeStaticMode = isHingeMetric(currentMetric);
 
   return (
     <div className="flex items-center gap-2">
       <button
-        className="cursor-pointer p-2 transition-transform hover:-translate-y-1"
+        className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
         onClick={skipToStart}
+        disabled={hingeStaticMode}
         title="Skip to Start">
         <SkipBackIcon />
       </button>
@@ -17,20 +22,23 @@ export function PlaybackControls() {
       <div className="h-6 w-px bg-neutral-300" />
 
       <button
-        className="cursor-pointer p-2 transition-transform hover:-translate-y-1"
+        className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
         onClick={handlePlayPause}
-        title={playing ? "Pause" : "Play"}>
+        disabled={hingeStaticMode}
+        title={hingeStaticMode ? "Static hinge metrics do not support playback" : playing ? "Pause" : "Play"}>
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
 
       <div className="h-6 w-px bg-neutral-300" />
 
       <button
-        className="cursor-pointer p-2 transition-transform hover:-translate-y-1"
+        className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
         onClick={skipToEnd}
+        disabled={hingeStaticMode}
         title="Skip to End">
         <SkipForwardIcon />
       </button>
+      {hingeStaticMode && <span className="text-xs text-neutral-500">Satic Hinges</span>}
     </div>
   );
 }
@@ -38,6 +46,8 @@ export function PlaybackControls() {
 export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) {
   const { playing, handlePlayPause, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
   const exportRenderMode = useExportRenderMode();
+  const currentMetric = useViewStore((s) => s.currentMetric);
+  const hingeStaticMode = isHingeMetric(currentMetric);
 
   if (!exportRenderMode.showTransientUi) return null;
 
@@ -50,22 +60,26 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
       }>
       <button
         onClick={skipToStart}
-        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
+        disabled={hingeStaticMode}
+        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         title="Skip to Start">
         <SkipBackIcon />
       </button>
       <button
         onClick={handlePlayPause}
-        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
-        title={playing ? "Pause" : "Play"}>
+        disabled={hingeStaticMode}
+        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+        title={hingeStaticMode ? "Static hinge metrics do not support playback" : playing ? "Pause" : "Play"}>
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
       <button
         onClick={skipToEnd}
-        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
+        disabled={hingeStaticMode}
+        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         title="Skip to End">
         <SkipForwardIcon />
       </button>
+      {hingeStaticMode && <span className="border-l border-neutral-300 pl-1 text-[10px] text-neutral-500">Static</span>}
       {playing && (
         <div className="flex items-center gap-1 border-l border-neutral-300 pl-1">
           <span className="text-[10px] font-medium text-neutral-700" title="Frames per second">

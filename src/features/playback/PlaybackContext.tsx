@@ -1,4 +1,5 @@
 import { useAnimationData } from "@/lib/useAnimationData";
+import { isHingeMetric } from "@/lib/metrics";
 import { useViewStore } from "@/state";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
@@ -19,32 +20,47 @@ export const usePlayback = (): PlaybackControlParams => {
   const fps = useViewStore((s) => s.fps);
   const skippedPerFrame = useViewStore((s) => s.skippedPerFrame);
   const totalFrames = useViewStore((s) => s.totalFrames);
+  const currentMetric = useViewStore((s) => s.currentMetric);
   const setStoreFrameIndex = useViewStore((s) => s.setFrameIndex);
   const setPlaying = useViewStore((s) => s.setPlaying);
+  const hingeStaticMode = isHingeMetric(currentMetric);
 
   const setFrameIndex = useCallback(
     (nextIndex: number | ((prevState: number) => number)) => {
+      if (hingeStaticMode) {
+        setStoreFrameIndex(0);
+        return;
+      }
       const resolvedIndex = typeof nextIndex === "number" ? nextIndex : nextIndex(frameIndex);
       const clamped = Math.max(0, Math.min(totalFrames - 1, resolvedIndex));
       setStoreFrameIndex(clamped);
     },
-    [frameIndex, totalFrames, setStoreFrameIndex]
+    [frameIndex, hingeStaticMode, totalFrames, setStoreFrameIndex]
   );
 
   const handlePlayPause = useCallback(() => {
+    if (hingeStaticMode) {
+      setStoreFrameIndex(0);
+      setPlaying(false);
+      return;
+    }
     if (frameIndex >= totalFrames - 1) {
       setStoreFrameIndex(0);
     }
     setPlaying(!playing);
-  }, [frameIndex, totalFrames, setPlaying, playing, setStoreFrameIndex]);
+  }, [frameIndex, hingeStaticMode, totalFrames, setPlaying, playing, setStoreFrameIndex]);
 
   const skipToStart = useCallback(() => {
     setStoreFrameIndex(0);
   }, [setStoreFrameIndex]);
 
   const skipToEnd = useCallback(() => {
+    if (hingeStaticMode) {
+      setStoreFrameIndex(0);
+      return;
+    }
     setStoreFrameIndex(totalFrames - 1);
-  }, [setStoreFrameIndex, totalFrames]);
+  }, [hingeStaticMode, setStoreFrameIndex, totalFrames]);
 
   return {
     frameIndex,
@@ -63,6 +79,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
   const playing = useViewStore((s) => s.playing);
   const frameIndex = useViewStore((s) => s.frameIndex);
+  const currentMetric = useViewStore((s) => s.currentMetric);
   const totalFrames = useViewStore((s) => s.totalFrames);
   const setFrameIndex = useViewStore((s) => s.setFrameIndex);
   const setPlaying = useViewStore((s) => s.setPlaying);
@@ -79,6 +96,20 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const frameIndexRef = useRef(frameIndex);
 
   const frameRate = animationData.metadata.dt > 0 ? 1 / animationData.metadata.dt : 30;
+  const hingeStaticMode = isHingeMetric(currentMetric);
+
+  useEffect(() => {
+    if (!hingeStaticMode) return;
+
+    if (playing) {
+      setPlaying(false);
+    }
+    if (frameIndex !== 0) {
+      setFrameIndex(0);
+    }
+    setSkippedPerFrame(0);
+    setFps(0);
+  }, [frameIndex, hingeStaticMode, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame]);
 
   useEffect(() => {
     frameIndexRef.current = frameIndex;
@@ -105,6 +136,15 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   }, [animationData.metadata.frameCount, setTotalFrames]);
 
   useEffect(() => {
+    if (hingeStaticMode) {
+      if (requestedAnimationFrameRef.current !== null) {
+        cancelAnimationFrame(requestedAnimationFrameRef.current);
+      }
+      setSkippedPerFrame(0);
+      setFps(0);
+      return;
+    }
+
     if (!playing) {
       if (requestedAnimationFrameRef.current !== null) {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
@@ -172,7 +212,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
     };
-  }, [frameRate, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame, totalFrames]);
+  }, [frameRate, hingeStaticMode, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame, totalFrames]);
 
   useEffect(() => {
     const changeFrame = (delta: number) => {
@@ -185,6 +225,15 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     function windowKeydown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (hingeStaticMode) {
+        if ([" ", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+          e.preventDefault();
+          setPlaying(false);
+          setFrameIndex(0);
+        }
         return;
       }
 
@@ -223,7 +272,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     window.addEventListener("keydown", windowKeydown);
     return () => window.removeEventListener("keydown", windowKeydown);
-  }, [frameIndex, playing, setFrameIndex, setPlaying, totalFrames]);
+  }, [frameIndex, hingeStaticMode, playing, setFrameIndex, setPlaying, totalFrames]);
 
   return <>{children}</>;
 }

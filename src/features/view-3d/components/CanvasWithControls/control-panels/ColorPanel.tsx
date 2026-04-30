@@ -37,7 +37,11 @@ export function ColorPanel() {
           <div className="text-[10px] text-neutral-500">Color Scale</div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-neutral-500">Show Threshold</span>
-            <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />
+            <Switch
+              size="sm"
+              checked={thresholdHighlighting}
+              onCheckedChange={setThresholdHighlighting}
+            />
           </div>
         </div>
         <ColorScaleBar

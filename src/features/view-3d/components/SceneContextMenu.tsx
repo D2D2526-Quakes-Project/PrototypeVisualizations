@@ -1,10 +1,10 @@
-import * as React from "react";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor } from "@/features/view-3d/contexts/visualization";
+import { formatValue, getMetricConfig } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useCrossSectionSelection } from "../contexts/visualization/CrossSectionSelectionContext";
 import { useViewStore } from "@/state";
-import { getMetricConfig, formatValue } from "@/lib/metrics";
+import * as React from "react";
+import { useCrossSectionSelection } from "../contexts/visualization/CrossSectionSelectionContext";
 
 export function SceneTooltip({ children }: { children: React.ReactNode }) {
   const { frameIndex } = usePlayback();
@@ -23,7 +23,9 @@ export function SceneTooltip({ children }: { children: React.ReactNode }) {
       return (
         <div className="flex flex-col gap-1">
           <div className="font-semibold">Node #{hoveredNodeId}</div>
-          {value !== undefined && <div className="">{`${metricConfig.label}: ${formatValue(value, 2)}`}</div>}
+          {value !== undefined && (
+            <div>{`${metricConfig.label}: ${formatValue(value, 2)} ${metricConfig.unit.abbr}`}</div>
+          )}
           <div className="text-muted-foreground">Click to open panel</div>
         </div>
       );

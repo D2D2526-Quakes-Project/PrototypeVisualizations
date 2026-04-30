@@ -41,6 +41,8 @@ export function HorizontalConnectionsRenderer({
       const iNode = row.iNodeIndex;
       const jNode = row.jNodeIndex;
 
+      // console.log(iNode, jNode);
+
       if (iNode >= 0 && jNode >= 0 && nodeIdSet.has(iNode) && nodeIdSet.has(jNode)) {
         result.push({ nodeA: iNode, nodeB: jNode });
       }

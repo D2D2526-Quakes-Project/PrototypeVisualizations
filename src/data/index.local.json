@@ -1,0 +1,80 @@
+{
+  "$schema": "./index.schema.json",
+  "buildings": [
+    {
+      "data_type": "binary",
+      "name": "15story",
+      "folder": "15story",
+      "building_data": "building.bld",
+      "building_data_size": 45753,
+      "simulations": [
+        {
+          "name": "station3138",
+          "folder": "station3138",
+          "size": 2184934345,
+          "accelerationLin": "acceleration_lin.bld",
+          "accelerationRot": "acceleration_rot.bld",
+          "displacementLin": "displacement_lin.bld",
+          "displacementRot": "displacement_rot.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "velocityRot": "velocity_rot.bld"
+        },
+        {
+          "name": "station3139",
+          "folder": "station3139",
+          "size": 1953102403,
+          "accelerationLin": "acceleration_lin.bld",
+          "accelerationRot": "acceleration_rot.bld",
+          "displacementLin": "displacement_lin.bld",
+          "displacementRot": "displacement_rot.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "velocityRot": "velocity_rot.bld"
+        }
+      ],
+      "size": 4138128200,
+      "beamData": "beam_data.bld"
+    },
+    {
+      "data_type": "binary",
+      "name": "52story",
+      "folder": "52story",
+      "building_data": "building.bld",
+      "building_data_size": 22323,
+      "simulations": [
+        {
+          "name": "station3138",
+          "folder": "station3138",
+          "size": 198874435,
+          "accelerationLin": "acceleration_lin.bld",
+          "accelerationRot": "acceleration_rot.bld",
+          "displacementLin": "displacement_lin.bld",
+          "displacementRot": "displacement_rot.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "velocityRot": "velocity_rot.bld"
+        },
+        {
+          "name": "station3139",
+          "folder": "station3139",
+          "size": 165135984,
+          "accelerationLin": "acceleration_lin.bld",
+          "accelerationRot": "acceleration_rot.bld",
+          "displacementLin": "displacement_lin.bld",
+          "displacementRot": "displacement_rot.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "velocityRot": "velocity_rot.bld"
+        }
+      ],
+      "size": 364057496,
+      "beamData": "beam_data.bld"
+    }
+  ],
+  "size": 4502185696
+}

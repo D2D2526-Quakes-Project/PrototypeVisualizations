@@ -13,6 +13,7 @@ import { useViewStore } from "@/state";
 import { ChartNoAxesCombinedIcon, XIcon } from "lucide-react";
 import { stringToNumber } from "@/lib/utils";
 import { IsometricBuilding } from "@/components/IsometricBoundingBox";
+import { HingeLocalizedSummary } from "@/features/view-3d/components/HingeLocalizedSummary";
 
 // const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
@@ -676,56 +677,15 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
           </div>
         )} */}
 
-        {/* Hinges */}
-        {/* {hingeSliceSummary && (
+        {animationData.precomputed.hingeNodeMetrics && (
           <div className="animate-fade-in">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h3 className="text-sm font-bold">Hinge Analysis (Static)</h3>
-              <span className="text-[10px] text-neutral-500">Global; not frame-linked</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="tracking-wide text-neutral-500 uppercase">Rows (Max)</div>
-                <div className="font-mono text-neutral-800">{hingeSliceSummary.maxOnlyCount.toLocaleString()}</div>
-              </div>
-              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="tracking-wide text-neutral-500 uppercase">Max Crit D/C</div>
-                <div className="font-mono text-neutral-800">{hingeSliceSummary.maxCritical.toFixed(2)}</div>
-              </div>
-              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="tracking-wide text-neutral-500 uppercase">D/C {">="} 1 / 2 / 4</div>
-                <div className="font-mono text-neutral-800">
-                  {hingeSliceSummary.ge1} / {hingeSliceSummary.ge2} / {hingeSliceSummary.ge4}
-                </div>
-              </div>
-              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="tracking-wide text-neutral-500 uppercase">P95 (approx)</div>
-                <div className="font-mono text-neutral-800">{hingeSliceSummary.p95Approx.toFixed(2)}</div>
-              </div>
-            </div>
-
-            <div className="mt-2">
-              <div className="mb-1 font-medium text-neutral-700">Top Hinges (Max Step)</div>
-              <div className="space-y-1">
-                {hingeSliceSummary.topRows.map((row) => (
-                  <div
-                    key={`${row.beamIndex}-${row.end}-${row.stepType}`}
-                    className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-2 border-b border-neutral-100 pb-1 text-[10px]">
-                    <span className="font-mono text-neutral-600">E{row.elementId}</span>
-                    <span className="font-mono text-neutral-600">{row.end}</span>
-                    <span className="truncate text-neutral-500">
-                      Beam {row.beamIndex} · Node {row.nodeIndex >= 0 ? row.nodeIndex : "?"}
-                    </span>
-                    <span className="font-mono text-neutral-800">{row.criticalDcr.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-2 text-[10px] text-neutral-400 italic">
-                Story/slice localization for hinge rows requires beam element connectivity mapping (next step).
-              </div>
-            </div>
+            <HingeLocalizedSummary
+              title="Static Hinge Rotation"
+              subtitle="Hinge data localized to this floor's nodes."
+              nodeIds={nodeIds}
+            />
           </div>
-        )} */}
+        )}
 
         {/* DISPLACEMENT */}
         {displacementData && (

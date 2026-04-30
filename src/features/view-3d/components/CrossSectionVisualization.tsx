@@ -153,6 +153,7 @@ export function CrossSectionVisualization({ nodeIds, crossSectionType, width }: 
       style={{ width: width, height: height }}
       className="overflow-hidden rounded border border-neutral-300 bg-neutral-900">
       <Canvas
+        frameloop="demand"
         orthographic
         linear
         flat

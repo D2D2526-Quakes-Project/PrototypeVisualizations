@@ -128,7 +128,6 @@ export interface DataExplorerPanelState {
 }
 
 export interface HingeDistributionPanelState {
-  stepType: string;
   binCount: number;
   logScale: boolean;
   clipPercentile: number;
@@ -152,7 +151,6 @@ export type PanelState =
   | { type: "peakValues"; state: PeakValuesPanelState; panelId: string }
   | { type: "dataExplorer"; state: DataExplorerPanelState; panelId: string }
   | { type: "hingeDistribution"; state: HingeDistributionPanelState; panelId: string }
-  | { type: "hingeHotspots"; state: HingeHotspotsPanelState; panelId: string }
   | { type: "unknown"; state: Record<string, unknown>; panelId: string };
 
 export interface AppState {
@@ -617,10 +615,9 @@ export function getDefaultDataExplorerPanelState(): DataExplorerPanelState {
 
 export function getDefaultHingeDistributionPanelState(): HingeDistributionPanelState {
   return {
-    stepType: "All",
     binCount: 24,
     logScale: false,
-    clipPercentile: 95,
+    clipPercentile: 99,
   };
 }
 

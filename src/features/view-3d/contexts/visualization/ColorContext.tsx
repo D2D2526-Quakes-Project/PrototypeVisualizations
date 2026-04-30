@@ -32,6 +32,8 @@ export function ColorProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+const ERROR_MAGENTA = interpolate(["magenta"], "oklab");
+
 export function useColor(): ColorContextType {
   const { animationData } = useAnimationData();
   const { thresholds } = useThresholds();
@@ -51,14 +53,18 @@ export function useColor(): ColorContextType {
   const { positiveInterpolator, positiveThresholdInterpolator, negativeInterpolator, negativeThresholdInterpolator } =
     useMemo(() => {
       return {
-        positiveInterpolator: interpolate(metricColorScale.positiveColorStops, "oklab"),
-        positiveThresholdInterpolator: interpolate(metricColorScale.positiveThresholdColorStops, "oklab"),
-        negativeInterpolator: metricConfig.positiveOnly
-          ? interpolate(["magenta"], "oklab")
-          : interpolate(metricColorScale.negativeColorStops, "oklab"),
-        negativeThresholdInterpolator: metricConfig.positiveOnly
-          ? interpolate(["magenta"], "oklab")
-          : interpolate(metricColorScale.negativeThresholdColorStops, "oklab"),
+        positiveInterpolator: metricConfig.hasPositive
+          ? interpolate(metricColorScale.positiveColorStops, "oklab")
+          : ERROR_MAGENTA,
+        positiveThresholdInterpolator: metricConfig.hasPositive
+          ? interpolate(metricColorScale.positiveThresholdColorStops, "oklab")
+          : ERROR_MAGENTA,
+        negativeInterpolator: metricConfig.hasNegative
+          ? interpolate(metricColorScale.negativeColorStops, "oklab")
+          : ERROR_MAGENTA,
+        negativeThresholdInterpolator: metricConfig.hasNegative
+          ? interpolate(metricColorScale.negativeThresholdColorStops, "oklab")
+          : ERROR_MAGENTA,
       };
     }, [metricConfig, metricColorScale]);
 

@@ -32,7 +32,7 @@ export function ThresholdPanel() {
             key: thresholdKey,
             label: config.label,
             unit: config.unit,
-            max: Math.max(config.getPrecomputedMax(animationData), thresholds[thresholdKey] || 0, 1),
+            max: Math.max(config.getPrecomputedMax(animationData), thresholds[thresholdKey] || 0, 0),
             tooltip: `Shared threshold for ${metrics.map((metric) => METRIC_CONFIGS[metric].label).join(", ")}`,
           };
         }

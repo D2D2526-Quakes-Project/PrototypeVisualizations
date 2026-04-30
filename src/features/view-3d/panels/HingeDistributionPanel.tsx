@@ -1,21 +1,10 @@
-import { useAnimationData } from "@/lib/useAnimationData";
 import { getDefaultHingeDistributionPanelState } from "@/features/view-3d/lib/statePersistence";
-import {
-  buildHingeEnrichedRows,
-  computeHingeHistogram,
-  HINGE_METRIC_LABELS,
-  HINGE_METRIC_UNITS,
-  type HingeMetricKey,
-} from "@/lib/hingeAnalysis";
+import { useAnimationData } from "@/lib/useAnimationData";
 import { useViewStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo } from "react";
-
-const HINGE_METRICS: HingeMetricKey[] = ["criticalDcr", "maxPosDeformDCRatio", "maxNegDeformDCRatio", "r3Abs", "m3Abs"];
-
-const DEFAULT_PERFORMANCE_LEVEL = 1;
 
 function getClipCountFromPercentile(counts: number[], clipPercentile: number): number {
   if (counts.length === 0) return 0;
@@ -26,13 +15,55 @@ function getClipCountFromPercentile(counts: number[], clipPercentile: number): n
   return Math.max(1, sorted[idx] ?? 1);
 }
 
-function buildHingeHistogramOption(
-  histogram: ReturnType<typeof computeHingeHistogram>,
-  metricKey: HingeMetricKey,
-  clipPercentile: number,
-  logScale: boolean
-): EChartsOption {
-  if (!histogram) {
+interface HingeHistogramResult {
+  bins: {
+    x0: number;
+    x1: number;
+    count: number;
+  }[];
+  count: number;
+  min: number;
+  max: number;
+  mean: number;
+}
+
+function computeHingeHistogram(values: number[], binCount = 24): HingeHistogramResult | null {
+  if (values.length === 0) {
+    return null;
+  }
+
+  values.sort((a, b) => a - b);
+
+  const count = values.length;
+
+  const min = values[0];
+  const max = values[count - 1];
+  const mean = values.reduce((sum, value) => sum + value, 0) / count;
+
+  const bins = Math.max(4, binCount);
+  const width = (max - min) / bins;
+  const counts = new Array<number>(bins).fill(0);
+
+  for (const value of values) {
+    const idx = Math.min(bins - 1, Math.max(0, Math.floor((value - min) / width)));
+    counts[idx] += 1;
+  }
+
+  return {
+    bins: counts.map((binValue, idx) => ({
+      x0: min + idx * width,
+      x1: min + (idx + 1) * width,
+      count: binValue,
+    })),
+    count,
+    min,
+    max,
+    mean,
+  };
+}
+
+function buildHingeHistogramOption(metric: MetricHistogram, clipPercentile: number, logScale: boolean): EChartsOption {
+  if (!metric.histogram) {
     return {
       animation: false,
       legend: { data: [] },
@@ -42,8 +73,9 @@ function buildHingeHistogramOption(
     };
   }
 
-  const metricLabel = HINGE_METRIC_LABELS[metricKey];
-  const metricUnit = HINGE_METRIC_UNITS[metricKey];
+  const metricLabel = metric.label;
+  const metricUnit = metric.units;
+  const histogram = metric.histogram;
   const metricLabelWithUnit = metricUnit ? `${metricLabel} (${metricUnit})` : metricLabel;
 
   const xLabels = histogram.bins.map((bin) => `${bin.x0.toFixed(2)}-${bin.x1.toFixed(2)}`);
@@ -132,6 +164,14 @@ function buildHingeHistogramOption(
   };
 }
 
+type MetricHistogram = {
+  key: string;
+  label: string;
+  units: string;
+  values: number[];
+  histogram: HingeHistogramResult | null;
+};
+
 export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const hingeData = animationData.hingeData;
@@ -152,36 +192,60 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
     [savedState.clipPercentile]
   );
 
-  const rows = useMemo(
-    () => buildHingeEnrichedRows(hingeData, animationData.beamData),
-    [hingeData, animationData.beamData]
-  );
-  const effectiveStepType = "All";
+  const histogramMetrics: MetricHistogram[] | null = useMemo(() => {
+    if (!hingeData) return null;
 
-  const histogramByMetric = useMemo(() => {
-    const map = new Map<HingeMetricKey, ReturnType<typeof computeHingeHistogram>>();
-    for (const metric of HINGE_METRICS) {
-      map.set(
-        metric,
-        computeHingeHistogram(
-          rows,
-          metric,
-          { stepType: effectiveStepType, performanceLevel: DEFAULT_PERFORMANCE_LEVEL },
-          Math.max(6, Math.min(binCount, 120))
-        )
-      );
+    const m3Abs = [];
+    const r3Abs = [];
+
+    for (let i = 0; i < hingeData.count; i++) {
+      const row = hingeData.getRow(i);
+      m3Abs.push(Math.abs(row.iM3Max));
+      m3Abs.push(Math.abs(row.jM3Max));
+      m3Abs.push(Math.abs(row.iM3Min));
+      m3Abs.push(Math.abs(row.jM3Min));
+      r3Abs.push(Math.abs(row.iR3Max));
+      r3Abs.push(Math.abs(row.jR3Max));
+      r3Abs.push(Math.abs(row.iR3Min));
+      r3Abs.push(Math.abs(row.jR3Min));
     }
-    return map;
-  }, [rows, effectiveStepType, binCount]);
+
+    return [
+      {
+        key: "r3Abs",
+        label: "|R3| Rotation",
+        units: "rad",
+        values: r3Abs,
+        histogram: null,
+      },
+      {
+        key: "m3Abs",
+        label: "|M3| Moment",
+        units: "kip-in",
+        values: m3Abs,
+        histogram: null,
+      },
+    ];
+  }, [hingeData]);
+
+  const histograms: MetricHistogram[] | null = useMemo(() => {
+    if (!histogramMetrics) return null;
+    return histogramMetrics.map((metric) => {
+      const { values } = metric;
+      return {
+        ...metric,
+        histogram: computeHingeHistogram(values, binCount),
+      };
+    });
+  }, [binCount, histogramMetrics]);
 
   useEffect(() => {
     setPanelState(panelId, "hingeDistribution", {
-      stepType: effectiveStepType,
       binCount,
       logScale,
       clipPercentile,
     });
-  }, [binCount, clipPercentile, effectiveStepType, logScale, panelId, setPanelState]);
+  }, [binCount, clipPercentile, logScale, panelId, setPanelState]);
 
   const allBinControls = useMemo(() => {
     return [
@@ -191,7 +255,6 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         value: binCount,
         onChange: (value: number) => {
           setPanelState(panelId, "hingeDistribution", {
-            stepType: effectiveStepType,
             binCount: Math.max(6, Math.min(120, value)),
             logScale,
             clipPercentile,
@@ -204,7 +267,6 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         value: clipPercentile,
         onChange: (value: number) => {
           setPanelState(panelId, "hingeDistribution", {
-            stepType: effectiveStepType,
             binCount,
             logScale,
             clipPercentile: Math.min(100, Math.max(60, value)),
@@ -212,7 +274,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         },
       },
     ];
-  }, [binCount, clipPercentile, effectiveStepType, logScale, panelId, setPanelState]);
+  }, [binCount, clipPercentile, logScale, panelId, setPanelState]);
 
   if (!hingeData) {
     return (
@@ -251,7 +313,6 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
             checked={logScale}
             onChange={(event) =>
               setPanelState(panelId, "hingeDistribution", {
-                stepType: effectiveStepType,
                 binCount,
                 logScale: event.target.checked,
                 clipPercentile,
@@ -262,29 +323,23 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         </label>
       </div>
 
-      <div className="border-b border-neutral-100 bg-neutral-50 px-3 py-2 text-[10px] text-neutral-500">
-        Performance level is fixed at PL 1.
-      </div>
-
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-        {rows.length === 0 ? (
+        {histograms == null ? (
           <div className="flex h-full items-center justify-center text-sm text-neutral-500">
-            No hinge rows available.
+            No hinge data available.
           </div>
         ) : (
           <div className="space-y-3">
-            {HINGE_METRICS.map((metricKey) => {
-              const histogram = histogramByMetric.get(metricKey) ?? null;
-              const option = buildHingeHistogramOption(histogram, metricKey, clipPercentile, logScale);
-              const metricLabel = HINGE_METRIC_LABELS[metricKey];
-              const metricUnit = HINGE_METRIC_UNITS[metricKey];
+            {histograms.map((metric) => {
+              const { key, label, units } = metric;
+              const option = buildHingeHistogramOption(metric, clipPercentile, logScale);
 
               return (
-                <div key={metricKey} className="rounded border border-neutral-200 bg-white p-2">
+                <div key={key} className="rounded border border-neutral-200 bg-white p-2">
                   <div className="mb-2 flex items-center justify-between text-xs">
                     <div className="font-medium text-neutral-700">
-                      {metricLabel}
-                      {metricUnit ? ` (${metricUnit})` : ""}
+                      {label}
+                      {units}
                     </div>
                     <div className="text-[10px] text-neutral-500">Number of hinges</div>
                   </div>

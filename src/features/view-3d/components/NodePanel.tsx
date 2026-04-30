@@ -9,6 +9,7 @@ import { Vector3 } from "three";
 import { MiniRibbon } from "./MiniRibbon";
 import { MiniTimeSeries } from "./MiniTimeSeries";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { getHingeNodeMetricValue } from "@/lib/hingeMetrics";
 
 // Generate a unique vibrant color based on node ID
 export function getNodeColor(nodeId: number): string {
@@ -539,6 +540,25 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     };
   }, [animationData.displacementRot, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
+  const hingeInfo = useMemo(() => {
+    const hingeNodeMetrics = animationData.precomputed.hingeNodeMetrics;
+    if (!hingeNodeMetrics) return null;
+
+    const maxRotation = getHingeNodeMetricValue(hingeNodeMetrics, nodeId, "hingeRotationMax");
+    const minRotation = getHingeNodeMetricValue(hingeNodeMetrics, nodeId, "hingeRotationMin");
+    const hingeEndCount = hingeNodeMetrics.hingeEndCountByNode[nodeId] ?? 0;
+
+    if (maxRotation === undefined && minRotation === undefined) {
+      return null;
+    }
+
+    return {
+      maxRotation,
+      minRotation,
+      hingeEndCount,
+    };
+  }, [animationData.precomputed.hingeNodeMetrics, nodeId]);
+
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3">
@@ -602,6 +622,43 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             </div>
           </div>
         </div>
+
+        {hingeInfo && (
+          <div className="animate-fade-in">
+            <h3 className="mb-2 text-sm font-bold">Static Hinge Rotation</h3>
+            <div className="mb-2 text-[10px] text-neutral-500">Satic Hinge values.</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Max Rotation</div>
+                <div className="font-mono text-neutral-900">
+                  {hingeInfo.maxRotation !== undefined ? (
+                    <UnitTooltip value={hingeInfo.maxRotation} unit="rad" decimals={3} showConversions={false} />
+                  ) : (
+                    "—"
+                  )}
+                </div>
+              </div>
+              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Min Rotation</div>
+                <div className="font-mono text-neutral-900">
+                  {hingeInfo.minRotation !== undefined ? (
+                    <UnitTooltip value={hingeInfo.minRotation} unit="rad" decimals={3} showConversions={false} />
+                  ) : (
+                    "—"
+                  )}
+                </div>
+              </div>
+              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Hinge Ends</div>
+                <div className="font-mono text-neutral-900">{hingeInfo.hingeEndCount.toLocaleString()}</div>
+              </div>
+              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
+                <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Rotation Units</div>
+                <div className="font-mono text-neutral-900">rad</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* DISPLACEMENT */}
         <div className="animate-fade-in">

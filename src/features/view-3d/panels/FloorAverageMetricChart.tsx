@@ -236,7 +236,6 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
       const xAxisIndex = unitGroups.findIndex((g) => g.unit === metricConfig.unit.abbr);
       const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
-      const isPositiveOnly = metricConfig.positiveOnly ?? true;
 
       const barSeries: SeriesOption = {
         name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
@@ -260,8 +259,11 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       };
 
       if (thresholdValue > 0) {
-        const markLineData = [{ xAxis: thresholdValue, name: `Threshold +${metricConfig.unit.abbr}` }];
-        if (!isPositiveOnly) {
+        const markLineData = [];
+        if (metricConfig.hasPositive) {
+          markLineData.push({ xAxis: thresholdValue, name: `Threshold +${metricConfig.unit.abbr}` });
+        }
+        if (metricConfig.hasNegative) {
           markLineData.push({ xAxis: -thresholdValue, name: `Threshold -${metricConfig.unit.abbr}` });
         }
 

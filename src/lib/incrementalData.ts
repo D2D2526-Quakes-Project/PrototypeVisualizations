@@ -1,3 +1,5 @@
+import { buildHingeNodeMetrics } from "@/lib/hingeMetrics";
+import type { DatasetKey, OptionalDatasetKey } from "@/lib/loadingTypes";
 import type {
   AnimationMetadata,
   BeamDataAccessor,
@@ -8,13 +10,11 @@ import type {
   GroundMotionMetadata,
   HingeDataAccessor,
   HingeMetadata,
-  HingeSummary,
   IndexAccessor,
   NodeValueTimeAccessor,
   SimulationMetadata,
   TimeIndexAccessor,
 } from "@/lib/types";
-import type { DatasetKey, OptionalDatasetKey } from "@/lib/loadingTypes";
 
 export const PROCESSED_CACHE_VERSION = 1;
 
@@ -104,7 +104,7 @@ export interface OptionalStatsDelta {
   };
   avgVelocityPerStory?: Float32Array;
   avgAccelerationPerStory?: Float32Array;
-  hinge?: HingeSummary;
+  hinge?: undefined; // TODO: Compute this summary (less values)
 }
 
 export interface SerializedOptionalDatasetResult {
@@ -221,10 +221,10 @@ function makeBeamAccessor(metadata: BeamDataMetadata, body: Float32Array): BeamD
     getRow(idx: number) {
       const row = data.subarray(idx * stride, (idx + 1) * stride);
       return {
-        elementId: Math.trunc(valueAt(row, 0)),
-        iNodeIndex: Math.trunc(valueAt(row, 1)),
-        jNodeIndex: Math.trunc(valueAt(row, 2)),
-        groupId: Math.trunc(valueAt(row, 3)),
+        // elementId: Math.trunc(valueAt(row, 0)),
+        iNodeIndex: Math.trunc(valueAt(row, 0)),
+        jNodeIndex: Math.trunc(valueAt(row, 1)),
+        groupId: Math.trunc(valueAt(row, 2)),
       };
     },
   };
@@ -248,23 +248,15 @@ function makeHingeAccessor(metadata: HingeMetadata, body: Float32Array): HingeDa
       const row = data.subarray(idx * stride, (idx + 1) * stride);
       return {
         beamIndex: Math.trunc(valueAt(row, 0)),
-        endMask: Math.trunc(valueAt(row, 1)),
+        endMask: Math.trunc(valueAt(row, 1)) as 0 | 1 | 2 | 3,
         iM3Max: valueAt(row, 2),
         iM3Min: valueAt(row, 3),
         iR3Max: valueAt(row, 4),
         iR3Min: valueAt(row, 5),
-        iMaxPosDcrMax: valueAt(row, 6),
-        iMaxPosDcrMin: valueAt(row, 7),
-        iMaxNegDcrMax: valueAt(row, 8),
-        iMaxNegDcrMin: valueAt(row, 9),
-        jM3Max: valueAt(row, 10),
-        jM3Min: valueAt(row, 11),
-        jR3Max: valueAt(row, 12),
-        jR3Min: valueAt(row, 13),
-        jMaxPosDcrMax: valueAt(row, 14),
-        jMaxPosDcrMin: valueAt(row, 15),
-        jMaxNegDcrMax: valueAt(row, 16),
-        jMaxNegDcrMin: valueAt(row, 17),
+        jM3Max: valueAt(row, 6),
+        jM3Min: valueAt(row, 7),
+        jR3Max: valueAt(row, 8),
+        jR3Min: valueAt(row, 9),
       };
     },
   };
@@ -615,20 +607,28 @@ export function mergeOptionalDatasetIntoAnimationData(
 
   if (result.key === "beamData") {
     nextAnimationData.beamData = makeBeamAccessor(result.metadata as BeamDataMetadata, result.data);
-    return nextAnimationData;
-  }
-
-  if (result.key === "hingeData") {
+  } else if (result.key === "hingeData") {
     nextAnimationData.hingeData = makeHingeAccessor(result.metadata as HingeMetadata, result.data);
-    return nextAnimationData;
+  } else {
+    const accessor = makeTimeAccessor(result.data, animationData.metadata.nodeCount);
+    if (result.key === "displacementRot") nextAnimationData.displacementRot = accessor;
+    if (result.key === "velocityLin") nextAnimationData.velocityLin = accessor;
+    if (result.key === "velocityRot") nextAnimationData.velocityRot = accessor;
+    if (result.key === "accelerationLin") nextAnimationData.accelerationLin = accessor;
+    if (result.key === "accelerationRot") nextAnimationData.accelerationRot = accessor;
   }
 
-  const accessor = makeTimeAccessor(result.data, animationData.metadata.nodeCount);
-  if (result.key === "displacementRot") nextAnimationData.displacementRot = accessor;
-  if (result.key === "velocityLin") nextAnimationData.velocityLin = accessor;
-  if (result.key === "velocityRot") nextAnimationData.velocityRot = accessor;
-  if (result.key === "accelerationLin") nextAnimationData.accelerationLin = accessor;
-  if (result.key === "accelerationRot") nextAnimationData.accelerationRot = accessor;
+  const hingeNodeMetrics = buildHingeNodeMetrics(
+    nextAnimationData.hingeData,
+    nextAnimationData.beamData,
+    nextAnimationData.metadata.nodeCount
+  );
+  if (hingeNodeMetrics) {
+    nextAnimationData.precomputed = {
+      ...nextAnimationData.precomputed,
+      hingeNodeMetrics,
+    };
+  }
   return nextAnimationData;
 }
 
@@ -656,7 +656,7 @@ export async function parseOptionalDatasetFromRawBuffer(
       metadata: parsed.metadata,
       data: parsed.bodyView.subarray(0, parsed.metadata.count_rows * parsed.metadata.stride),
       statsDelta: {
-        hinge: parsed.metadata.summary,
+        hinge: undefined /* parsed.metadata.summary */, // TODO: Compute this summary (less values)
       },
     };
   }

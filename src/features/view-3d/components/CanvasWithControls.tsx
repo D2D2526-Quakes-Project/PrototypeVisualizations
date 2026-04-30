@@ -1,6 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
 
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { useExportRenderMode } from "@/features/export/renderMode";
@@ -299,11 +307,13 @@ export function CanvasWithControls({
         className="relative min-h-0 flex-1"
         style={rightPadding > 0 ? { paddingRight: `${rightPadding}px` } : undefined}>
         <Canvas
+          frameloop="demand"
           linear
           flat
           onCreated={({ scene }) => {
             scene.fog = null;
           }}>
+          <LayoutSizeSync />
           <color attach="background" args={[backgroundColor]} />
           {children}
           <CameraManager isOrthographic={isOrthographic} enableSmoothing={false} enablePan />
@@ -344,6 +354,31 @@ export function CanvasWithControls({
       {/* <SelectionShortcuts showPlayback={Boolean(showPlaybackControls)} /> */}
     </div>
   );
+}
+
+function LayoutSizeSync() {
+  const { setSize, gl } = useThree();
+
+  useLayoutEffect(() => {
+    const parent = gl.domElement.parentElement;
+
+    const handleResize = () => {
+      if (parent) setSize(parent.offsetWidth, parent.offsetHeight);
+    };
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    const ro = new ResizeObserver(handleResize);
+    ro.observe(parent!);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      ro.disconnect();
+    };
+  }, [setSize, gl]);
+
+  return null;
 }
 
 export { ViewControls } from "./CanvasWithControls/ViewControls";

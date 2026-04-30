@@ -608,7 +608,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         </group>
       </group>
 
-      <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 20]} />
+      <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 1]} />
 
       <FloorTickMarks />
 

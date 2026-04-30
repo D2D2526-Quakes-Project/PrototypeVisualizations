@@ -16,7 +16,7 @@ import { formatFixed3 } from "@/lib/utils";
 import { formatCompactNumber } from "@/lib/utils";
 import { getDefaultTimelinePanelState } from "@/features/view-3d/lib/statePersistence";
 import { useViewStore } from "@/state";
-import { getMetricKeyColor, UNITS, type UnitConfig } from "@/lib/metrics";
+import { getMetricKeyColor, isHingeMetric, UNITS, type UnitConfig } from "@/lib/metrics";
 
 const GROUND_CHANNEL_CONFIG = {
   x: {
@@ -387,7 +387,9 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const panelId = api?.id ?? "timeline";
   const defaultState = getDefaultTimelinePanelState();
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const currentMetric = useViewStore((s) => s.currentMetric);
   const savedState = savedPanelState?.type === "timeline" ? savedPanelState.state : defaultState;
+  const hingeStaticMode = isHingeMetric(currentMetric);
 
   const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(savedState.selectedKeys);
 
@@ -797,6 +799,10 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
   // Scrubbing logic - uses refs to access current values and tracks chart instance changes
   useEffect(() => {
+    if (hingeStaticMode) {
+      return;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let zr: any = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -879,7 +885,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       window.removeEventListener("mouseup", handleMouseUp);
       currentChart = null;
     };
-  }, [setFrameIndex]);
+  }, [hingeStaticMode, setFrameIndex]);
 
   // Update for MarkLine and MarkPoint
   useEffect(() => {
@@ -963,14 +969,26 @@ export function Timeline({ api }: IDockviewPanelProps) {
       {/* Chart Area */}
       <div className="relative min-h-0 w-full flex-1" style={{ cursor: isDragging ? "grabbing" : "default" }}>
         {effectiveSelectedKeys.length > 0 ? (
-          <ReactECharts
-            ref={chartRef}
-            option={option}
-            style={{ height: "100%", width: "100%" }}
-            opts={{ renderer: "canvas" }}
-            notMerge={true}
-            onChartReady={() => setChartReadyVersion((v) => v + 1)}
-          />
+          <>
+            <ReactECharts
+              ref={chartRef}
+              option={option}
+              style={{ height: "100%", width: "100%", opacity: hingeStaticMode ? 0.65 : 1 }}
+              opts={{ renderer: "canvas" }}
+              notMerge={true}
+              onChartReady={() => setChartReadyVersion((v) => v + 1)}
+            />
+            {hingeStaticMode && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="rounded border border-neutral-200 bg-white/95 px-3 py-2 text-center text-xs text-neutral-600 shadow-sm">
+                  Hinge metrics are static.
+                  <div className="mt-1 text-[10px] text-neutral-500">
+                    Playback and scrubbing are disabled in this mode.
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
             Select a data channel to view

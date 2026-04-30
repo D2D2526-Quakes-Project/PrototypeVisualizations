@@ -136,9 +136,9 @@ const PANEL_DEFINITIONS = check({
     component: HingeDistributionPanel,
     category: "Distributions",
     icon: BarChart3,
-    description: "Static hinge metric histogram",
-    requiredOptionalData: ["hingeData"],
-    optionalEnhancementData: ["beamData"],
+    description: "Global static hinge rotation histogram",
+    requiredOptionalData: ["hingeData", "beamData"],
+    optionalEnhancementData: [],
   },
   "Floor Torsion Map": {
     component: FloorTorsionMapPanel,

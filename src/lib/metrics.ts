@@ -1,6 +1,7 @@
 import type { BuildingAnimationData, ComputedStats } from "@/lib/types";
 import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
 import { MATPLOTLIB_PALETTES, type MatplotlibPaletteKey } from "./colors/matplotlibColors";
+import { getHingeNodeMetricValue, type HingeNodeMetricKey } from "@/lib/hingeMetrics";
 
 export type Metric =
   | "displacementX"
@@ -27,11 +28,18 @@ export type Metric =
   | "rotationAccelerationY"
   | "rotationAccelerationZ"
   | "rotationAccelerationMag"
+  | "hingeRotationAbs"
+  | "hingeRotationMax"
+  | "hingeRotationMin"
   | "interstoryDrift"
   | "floorIndex"
   | "nodeZ"
   | "crossSectionX"
   | "crossSectionY";
+
+export function isHingeMetric(metric: Metric): metric is HingeNodeMetricKey {
+  return metric === "hingeRotationMax" || metric === "hingeRotationMin" || metric === "hingeRotationAbs";
+}
 
 export type ThresholdKey =
   | "displacement"
@@ -41,6 +49,7 @@ export type ThresholdKey =
   | "rotationVelocity"
   | "rotationAcceleration"
   | "interstoryDrift"
+  | "hingeRotation"
   | "inf";
 
 export interface ColorScale {
@@ -400,7 +409,8 @@ export type MetricConfig = {
   getPrecomputedMax: (stats: BuildingAnimationData) => number;
   getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => number | undefined;
   isAvailable: (animationData: BuildingAnimationData) => boolean;
-  positiveOnly: boolean;
+  hasPositive: boolean;
+  hasNegative: boolean;
 };
 
 export const METRIC_PALETTES: Record<MetricPaletteKey, MetricPaletteDefinition> = {
@@ -664,6 +674,13 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
     getPrecomputedMax: get("maxRotationAcceleration"),
     isAvailable: (animationData) => !!animationData.accelerationRot,
   },
+  hingeRotation: {
+    key: "hingeRotation",
+    label: "Static Hinge Rotation",
+    unit: UNITS["radians"],
+    getPrecomputedMax: (animationData) => animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
+    isAvailable: (animationData) => !!animationData.precomputed.hingeNodeMetrics,
+  },
   inf: {
     key: "inf",
     label: "inf",
@@ -681,7 +698,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Story Drift",
     unit: UNITS["percent"],
     defaultPalette: "red",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: get("maxStoryDrift"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -696,7 +714,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Disp. Mag",
     unit: UNITS["inches"],
     defaultPalette: "red",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: get("maxDisplacement"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -711,7 +730,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Disp. X",
     unit: UNITS["inches"],
     defaultPalette: "red",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxDisplacementX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -725,7 +745,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Disp. Y",
     unit: UNITS["inches"],
     defaultPalette: "rose",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxDisplacementY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -739,7 +760,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Disp. Z",
     unit: UNITS["inches"],
     defaultPalette: "red",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxDisplacementZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -753,7 +775,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Vel. Mag",
     unit: UNITS["inches/second"],
     defaultPalette: "cyan",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: get("maxVelocity"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -769,7 +792,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Vel. X",
     unit: UNITS["inches/second"],
     defaultPalette: "cyan",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxVelocityX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -784,7 +808,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Vel. Y",
     unit: UNITS["inches/second"],
     defaultPalette: "cyan",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxVelocityY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -799,7 +824,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Vel. Z",
     unit: UNITS["inches/second"],
     defaultPalette: "cyan",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxVelocityZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -814,7 +840,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Acc. Mag",
     unit: UNITS["inches/second²"],
     defaultPalette: "violet",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: get("maxAcceleration"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -830,7 +857,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Acc. X",
     unit: UNITS["inches/second²"],
     defaultPalette: "violet",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxAccelerationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -845,7 +873,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Acc. Y",
     unit: UNITS["inches/second²"],
     defaultPalette: "violet",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxAccelerationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -860,7 +889,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Acc. Z",
     unit: UNITS["inches/second²"],
     defaultPalette: "violet",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxAccelerationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -875,7 +905,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Mag",
     unit: UNITS["radians"],
     defaultPalette: "orange",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: get("maxRotation"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -891,7 +922,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. X",
     unit: UNITS["radians"],
     defaultPalette: "orange",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -906,7 +938,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Y",
     unit: UNITS["radians"],
     defaultPalette: "orange",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -921,7 +954,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Z",
     unit: UNITS["radians"],
     defaultPalette: "orange",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -936,7 +970,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Vel. Mag",
     unit: UNITS["radians/second"],
     defaultPalette: "teal",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: get("maxRotationVelocity"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -952,7 +987,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Vel. X",
     unit: UNITS["radians/second"],
     defaultPalette: "teal",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationVelocityX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -967,7 +1003,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Vel. Y",
     unit: UNITS["radians/second"],
     defaultPalette: "teal",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationVelocityY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -982,7 +1019,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Vel. Z",
     unit: UNITS["radians/second"],
     defaultPalette: "teal",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationVelocityZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -997,7 +1035,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Acc. Mag",
     unit: UNITS["radians/second²"],
     defaultPalette: "purple",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: get("maxRotationAcceleration"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1013,7 +1052,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Acc. X",
     unit: UNITS["radians/second²"],
     defaultPalette: "purple",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationAccelerationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1028,7 +1068,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Acc. Y",
     unit: UNITS["radians/second²"],
     defaultPalette: "purple",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationAccelerationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1043,13 +1084,68 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Rot. Acc. Z",
     unit: UNITS["radians/second²"],
     defaultPalette: "purple",
-    positiveOnly: false,
+    hasPositive: true,
+    hasNegative: true,
     getPrecomputedMax: get("maxRotationAccelerationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       if (!animationData.accelerationRot) return undefined;
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
     },
+  },
+  hingeRotationAbs: {
+    metric: "hingeRotationAbs",
+    thresholdKey: "hingeRotation",
+    label: "Static Hinge Rotation Abs",
+    shortLabel: "Hinge Abs",
+    unit: UNITS["radians"],
+    defaultPalette: "amber",
+    hasPositive: true,
+    hasNegative: false,
+    getPrecomputedMax: (animationData: BuildingAnimationData) =>
+      Math.max(
+        animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
+        animationData.precomputed.hingeNodeMetrics?.minRotationAbsMax ?? 0
+      ),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.precomputed.hingeNodeMetrics),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) => {
+      const max = getHingeNodeMetricValue(animationData.precomputed.hingeNodeMetrics, nodeId, "hingeRotationMax");
+      const min = getHingeNodeMetricValue(animationData.precomputed.hingeNodeMetrics, nodeId, "hingeRotationMin");
+      if (max == undefined) return min;
+      if (min == undefined) return max;
+      return Math.max(max, min);
+    },
+  },
+  hingeRotationMax: {
+    metric: "hingeRotationMax",
+    thresholdKey: "hingeRotation",
+    label: "Static Hinge Rotation Max",
+    shortLabel: "Hinge Max",
+    unit: UNITS["radians"],
+    defaultPalette: "amber",
+    hasPositive: true,
+    hasNegative: false,
+    getPrecomputedMax: (animationData: BuildingAnimationData) =>
+      animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.precomputed.hingeNodeMetrics),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) => {
+      return getHingeNodeMetricValue(animationData.precomputed.hingeNodeMetrics, nodeId, "hingeRotationMax");
+    },
+  },
+  hingeRotationMin: {
+    metric: "hingeRotationMin",
+    thresholdKey: "hingeRotation",
+    label: "Static Hinge Rotation Min",
+    shortLabel: "Hinge Min",
+    unit: UNITS["radians"],
+    defaultPalette: "teal",
+    hasPositive: false,
+    hasNegative: true,
+    getPrecomputedMax: (animationData: BuildingAnimationData) =>
+      animationData.precomputed.hingeNodeMetrics?.minRotationAbsMax ?? 0,
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.precomputed.hingeNodeMetrics),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
+      getHingeNodeMetricValue(animationData.precomputed.hingeNodeMetrics, nodeId, "hingeRotationMin"),
   },
   // Debug metrics
   floorIndex: {
@@ -1059,7 +1155,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Floor Index",
     unit: UNITS["percent"],
     defaultPalette: "spectrum",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: (animationData) => {
       // Return number of stories as max
       return Object.keys(animationData.precomputed.storyElevations).length;
@@ -1083,7 +1180,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Node Z",
     unit: UNITS["inches"],
     defaultPalette: "spectrum",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: (animationData) => {
       // Convert max Z from inches to feet
       return animationData.precomputed.boundingBox.max[2];
@@ -1102,7 +1200,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Cross-Section X",
     unit: UNITS["percent"],
     defaultPalette: "spectrum",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: (animationData) => {
       // Return number of X cross-sections as max
       return animationData.precomputed.numCrossSectionsX;
@@ -1131,7 +1230,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     shortLabel: "Cross-Section Y",
     unit: UNITS["percent"],
     defaultPalette: "spectrum",
-    positiveOnly: true,
+    hasPositive: true,
+    hasNegative: false,
     getPrecomputedMax: (animationData) => {
       // Return number of Y cross-sections as max
       return animationData.precomputed.numCrossSectionsY;
@@ -1156,6 +1256,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
 
 export const THRESHOLD_KEY_ORDER: ThresholdKey[] = [
   "interstoryDrift",
+  "hingeRotation",
   "displacement",
   "rotation",
   "velocity",
@@ -1195,8 +1296,4 @@ export function getMetricColorScale(metric: Metric, overrides?: MetricPaletteOve
 
 export function getMetricKeyColor(metric: Metric, overrides?: MetricPaletteOverrides) {
   return getMetricColorScale(metric, overrides).keyColor;
-}
-
-export function positiveOnlyMetric(metric: Metric): boolean {
-  return METRIC_CONFIGS[metric].positiveOnly;
 }

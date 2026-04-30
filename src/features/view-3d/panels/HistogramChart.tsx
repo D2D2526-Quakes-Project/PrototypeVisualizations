@@ -40,7 +40,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
 import { getDefaultHistogramChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";
+import { isHingeMetric, METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
@@ -167,8 +167,8 @@ export function HistogramChart({
   );
   const filteredMetrics = useMemo(() => {
     const allowed = metricOptions
-      ? availableMetrics.filter((metric) => metricOptions.includes(metric))
-      : availableMetrics;
+      ? availableMetrics.filter((metric) => metricOptions.includes(metric) && !isHingeMetric(metric))
+      : availableMetrics.filter((metric) => !isHingeMetric(metric));
     return allowed.length > 0 ? allowed : availableMetrics;
   }, [availableMetrics, metricOptions]);
   const [valueType, setValueType] = useState<Metric>(() => {
@@ -241,7 +241,7 @@ export function HistogramChart({
     const { binEdges, bins, binWidth, minPos, positionValues, filteredNodeIds } = staticConfig;
     const config = METRIC_CONFIGS[valueType];
     const threshold = thresholds[config.thresholdKey];
-    const thresholdMagnitude = config.positiveOnly ? threshold : Math.abs(threshold);
+    const thresholdMagnitude = Math.abs(threshold);
 
     const getNodeValue = (nodeId: number): number | null => {
       const value = config.getValue(animationData, frameIndex, nodeId);
@@ -259,9 +259,7 @@ export function HistogramChart({
       const binIndex = Math.min(Math.max(Math.floor((positionValues[i] - minPos) / binWidth), 0), bins - 1);
       totalCounts[binIndex]++;
 
-      const exceedsThreshold = config.positiveOnly
-        ? nodeValue >= thresholdMagnitude
-        : Math.abs(nodeValue) >= thresholdMagnitude;
+      const exceedsThreshold = Math.abs(nodeValue) >= thresholdMagnitude;
       if (exceedsThreshold) {
         exceedingCounts[binIndex]++;
       }

@@ -1,3 +1,5 @@
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   getMetricColorScale,
   getMetricConfig,
@@ -8,9 +10,8 @@ import {
   type MetricPaletteOverrides,
 } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
+import { formatCompactNumber } from "@/lib/utils";
 import { useColor, useThresholds } from "../../contexts/visualization";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface ColorScaleBarProps {
   currentMetric: Metric;
@@ -23,10 +24,6 @@ interface ColorScaleBarProps {
 function clamp01(value: number) {
   if (!Number.isFinite(value)) return 0;
   return Math.min(1, Math.max(0, value));
-}
-
-function formatScaleValue(value: number, unitAbbr: string) {
-  return `${value.toFixed(1)} ${unitAbbr}`;
 }
 
 function LabelBox({
@@ -51,7 +48,8 @@ function LabelBox({
 function getScaleStopsAndLabels(
   colorScale: ReturnType<typeof getMetricColorScale>,
   maxValue: number,
-  positiveOnly: boolean,
+  hasPositive: boolean,
+  hasNegative: boolean,
   thresholdHighlighting: boolean,
   thresholdValue: number
 ) {
@@ -61,50 +59,52 @@ function getScaleStopsAndLabels(
   const negativeTStops = colorScale.negativeThresholdColorStops;
   const thresholdRatio = clamp01(maxValue > 0 ? thresholdValue / maxValue : 0);
 
-  let stops: string[];
-
-  if (thresholdHighlighting) {
-    if (positiveOnly) {
-      const thresholdPos = thresholdRatio * 100;
-
-      stops = [
-        ...positiveStops.map((color, i) => `${color} ${(i / (positiveStops.length - 1)) * thresholdPos}%`),
-        ...positiveTStops.map(
-          (color, i) => `${color} ${(i / (positiveTStops.length - 1)) * (100 - thresholdPos) + thresholdPos}%`
-        ),
-      ];
-    } else {
-      const posThresholdPos = thresholdRatio * 50 + 50;
-      const negThresholdPos = (1 - thresholdRatio) * 50;
-
-      stops = [
+  // Number is 0-1 for a range and stirng is color
+  const relativeStops: [number, string][] = [];
+  if (hasNegative) {
+    const negThresholdPos = (1 - thresholdRatio) * 50;
+    if (thresholdHighlighting) {
+      relativeStops.push(
         ...negativeTStops
           .toReversed()
-          .map((color, i) => `${color} ${(i / (negativeTStops.length - 1)) * negThresholdPos}%`),
-        ...negativeStops
-          .toReversed()
-          .map(
-            (color, i) => `${color} ${(i / (negativeStops.length - 1)) * (50 - negThresholdPos) + negThresholdPos}%`
-          ),
-        ...positiveStops.map(
-          (color, i) => `${color} ${(i / (positiveStops.length - 1)) * (posThresholdPos - 50) + 50}%`
-        ),
-        ...positiveTStops.map(
-          (color, i) => `${color} ${(i / (positiveTStops.length - 1)) * (100 - posThresholdPos) + posThresholdPos}%`
-        ),
-      ];
+          .map((color, i) => [(i / (negativeTStops.length - 1)) * negThresholdPos, color] as [number, string])
+      );
     }
-  } else {
-    if (positiveOnly) {
-      stops = positiveStops.map((color, i) => `${color} ${(i / (positiveStops.length - 1)) * 100}%`);
-    } else {
-      stops = [
-        ...negativeStops.toReversed().map((color, i) => `${color} ${(i / (negativeStops.length - 1)) * 50}%`),
-        ...positiveStops.map((color, i) => `${color} ${(i / (positiveStops.length - 1)) * 50 + 50}%`),
-      ];
+    relativeStops.push(
+      ...negativeStops
+        .toReversed()
+        .map(
+          (color, i) =>
+            [(i / (negativeStops.length - 1)) * (50 - negThresholdPos) + negThresholdPos, color] as [number, string]
+        )
+    );
+  }
+
+  if (hasPositive) {
+    const posThresholdPos = thresholdRatio * 50 + 50;
+    relativeStops.push(
+      ...positiveStops.map(
+        (color, i) => [(i / (positiveStops.length - 1)) * (posThresholdPos - 50) + 50, color] as [number, string]
+      )
+    );
+
+    if (thresholdHighlighting) {
+      relativeStops.push(
+        ...positiveTStops.map(
+          (color, i) =>
+            [(i / (positiveTStops.length - 1)) * (100 - posThresholdPos) + posThresholdPos, color] as [number, string]
+        )
+      );
     }
   }
 
+  let min = 100,
+    max = 0;
+  relativeStops.forEach(([pos]) => {
+    min = Math.min(min, pos);
+    max = Math.max(max, pos);
+  });
+  const stops = relativeStops.map(([pos, color]) => `${color} ${((pos - min) / (max - min)) * 100}%`);
   return { stops, thresholdRatio };
 }
 
@@ -120,20 +120,20 @@ export function ColorScaleBar({
   const config = getMetricConfig(currentMetric);
   const colorScale = getMetricColorScale(currentMetric, metricPaletteOverrides);
   const maxValue = config.getPrecomputedMax(animationData);
-  const positiveOnly = config.positiveOnly;
   const thresholdValue = thresholds[config.thresholdKey] ?? 0;
 
   const { stops, thresholdRatio } = getScaleStopsAndLabels(
     colorScale,
     maxValue,
-    positiveOnly,
+    config.hasPositive,
+    config.hasNegative,
     thresholdHighlighting,
     thresholdValue
   );
-  const minLabel = formatScaleValue(positiveOnly ? 0 : -maxValue, config.unit.abbr);
-  const centerLabel = formatScaleValue(0, config.unit.abbr);
-  const maxLabel = formatScaleValue(maxValue, config.unit.abbr);
-  const thresholdLabel = formatScaleValue(thresholdValue, config.unit.abbr);
+  const minLabel = formatCompactNumber(config.hasPositive ? 0 : -maxValue) + " " + config.unit.abbr; // TODO:
+  const centerLabel = formatCompactNumber(0) + " " + config.unit.abbr;
+  const maxLabel = formatCompactNumber(maxValue) + " " + config.unit.abbr;
+  const thresholdLabel = formatCompactNumber(thresholdValue) + " " + config.unit.abbr;
 
   return (
     <ColorScaleBarPopover>
@@ -142,89 +142,53 @@ export function ColorScaleBar({
         style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}>
         {insideLabel && (
           <div className="flex items-start gap-1 overflow-hidden">
-            {positiveOnly ? (
-              <>
-                <LabelBox boxed value={minLabel} />
+            <LabelBox boxed value={minLabel} />
+            <div className="flex min-w-0 flex-1 items-start">
+              {config.hasPositive && config.hasNegative && (
                 <div className="flex min-w-0 flex-1 items-start">
-                  {thresholdHighlighting ? (
-                    <>
-                      <div style={{ flexGrow: thresholdRatio }} />
-                      <LabelBox boxed value={thresholdLabel} underlined />
-                      <div style={{ flexGrow: 1 - thresholdRatio }} />
-                    </>
-                  ) : (
-                    <div className="flex-1" />
-                  )}
+                  <div className="flex-1" />
+                  <LabelBox boxed value={centerLabel} />
                 </div>
-                <LabelBox boxed value={maxLabel} />
-              </>
-            ) : (
-              <>
-                <LabelBox boxed value={minLabel} />
-                <div className="flex min-w-0 flex-1 items-start">
-                  <div className="flex min-w-0 flex-1 items-start">
-                    <div className="flex-1" />
-                    <LabelBox boxed value={centerLabel} />
-                  </div>
-                  <div className="flex min-w-0 flex-1 items-start">
-                    {thresholdHighlighting ? (
-                      <>
-                        <div style={{ flexGrow: thresholdRatio }} />
-                        <LabelBox boxed value={thresholdLabel} underlined />
-                        <div style={{ flexGrow: 1 - thresholdRatio }} />
-                      </>
-                    ) : (
-                      <div className="flex-1" />
-                    )}
-                  </div>
-                </div>
-                <LabelBox boxed value={maxLabel} />
-              </>
-            )}
-          </div>
-        )}
-      </div>
-      {!(noLabel || insideLabel) && (
-        <div className="mt-1 flex items-start gap-1 overflow-hidden">
-          {positiveOnly ? (
-            <>
-              <LabelBox value={minLabel} />
+              )}
               <div className="flex min-w-0 flex-1 items-start">
                 {thresholdHighlighting ? (
                   <>
                     <div style={{ flexGrow: thresholdRatio }} />
-                    <LabelBox value={thresholdLabel} underlined />
+                    <LabelBox boxed value={thresholdLabel} underlined />
                     <div style={{ flexGrow: 1 - thresholdRatio }} />
                   </>
                 ) : (
                   <div className="flex-1" />
                 )}
               </div>
-              <LabelBox value={maxLabel} />
-            </>
-          ) : (
-            <>
-              <LabelBox value={minLabel} />
+            </div>
+            <LabelBox boxed value={maxLabel} />
+          </div>
+        )}
+      </div>
+      {!(noLabel || insideLabel) && (
+        <div className="mt-1 flex items-start gap-1 overflow-hidden">
+          <LabelBox value={minLabel} />
+          <div className="flex min-w-0 flex-1 items-start">
+            {config.hasPositive && config.hasNegative && (
               <div className="flex min-w-0 flex-1 items-start">
-                <div className="flex min-w-0 flex-1 items-start">
-                  <div className="flex-1" />
-                  <LabelBox value={centerLabel} />
-                </div>
-                <div className="flex min-w-0 flex-1 items-start">
-                  {thresholdHighlighting ? (
-                    <>
-                      <div style={{ flexGrow: thresholdRatio }} />
-                      <LabelBox value={thresholdLabel} underlined />
-                      <div style={{ flexGrow: 1 - thresholdRatio }} />
-                    </>
-                  ) : (
-                    <div className="flex-1" />
-                  )}
-                </div>
+                <div className="flex-1" />
+                <LabelBox value={centerLabel} />
               </div>
-              <LabelBox value={maxLabel} />
-            </>
-          )}
+            )}
+            <div className="flex min-w-0 flex-1 items-start">
+              {thresholdHighlighting ? (
+                <>
+                  <div style={{ flexGrow: thresholdRatio }} />
+                  <LabelBox value={thresholdLabel} underlined />
+                  <div style={{ flexGrow: 1 - thresholdRatio }} />
+                </>
+              ) : (
+                <div className="flex-1" />
+              )}
+            </div>
+          </div>
+          <LabelBox value={maxLabel} />
         </div>
       )}
     </ColorScaleBarPopover>
@@ -242,7 +206,6 @@ export function ColorScaleBarTooltip({
   const { thresholds } = useThresholds();
   const config = getMetricConfig(currentMetric);
   const maxValue = config.getPrecomputedMax(animationData);
-  const positiveOnly = config.positiveOnly;
   const thresholdValue = thresholds[config.thresholdKey] ?? 0;
 
   const unit = config.unit;
@@ -265,11 +228,12 @@ export function ColorScaleBarTooltip({
         <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
           <span className="text-neutral-400">Max:</span>
           <span>
-            {positiveOnly ? maxValue.toFixed(2) : `+${maxValue.toFixed(2)}`} {unit.abbr}
+            {config.hasPositive ? (config.hasNegative ? `+${maxValue.toFixed(2)}` : maxValue.toFixed(2)) : "0"}{" "}
+            {unit.abbr}
           </span>
           <span className="text-neutral-400">Min:</span>
           <span>
-            {positiveOnly ? "0" : `-${maxValue.toFixed(2)}`} {unit.abbr}
+            {config.hasNegative ? `-${maxValue.toFixed(2)}` : "0"} {unit.abbr}
           </span>
           {thresholdHighlighting && thresholdValue > 0 && (
             <>

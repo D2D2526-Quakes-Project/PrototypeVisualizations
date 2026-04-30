@@ -295,17 +295,12 @@ All `.bld` files follow a "Header-Body" architecture:
 - **JSON Schema (summary)**:
   ```json
   {
-    "type": "beam_data",
-    "version": 1,
     "count_rows": <integer>,
-    "stride": 4,
-    "fields": ["elementId", "iNodeIndex", "jNodeIndex", "groupId"]
+    "stride": 2,
   }
   ```
-- **Binary Body**: `float32` row-major table, one row per `beam_data.csv` row
-- **Notes**:
-  - `iNodeIndex` / `jNodeIndex` are derived from the same `node_data.csv` ordering used for all simulation arrays
-  - `groupId` is retained for lightweight member-type filtering/styling
+- **Binary Body**: `float32` array of `[iNodeIndex, jNodeIndex]` per beam index
+- **Size**: `count_rows * stride` bytes
 
 **E. Hinge Data (`hinge_data.bld`)**
 
@@ -317,10 +312,8 @@ All `.bld` files follow a "Header-Body" architecture:
 - **JSON Schema (summary)**:
   ```json
   {
-    "type": "hinge_data",
-    "version": 2,
     "count_rows": <integer>,
-    "stride": 18,
+    "stride": 10,
     "fields": [
       "beamIndex",
       "endMask",
@@ -328,30 +321,19 @@ All `.bld` files follow a "Header-Body" architecture:
       "iM3Min",
       "iR3Max",
       "iR3Min",
-      "iMaxPosDcrMax",
-      "iMaxPosDcrMin",
-      "iMaxNegDcrMax",
-      "iMaxNegDcrMin",
       "jM3Max",
       "jM3Min",
       "jR3Max",
       "jR3Min",
-      "jMaxPosDcrMax",
-      "jMaxPosDcrMin",
-      "jMaxNegDcrMax",
-      "jMaxNegDcrMin"
     ],
-    "step_types": ["Max", "Min"]
   }
   ```
-- **Binary Body**: `float32` row-major table, `count_rows * stride` values
-- **Key Fields**:
-  - `beamIndex`: Row index into `beam_data.bld`
-  - `endMask`: Bitmask (`1 = I present`, `2 = J present`)
+- **Binary Body**: `float32` array of `[beamIndex, endMask, iM3Max, iM3Min, iR3Max, iR3Min, jM3Max, jM3Min, jR3Max, jR3Min]` per row
+- **Size**: `count_rows * stride` bytes
 - **Units**:
+  - `endMask`: Bitmask (`1 = I present`, `2 = J present`, `3 = both`)
   - `M3`: model output moment units from source export
   - `R3`: radians (rotation demand)
-  - `Max Pos/Neg DCR`: unitless demand-capacity ratio
 
 #### Technical Specifications
 

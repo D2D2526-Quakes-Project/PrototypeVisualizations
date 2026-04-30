@@ -1490,52 +1490,6 @@ def load_hinge_dataframe(hinge_file):
     return None
 
 
-def summarize_hinge_metric(series, bins=64):
-    """Compute summary + histogram for a numeric hinge metric."""
-    values = pd.to_numeric(series, errors="coerce").to_numpy(dtype=np.float64)
-    values = values[np.isfinite(values)]
-    count = int(values.size)
-
-    if count == 0:
-        return {
-            "count": 0,
-            "min": None,
-            "max": None,
-            "mean": None,
-            "std": None,
-            "p50": None,
-            "p95": None,
-            "p99": None,
-            "histogram": {"bin_edges": [], "counts": []},
-        }
-
-    min_value = float(values.min())
-    max_value = float(values.max())
-    p50, p95, p99 = np.percentile(values, [50, 95, 99])
-
-    if np.isclose(min_value, max_value):
-        delta = max(abs(min_value) * 1e-6, 1e-6)
-        hist_edges = np.array([min_value - delta, max_value + delta], dtype=np.float64)
-        hist_counts = np.array([count], dtype=np.int64)
-    else:
-        hist_counts, hist_edges = np.histogram(values, bins=bins)
-
-    return {
-        "count": count,
-        "min": min_value,
-        "max": max_value,
-        "mean": float(values.mean()),
-        "std": float(values.std(ddof=0)),
-        "p50": float(p50),
-        "p95": float(p95),
-        "p99": float(p99),
-        "histogram": {
-            "bin_edges": [float(v) for v in hist_edges.tolist()],
-            "counts": [int(v) for v in hist_counts.tolist()],
-        },
-    }
-
-
 def normalize_hinge_dataframe(df_hinge, hinge_file):
     """Normalize hinge table to canonical schema and validate key constraints."""
     normalized = df_hinge.copy()
@@ -1608,16 +1562,18 @@ def process_beam_data(building, id_to_index, building_output_dir):
         df_beams[column] = df_beams[column].round().astype(np.int32)
 
     row_count = len(df_beams)
-    stride = 4
-    fields = ["elementId", "iNodeIndex", "jNodeIndex", "groupId"]
+    stride = 3
     encoded = np.zeros((row_count, stride), dtype=np.float32)
 
     beam_index_by_group2_element_id = {}
     missing_node_refs = []
+    unique_group_names = sorted(df_beams["Group Name"].unique().tolist())
+    unique_group_ids = sorted(df_beams["Group ID"].unique().tolist())
 
     for beam_index, (_, row) in enumerate(df_beams.iterrows()):
         element_id = int(row["Element ID"])
         group_id = int(row["Group ID"])
+        group_idx = unique_group_ids.index(group_id)
         i_node_id = int(row["I-Node ID"])
         j_node_id = int(row["J-Node ID"])
 
@@ -1627,10 +1583,10 @@ def process_beam_data(building, id_to_index, building_output_dir):
             missing_node_refs.append((beam_index, element_id, group_id, i_node_id, j_node_id))
             continue
 
-        encoded[beam_index, 0] = np.float32(element_id)
-        encoded[beam_index, 1] = np.float32(i_node_index)
-        encoded[beam_index, 2] = np.float32(j_node_index)
-        encoded[beam_index, 3] = np.float32(group_id)
+        # encoded[beam_index, 0] = np.float32(element_id)
+        encoded[beam_index, 0] = np.float32(i_node_index)
+        encoded[beam_index, 1] = np.float32(j_node_index)
+        encoded[beam_index, 2] = np.float32(group_idx)
 
         if group_id == 2:
             if element_id in beam_index_by_group2_element_id:
@@ -1644,19 +1600,9 @@ def process_beam_data(building, id_to_index, building_output_dir):
     group_id_counts = {str(int(group_id)): int(count) for group_id, count in df_beams["Group ID"].value_counts().sort_index().items()}  # type: ignore
 
     header = {
-        "type": "beam_data",
-        "version": 1,
         "count_rows": row_count,
         "stride": stride,
-        "fields": fields,
-        "summary": {
-            "counts": {
-                "rows": row_count,
-                "group_ids": group_id_counts,
-                "group2_rows": int((df_beams["Group ID"] == 2).sum()),
-                "hinge_lookup_rows": len(beam_index_by_group2_element_id),
-            }
-        },
+        "groupNames": unique_group_names,
     }
 
     write_bld_file("beam_data.bld", header, encoded.flatten().tobytes(), building_output_dir)
@@ -1768,7 +1714,6 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
 
     sorted_beam_indices = sorted(records_by_beam.keys())
     row_count = len(sorted_beam_indices)
-    stride = 18
     fields = [
         "beamIndex",
         "endMask",
@@ -1776,75 +1721,30 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
         "iM3Min",
         "iR3Max",
         "iR3Min",
-        "iMaxPosDcrMax",
-        "iMaxPosDcrMin",
-        "iMaxNegDcrMax",
-        "iMaxNegDcrMin",
+        # "iMaxPosDcrMax",
+        # "iMaxPosDcrMin",
+        # "iMaxNegDcrMax",
+        # "iMaxNegDcrMin",
         "jM3Max",
         "jM3Min",
         "jR3Max",
         "jR3Min",
-        "jMaxPosDcrMax",
-        "jMaxPosDcrMin",
-        "jMaxNegDcrMax",
-        "jMaxNegDcrMin",
+        # "jMaxPosDcrMax",
+        # "jMaxPosDcrMin",
+        # "jMaxNegDcrMax",
+        # "jMaxNegDcrMin",
     ]
+    stride = len(fields)
 
     encoded = np.full((row_count, stride), np.nan, dtype=np.float32)
     for row_idx, beam_index in enumerate(sorted_beam_indices):
         record = records_by_beam[beam_index]
         encoded[row_idx, :] = np.array([record[field] for field in fields], dtype=np.float32)
 
-    step_type_counts = {str(k): int(v) for k, v in normalized["Step Type"].value_counts().sort_index().items()}
-    component_counts = {str(int(k)): int(v) for k, v in normalized["Component No."].value_counts().sort_index().items()}  # type: ignore
-    side_counts = {str(k): int(v) for k, v in normalized["hingeSide"].value_counts().sort_index().items()}
-
-    end_masks = [int(records_by_beam[beam_index]["endMask"]) for beam_index in sorted_beam_indices]
-    beams_with_i = sum(1 for mask in end_masks if mask & 0b01)
-    beams_with_j = sum(1 for mask in end_masks if mask & 0b10)
-
-    metrics_summary = {
-        "m3": {
-            "max": summarize_hinge_metric(normalized.loc[normalized["Step Type"] == "Max", "M3"]),
-            "min": summarize_hinge_metric(normalized.loc[normalized["Step Type"] == "Min", "M3"]),
-        },
-        "r3": {
-            "max": summarize_hinge_metric(normalized.loc[normalized["Step Type"] == "Max", "R3"]),
-            "min": summarize_hinge_metric(normalized.loc[normalized["Step Type"] == "Min", "R3"]),
-        },
-        "max_pos_deform_dc_ratio": {
-            "max": summarize_hinge_metric(normalized.loc[normalized["Step Type"] == "Max", "Max Pos Deform DCRatio"]),
-            "min": summarize_hinge_metric(normalized.loc[normalized["Step Type"] == "Min", "Max Pos Deform DCRatio"]),
-        },
-        "max_neg_deform_dc_ratio": {
-            "max": summarize_hinge_metric(normalized.loc[normalized["Step Type"] == "Max", "Max Neg Deform DCRatio"]),
-            "min": summarize_hinge_metric(normalized.loc[normalized["Step Type"] == "Min", "Max Neg Deform DCRatio"]),
-        },
-    }
-
     header = {
-        "type": "hinge_data",
-        "version": 2,
         "count_rows": row_count,
         "stride": stride,
         "fields": fields,
-        "step_types": ["Max", "Min"],
-        "source_file": os.path.basename(hinge_file),
-        "source_format": Path(hinge_file).suffix.lower().lstrip("."),
-        "summary": {
-            "counts": {
-                "source_rows": source_row_count,
-                "rows_performance_level_1": int(len(normalized)),
-                "rows_paired": row_count,
-                "beams": row_count,
-                "beams_with_i": int(beams_with_i),
-                "beams_with_j": int(beams_with_j),
-                "step_types": step_type_counts,
-                "component_numbers": component_counts,
-                "sides": side_counts,
-            },
-            "metrics": metrics_summary,
-        },
     }
 
     write_bld_file("hinge_data.bld", header, encoded.flatten().tobytes(), simulation_output_dir)
@@ -1907,44 +1807,6 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_index_by
                     print(f"Error processing {type_name}: {error}")
 
     # Process ground motion (single threaded, usually fast)
-    if simulation["has_ground_motion"] and should_process_metric("ground_motion"):
-        process_ground_motion(files_config, simulation_output_dir)
-
-    # Process non-time-series hinge data
-    if simulation.get("has_hinge_data") and should_process_metric("hinge"):
-        process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2_element_id)
-
-
-def process_simulation(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir):
-    """Process a single simulation for a building (sequential version)"""
-    simulation_name = simulation["name"]
-    simulation_output_dir = os.path.join(building_output_dir, simulation_name)
-
-    print(f"\n{'-'*60}")
-    print(f"Processing Simulation: {simulation_name}")
-    print(f"Pattern: {simulation.get('file_pattern', 'Unknown')}")
-    print(
-        f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, " f"Acceleration: {simulation['has_acceleration']}, Hinge: {simulation.get('has_hinge_data', False)}"
-    )
-    print(f"{'-'*60}")
-
-    if not os.path.exists(simulation_output_dir):
-        os.makedirs(simulation_output_dir)
-
-    # Get file paths for this simulation
-    files_config = get_simulation_files(building["folder"], simulation)
-
-    # Process response files
-    if simulation["has_displacement"] and should_process_metric("displacement"):
-        process_response_file("displacement", "displacement", id_to_index, files_config, simulation_output_dir)
-
-    if simulation["has_velocity"] and should_process_metric("velocity"):
-        process_response_file("velocity", "velocity", id_to_index, files_config, simulation_output_dir)
-
-    if simulation["has_acceleration"] and should_process_metric("acceleration"):
-        process_response_file("acceleration", "acceleration", id_to_index, files_config, simulation_output_dir)
-
-    # Process ground motion
     if simulation["has_ground_motion"] and should_process_metric("ground_motion"):
         process_ground_motion(files_config, simulation_output_dir)
 
@@ -2055,11 +1917,6 @@ if __name__ == "__main__":
                 results.append((building_name, "skipped", "outputs already exist"))
                 continue
 
-        # Skip building-level processing if not in metrics
-        if args.metrics and "all" not in args.metrics and "building" not in args.metrics:
-            print(f"\nSkipping building {building_name} - building data not in metrics")
-            # Still process simulations for non-building metrics like hinge
-
         try:
             simulations = discover_simulations(building["folder"])
 
@@ -2087,6 +1944,7 @@ if __name__ == "__main__":
             results.append((building_name, "success", f"processed {len(simulations)} simulation(s)"))
         except Exception as e:
             results.append((building["name"], "error", str(e)))
+            raise e
 
     print("\n" + "=" * 60)
     print("Processing Results:")

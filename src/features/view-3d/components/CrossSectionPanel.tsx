@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CrossSectionVisualization } from "./CrossSectionVisualization";
 import { MiniTimeSeries } from "./MiniTimeSeries";
 import { IsometricBuilding } from "@/components/IsometricBoundingBox";
+import { HingeLocalizedSummary } from "@/features/view-3d/components/HingeLocalizedSummary";
 
 interface CrossSectionParams {
   crossSectionType: "X" | "Y";
@@ -477,6 +478,16 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
             <div className="text-neutral-600">{nodeIds.length}</div>
           </div>
         </div>
+
+        {animationData.precomputed.hingeNodeMetrics && (
+          <div className="animate-fade-in">
+            <HingeLocalizedSummary
+              title="Static Hinge Rotation"
+              subtitle={`Hinge data localized to the ${crossSectionType}-section nodes.`}
+              nodeIds={nodeIds}
+            />
+          </div>
+        )}
 
         {/* DISPLACEMENT */}
         {displacementData && (

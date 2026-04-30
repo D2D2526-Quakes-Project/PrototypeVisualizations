@@ -1,34 +1,4 @@
-/**
- * =============================================================================
- * ALL VALUES DEFINITION
- * =============================================================================
- *
- * Throughout this application, "all values" refers to the complete set of
- * simulation data available for analysis and visualization. These include:
- *
- * PRIMARY VALUES (from simulation data files):
- * - Displacement (linear): X, Y, Z components and magnitude - Units: inches
- * - Displacement (rotation): RX, RY, RZ components and magnitude - Units: radians
- * - Velocity (linear): X, Y, Z components and magnitude - Units: inches/second
- * - Velocity (rotation): RX, RY, RZ components and magnitude - Units: radians/second
- * - Acceleration (linear): X, Y, Z components and magnitude - Units: inches/second²
- * - Acceleration (rotation): RX, RY, RZ components and magnitude - Units: radians/second²
- *
- * DERIVED VALUES (computed from primary values):
- * - Interstory Drift (ISD): Per-story drift ratio for each corner (NW, NE, SW, SE)
- *   - Units: percentage (drift/height * 100)
- *   - Computed as relative displacement between adjacent floors
- * - ISD Ratio: Current drift / Peak drift for each corner
- *   - Unitless ratio, useful for threshold-based visualization
- *
- * GROUND MOTION:
- * - X, Y, Z components and magnitude - Units: inches
- * - Represents the input earthquake motion at the base
- *
- * When implementing features that show "all values", consider all of the above
- * metrics unless explicitly stated otherwise.
- * =============================================================================
- */
+// ------------------------ JSON INDEX -----------------------------
 
 export type BuildingIndex = {
   size: number;
@@ -82,7 +52,7 @@ export type BinarySimulation = BaseSimulation & {
 
 export type Simulation = BinarySimulation;
 
-// -----------------------------------------------------------------------------
+// ------------------------ FILE METADATA -----------------------------
 
 export const CornerOrder = ["NW", "NE", "SW", "SE"] as const;
 
@@ -116,67 +86,18 @@ export interface GroundMotionMetadata {
 }
 
 export interface BeamDataMetadata {
-  type: "beam_data";
-  version: number;
   count_rows: number;
   stride: number;
-  fields: string[];
-  summary?: {
-    counts?: {
-      rows?: number;
-      group_ids?: Record<string, number>;
-      group2_rows?: number;
-      hinge_lookup_rows?: number;
-    };
-  };
-}
-
-export interface HingeMetricSummary {
-  count: number;
-  min: number | null;
-  max: number | null;
-  mean: number | null;
-  std: number | null;
-  p50: number | null;
-  p95: number | null;
-  p99: number | null;
-  histogram: {
-    bin_edges: number[];
-    counts: number[];
-  };
-}
-
-export interface HingeSummary {
-  counts: {
-    source_rows: number;
-    rows_performance_level_1: number;
-    rows_paired: number;
-    beams: number;
-    beams_with_i: number;
-    beams_with_j: number;
-    step_types: Record<string, number>;
-    component_numbers: Record<string, number>;
-    sides: Record<string, number>;
-  };
-  metrics: {
-    m3: { max: HingeMetricSummary; min: HingeMetricSummary };
-    r3: { max: HingeMetricSummary; min: HingeMetricSummary };
-    max_pos_deform_dc_ratio: { max: HingeMetricSummary; min: HingeMetricSummary };
-    max_neg_deform_dc_ratio: { max: HingeMetricSummary; min: HingeMetricSummary };
-  };
+  groupNames: string[];
 }
 
 export interface HingeMetadata {
-  type: "hinge_data";
-  version: number;
   count_rows: number;
   stride: number;
   fields: string[];
-  step_types: string[];
-  source_file?: string;
-  source_format?: string;
-  summary?: HingeSummary;
 }
+
+// -------------------------------- Animation Data ------------------------------
 
 export interface AnimationMetadata {
   nodeCount: number;
@@ -271,16 +192,14 @@ export interface BuildingAnimationData {
 
   /**
    * Beam/member connectivity (building-level static topology).
-   * Layout per row: [elementId, iNodeIndex, jNodeIndex, groupId]
+   * Layout per row: [iNodeIndex, jNodeIndex, groupId]
    */
   beamData?: BeamDataAccessor;
 
   /**
    * Hinge Data (non-time-series), paired by beam/member.
    * Layout per row:
-   * [beamIndex, endMask,
-   *  iM3Max, iM3Min, iR3Max, iR3Min, iMaxPosDcrMax, iMaxPosDcrMin, iMaxNegDcrMax, iMaxNegDcrMin,
-   *  jM3Max, jM3Min, jR3Max, jR3Min, jMaxPosDcrMax, jMaxPosDcrMin, jMaxNegDcrMax, jMaxNegDcrMin]
+   * [beamIndex, endMask, iM3Max, iM3Min, iR3Max, iR3Min, jM3Max, jM3Min, jR3Max, jR3Min]
    */
   hingeData?: HingeDataAccessor;
 
@@ -316,7 +235,6 @@ export interface NodeValueTimeAccessor {
 }
 
 export interface BeamRow {
-  elementId: number;
   iNodeIndex: number;
   jNodeIndex: number;
   groupId: number;
@@ -333,23 +251,15 @@ export interface BeamDataAccessor {
 
 export interface HingeRow {
   beamIndex: number;
-  endMask: number;
+  endMask: 0 | 1 | 2 | 3;
   iM3Max: number;
   iM3Min: number;
   iR3Max: number;
   iR3Min: number;
-  iMaxPosDcrMax: number;
-  iMaxPosDcrMin: number;
-  iMaxNegDcrMax: number;
-  iMaxNegDcrMin: number;
   jM3Max: number;
   jM3Min: number;
   jR3Max: number;
   jR3Min: number;
-  jMaxPosDcrMax: number;
-  jMaxPosDcrMin: number;
-  jMaxNegDcrMax: number;
-  jMaxNegDcrMin: number;
 }
 
 export interface HingeDataAccessor {
@@ -473,9 +383,43 @@ export interface ComputedStats {
   avgAccelerationPerStory?: Float32Array;
 
   // HINGE SUMMARY (if hinge data exists)
-  hinge?: HingeSummary;
+  hinge?: HingeComputedStats;
+  hingeNodeMetrics?: HingeNodeMetrics;
 
   // CROSS-SECTIONS
   numCrossSectionsX: number;
   numCrossSectionsY: number;
+}
+
+export interface HingeNodeMetrics {
+  maxRotationByNode: Float32Array;
+  minRotationByNode: Float32Array;
+  hingeEndCountByNode: Uint32Array;
+  nodesWithHinges: number;
+  maxRotationAbsMax: number;
+  minRotationAbsMax: number;
+}
+
+export interface HingeComputedStats {
+  counts: {
+    source_rows: number;
+    rows_performance_level_1: number;
+    rows_paired: number;
+    beams: number;
+    beams_with_i: number;
+    beams_with_j: number;
+    step_types: Record<string, number>;
+    component_numbers: Record<string, number>;
+    sides: Record<string, number>;
+  };
+  metrics: {
+    m3: { max: HingeMetricSummary; min: HingeMetricSummary };
+    r3: { max: HingeMetricSummary; min: HingeMetricSummary };
+  };
+}
+
+interface HingeMetricSummary {
+  count: number;
+  min: number | null;
+  max: number | null;
 }

@@ -120,7 +120,6 @@ function FloorSlab({
         const pos = animationData.initialPositions.at(nodeId);
         const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
         const expandedPosition = getExpandedPosition(
-          nodeId,
           [pos[0], pos[1], pos[2]],
           [disp[0], disp[1], disp[2]],
           offset,
@@ -214,7 +213,6 @@ function FloorSlab({
       const pos = animationData.initialPositions.at(nodeId);
       const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       const expandedPosition = getExpandedPosition(
-        nodeId,
         [pos[0], pos[1], pos[2]],
         [disp[0], disp[1], disp[2]],
         offset,

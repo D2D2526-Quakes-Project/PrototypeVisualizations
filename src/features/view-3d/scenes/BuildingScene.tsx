@@ -20,7 +20,7 @@ import {
   useViewMode,
 } from "@/features/view-3d/contexts/visualization";
 import { useNodeInteractionMode, useSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
-import { getMetricConfig } from "@/lib/metrics";
+import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
@@ -64,6 +64,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
   const setHoveredNodeId = useViewStore((s) => s.setHoveredNodeId);
   const renderNodes = useViewStore((s) => s.renderNodes);
+  const renderHingeNodes = isHingeMetric(currentMetric);
   const renderFloorSlabs = useViewStore((s) => s.renderFloorSlabs);
   const renderXCrossSectionSlabs = useViewStore((s) => s.renderXCrossSectionSlabs);
   const renderYCrossSectionSlabs = useViewStore((s) => s.renderYCrossSectionSlabs);
@@ -76,6 +77,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const nodeOpacity = useViewStore((s) => s.nodeOpacity);
   const floorOpacity = useViewStore((s) => s.floorOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
+  const hingeNodeScale = useViewStore((s) => s.hingeNodeScale);
   const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
   const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -147,9 +149,42 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     });
   }, [visibleNodesBasedOnMode, visibleFloors, animationData.metadata.stories, hiddenNodeIdSet]);
   const visibleStoriesKey = useMemo(() => Array.from(visibleFloors).join("|"), [visibleFloors]);
+
+  const hingeNodeGeometry = useMemo(() => {
+    if (!animationData.hingeData || !animationData.beamData) return null;
+    if (visibleNodes.length === 0) return null;
+
+    const visibleNodeSet = new Set(visibleNodes);
+    const visibleNodesWithHinges = [];
+    for (let i = 0; i < animationData.hingeData.count; i++) {
+      const row = animationData.hingeData.getRow(i);
+      const beamIndex = row.beamIndex;
+
+      const beam = animationData.beamData.getRow(beamIndex);
+      const iNode = beam.iNodeIndex;
+      const jNode = beam.jNodeIndex;
+
+      if (visibleNodeSet.has(iNode) && visibleNodeSet.has(jNode)) {
+        const iNodePosFloat = animationData.initialPositions.at(iNode);
+        const jNodePosFloat = animationData.initialPositions.at(jNode);
+
+        const iNodePos = [iNodePosFloat[0], iNodePosFloat[1], iNodePosFloat[2]];
+        const jNodePos = [jNodePosFloat[0], jNodePosFloat[1], jNodePosFloat[2]];
+
+        visibleNodesWithHinges.push({ hingeIdx: i, endCap: 1, pos: iNodePos, otherPos: jNodePos });
+        visibleNodesWithHinges.push({ hingeIdx: i, endCap: 2, pos: jNodePos, otherPos: iNodePos });
+      }
+    }
+
+    return {
+      count: visibleNodesWithHinges.length,
+      visibleNodesWithHinges,
+    };
+  }, [animationData.hingeData, animationData.beamData, visibleNodes, animationData.initialPositions]);
+
   const interactiveSceneKey = useMemo(
     () =>
-      `${renderNodes}:${renderFloorSlabs}:${renderXCrossSectionSlabs}:${renderYCrossSectionSlabs}:${showCornersOnly}:${visibleStoriesKey}:${visibleNodes.length}`,
+      `${renderNodes}:${renderFloorSlabs}:${renderXCrossSectionSlabs}:${renderYCrossSectionSlabs}:${showCornersOnly}:${visibleStoriesKey}:${visibleNodes.length}:${renderHingeNodes}:${hingeNodeGeometry ? hingeNodeGeometry.count : ""}`,
     [
       renderNodes,
       renderFloorSlabs,
@@ -158,6 +193,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       showCornersOnly,
       visibleStoriesKey,
       visibleNodes.length,
+      renderHingeNodes,
+      hingeNodeGeometry,
     ]
   );
 
@@ -251,7 +288,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         if (commitSelection && boxSelectionRef.current) {
           const selected = performBoxSelection(
             cameraRef.current,
-            meshRef,
+            nodesMeshRef,
             boxSelectionRef.current,
             visibleNodesRef.current
           );
@@ -420,7 +457,8 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
     [setHoveredNodeId]
   );
 
-  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const nodesMeshRef = useRef<THREE.InstancedMesh>(null);
+  const hingeNodesMeshRef = useRef<THREE.InstancedMesh>(null);
 
   // Build a Set of instance indices that are box-selected (for O(1) lookup)
   const boxSelectedIndices = useMemo(() => {
@@ -434,9 +472,9 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   }, [visibleNodes, selectedNodeIdSet]);
 
   useFrame(() => {
-    if (!meshRef.current || visibleNodes.length === 0) return;
+    if (!nodesMeshRef.current || visibleNodes.length === 0) return;
 
-    const colorAttr = meshRef.current.geometry.attributes.color;
+    const colorAttr = nodesMeshRef.current.geometry.attributes.color;
     if (!colorAttr) return;
 
     const currentFrame = frameIndexRef.current;
@@ -450,7 +488,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       const initZ = basePositions[i * 3 + 2];
       const displacement = animationData.displacementLin.atFrame(currentFrame).at(nodeId);
       const expandedPosition = getExpandedPosition(
-        nodeId,
         [initX, initY, initZ],
         [displacement[0], displacement[1], displacement[2]],
         [offsets.x, offsets.y, offsets.z],
@@ -473,7 +510,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       tempObject.scale.set(scale, scale, scale);
 
       tempObject.updateMatrix();
-      meshRef.current.setMatrixAt(i, tempObject.matrix);
+      nodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
 
       // Compute color directly in the loop
       if (hoveredNodeId === nodeId || boxSelectedIndices.has(i)) {
@@ -486,7 +523,56 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       tempColor.toArray(colorAttr.array, i * 3);
     }
 
-    meshRef.current.instanceMatrix.needsUpdate = true;
+    nodesMeshRef.current.instanceMatrix.needsUpdate = true;
+    colorAttr.needsUpdate = true;
+  });
+
+  useFrame(() => {
+    if (!hingeNodesMeshRef.current) return;
+    if (!hingeNodeGeometry) return;
+
+    const { visibleNodesWithHinges } = hingeNodeGeometry;
+
+    const geometry = hingeNodesMeshRef.current.geometry;
+    const colorAttr = geometry.attributes.color;
+    if (!colorAttr) return;
+
+    for (let i = 0; i < visibleNodesWithHinges.length; i += 1) {
+      const { hingeIdx, endCap, pos, otherPos } = visibleNodesWithHinges[i];
+      const dx = otherPos[0] - pos[0];
+      const dy = otherPos[1] - pos[1];
+      const dz = otherPos[2] - pos[2];
+
+      const expandedPosition = getExpandedPosition(
+        [pos[0], pos[1], pos[2]],
+        [0, 0, 0],
+        [offsets.x, offsets.y, offsets.z],
+        animationData.metadata
+      );
+
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+      // const nudge = Math.max((0.5 / UNIT_SCALE) * nodeScale, UNIT_SCALE * 15/2 * nodeScale * UNIT_SCALE);
+      const nudge = Math.max(nodeScale / UNIT_SCALE, hingeNodeScale / UNIT_SCALE / 5);
+      const nudgedPos = [
+        expandedPosition[0] + (dx / dist) * nudge,
+        expandedPosition[1] + (dy / dist) * nudge,
+        expandedPosition[2] + (dz / dist) * nudge,
+      ];
+
+      tempObject.scale.set(hingeNodeScale, hingeNodeScale, hingeNodeScale);
+      tempObject.rotation.set(0, 0, Math.atan2(dy, dx) - Math.PI / 2);
+      // tempObject.up.set(0, 0, 1);
+      // tempObject.position.set(pos[0], pos[1], pos[2]);
+      // tempObject.lookAt(otherPos[0], otherPos[1], otherPos[2]);
+      tempObject.position.set(nudgedPos[0], nudgedPos[1], nudgedPos[2]);
+      tempObject.updateMatrix();
+      hingeNodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
+
+      const color = getNodeColor(hingeIdx, endCap);
+      tempColor.setRGB(color.r, color.g, color.b);
+      tempColor.toArray(colorAttr.array, i * 3);
+    }
+    hingeNodesMeshRef.current.instanceMatrix.needsUpdate = true;
     colorAttr.needsUpdate = true;
   });
 
@@ -496,7 +582,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       const pos = animationData.initialPositions.at(nodeId);
       const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       const expandedPosition = getExpandedPosition(
-        nodeId,
         [pos[0], pos[1], pos[2]],
         [displacement[0], displacement[1], displacement[2]],
         [offsets.x, offsets.y, offsets.z],
@@ -565,7 +650,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
           {renderNodes && (
             <instancedMesh
               key={`nodes-${interactiveSceneKey}`}
-              ref={meshRef}
+              ref={nodesMeshRef}
               onPointerDown={handlePointerDown}
               onPointerMove={(e) => handlePointerMove(e)}
               onPointerOut={(e) => handlePointerOut(e)}
@@ -583,13 +668,29 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
             </instancedMesh>
           )}
 
-          {/* Selected node highlights - one ring per selected node */}
-          {selectedNodesData.map(({ nodeId, position, color }) => (
+          {renderHingeNodes && hingeNodeGeometry && (
+            <instancedMesh
+              key={`hinge-nodes-${interactiveSceneKey}`}
+              ref={hingeNodesMeshRef}
+              args={[undefined, undefined, hingeNodeGeometry.count]}
+              frustumCulled={false}>
+              <coneGeometry args={[16, 30, 4]}>
+                <instancedBufferAttribute
+                  attach="attributes-color"
+                  args={[new Float32Array(hingeNodeGeometry.count * 3).fill(1), 3]}
+                  usage={THREE.DynamicDrawUsage}
+                />
+              </coneGeometry>
+              <meshBasicMaterial fog={false} vertexColors transparent />
+            </instancedMesh>
+          )}
+
+          {/* {selectedNodesData.map(({ nodeId, position, color }) => (
             <mesh key={`selected-${nodeId}`} position={position}>
-              <torusGeometry args={[3, 0.3, 8, 32]} />
+              <torusGeometry args={[30, 5, 8, 32]} />
               <meshBasicMaterial color={color} transparent opacity={0.8} />
             </mesh>
-          ))}
+          ))} */}
 
           <Points frustumCulled={false}>
             <PointMaterial

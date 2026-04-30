@@ -64,7 +64,6 @@ export function VerticalConnectionsRenderer({
         const posA = animationData.initialPositions.at(conn.nodeA);
         const dispA = animationData.displacementLin.atFrame(frameIndex).at(conn.nodeA);
         const expandedA = getExpandedPosition(
-          conn.nodeA,
           [posA[0], posA[1], posA[2]],
           [dispA[0], dispA[1], dispA[2]],
           offset,
@@ -74,7 +73,6 @@ export function VerticalConnectionsRenderer({
         const posB = animationData.initialPositions.at(conn.nodeB);
         const dispB = animationData.displacementLin.atFrame(frameIndex).at(conn.nodeB);
         const expandedB = getExpandedPosition(
-          conn.nodeB,
           [posB[0], posB[1], posB[2]],
           [dispB[0], dispB[1], dispB[2]],
           offset,

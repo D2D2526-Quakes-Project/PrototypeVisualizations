@@ -72,7 +72,6 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
       const initZ = basePositions[i * 3 + 2];
       const displacement = animationData.displacementLin.atFrame(currentFrame).at(nodeId);
       const expandedPosition = getExpandedPosition(
-        nodeId,
         [initX, initY, initZ],
         [displacement[0], displacement[1], displacement[2]],
         [offsets.x, offsets.y, offsets.z],

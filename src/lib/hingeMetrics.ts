@@ -74,12 +74,10 @@ export function buildHingeNodeMetrics(
     const row = hingeData.getRow(i);
 
     if (row.endMask & 0b01) {
-      registerNodeValue(row.beamIndex, "I", row.endMask, row.endMask);
-      // registerNodeValue(row.beamIndex, "I", row.iR3Max, row.iR3Min);
+      registerNodeValue(row.beamIndex, "I", row.iR3Max, row.iR3Min);
     }
     if (row.endMask & 0b10) {
-      registerNodeValue(row.beamIndex, "J", row.endMask, row.endMask);
-      // registerNodeValue(row.beamIndex, "J", row.jR3Max, row.jR3Min);
+      registerNodeValue(row.beamIndex, "J", row.jR3Max, row.jR3Min);
     }
   }
 

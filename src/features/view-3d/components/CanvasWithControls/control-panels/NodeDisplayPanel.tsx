@@ -1,6 +1,14 @@
 import { Slider } from "@/components/ui/slider";
 import { useViewStore } from "@/state";
-import { BlendIcon, ChevronsLeftRightEllipsisIcon, Circle, Layers, MoveHorizontal, Sliders } from "lucide-react";
+import {
+  BlendIcon,
+  ChevronsLeftRightEllipsisIcon,
+  Circle,
+  Layers,
+  MoveHorizontal,
+  Sliders,
+  WorkflowIcon,
+} from "lucide-react";
 
 export function NodeDisplayPanel() {
   const nodeScale = useViewStore((s) => s.nodeScale);
@@ -9,6 +17,8 @@ export function NodeDisplayPanel() {
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
   const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
   const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
+  const hingeNodeScale = useViewStore((s) => s.hingeNodeScale);
+  const setHingeNodeScale = useViewStore((s) => s.setHingeNodeScale);
   // const belowThresholdNodeOpacity = useViewStore((s) => s.belowThresholdNodeOpacity);
   const setNodeScale = useViewStore((s) => s.setNodeScale);
   const setNodeOpacity = useViewStore((s) => s.setNodeOpacity);
@@ -97,6 +107,20 @@ export function NodeDisplayPanel() {
         <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">
           {(connectionLineOpacity * 100).toFixed(0)}%
         </span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <WorkflowIcon size={12} className="shrink-0 text-neutral-400" />
+        <span className="w-16 shrink-0 text-[10px] text-neutral-500">Hinge Scale</span>
+        <Slider
+          value={[hingeNodeScale]}
+          onValueChange={(val) => setHingeNodeScale(val[0])}
+          min={0}
+          max={3}
+          step={0.05}
+          className="flex-1"
+        />
+        <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{hingeNodeScale.toFixed(1)}x</span>
       </div>
 
       <div className="border-neutral-200">

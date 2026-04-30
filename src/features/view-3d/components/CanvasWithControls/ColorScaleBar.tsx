@@ -130,10 +130,12 @@ export function ColorScaleBar({
     thresholdHighlighting,
     thresholdValue
   );
-  const minLabel = formatCompactNumber(config.hasPositive ? 0 : -maxValue) + " " + config.unit.abbr; // TODO:
+  const minLabel = formatCompactNumber(config.hasNegative ? -maxValue : 0) + " " + config.unit.abbr;
   const centerLabel = formatCompactNumber(0) + " " + config.unit.abbr;
-  const maxLabel = formatCompactNumber(maxValue) + " " + config.unit.abbr;
+  const maxLabel = formatCompactNumber(config.hasPositive ? maxValue : 0) + " " + config.unit.abbr;
   const thresholdLabel = formatCompactNumber(thresholdValue) + " " + config.unit.abbr;
+
+  const onlyNegative = config.hasNegative && !config.hasPositive;
 
   return (
     <ColorScaleBarPopover>
@@ -153,9 +155,9 @@ export function ColorScaleBar({
               <div className="flex min-w-0 flex-1 items-start">
                 {thresholdHighlighting ? (
                   <>
-                    <div style={{ flexGrow: thresholdRatio }} />
+                    <div style={{ flexGrow: onlyNegative ? 1 - thresholdRatio : thresholdRatio }} />
                     <LabelBox boxed value={thresholdLabel} underlined />
-                    <div style={{ flexGrow: 1 - thresholdRatio }} />
+                    <div style={{ flexGrow: onlyNegative ? thresholdRatio : 1 - thresholdRatio }} />
                   </>
                 ) : (
                   <div className="flex-1" />
@@ -179,9 +181,9 @@ export function ColorScaleBar({
             <div className="flex min-w-0 flex-1 items-start">
               {thresholdHighlighting ? (
                 <>
-                  <div style={{ flexGrow: thresholdRatio }} />
+                  <div style={{ flexGrow: onlyNegative ? 1 - thresholdRatio : thresholdRatio }} />
                   <LabelBox value={thresholdLabel} underlined />
-                  <div style={{ flexGrow: 1 - thresholdRatio }} />
+                  <div style={{ flexGrow: onlyNegative ? thresholdRatio : 1 - thresholdRatio }} />
                 </>
               ) : (
                 <div className="flex-1" />

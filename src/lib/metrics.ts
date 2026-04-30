@@ -1,7 +1,7 @@
+import { type HingeNodeMetricKey } from "@/lib/hingeMetrics";
 import type { BuildingAnimationData, ComputedStats } from "@/lib/types";
-import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
 import { MATPLOTLIB_PALETTES, type MatplotlibPaletteKey } from "./colors/matplotlibColors";
-import { getHingeNodeMetricValue, type HingeNodeMetricKey } from "@/lib/hingeMetrics";
+import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
 
 export type Metric =
   | "displacementX"
@@ -676,7 +676,7 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
   },
   hingeRotation: {
     key: "hingeRotation",
-    label: "Static Hinge Rotation",
+    label: "Hinge Rotation",
     unit: UNITS["radians"],
     getPrecomputedMax: (animationData) => animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
     isAvailable: (animationData) => !!animationData.precomputed.hingeNodeMetrics,
@@ -1107,13 +1107,17 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
         animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
         animationData.precomputed.hingeNodeMetrics?.minRotationAbsMax ?? 0
       ),
-    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.precomputed.hingeNodeMetrics),
-    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) => {
-      const max = getHingeNodeMetricValue(animationData.precomputed.hingeNodeMetrics, nodeId, "hingeRotationMax");
-      const min = getHingeNodeMetricValue(animationData.precomputed.hingeNodeMetrics, nodeId, "hingeRotationMin");
-      if (max == undefined) return min;
-      if (min == undefined) return max;
-      return Math.max(max, min);
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.hingeData),
+    getValue: (animationData: BuildingAnimationData, endCap: number, hingeIdx: number) => {
+      const row = animationData.hingeData!.getRow(hingeIdx);
+      if (endCap === 1) {
+        // I
+        return Math.max(Math.abs(row.iR3Max), Math.abs(row.iR3Min));
+      } else if (endCap === 2) {
+        // J
+        return Math.max(Math.abs(row.jR3Max), Math.abs(row.jR3Min));
+      }
+      return undefined;
     },
   },
   hingeRotationMax: {
@@ -1127,9 +1131,17 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasNegative: false,
     getPrecomputedMax: (animationData: BuildingAnimationData) =>
       animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
-    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.precomputed.hingeNodeMetrics),
-    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) => {
-      return getHingeNodeMetricValue(animationData.precomputed.hingeNodeMetrics, nodeId, "hingeRotationMax");
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.hingeData),
+    getValue: (animationData: BuildingAnimationData, endCap: number, hingeIdx: number) => {
+      const row = animationData.hingeData!.getRow(hingeIdx);
+      if (endCap === 1) {
+        // I
+        return row.iR3Max;
+      } else if (endCap === 2) {
+        // J
+        return row.jR3Max;
+      }
+      return undefined;
     },
   },
   hingeRotationMin: {
@@ -1143,9 +1155,18 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasNegative: true,
     getPrecomputedMax: (animationData: BuildingAnimationData) =>
       animationData.precomputed.hingeNodeMetrics?.minRotationAbsMax ?? 0,
-    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.precomputed.hingeNodeMetrics),
-    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
-      getHingeNodeMetricValue(animationData.precomputed.hingeNodeMetrics, nodeId, "hingeRotationMin"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.hingeData),
+    getValue: (animationData: BuildingAnimationData, endCap: number, hingeIdx: number) => {
+      const row = animationData.hingeData!.getRow(hingeIdx);
+      if (endCap === 1) {
+        // I
+        return row.iR3Min;
+      } else if (endCap === 2) {
+        // J
+        return row.jR3Min;
+      }
+      return undefined;
+    },
   },
   // Debug metrics
   floorIndex: {

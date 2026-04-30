@@ -12,7 +12,6 @@ interface ExpandedScaleContextType {
   setDisplacementScale: (axis: "xz" | "z", factor: number) => void;
   reset: () => void;
   getExpandedPosition: (
-    nodeId: number,
     initialPosition: [number, number, number],
     displacement: [number, number, number],
     offset: [number, number, number],
@@ -37,7 +36,6 @@ export function useExpandedScale(): ExpandedScaleContextType {
 
   const getExpandedPosition = useCallback(
     (
-      _nodeId: number,
       initialPosition: [number, number, number],
       displacement: [number, number, number],
       offset: [number, number, number],

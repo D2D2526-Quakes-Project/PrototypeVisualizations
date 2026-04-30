@@ -1,15 +1,16 @@
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { getMetricKeyColor } from "@/lib/metrics";
+import { interpolateColor } from "@/lib/colors";
+import { getMetricColorScale, getMetricConfig, getMetricKeyColor, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useViewStore, useViewStoreRaw } from "@/state";
+import { interpolate } from "culori";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
-import { ChartNoAxesCombinedIcon, InfoIcon, XIcon } from "lucide-react";
+import { ChartNoAxesCombinedIcon, InfoIcon, TriangleIcon, XIcon } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { Vector3 } from "three";
 import { MiniRibbon } from "./MiniRibbon";
 import { MiniTimeSeries } from "./MiniTimeSeries";
-import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { getHingeNodeMetricValue } from "@/lib/hingeMetrics";
 
 // Generate a unique vibrant color based on node ID
 export function getNodeColor(nodeId: number): string {
@@ -540,24 +541,54 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     };
   }, [animationData.displacementRot, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
-  const hingeInfo = useMemo(() => {
-    const hingeNodeMetrics = animationData.precomputed.hingeNodeMetrics;
-    if (!hingeNodeMetrics) return null;
-
-    const maxRotation = getHingeNodeMetricValue(hingeNodeMetrics, nodeId, "hingeRotationMax");
-    const minRotation = getHingeNodeMetricValue(hingeNodeMetrics, nodeId, "hingeRotationMin");
-    const hingeEndCount = hingeNodeMetrics.hingeEndCountByNode[nodeId] ?? 0;
-
-    if (maxRotation === undefined && minRotation === undefined) {
+  const currentMetric = useViewStore((s) => s.currentMetric);
+  const hingeEntries = useMemo(() => {
+    const nodeToHingeIndexMap = animationData.precomputed.nodeToHingeIndexMap;
+    const hingeData = animationData.hingeData;
+    if (!nodeToHingeIndexMap || !hingeData || !isHingeMetric(currentMetric)) {
       return null;
     }
 
-    return {
-      maxRotation,
-      minRotation,
-      hingeEndCount,
-    };
-  }, [animationData.precomputed.hingeNodeMetrics, nodeId]);
+    const metricConfig = getMetricConfig(currentMetric);
+    const metricColorScale = getMetricColorScale(currentMetric, metricPaletteOverrides);
+    const maxValue = metricConfig.getPrecomputedMax(animationData);
+
+    const interpolator = interpolate(metricColorScale.positiveColorStops, "oklab");
+    const entries: Array<{
+      hingeIdx: number;
+      endCap: number;
+      beamIdx: number;
+      maxValue: number;
+      minValue: number;
+      color: string;
+    }> = [];
+
+    const hingesForNode = nodeToHingeIndexMap[nodeId];
+    if (!hingesForNode || hingesForNode.length === 0) {
+      return null;
+    }
+
+    for (const { hingeIdx, endCap } of hingesForNode) {
+      const hingeRow = hingeData.getRow(hingeIdx);
+      const maxVal = endCap === 1 ? hingeRow.iR3Max : hingeRow.jR3Max;
+      const minVal = endCap === 1 ? hingeRow.iR3Min : hingeRow.jR3Min;
+
+      const colorValue = maxValue > 0 ? Math.min(1, Math.max(0, Math.abs(maxVal) / maxValue)) : 0;
+      const rgb = interpolateColor(interpolator, colorValue);
+      const color = `rgb(${Math.round(rgb[0] * 255)}, ${Math.round(rgb[1] * 255)}, ${Math.round(rgb[2] * 255)})`;
+
+      entries.push({
+        hingeIdx,
+        endCap,
+        beamIdx: hingeRow.beamIndex,
+        maxValue: maxVal,
+        minValue: minVal,
+        color,
+      });
+    }
+
+    return entries.length > 0 ? entries : null;
+  }, [currentMetric, nodeId, metricPaletteOverrides, animationData]);
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -623,39 +654,37 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
           </div>
         </div>
 
-        {hingeInfo && (
+        {hingeEntries && (
           <div className="animate-fade-in">
-            <h3 className="mb-2 text-sm font-bold">Static Hinge Rotation</h3>
-            <div className="mb-2 text-[10px] text-neutral-500">Satic Hinge values.</div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Max Rotation</div>
-                <div className="font-mono text-neutral-900">
-                  {hingeInfo.maxRotation !== undefined ? (
-                    <UnitTooltip value={hingeInfo.maxRotation} unit="rad" decimals={3} showConversions={false} />
-                  ) : (
-                    "—"
-                  )}
+            <h3 className="text-sm font-bold">Hinge Rotation</h3>
+            <div className="space-y-2">
+              <div className="mb-0 grid grid-cols-3 items-center gap-2">
+                <div className="flex items-center gap-1"></div>
+                <div className="text-right">
+                  <div className="text-[10px] text-neutral-500">Max</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] text-neutral-500">Min</div>
                 </div>
               </div>
-              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Min Rotation</div>
-                <div className="font-mono text-neutral-900">
-                  {hingeInfo.minRotation !== undefined ? (
-                    <UnitTooltip value={hingeInfo.minRotation} unit="rad" decimals={3} showConversions={false} />
-                  ) : (
-                    "—"
-                  )}
+              {hingeEntries.map((entry) => (
+                <div key={entry.hingeIdx} className="grid grid-cols-3 items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <TriangleIcon className="text-border size-4" style={{ fill: entry.color }} />
+                    <span className="text-neutral-700">{entry.endCap === 1 ? "I" : "J"}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-neutral-900">
+                      <UnitTooltip value={entry.maxValue} unit="rad" decimals={4} showConversions={false} />
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-neutral-900">
+                      <UnitTooltip value={entry.minValue} unit="rad" decimals={4} showConversions={false} />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Hinge Ends</div>
-                <div className="font-mono text-neutral-900">{hingeInfo.hingeEndCount.toLocaleString()}</div>
-              </div>
-              <div className="rounded border border-neutral-200 bg-neutral-50 p-2">
-                <div className="text-[10px] tracking-wide text-neutral-500 uppercase">Rotation Units</div>
-                <div className="font-mono text-neutral-900">rad</div>
-              </div>
+              ))}
             </div>
           </div>
         )}

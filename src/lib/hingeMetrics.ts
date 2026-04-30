@@ -1,4 +1,11 @@
-import type { BeamDataAccessor, BuildingAnimationData, HingeDataAccessor, HingeNodeMetrics } from "@/lib/types";
+import type {
+  BeamDataAccessor,
+  BeamHingeIndexEntry,
+  BuildingAnimationData,
+  HingeDataAccessor,
+  HingeNodeMetrics,
+  NodeHingeIndexEntry,
+} from "@/lib/types";
 
 export type HingeNodeMetricKey = "hingeRotationMax" | "hingeRotationMin";
 
@@ -247,4 +254,55 @@ export function summarizeHingeNodes(
 export function getGlobalHingeSummary(animationData: BuildingAnimationData): HingeLocalizedSummary | null {
   const allNodeIds = Array.from({ length: animationData.metadata.nodeCount }, (_, nodeId) => nodeId);
   return summarizeHingeNodes(allNodeIds, animationData.precomputed.hingeNodeMetrics);
+}
+
+export function buildNodeToHingeIndexMap(
+  hingeData: HingeDataAccessor | undefined,
+  beamData: BeamDataAccessor | undefined,
+  nodeCount: number
+): NodeHingeIndexEntry[][] | undefined {
+  if (!hingeData || !beamData || nodeCount <= 0) {
+    return undefined;
+  }
+
+  const map: NodeHingeIndexEntry[][] = Array.from({ length: nodeCount }, () => []);
+
+  for (let hingeIdx = 0; hingeIdx < hingeData.count; hingeIdx++) {
+    const row = hingeData.getRow(hingeIdx);
+    const beamRow = beamData.getRow(row.beamIndex);
+
+    if (row.endMask & 0b01) {
+      map[beamRow.iNodeIndex].push({ hingeIdx, endCap: 1 });
+    }
+    if (row.endMask & 0b10) {
+      map[beamRow.jNodeIndex].push({ hingeIdx, endCap: 2 });
+    }
+  }
+
+  return map;
+}
+
+export function buildBeamToHingeIndexMap(
+  hingeData: HingeDataAccessor | undefined,
+  beamData: BeamDataAccessor | undefined
+): BeamHingeIndexEntry[][] | undefined {
+  if (!hingeData || !beamData) {
+    return undefined;
+  }
+
+  const map: BeamHingeIndexEntry[][] = Array.from({ length: beamData.count }, () => []);
+
+  for (let hingeIdx = 0; hingeIdx < hingeData.count; hingeIdx++) {
+    const row = hingeData.getRow(hingeIdx);
+    const beamIdx = row.beamIndex;
+
+    if (row.endMask & 0b01) {
+      map[beamIdx].push({ hingeIdx, endCap: 1 });
+    }
+    if (row.endMask & 0b10) {
+      map[beamIdx].push({ hingeIdx, endCap: 2 });
+    }
+  }
+
+  return map;
 }

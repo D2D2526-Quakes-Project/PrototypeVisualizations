@@ -1,4 +1,8 @@
-import { buildHingeNodeMetrics } from "@/lib/hingeMetrics";
+import {
+  buildBeamToHingeIndexMap,
+  buildHingeNodeMetrics,
+  buildNodeToHingeIndexMap,
+} from "@/lib/hingeMetrics";
 import type { DatasetKey, OptionalDatasetKey } from "@/lib/loadingTypes";
 import type {
   AnimationMetadata,
@@ -623,10 +627,21 @@ export function mergeOptionalDatasetIntoAnimationData(
     nextAnimationData.beamData,
     nextAnimationData.metadata.nodeCount
   );
+  const nodeToHingeIndexMap = buildNodeToHingeIndexMap(
+    nextAnimationData.hingeData,
+    nextAnimationData.beamData,
+    nextAnimationData.metadata.nodeCount
+  );
+  const beamToHingeIndexMap = buildBeamToHingeIndexMap(
+    nextAnimationData.hingeData,
+    nextAnimationData.beamData
+  );
   if (hingeNodeMetrics) {
     nextAnimationData.precomputed = {
       ...nextAnimationData.precomputed,
       hingeNodeMetrics,
+      nodeToHingeIndexMap,
+      beamToHingeIndexMap,
     };
   }
   return nextAnimationData;

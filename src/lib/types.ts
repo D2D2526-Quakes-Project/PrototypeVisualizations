@@ -385,6 +385,8 @@ export interface ComputedStats {
   // HINGE SUMMARY (if hinge data exists)
   hinge?: HingeComputedStats;
   hingeNodeMetrics?: HingeNodeMetrics;
+  nodeToHingeIndexMap?: NodeHingeIndexEntry[][];
+  beamToHingeIndexMap?: BeamHingeIndexEntry[][];
 
   // CROSS-SECTIONS
   numCrossSectionsX: number;
@@ -398,6 +400,16 @@ export interface HingeNodeMetrics {
   nodesWithHinges: number;
   maxRotationAbsMax: number;
   minRotationAbsMax: number;
+}
+
+export interface NodeHingeIndexEntry {
+  hingeIdx: number;
+  endCap: 1 | 2;
+}
+
+export interface BeamHingeIndexEntry {
+  hingeIdx: number;
+  endCap: 1 | 2;
 }
 
 export interface HingeComputedStats {

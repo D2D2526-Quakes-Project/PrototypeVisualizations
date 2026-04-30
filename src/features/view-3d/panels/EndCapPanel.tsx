@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IDockviewPanelProps } from "dockview";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor } from "@/features/view-3d/contexts/visualization/ColorContext";
+import { useVisualDisplacement } from "@/features/view-3d/lib/visualDisplacement";
 
 interface EndCapNode {
   nodeId: number;
@@ -40,10 +41,10 @@ export function EndCapPanel(_props: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const currentMetric = useViewStore((s) => s.currentMetric);
-  const { getNodeColor } = useColor();
+  const { getNodeColor: getRawNodeColor } = useColor();
+  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
 
   const initialPositions = animationData.initialPositions.data;
-  const displacementLin = animationData.displacementLin;
   const stride = animationData.initialPositions.stride;
   const nodeCount = animationData.metadata.nodeCount;
   const nodeToBelow = animationData.metadata.nodeToBelow;
@@ -72,21 +73,19 @@ export function EndCapPanel(_props: IDockviewPanelProps) {
 
   const getCurrentPosition = useCallback(
     (node: EndCapNode) => {
-      const dispBase = frameIndex * nodeCount * 3 + node.nodeId * 3;
-      const dy = displacementLin.data[dispBase + 1] ?? 0;
-      const dz = displacementLin.data[dispBase + 2] ?? 0;
+      const displacement = visualDisplacement.atFrame(frameIndex).at(node.nodeId);
       return {
-        y: node.initialY + dy,
-        z: node.initialZ + dz,
+        y: node.initialY + (displacement[1] ?? 0),
+        z: node.initialZ + (displacement[2] ?? 0),
       };
     },
-    [displacementLin, frameIndex, nodeCount]
+    [frameIndex, visualDisplacement]
   );
 
   const projectedNodes = useMemo(() => {
     return endCapNodes.map((node) => {
       const pos = getCurrentPosition(node);
-      const threeColor = getNodeColor(node.nodeId, frameIndex);
+      const threeColor = getVisualNodeColor(node.nodeId, frameIndex, getRawNodeColor);
       return {
         ...node,
         y: pos.y,
@@ -94,7 +93,7 @@ export function EndCapPanel(_props: IDockviewPanelProps) {
         color: `rgb(${Math.round(threeColor.r * 255)}, ${Math.round(threeColor.g * 255)}, ${Math.round(threeColor.b * 255)})`,
       };
     });
-  }, [endCapNodes, getCurrentPosition, getNodeColor, frameIndex]);
+  }, [endCapNodes, getCurrentPosition, getRawNodeColor, getVisualNodeColor, frameIndex]);
 
   const nodeMap = useMemo(() => {
     const map: Record<number, (typeof projectedNodes)[0]> = {};
@@ -129,14 +128,14 @@ export function EndCapPanel(_props: IDockviewPanelProps) {
   const exceedingCount = useMemo(() => {
     let count = 0;
     for (const node of projectedNodes) {
-      const threeColor = getNodeColor(node.nodeId, frameIndex);
+      const threeColor = getVisualNodeColor(node.nodeId, frameIndex, getRawNodeColor);
       const brightness = (threeColor.r + threeColor.g + threeColor.b) / 3;
       if (brightness > 0.8) {
         count++;
       }
     }
     return count;
-  }, [projectedNodes, getNodeColor, frameIndex]);
+  }, [projectedNodes, getRawNodeColor, getVisualNodeColor, frameIndex]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 400, height: 350 });

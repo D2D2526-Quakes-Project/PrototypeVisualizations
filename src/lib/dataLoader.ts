@@ -6,6 +6,11 @@ const DB_NAME = "QuakesCache";
 const RAW_STORE_NAME = "files";
 const PROCESSED_STORE_NAME = "processed";
 const DB_VERSION = 2;
+const RAW_CACHE_VERSION = 1;
+
+function getRawCacheKey(url: string): string {
+  return `raw:${RAW_CACHE_VERSION}:${url}`;
+}
 
 /**
  * 1. Initialize IndexedDB
@@ -38,7 +43,7 @@ const getFromCache = async (url: string): Promise<ArrayBuffer | undefined> => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(RAW_STORE_NAME, "readonly");
       const store = tx.objectStore(RAW_STORE_NAME);
-      const request = store.get(url);
+      const request = store.get(getRawCacheKey(url));
 
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
@@ -54,7 +59,7 @@ const saveToCache = async (url: string, data: ArrayBuffer) => {
     const db = await openDB();
     const tx = db.transaction(RAW_STORE_NAME, "readwrite");
     const store = tx.objectStore(RAW_STORE_NAME);
-    store.put(data, url);
+    store.put(data, getRawCacheKey(url));
   } catch (e) {
     console.warn("Cache write failed (likely quota exceeded)", e);
   }
@@ -65,7 +70,7 @@ export const removeFromCache = async (url: string) => {
     const db = await openDB();
     const tx = db.transaction(RAW_STORE_NAME, "readwrite");
     const store = tx.objectStore(RAW_STORE_NAME);
-    store.delete(url);
+    store.delete(getRawCacheKey(url));
   } catch (e) {
     console.warn("Cache write failed (likely quota exceeded)", e);
   }

@@ -11,6 +11,7 @@ import { NodePanel, NodeTab } from "@/features/view-3d/components/NodePanel";
 import { NodeSelectionProvider, useNodeSelection } from "@/features/view-3d/contexts/NodeSelectionContext";
 import { useAutoSave } from "@/features/view-3d/hooks/useAutoSave";
 import {
+  getDataSelectionFromCurrentUrl,
   getDefaultAppState,
   getStateFromCurrentUrl,
   loadFromLocalStorage,
@@ -60,6 +61,15 @@ export function View3d() {
       const stateToRestore = urlState ?? savedState;
 
       if (stateToRestore) {
+        // If the building changed, we want to reset some building-specific settings
+        // like visible floors.
+        const currentSelection = getDataSelectionFromCurrentUrl();
+        const savedSelection = stateToRestore.dataSelection;
+
+        if (currentSelection && savedSelection && currentSelection.building !== savedSelection.building) {
+          stateToRestore.visibleFloors = [];
+        }
+
         requestAnimationFrame(() => {
           if (new URLSearchParams(window.location.search).get("debugState") === "1") {
             console.debug("[restore] loaded initial state", {
@@ -156,6 +166,8 @@ function DockviewContainer({ initialState, autoSave = true }: { initialState: Ap
     if (initialState.renderYCrossSectionSlabs !== undefined)
       s.setRenderYCrossSectionSlabs(initialState.renderYCrossSectionSlabs);
     if (initialState.showCornersOnly !== undefined) s.setShowCornersOnly(initialState.showCornersOnly);
+    if (initialState.visualInterpolationEnabled !== undefined)
+      s.setVisualInterpolationEnabled(initialState.visualInterpolationEnabled);
     if (initialState.renderVerticalConnections !== undefined)
       s.setRenderVerticalConnections(initialState.renderVerticalConnections);
     if (initialState.renderHorizontalConnections !== undefined)

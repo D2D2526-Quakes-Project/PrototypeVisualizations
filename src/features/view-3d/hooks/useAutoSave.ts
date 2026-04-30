@@ -47,6 +47,7 @@ export function useAutoSave(enabled = true) {
       renderXCrossSectionSlabs: state.renderXCrossSectionSlabs,
       renderYCrossSectionSlabs: state.renderYCrossSectionSlabs,
       showCornersOnly: state.showCornersOnly,
+      visualInterpolationEnabled: state.visualInterpolationEnabled,
       renderVerticalConnections: state.renderVerticalConnections,
       renderHorizontalConnections: state.renderHorizontalConnections,
     };
@@ -109,6 +110,7 @@ export function useAutoSave(enabled = true) {
       "renderXCrossSectionSlabs",
       "renderYCrossSectionSlabs",
       "showCornersOnly",
+      "visualInterpolationEnabled",
       "renderVerticalConnections",
       "renderHorizontalConnections",
     ] as const;

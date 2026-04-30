@@ -182,6 +182,7 @@ export interface AppState {
   renderXCrossSectionSlabs: boolean;
   renderYCrossSectionSlabs: boolean;
   showCornersOnly: boolean;
+  visualInterpolationEnabled: boolean;
   renderVerticalConnections: boolean;
   renderHorizontalConnections: boolean;
   nodePanelGraphVisibility: Record<string, boolean>;
@@ -655,6 +656,7 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     renderXCrossSectionSlabs: false,
     renderYCrossSectionSlabs: false,
     showCornersOnly: false,
+    visualInterpolationEnabled: false,
     renderVerticalConnections: false,
     renderHorizontalConnections: false,
     nodePanelGraphVisibility: {},
@@ -1464,6 +1466,7 @@ export function getCurrentAppStateSnapshot(store: ReturnType<typeof useViewStore
     renderXCrossSectionSlabs: state.renderXCrossSectionSlabs,
     renderYCrossSectionSlabs: state.renderYCrossSectionSlabs,
     showCornersOnly: state.showCornersOnly,
+    visualInterpolationEnabled: state.visualInterpolationEnabled,
     renderVerticalConnections: state.renderVerticalConnections,
     renderHorizontalConnections: state.renderHorizontalConnections,
     nodePanelGraphVisibility: state.nodePanelGraphVisibility,

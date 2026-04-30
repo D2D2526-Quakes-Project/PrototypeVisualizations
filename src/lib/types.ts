@@ -78,6 +78,8 @@ export interface SimulationMetadata {
   count_frames: number;
   count_nodes: number;
   dt: number;
+  /** Node indices with no source coverage in any axis for this dataset. */
+  missing_node_indices?: number[];
 }
 
 export interface GroundMotionMetadata {
@@ -120,6 +122,8 @@ export interface AnimationMetadata {
   crossSectionsY: Record<string, number[]>;
   /** Floors that should be hidden by default */
   hiddenFloors?: string[];
+  /** Node indices with no translational displacement source coverage in any axis. */
+  displacementMissingNodeIndices?: number[];
 }
 
 export interface BuildingAnimationData {

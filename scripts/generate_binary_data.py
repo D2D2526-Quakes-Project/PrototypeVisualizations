@@ -409,10 +409,10 @@ def merge_grid_data(file_list, id_to_index):
         id_to_index: Mapping from node ID to node index
 
     Returns:
-        Tuple of (merged_data_array, merged_column_map)
+        Tuple of (merged_data_array, merged_column_map, covered_node_ids)
     """
     if not file_list:
-        return None, {}
+        return None, {}, set()
 
     print(f"    Merging {len(file_list)} grid file(s)...")
 
@@ -445,10 +445,12 @@ def merge_grid_data(file_list, id_to_index):
 
     # Merge column maps
     merged_col_map = {}
+    covered_node_ids = set()
     for col_map in all_col_maps:
         merged_col_map.update(col_map)
+        covered_node_ids.update(col_map.values())
 
-    print(f"    Total unique nodes across all grids: {len(merged_col_map)}")
+    print(f"    Total unique nodes across all grids: {len(covered_node_ids)}")
 
     # Create merged data array
     num_nodes = len(id_to_index)
@@ -463,7 +465,31 @@ def merge_grid_data(file_list, id_to_index):
                 node_idx = id_to_index[node_id]
                 merged_data[:, node_idx] = data[:, col_idx]
 
-    return merged_data, merged_col_map
+    return merged_data, merged_col_map, covered_node_ids
+
+
+def compute_missing_node_indices(num_nodes, id_to_index, *coverage_sources):
+    """
+    Return node indices that have no source coverage in any provided component map.
+
+    Partial coverage is preserved in the binary arrays and is not considered "missing";
+    missing means the node does not appear in any component header for this dataset.
+    """
+    covered_node_indices = set()
+
+    for source in coverage_sources:
+        if not source:
+            continue
+        if isinstance(source, dict):
+            node_ids = source.values()
+        else:
+            node_ids = source
+        for node_id in node_ids:
+            node_index = id_to_index.get(node_id)
+            if node_index is not None:
+                covered_node_indices.add(node_index)
+
+    return [node_index for node_index in range(num_nodes) if node_index not in covered_node_indices]
 
 
 def get_simulation_files(building_folder, simulation):
@@ -1306,13 +1332,13 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
         # Merge grid data for each component
         print(f"\n--- Loading and Merging Grid Data ---")
         print(f"Merging H1 component from {len(h1_grid_files)} grid file(s)...")
-        d_lx, col_map_x = merge_grid_data(h1_grid_files, id_to_index)
+        d_lx, col_map_x, covered_lin_x = merge_grid_data(h1_grid_files, id_to_index)
 
         print(f"Merging H2 component from {len(h2_grid_files)} grid file(s)...")
-        d_ly, _ = merge_grid_data(h2_grid_files, id_to_index)
+        d_ly, col_map_y, covered_lin_y = merge_grid_data(h2_grid_files, id_to_index)
 
         print(f"Merging V component from {len(v_grid_files)} grid file(s)...")
-        d_lz, _ = merge_grid_data(v_grid_files, id_to_index)
+        d_lz, col_map_z, covered_lin_z = merge_grid_data(v_grid_files, id_to_index)
 
         if d_lx is None or d_ly is None or d_lz is None:
             print(f"❌ Skipping {type_name}: Failed to merge grid data")
@@ -1320,6 +1346,9 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
 
         num_frames = len(d_lx)
         num_nodes = len(id_to_index)
+        missing_lin_node_indices = compute_missing_node_indices(
+            num_nodes, id_to_index, covered_lin_x, covered_lin_y, covered_lin_z
+        )
 
         # Load Rotational Data if available (also grid format)
         has_rotation = rot_files is not None and len(rot_files) > 0 and isinstance(rot_files[0], list)
@@ -1330,11 +1359,11 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
 
             print(f"\nMerging rotation data:")
             print(f"  H1 rotation from {len(h1_rot_files)} grid file(s)...")
-            d_rx, _ = merge_grid_data(h1_rot_files, id_to_index)
+            d_rx, col_map_rx, covered_rot_x = merge_grid_data(h1_rot_files, id_to_index)
             print(f"  H2 rotation from {len(h2_rot_files)} grid file(s)...")
-            d_ry, _ = merge_grid_data(h2_rot_files, id_to_index)
+            d_ry, col_map_ry, covered_rot_y = merge_grid_data(h2_rot_files, id_to_index)
             print(f"  V rotation from {len(v_rot_files)} grid file(s)...")
-            d_rz, _ = merge_grid_data(v_rot_files, id_to_index)
+            d_rz, col_map_rz, covered_rot_z = merge_grid_data(v_rot_files, id_to_index)
 
             if d_rx is None or d_ry is None or d_rz is None:
                 print(f"  ⚠ Rotation data incomplete, will create empty rotation data")
@@ -1342,11 +1371,17 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
                 d_rx = np.zeros((num_frames, num_nodes), dtype=np.float32)
                 d_ry = np.zeros((num_frames, num_nodes), dtype=np.float32)
                 d_rz = np.zeros((num_frames, num_nodes), dtype=np.float32)
+                missing_rot_node_indices = []
+            else:
+                missing_rot_node_indices = compute_missing_node_indices(
+                    num_nodes, id_to_index, covered_rot_x, covered_rot_y, covered_rot_z
+                )
         else:
             has_rotation = False
             d_rx = np.zeros((num_frames, num_nodes), dtype=np.float32)
             d_ry = np.zeros((num_frames, num_nodes), dtype=np.float32)
             d_rz = np.zeros((num_frames, num_nodes), dtype=np.float32)
+            missing_rot_node_indices = []
 
         # Use merged data directly (already aligned by node index)
         aligned_lx = d_lx
@@ -1388,30 +1423,40 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
         # Files
         f_lx, f_ly, f_lz = lin_files[0], lin_files[1], lin_files[2]
 
-        # 1. Parse Header Map (Assume X file governs)
+        # 1. Parse header maps
         col_map_x, _ = parse_ladwp_header(f_lx)
+        col_map_y, _ = parse_ladwp_header(f_ly)
+        col_map_z, _ = parse_ladwp_header(f_lz)
 
         # 2. Load Linear Data
         print(f"Loading Linear Data...")
         d_lx, _ = load_ladwp_data(f_lx, col_map_x)
-        d_ly, _ = load_ladwp_data(f_ly, col_map_x)
-        d_lz, _ = load_ladwp_data(f_lz, col_map_x)
+        d_ly, _ = load_ladwp_data(f_ly, col_map_y)
+        d_lz, _ = load_ladwp_data(f_lz, col_map_z)
 
         # Load Rotational Data if available
         if has_rotation:
             print(f"Loading Rotational Data...")
             f_rx, f_ry, f_rz = rot_files[0], rot_files[1], rot_files[2]
-            d_rx, _ = load_ladwp_data(f_rx, col_map_x)
-            d_ry, _ = load_ladwp_data(f_ry, col_map_x)
-            d_rz, _ = load_ladwp_data(f_rz, col_map_x)
+            col_map_rx, _ = parse_ladwp_header(f_rx)
+            col_map_ry, _ = parse_ladwp_header(f_ry)
+            col_map_rz, _ = parse_ladwp_header(f_rz)
+            d_rx, _ = load_ladwp_data(f_rx, col_map_rx)
+            d_ry, _ = load_ladwp_data(f_ry, col_map_ry)
+            d_rz, _ = load_ladwp_data(f_rz, col_map_rz)
+            missing_rot_node_indices = compute_missing_node_indices(
+                num_nodes, id_to_index, col_map_rx, col_map_ry, col_map_rz
+            )
         else:
             # Create empty arrays for rotation
             d_rx = np.zeros_like(d_lx)
             d_ry = np.zeros_like(d_lx)
             d_rz = np.zeros_like(d_lx)
+            missing_rot_node_indices = []
 
         num_frames = len(d_lx)
         num_nodes = len(id_to_index)
+        missing_lin_node_indices = compute_missing_node_indices(num_nodes, id_to_index, col_map_x, col_map_y, col_map_z)
 
         # 3. Interleave Data
         print("Interleaving data...")
@@ -1444,14 +1489,26 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
     buffer_lin = stacked_lin.flatten()
 
     # Write linear file (always written, stride 3)
-    header_lin = {"type": f"{type_name}_lin", "count_frames": num_frames, "count_nodes": num_nodes, "dt": 0.01}
+    header_lin = {
+        "type": f"{type_name}_lin",
+        "count_frames": num_frames,
+        "count_nodes": num_nodes,
+        "dt": 0.01,
+        "missing_node_indices": missing_lin_node_indices,
+    }
     write_bld_file(f"{file_key}_lin.bld", header_lin, buffer_lin.tobytes(), simulation_output_dir)
 
     # Write rotation file if rotation data exists
     if has_rotation:
         stacked_rot = np.stack([aligned_rx, aligned_ry, aligned_rz], axis=2)
         buffer_rot = stacked_rot.flatten()
-        header_rot = {"type": f"{type_name}_rot", "count_frames": num_frames, "count_nodes": num_nodes, "dt": 0.01}
+        header_rot = {
+            "type": f"{type_name}_rot",
+            "count_frames": num_frames,
+            "count_nodes": num_nodes,
+            "dt": 0.01,
+            "missing_node_indices": missing_rot_node_indices,
+        }
         write_bld_file(f"{file_key}_rot.bld", header_rot, buffer_rot.tobytes(), simulation_output_dir)
 
 

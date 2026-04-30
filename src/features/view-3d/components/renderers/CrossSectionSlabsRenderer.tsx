@@ -1,5 +1,6 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useExpandedScale } from "@/features/view-3d/contexts/visualization";
+import { useVisualDisplacement } from "@/features/view-3d/lib/visualDisplacement";
 import { useAnimationData } from "@/lib/useAnimationData";
 import Delaunay from "delaunator";
 import { useMemo } from "react";
@@ -111,8 +112,9 @@ function CrossSectionSlab({
   crossSectionType,
 }: CrossSectionSlabProps) {
   const { animationData } = useAnimationData();
-  const { getNodeColor } = useColor();
+  const { getNodeColor: getRawNodeColor } = useColor();
   const { hoveredCrossSection, selectCrossSection, setHovered } = useCrossSectionSelection();
+  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
 
   const crossSectionId = `cross-section-${crossSectionType}-${crossSectionPos}`;
   const isHovered = hoveredCrossSection?.id === crossSectionId;
@@ -124,7 +126,7 @@ function CrossSectionSlab({
 
     const nodePositions = nodeIds.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
-      const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
+      const disp = visualDisplacement.atFrame(frameIndex).at(nodeId);
       const expandedPosition = getExpandedPosition(
         [pos[0], pos[1], pos[2]],
         [disp[0], disp[1], disp[2]],
@@ -156,7 +158,7 @@ function CrossSectionSlab({
       positions[i * 3 + 1] = nodePos.y;
       positions[i * 3 + 2] = nodePos.z;
 
-      const nodeColor = getNodeColor(nodeId, frameIndex);
+      const nodeColor = getVisualNodeColor(nodeId, frameIndex, getRawNodeColor);
       colors[i * 3] = nodeColor.r;
       colors[i * 3 + 1] = nodeColor.g;
       colors[i * 3 + 2] = nodeColor.b;
@@ -176,7 +178,17 @@ function CrossSectionSlab({
         side: THREE.DoubleSide,
       })
     );
-  }, [nodeIds, frameIndex, animationData, getNodeColor, getExpandedPosition, offset, crossSectionType]);
+  }, [
+    nodeIds,
+    frameIndex,
+    animationData,
+    getRawNodeColor,
+    getVisualNodeColor,
+    getExpandedPosition,
+    offset,
+    crossSectionType,
+    visualDisplacement,
+  ]);
 
   const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();

@@ -20,7 +20,7 @@ import type {
   TimeIndexAccessor,
 } from "@/lib/types";
 
-export const PROCESSED_CACHE_VERSION = 1;
+export const PROCESSED_CACHE_VERSION = 3;
 
 export interface SerializedStoryDrift {
   data: Float32Array;
@@ -518,6 +518,7 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     crossSectionsX: buildingData.metadata.cross_sections_x,
     crossSectionsY: buildingData.metadata.cross_sections_y,
     hiddenFloors: buildingData.metadata.hidden_floors ?? [],
+    displacementMissingNodeIndices: dispLinData.metadata.missing_node_indices ?? [],
   };
 
   // --- Compute Node Story Drift Dynamically ---

@@ -102,6 +102,8 @@ export interface ViewState {
   setRenderYCrossSectionSlabs: (value: boolean) => void;
   showCornersOnly: boolean;
   setShowCornersOnly: (value: boolean) => void;
+  visualInterpolationEnabled: boolean;
+  setVisualInterpolationEnabled: (value: boolean) => void;
   renderVerticalConnections: boolean;
   setRenderVerticalConnections: (value: boolean) => void;
   renderHorizontalConnections: boolean;
@@ -270,6 +272,8 @@ export const createViewStore = () =>
       setRenderYCrossSectionSlabs: (renderYCrossSectionSlabs) => set({ renderYCrossSectionSlabs }),
       showCornersOnly: false,
       setShowCornersOnly: (showCornersOnly) => set({ showCornersOnly }),
+      visualInterpolationEnabled: false,
+      setVisualInterpolationEnabled: (visualInterpolationEnabled) => set({ visualInterpolationEnabled }),
       renderVerticalConnections: false,
       setRenderVerticalConnections: (renderVerticalConnections) => set({ renderVerticalConnections }),
       renderHorizontalConnections: false,

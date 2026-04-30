@@ -1,5 +1,6 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useExpandedScale } from "@/features/view-3d/contexts/visualization";
+import { useVisualDisplacement } from "@/features/view-3d/lib/visualDisplacement";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import * as THREE from "three";
@@ -18,7 +19,8 @@ export function VerticalConnectionsRenderer({
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getExpandedPosition } = useExpandedScale();
-  const { getNodeColor } = useColor();
+  const { getNodeColor: getRawNodeColor } = useColor();
+  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
 
   const offset = useMemo(
     (): [number, number, number] => [
@@ -62,7 +64,7 @@ export function VerticalConnectionsRenderer({
     <group>
       {connections.map((conn, idx) => {
         const posA = animationData.initialPositions.at(conn.nodeA);
-        const dispA = animationData.displacementLin.atFrame(frameIndex).at(conn.nodeA);
+        const dispA = visualDisplacement.atFrame(frameIndex).at(conn.nodeA);
         const expandedA = getExpandedPosition(
           [posA[0], posA[1], posA[2]],
           [dispA[0], dispA[1], dispA[2]],
@@ -71,7 +73,7 @@ export function VerticalConnectionsRenderer({
         );
 
         const posB = animationData.initialPositions.at(conn.nodeB);
-        const dispB = animationData.displacementLin.atFrame(frameIndex).at(conn.nodeB);
+        const dispB = visualDisplacement.atFrame(frameIndex).at(conn.nodeB);
         const expandedB = getExpandedPosition(
           [posB[0], posB[1], posB[2]],
           [dispB[0], dispB[1], dispB[2]],
@@ -82,7 +84,7 @@ export function VerticalConnectionsRenderer({
         const start = new THREE.Vector3(expandedA[0], expandedA[1], expandedA[2]);
         const end = new THREE.Vector3(expandedB[0], expandedB[1], expandedB[2]);
 
-        const color = getNodeColor(conn.nodeA, frameIndex);
+        const color = getVisualNodeColor(conn.nodeA, frameIndex, getRawNodeColor);
 
         const points = [start, end];
 

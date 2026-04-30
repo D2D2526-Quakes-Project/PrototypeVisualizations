@@ -1,5 +1,6 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useExpandedScale, useThresholds } from "@/features/view-3d/contexts/visualization";
+import { useVisualDisplacement } from "@/features/view-3d/lib/visualDisplacement";
 import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
@@ -23,8 +24,9 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getExpandedPosition } = useExpandedScale();
-  const { getNodeColor, currentMetric } = useColor();
+  const { getNodeColor: getRawNodeColor, currentMetric } = useColor();
   const { thresholds } = useThresholds();
+  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
   const nodeScale = useViewStore((s) => s.nodeScale);
   const nodeOpacity = useViewStore((s) => s.nodeOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
@@ -109,7 +111,7 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
       const initX = basePositions[i * 3 + 0];
       const initY = basePositions[i * 3 + 1];
       const initZ = basePositions[i * 3 + 2];
-      const displacement = animationData.displacementLin.atFrame(currentFrame).at(nodeId);
+      const displacement = visualDisplacement.atFrame(currentFrame).at(nodeId);
       const expandedPosition = getExpandedPosition(
         [initX, initY, initZ],
         [displacement[0], displacement[1], displacement[2]],
@@ -135,7 +137,7 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
       tempObject.updateMatrix();
       meshRef.current.setMatrixAt(i, tempObject.matrix);
 
-      const color = getNodeColor(nodeId, currentFrame);
+      const color = getVisualNodeColor(nodeId, currentFrame, getRawNodeColor);
       tempColor.setRGB(color.r, color.g, color.b);
       tempColor.toArray(colorAttr.array, i * 3);
     }
@@ -181,7 +183,7 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
       tempObject.updateMatrix();
       hingeNodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
 
-      const color = getNodeColor(hingeIdx, endCap);
+      const color = getRawNodeColor(hingeIdx, endCap);
       tempColor.setRGB(color.r, color.g, color.b);
       tempColor.toArray(colorAttr.array, i * 3);
     }

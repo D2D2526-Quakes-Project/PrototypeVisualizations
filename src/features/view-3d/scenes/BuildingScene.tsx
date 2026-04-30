@@ -20,6 +20,7 @@ import {
   useViewMode,
 } from "@/features/view-3d/contexts/visualization";
 import { useNodeInteractionMode, useSlabInteractionMode } from "@/features/view-3d/lib/interactionPolicy";
+import { useVisualDisplacement } from "@/features/view-3d/lib/visualDisplacement";
 import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
@@ -45,10 +46,15 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { selectedNodes, selectNode } = useNodeSelection();
-  const { getNodeColor, currentMetric } = useColor();
+  const { getNodeColor: getRawNodeColor, currentMetric } = useColor();
   const { thresholds } = useThresholds();
   const { getVisibleNodes } = useViewMode();
   const { getExpandedPosition } = useExpandedScale();
+  const {
+    displacement: visualDisplacement,
+    getNodeColor: getVisualNodeColor,
+    isNodeInterpolated,
+  } = useVisualDisplacement();
   const { sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
   const { setHovered: setHoveredCrossSection, deselectCrossSection } = useCrossSectionSelection();
   const { camera } = useThree();
@@ -487,7 +493,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       const initX = basePositions[i * 3 + 0];
       const initY = basePositions[i * 3 + 1];
       const initZ = basePositions[i * 3 + 2];
-      const displacement = animationData.displacementLin.atFrame(currentFrame).at(nodeId);
+      const displacement = visualDisplacement.atFrame(currentFrame).at(nodeId);
       const expandedPosition = getExpandedPosition(
         [initX, initY, initZ],
         [displacement[0], displacement[1], displacement[2]],
@@ -514,10 +520,13 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       nodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
 
       // Compute color directly in the loop
-      if (hoveredNodeId === nodeId || boxSelectedIndices.has(i)) {
+      if (isNodeInterpolated(nodeId)) {
+        const color = getVisualNodeColor(nodeId, currentFrame, getRawNodeColor);
+        tempColor.setRGB(color.r, color.g, color.b);
+      } else if (hoveredNodeId === nodeId || boxSelectedIndices.has(i)) {
         tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
       } else {
-        const color = getNodeColor(nodeId, currentFrame);
+        const color = getVisualNodeColor(nodeId, currentFrame, getRawNodeColor);
         tempColor.setRGB(color.r, color.g, color.b);
       }
 
@@ -569,7 +578,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       tempObject.updateMatrix();
       hingeNodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
 
-      const color = getNodeColor(hingeIdx, endCap);
+      const color = getRawNodeColor(hingeIdx, endCap);
       tempColor.setRGB(color.r, color.g, color.b);
       tempColor.toArray(colorAttr.array, i * 3);
     }
@@ -581,7 +590,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const selectedNodesData = useMemo(() => {
     return selectedNodes.map((nodeId) => {
       const pos = animationData.initialPositions.at(nodeId);
-      const displacement = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
+      const displacement = visualDisplacement.atFrame(frameIndex).at(nodeId);
       const expandedPosition = getExpandedPosition(
         [pos[0], pos[1], pos[2]],
         [displacement[0], displacement[1], displacement[2]],
@@ -594,7 +603,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         color: getNodePanelColor(nodeId), // Use unique color for selection
       };
     });
-  }, [selectedNodes, frameIndex, animationData, getExpandedPosition, offsets]);
+  }, [selectedNodes, frameIndex, animationData, getExpandedPosition, offsets, visualDisplacement]);
 
   return (
     <>

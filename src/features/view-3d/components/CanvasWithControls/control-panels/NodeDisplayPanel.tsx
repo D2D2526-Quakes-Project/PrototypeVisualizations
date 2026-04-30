@@ -1,3 +1,5 @@
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useViewStore } from "@/state";
 import {
@@ -18,7 +20,9 @@ export function NodeDisplayPanel() {
   const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
   const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
   const hingeNodeScale = useViewStore((s) => s.hingeNodeScale);
+  const visualInterpolationEnabled = useViewStore((s) => s.visualInterpolationEnabled);
   const setHingeNodeScale = useViewStore((s) => s.setHingeNodeScale);
+  const setVisualInterpolationEnabled = useViewStore((s) => s.setVisualInterpolationEnabled);
   // const belowThresholdNodeOpacity = useViewStore((s) => s.belowThresholdNodeOpacity);
   const setNodeScale = useViewStore((s) => s.setNodeScale);
   const setNodeOpacity = useViewStore((s) => s.setNodeOpacity);
@@ -121,6 +125,23 @@ export function NodeDisplayPanel() {
           className="flex-1"
         />
         <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{hingeNodeScale.toFixed(1)}x</span>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 rounded-sm border border-neutral-200 px-2 py-1.5">
+        <div className="flex items-center gap-2">
+          <WorkflowIcon size={12} className="shrink-0 text-neutral-400" />
+          <div className="min-w-0">
+            <Label htmlFor="visual-interpolation" className="text-[10px] font-medium text-neutral-700">
+              Visual Fill
+            </Label>
+            <div className="text-[10px] text-neutral-500">Floor-average displacement for nodes with no source data</div>
+          </div>
+        </div>
+        <Checkbox
+          id="visual-interpolation"
+          checked={visualInterpolationEnabled}
+          onCheckedChange={(checked) => setVisualInterpolationEnabled(checked === true)}
+        />
       </div>
 
       <div className="border-neutral-200">

@@ -58,8 +58,8 @@ function TooltipContent({
         {formatStoryLabel(storyId, elevationIn)}
       </div>
       {corners.map((corner) => {
-        const current = Math.abs(currentValues[storyId]?.[corner] || 0);
-        const peak = Math.abs(peakValues[storyId]?.[corner] || 0);
+        const current = currentValues[storyId]?.[corner] || 0;
+        const peak = peakValues[storyId]?.[corner] || 0;
 
         return (
           <div
@@ -104,16 +104,16 @@ function getPrecomputedPeakValue(
 ): number | null {
   switch (metric) {
     case "interstoryDrift":
-      return Math.abs(animationData.precomputed.peakStoryDrift[nodeId] ?? 0);
+      return animationData.precomputed.peakStoryDrift[nodeId] ?? 0;
     case "displacementMag":
-      return Math.abs(animationData.precomputed.peakNodeDisplacement[nodeId] ?? 0);
+      return animationData.precomputed.peakNodeDisplacement[nodeId] ?? 0;
     case "velocityMag":
       return animationData.precomputed.peakNodeVelocity
-        ? Math.abs(animationData.precomputed.peakNodeVelocity[nodeId] ?? 0)
+        ? (animationData.precomputed.peakNodeVelocity[nodeId] ?? 0)
         : null;
     case "accelerationMag":
       return animationData.precomputed.peakNodeAcceleration
-        ? Math.abs(animationData.precomputed.peakNodeAcceleration[nodeId] ?? 0)
+        ? (animationData.precomputed.peakNodeAcceleration[nodeId] ?? 0)
         : null;
     default:
       return null;
@@ -195,10 +195,10 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     for (const storyId of storyIds) {
       const cornerNodes = animationData.metadata.cornerNodes[storyId];
       values[storyId] = {
-        NW: Math.abs(metricConfig.getValue(animationData, frameIndex, cornerNodes.NW) ?? 0),
-        NE: Math.abs(metricConfig.getValue(animationData, frameIndex, cornerNodes.NE) ?? 0),
-        SW: Math.abs(metricConfig.getValue(animationData, frameIndex, cornerNodes.SW) ?? 0),
-        SE: Math.abs(metricConfig.getValue(animationData, frameIndex, cornerNodes.SE) ?? 0),
+        NW: metricConfig.getValue(animationData, frameIndex, cornerNodes.NW) ?? 0,
+        NE: metricConfig.getValue(animationData, frameIndex, cornerNodes.NE) ?? 0,
+        SW: metricConfig.getValue(animationData, frameIndex, cornerNodes.SW) ?? 0,
+        SE: metricConfig.getValue(animationData, frameIndex, cornerNodes.SE) ?? 0,
       };
     }
 
@@ -224,8 +224,10 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
 
         let peak = 0;
         for (let candidateFrame = 0; candidateFrame < frameCount; candidateFrame++) {
-          const value = metricConfig.getValue(animationData, candidateFrame, nodeId);
-          peak = Math.max(peak, Math.abs(value ?? 0));
+          const value = metricConfig.getValue(animationData, candidateFrame, nodeId) ?? 0;
+          if (Math.abs(value) > Math.abs(peak)) {
+            peak = value;
+          }
         }
         storyPeakValues[corner] = peak;
       }
@@ -365,7 +367,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       const currentLineSeries = corners.map((corner, idx) => ({
         name: corner,
         type: "line" as const,
-        data: storyIds.map((storyId) => Math.abs(currentValues[storyId]?.[corner] || 0)),
+        data: storyIds.map((storyId) => currentValues[storyId]?.[corner] || 0),
         itemStyle: {
           color: cornerColors[corner],
         },
@@ -391,7 +393,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       const peakLineSeries = corners.map((corner) => ({
         name: `${corner} Peak`,
         type: "line" as const,
-        data: storyIds.map((storyId) => Math.abs(peakValues[storyId]?.[corner] || 0)),
+        data: storyIds.map((storyId) => peakValues[storyId]?.[corner] || 0),
         itemStyle: {
           color: cornerColors[corner],
           opacity: 0.5,
@@ -415,9 +417,13 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       type: "bar" as const,
       stack: corner,
       data: storyIds.map((storyId) => {
-        const peak = Math.abs(peakValues[storyId]?.[corner] || 0);
-        const current = Math.abs(currentValues[storyId]?.[corner] || 0);
-        return Math.max(peak - current, 0);
+        const peak = peakValues[storyId]?.[corner] || 0;
+        const current = currentValues[storyId]?.[corner] || 0;
+        if (peak >= 0) {
+          return Math.max(peak - Math.max(0, current), 0);
+        } else {
+          return Math.min(peak - Math.min(0, current), 0);
+        }
       }),
       itemStyle: {
         color: cornerColors[corner],
@@ -435,7 +441,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       name: corner,
       type: "bar" as const,
       stack: corner,
-      data: storyIds.map((storyId) => Math.abs(currentValues[storyId]?.[corner] || 0)),
+      data: storyIds.map((storyId) => currentValues[storyId]?.[corner] || 0),
       itemStyle: {
         color: cornerColors[corner],
         borderRadius: [0, 2, 2, 0] as [number, number, number, number],
@@ -458,17 +464,27 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     return [...currentSeries, ...peakSeries];
   }, [currentValues, displayMode, peakValues, storyIds, thresholdValue]);
 
-  const xAxisMax = useMemo(() => {
+  const xAxisExtent = useMemo(() => {
     let maxValue = MIN_X_AXIS_MAX;
+    let minValue = 0;
 
     for (const storyId of storyIds) {
       for (const corner of corners) {
-        maxValue = Math.max(maxValue, currentValues[storyId]?.[corner] ?? 0, peakValues[storyId]?.[corner] ?? 0);
+        const val = currentValues[storyId]?.[corner] ?? 0;
+        const peak = peakValues[storyId]?.[corner] ?? 0;
+        maxValue = Math.max(maxValue, val, peak);
+        minValue = Math.min(minValue, val, peak);
       }
     }
 
-    return Math.max(maxValue * 1.15, MIN_X_AXIS_MAX);
-  }, [currentValues, peakValues, storyIds]);
+    if (metricConfig.hasNegative) {
+      const absMax = Math.max(Math.abs(maxValue), Math.abs(minValue));
+      const paddedMax = Math.max(absMax * 1.15, MIN_X_AXIS_MAX);
+      return { min: -paddedMax, max: paddedMax };
+    }
+
+    return { min: 0, max: Math.max(maxValue * 1.15, MIN_X_AXIS_MAX) };
+  }, [currentValues, metricConfig.hasNegative, peakValues, storyIds]);
 
   const option = useMemo(() => {
     const selected: Record<string, boolean> = {};
@@ -492,7 +508,8 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
           color: "#4b5563",
           fontWeight: 500,
         },
-        max: xAxisMax,
+        min: xAxisExtent.min,
+        max: xAxisExtent.max,
         axisLine: {
           lineStyle: {
             color: "#d1d5db",
@@ -512,7 +529,15 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       },
       series: seriesData,
     } satisfies EChartsOption;
-  }, [baseOption, metricConfig.label, metricConfig.unit.abbr, panelState.visibleCorners, seriesData, xAxisMax]);
+  }, [
+    baseOption,
+    metricConfig.label,
+    metricConfig.unit.abbr,
+    panelState.visibleCorners,
+    seriesData,
+    xAxisExtent.min,
+    xAxisExtent.max,
+  ]);
 
   return (
     <div className="relative flex h-full w-full flex-col gap-2 bg-white">

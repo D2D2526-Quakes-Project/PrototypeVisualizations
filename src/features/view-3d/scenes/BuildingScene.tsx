@@ -310,6 +310,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         if (!(e.ctrlKey || e.metaKey) || e.button !== 0) return;
 
         const rect = domElement.getBoundingClientRect();
+        console.log(domElement, rect);
         if (rect.width <= 0 || rect.height <= 0) return;
 
         dragRectRef.current = rect;

@@ -2,7 +2,8 @@ import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useAnimationData } from "@/lib/useAnimationData";
 // import { buildHingeEnrichedRows } from "@/lib/hingeAnalysis";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FloorVisualization } from "./FloorVisualization";
 import { MiniTimeSeries } from "./MiniTimeSeries";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 // import { FloorTorsionPlanPreview } from "@/features/view-3d/components/FloorTorsionPlanPreview";
@@ -58,6 +59,25 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
     () => animationData.metadata.stories[storyId] || [],
     [storyId, animationData.metadata.stories]
   );
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState(300);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width } = containerRef.current.getBoundingClientRect();
+        setDimensions(width);
+      }
+    };
+
+    updateDimensions();
+    const observer = new ResizeObserver(updateDimensions);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
 
   // LOCATION INFO
   const storyInfo = useMemo(() => {
@@ -596,6 +616,11 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3">
+        {/* 3D VISUALIZATION */}
+        <div className="animate-fade-in w-full" ref={containerRef}>
+          <FloorVisualization nodeIds={nodeIds} width={dimensions} />
+        </div>
+
         {/* LOCATION INFO */}
         <div className="animate-fade-in">
           <div className="grid grid-cols-2 gap-2">
@@ -1122,7 +1147,6 @@ export function FloorTab(props: IDockviewPanelHeaderProps<{ storyId: string }>) 
   const lightColor = getFloorColorLight(storyId);
   const { animationData } = useAnimationData();
   const storyElevations = animationData.precomputed.storyElevations;
-  console.log(storyId, storyElevations);
 
   const handleClose = () => {
     props.api.close();

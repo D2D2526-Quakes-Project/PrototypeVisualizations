@@ -197,6 +197,7 @@ export interface DataSelection {
 export interface OptionalDataLoadOptions {
   beamData: boolean;
   hingeData: boolean;
+  shearData: boolean;
   displacementRot: boolean;
   velocityLin: boolean;
   velocityRot: boolean;
@@ -207,6 +208,7 @@ export interface OptionalDataLoadOptions {
 export const OPTIONAL_DATA_LOAD_OPTION_KEYS = [
   "beamData",
   "hingeData",
+  "shearData",
   "displacementRot",
   "velocityLin",
   "velocityRot",

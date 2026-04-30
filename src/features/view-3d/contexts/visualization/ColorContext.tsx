@@ -73,7 +73,7 @@ export function useColor(): ColorContextType {
   }, [animationData, metricConfig]);
 
   const thresholdValue = useMemo(() => {
-    return thresholds[metricConfig.thresholdKey];
+    return thresholds[metricConfig.thresholdKey] ?? 0;
   }, [thresholds, metricConfig]);
 
   const getNodeColor = useCallback(

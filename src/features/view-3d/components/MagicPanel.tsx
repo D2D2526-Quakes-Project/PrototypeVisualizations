@@ -57,6 +57,7 @@ type PanelDefinition = {
 type PanelDataKey =
   | "beamData"
   | "hingeData"
+  | "shearData"
   | "displacementRot"
   | "velocityLin"
   | "velocityRot"
@@ -177,6 +178,7 @@ const PANEL_DEFINITIONS = check({
 const PANEL_DATA_LABELS: Record<PanelDataKey, string> = {
   beamData: "beam connectivity data",
   hingeData: "hinge data",
+  shearData: "shear data",
   displacementRot: "rotational displacement data",
   velocityLin: "linear velocity data",
   velocityRot: "rotational velocity data",

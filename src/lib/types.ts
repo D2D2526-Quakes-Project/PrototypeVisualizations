@@ -48,6 +48,8 @@ export type BinarySimulation = BaseSimulation & {
   groundMotion: string;
   /** Path to hinge data file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   hingeData?: string;
+  /** Path to shear data file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  shearData?: string;
 };
 
 export type Simulation = BinarySimulation;
@@ -99,6 +101,14 @@ export interface HingeMetadata {
   fields: string[];
 }
 
+export interface ShearMetadata {
+  count_rows: number;
+  stride: number;
+  fields: string[];
+  story_order: string[];
+  units: "kip";
+}
+
 // -------------------------------- Animation Data ------------------------------
 
 export interface AnimationMetadata {
@@ -124,6 +134,8 @@ export interface AnimationMetadata {
   hiddenFloors?: string[];
   /** Node indices with no translational displacement source coverage in any axis. */
   displacementMissingNodeIndices?: number[];
+  /** Dense node-index lookup to story id; null for unmapped nodes. */
+  nodeToStory: Array<string | null>;
 }
 
 export interface BuildingAnimationData {
@@ -208,6 +220,13 @@ export interface BuildingAnimationData {
   hingeData?: HingeDataAccessor;
 
   /**
+   * Shear Data (non-time-series), story-aligned column-only section forces.
+   * Layout per row: [h1Max, h1Min, h2Max, h2Min]
+   * Units: KIP
+   */
+  shearData?: ShearDataAccessor;
+
+  /**
    * Story Drift Data.
    * Layout: Frame -> Node -> [d]
    * Size: frameCount * nodeCount * 1
@@ -273,6 +292,26 @@ export interface HingeDataAccessor {
   metadata: HingeMetadata;
   at: (idx: number) => Float32Array;
   getRow: (idx: number) => HingeRow;
+}
+
+export interface ShearRow {
+  storyId: string;
+  h1Max: number;
+  h1Min: number;
+  h1Abs: number;
+  h2Max: number;
+  h2Min: number;
+  h2Abs: number;
+}
+
+export interface ShearDataAccessor {
+  data: Float32Array;
+  stride: number;
+  count: number;
+  metadata: ShearMetadata;
+  at: (idx: number) => Float32Array;
+  getRow: (idx: number) => ShearRow;
+  getByStory: (storyId: string) => ShearRow | undefined;
 }
 
 export interface ComputedStats {
@@ -391,6 +430,14 @@ export interface ComputedStats {
   hingeNodeMetrics?: HingeNodeMetrics;
   nodeToHingeIndexMap?: NodeHingeIndexEntry[][];
   beamToHingeIndexMap?: BeamHingeIndexEntry[][];
+
+  // SHEAR SUMMARY (if shear data exists)
+  maxShearH1Max?: number;
+  maxShearH1Min?: number;
+  maxShearH1Abs?: number;
+  maxShearH2Max?: number;
+  maxShearH2Min?: number;
+  maxShearH2Abs?: number;
 
   // CROSS-SECTIONS
   numCrossSectionsX: number;

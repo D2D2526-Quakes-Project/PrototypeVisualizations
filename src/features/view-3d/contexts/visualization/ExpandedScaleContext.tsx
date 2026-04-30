@@ -2,7 +2,7 @@ import { useViewStore } from "@/state";
 import type { AnimationMetadata } from "@/lib/types";
 import type { ExpandedScaleState as StoredExpandedScaleState } from "@/state/viewStore";
 import { useCallback } from "react";
-import { isHingeMetric } from "@/lib/metrics";
+import { isStaticMetric } from "@/lib/metrics";
 
 interface ExpandedScaleContextType {
   state: StoredExpandedScaleState;
@@ -32,7 +32,7 @@ export function useExpandedScale(): ExpandedScaleContextType {
   const setDisplacementScale = useViewStore((s) => s.setDisplacementScale);
   const resetExpandedScale = useViewStore((s) => s.resetExpandedScale);
 
-  const hingeStaticMode = isHingeMetric(currentMetric);
+  const staticMetricMode = isStaticMetric(currentMetric);
 
   const getExpandedPosition = useCallback(
     (
@@ -44,17 +44,17 @@ export function useExpandedScale(): ExpandedScaleContextType {
       const [initX, initY, initZ] = initialPosition;
       const [dispX, dispY, dispZ] = displacement;
 
-      const scaledDispX = hingeStaticMode
+      const scaledDispX = staticMetricMode
         ? 0
         : expandedScale.displacementEnabled
           ? dispX * expandedScale.xzDisplacementScale
           : dispX;
-      const scaledDispY = hingeStaticMode
+      const scaledDispY = staticMetricMode
         ? 0
         : expandedScale.displacementEnabled
           ? dispY * expandedScale.xzDisplacementScale
           : dispY;
-      const scaledDispZ = hingeStaticMode
+      const scaledDispZ = staticMetricMode
         ? 0
         : expandedScale.displacementEnabled
           ? dispZ * expandedScale.zDisplacementScale
@@ -72,7 +72,7 @@ export function useExpandedScale(): ExpandedScaleContextType {
         (initZ + offsetZ) * (1 + expandedScale.zExpansion) + scaledDispZ - offsetZ,
       ] as [number, number, number];
     },
-    [expandedScale, hingeStaticMode]
+    [expandedScale, staticMetricMode]
   );
 
   return {

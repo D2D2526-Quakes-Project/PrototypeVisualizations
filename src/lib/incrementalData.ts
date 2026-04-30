@@ -16,11 +16,14 @@ import type {
   HingeMetadata,
   IndexAccessor,
   NodeValueTimeAccessor,
+  ShearDataAccessor,
+  ShearMetadata,
+  ShearRow,
   SimulationMetadata,
   TimeIndexAccessor,
 } from "@/lib/types";
 
-export const PROCESSED_CACHE_VERSION = 3;
+export const PROCESSED_CACHE_VERSION = 4;
 
 export interface SerializedStoryDrift {
   data: Float32Array;
@@ -109,12 +112,18 @@ export interface OptionalStatsDelta {
   avgVelocityPerStory?: Float32Array;
   avgAccelerationPerStory?: Float32Array;
   hinge?: undefined; // TODO: Compute this summary (less values)
+  maxShearH1Max?: number;
+  maxShearH1Min?: number;
+  maxShearH1Abs?: number;
+  maxShearH2Max?: number;
+  maxShearH2Min?: number;
+  maxShearH2Abs?: number;
 }
 
 export interface SerializedOptionalDatasetResult {
   key: OptionalDatasetKey;
-  kind: "timeSeries" | "beamData" | "hingeData";
-  metadata: SimulationMetadata | BeamDataMetadata | HingeMetadata;
+  kind: "timeSeries" | "beamData" | "hingeData" | "shearData";
+  metadata: SimulationMetadata | BeamDataMetadata | HingeMetadata | ShearMetadata;
   data: Float32Array;
   statsDelta: OptionalStatsDelta;
 }
@@ -208,6 +217,17 @@ function makeNodeValueTimeAccessor(data: Float32Array, frameCount: number, nodeC
   };
 }
 
+function buildNodeToStoryMap(metadata: Pick<AnimationMetadata, "nodeCount" | "storyOrder" | "stories">): Array<string | null> {
+  const nodeToStory = Array.from({ length: metadata.nodeCount }, () => null as string | null);
+  metadata.storyOrder.forEach((storyId) => {
+    const nodes = metadata.stories[storyId] ?? [];
+    nodes.forEach((nodeIndex) => {
+      nodeToStory[nodeIndex] = storyId;
+    });
+  });
+  return nodeToStory;
+}
+
 function makeBeamAccessor(metadata: BeamDataMetadata, body: Float32Array): BeamDataAccessor {
   const stride = metadata.stride;
   const count = metadata.count_rows;
@@ -262,6 +282,53 @@ function makeHingeAccessor(metadata: HingeMetadata, body: Float32Array): HingeDa
         jR3Max: valueAt(row, 8),
         jR3Min: valueAt(row, 9),
       };
+    },
+  };
+}
+
+function makeShearAccessor(metadata: ShearMetadata, body: Float32Array): ShearDataAccessor {
+  const stride = metadata.stride;
+  const count = metadata.count_rows;
+  const data = body.subarray(0, count * stride);
+  const storyIndexById = new Map(metadata.story_order.map((storyId, index) => [storyId, index]));
+  const valueAt = (row: Float32Array, index: number): number => row[index] ?? Number.NaN;
+  const absEnvelope = (maxValue: number, minValue: number): number => {
+    if (!Number.isFinite(maxValue) && !Number.isFinite(minValue)) return Number.NaN;
+    return Math.max(
+      Number.isFinite(maxValue) ? Math.abs(maxValue) : 0,
+      Number.isFinite(minValue) ? Math.abs(minValue) : 0
+    );
+  };
+  const buildRow = (idx: number): ShearRow => {
+    const row = data.subarray(idx * stride, (idx + 1) * stride);
+    const h1Max = valueAt(row, 0);
+    const h1Min = valueAt(row, 1);
+    const h2Max = valueAt(row, 2);
+    const h2Min = valueAt(row, 3);
+    return {
+      storyId: metadata.story_order[idx] ?? "",
+      h1Max,
+      h1Min,
+      h1Abs: absEnvelope(h1Max, h1Min),
+      h2Max,
+      h2Min,
+      h2Abs: absEnvelope(h2Max, h2Min),
+    };
+  };
+
+  return {
+    data,
+    stride,
+    count,
+    metadata,
+    at(idx: number) {
+      return data.subarray(idx * stride, (idx + 1) * stride);
+    },
+    getRow: buildRow,
+    getByStory(storyId: string) {
+      const index = storyIndexById.get(storyId);
+      if (index === undefined) return undefined;
+      return buildRow(index);
     },
   };
 }
@@ -519,7 +586,9 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     crossSectionsY: buildingData.metadata.cross_sections_y,
     hiddenFloors: buildingData.metadata.hidden_floors ?? [],
     displacementMissingNodeIndices: dispLinData.metadata.missing_node_indices ?? [],
+    nodeToStory: Array.from({ length: buildingData.metadata.count_nodes }, () => null),
   };
+  metadata.nodeToStory = buildNodeToStoryMap(metadata);
 
   // --- Compute Node Story Drift Dynamically ---
   const nodeCount = metadata.nodeCount;
@@ -582,17 +651,23 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
 }
 
 export function rebuildAnimationDataFromSerializedCore(data: SerializedRequiredAnimationData): BuildingAnimationData {
+  const metadata: AnimationMetadata = {
+    ...data.metadata,
+    nodeToStory:
+      data.metadata.nodeToStory && data.metadata.nodeToStory.length === data.metadata.nodeCount
+        ? data.metadata.nodeToStory
+        : buildNodeToStoryMap(data.metadata),
+  };
+
   return {
-    metadata: {
-      ...data.metadata,
-    },
+    metadata,
     precomputed: {
       ...data.precomputed,
     },
     initialPositions: makeAccessor(data.initialPositions, 3),
-    displacementLin: makeTimeAccessor(data.displacementLin, data.metadata.nodeCount),
+    displacementLin: makeTimeAccessor(data.displacementLin, metadata.nodeCount),
     groundMotion: makeAccessor(data.groundMotion, 3),
-    storyDrift: makeNodeValueTimeAccessor(data.storyDrift, data.metadata.frameCount, data.metadata.nodeCount),
+    storyDrift: makeNodeValueTimeAccessor(data.storyDrift, metadata.frameCount, metadata.nodeCount),
   };
 }
 
@@ -614,6 +689,8 @@ export function mergeOptionalDatasetIntoAnimationData(
     nextAnimationData.beamData = makeBeamAccessor(result.metadata as BeamDataMetadata, result.data);
   } else if (result.key === "hingeData") {
     nextAnimationData.hingeData = makeHingeAccessor(result.metadata as HingeMetadata, result.data);
+  } else if (result.key === "shearData") {
+    nextAnimationData.shearData = makeShearAccessor(result.metadata as ShearMetadata, result.data);
   } else {
     const accessor = makeTimeAccessor(result.data, animationData.metadata.nodeCount);
     if (result.key === "displacementRot") nextAnimationData.displacementRot = accessor;
@@ -677,6 +754,18 @@ export async function parseOptionalDatasetFromRawBuffer(
     };
   }
 
+  if (request.key === "shearData") {
+    const parsed = parseBlob<ShearMetadata>(buffer);
+    const data = parsed.bodyView.subarray(0, parsed.metadata.count_rows * parsed.metadata.stride);
+    return {
+      key: request.key,
+      kind: "shearData",
+      metadata: parsed.metadata,
+      data,
+      statsDelta: calculateShearStats(parsed.metadata, data),
+    };
+  }
+
   const parsed = parseBlob<SimulationMetadata>(buffer);
   if (parsed.metadata.count_nodes !== request.baseMetadata.nodeCount) {
     throw new Error(
@@ -694,8 +783,49 @@ export async function parseOptionalDatasetFromRawBuffer(
   };
 }
 
+function calculateShearStats(metadata: ShearMetadata, body: Float32Array): OptionalStatsDelta {
+  const maxAbsByColumn = [0, 0, 0, 0];
+  let maxShearH1Abs = 0;
+  let maxShearH2Abs = 0;
+
+  for (let rowIdx = 0; rowIdx < metadata.count_rows; rowIdx++) {
+    const offset = rowIdx * metadata.stride;
+    const h1Max = body[offset];
+    const h1Min = body[offset + 1];
+    const h2Max = body[offset + 2];
+    const h2Min = body[offset + 3];
+    const values = [h1Max, h1Min, h2Max, h2Min];
+
+    values.forEach((value, index) => {
+      if (Number.isFinite(value)) {
+        maxAbsByColumn[index] = Math.max(maxAbsByColumn[index], Math.abs(value));
+      }
+    });
+
+    maxShearH1Abs = Math.max(
+      maxShearH1Abs,
+      Number.isFinite(h1Max) ? Math.abs(h1Max) : 0,
+      Number.isFinite(h1Min) ? Math.abs(h1Min) : 0
+    );
+    maxShearH2Abs = Math.max(
+      maxShearH2Abs,
+      Number.isFinite(h2Max) ? Math.abs(h2Max) : 0,
+      Number.isFinite(h2Min) ? Math.abs(h2Min) : 0
+    );
+  }
+
+  return {
+    maxShearH1Max: maxAbsByColumn[0],
+    maxShearH1Min: maxAbsByColumn[1],
+    maxShearH1Abs,
+    maxShearH2Max: maxAbsByColumn[2],
+    maxShearH2Min: maxAbsByColumn[3],
+    maxShearH2Abs,
+  };
+}
+
 function calculateOptionalTimeSeriesStats(
-  key: Exclude<OptionalDatasetKey, "beamData" | "hingeData">,
+  key: Exclude<OptionalDatasetKey, "beamData" | "hingeData" | "shearData">,
   metadata: AnimationMetadata,
   body: Float32Array
 ): OptionalStatsDelta {

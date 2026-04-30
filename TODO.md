@@ -71,6 +71,12 @@
 
 ### 6.1.1 Hinge Data Pipeline Integration (Current Sprint)
 
+### 6.1.1a Shear Data Pipeline Integration (Current Sprint)
+
+- [x] Parse `Shears/*_H1M.txt` and `Shears/*_H2M.txt` column-only per-floor summaries into optional `shear_data.bld`
+- [x] Add optional client loading, story-level shear accessors, and H1/H2 max/min/absolute shear metrics
+- [x] Treat missing shear artifacts gracefully when a simulation has no source shear files
+
 ### 6.1.2 Hinge Visualization UI Integration (Current Sprint)
 
 - [x] Use `beam_data.bld` + story node membership to localize hinge rows to floors/slices in UI

@@ -1,5 +1,5 @@
 import { useAnimationData } from "@/lib/useAnimationData";
-import { isHingeMetric } from "@/lib/metrics";
+import { isStaticMetric } from "@/lib/metrics";
 import { useViewStore } from "@/state";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
@@ -23,11 +23,11 @@ export const usePlayback = (): PlaybackControlParams => {
   const currentMetric = useViewStore((s) => s.currentMetric);
   const setStoreFrameIndex = useViewStore((s) => s.setFrameIndex);
   const setPlaying = useViewStore((s) => s.setPlaying);
-  const hingeStaticMode = isHingeMetric(currentMetric);
+  const staticMetricMode = isStaticMetric(currentMetric);
 
   const setFrameIndex = useCallback(
     (nextIndex: number | ((prevState: number) => number)) => {
-      if (hingeStaticMode) {
+      if (staticMetricMode) {
         setStoreFrameIndex(0);
         return;
       }
@@ -35,11 +35,11 @@ export const usePlayback = (): PlaybackControlParams => {
       const clamped = Math.max(0, Math.min(totalFrames - 1, resolvedIndex));
       setStoreFrameIndex(clamped);
     },
-    [frameIndex, hingeStaticMode, totalFrames, setStoreFrameIndex]
+    [frameIndex, staticMetricMode, totalFrames, setStoreFrameIndex]
   );
 
   const handlePlayPause = useCallback(() => {
-    if (hingeStaticMode) {
+    if (staticMetricMode) {
       setStoreFrameIndex(0);
       setPlaying(false);
       return;
@@ -48,19 +48,19 @@ export const usePlayback = (): PlaybackControlParams => {
       setStoreFrameIndex(0);
     }
     setPlaying(!playing);
-  }, [frameIndex, hingeStaticMode, totalFrames, setPlaying, playing, setStoreFrameIndex]);
+  }, [frameIndex, staticMetricMode, totalFrames, setPlaying, playing, setStoreFrameIndex]);
 
   const skipToStart = useCallback(() => {
     setStoreFrameIndex(0);
   }, [setStoreFrameIndex]);
 
   const skipToEnd = useCallback(() => {
-    if (hingeStaticMode) {
+    if (staticMetricMode) {
       setStoreFrameIndex(0);
       return;
     }
     setStoreFrameIndex(totalFrames - 1);
-  }, [hingeStaticMode, setStoreFrameIndex, totalFrames]);
+  }, [staticMetricMode, setStoreFrameIndex, totalFrames]);
 
   return {
     frameIndex,
@@ -96,10 +96,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const frameIndexRef = useRef(frameIndex);
 
   const frameRate = animationData.metadata.dt > 0 ? 1 / animationData.metadata.dt : 30;
-  const hingeStaticMode = isHingeMetric(currentMetric);
+  const staticMetricMode = isStaticMetric(currentMetric);
 
   useEffect(() => {
-    if (!hingeStaticMode) return;
+    if (!staticMetricMode) return;
 
     if (playing) {
       setPlaying(false);
@@ -109,7 +109,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     }
     setSkippedPerFrame(0);
     setFps(0);
-  }, [frameIndex, hingeStaticMode, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame]);
+  }, [frameIndex, staticMetricMode, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame]);
 
   useEffect(() => {
     frameIndexRef.current = frameIndex;
@@ -136,7 +136,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   }, [animationData.metadata.frameCount, setTotalFrames]);
 
   useEffect(() => {
-    if (hingeStaticMode) {
+    if (staticMetricMode) {
       if (requestedAnimationFrameRef.current !== null) {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
@@ -212,7 +212,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
     };
-  }, [frameRate, hingeStaticMode, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame, totalFrames]);
+  }, [frameRate, staticMetricMode, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame, totalFrames]);
 
   useEffect(() => {
     const changeFrame = (delta: number) => {
@@ -228,7 +228,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (hingeStaticMode) {
+      if (staticMetricMode) {
         if ([" ", "ArrowLeft", "ArrowRight"].includes(e.key)) {
           e.preventDefault();
           setPlaying(false);
@@ -272,7 +272,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
     window.addEventListener("keydown", windowKeydown);
     return () => window.removeEventListener("keydown", windowKeydown);
-  }, [frameIndex, hingeStaticMode, playing, setFrameIndex, setPlaying, totalFrames]);
+  }, [frameIndex, staticMetricMode, playing, setFrameIndex, setPlaying, totalFrames]);
 
   return <>{children}</>;
 }

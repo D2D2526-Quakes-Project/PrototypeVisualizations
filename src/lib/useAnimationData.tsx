@@ -71,6 +71,7 @@ type OptionalDataLoadKey = keyof OptionalDataLoadOptions;
 const DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS: OptionalDataLoadOptions = {
   beamData: false,
   hingeData: false,
+  shearData: false,
   displacementRot: false,
   velocityLin: false,
   velocityRot: false,
@@ -92,6 +93,7 @@ function getAvailableOptionalDataLoadOptions(
   return {
     beamData: Boolean(building.beamData),
     hingeData: Boolean(simulation.hingeData),
+    shearData: Boolean(simulation.shearData),
     displacementRot: Boolean(simulation.displacementRot),
     velocityLin: Boolean(simulation.velocityLin),
     velocityRot: Boolean(simulation.velocityRot),
@@ -111,6 +113,7 @@ function getEffectiveOptionalDataLoadOptions(
   return {
     beamData: normalized.beamData && available.beamData,
     hingeData: normalized.hingeData && available.hingeData,
+    shearData: normalized.shearData && available.shearData,
     displacementRot: normalized.displacementRot && available.displacementRot,
     velocityLin: normalized.velocityLin && available.velocityLin,
     velocityRot: normalized.velocityRot && available.velocityRot,
@@ -389,7 +392,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       if (sessionIdRef.current !== sessionId) return;
 
       const sourcePath =
-        key === "beamData" ? building.beamData : key === "hingeData" ? simulation.hingeData : simulation[key];
+        key === "beamData" ? building.beamData : key === "hingeData" ? simulation.hingeData : key === "shearData" ? simulation.shearData : simulation[key];
       if (!sourcePath) return;
 
       const selectionKey = `${building.folder}::${simulation.folder}`;
@@ -1065,7 +1068,8 @@ function SimulationPickerOverlay({
                             (s.accelerationLin && isCatalogPathIncomplete(s.accelerationLin)) ||
                             (s.accelerationRot && isCatalogPathIncomplete(s.accelerationRot)) ||
                             isCatalogPathIncomplete(s.groundMotion) ||
-                            (s.hingeData && isCatalogPathIncomplete(s.hingeData));
+                            (s.hingeData && isCatalogPathIncomplete(s.hingeData)) ||
+                            (s.shearData && isCatalogPathIncomplete(s.shearData));
                           const isSelected =
                             pendingSelection?.building.folder === b.folder &&
                             pendingSelection?.simulation.folder === s.folder;
@@ -1279,6 +1283,7 @@ function countSimulationFiles(simulation: BinarySimulation) {
     simulation.accelerationRot,
     simulation.groundMotion,
     simulation.hingeData,
+    simulation.shearData,
   ].filter(Boolean).length;
 }
 
@@ -1291,6 +1296,7 @@ type OptionalDataLoadControlConfig = {
 const OPTIONAL_DATA_LOAD_CONTROL_CONFIG = [
   { key: "beamData", label: "Beam", description: "Connectivity + beam mapping support for structural overlays." },
   { key: "hingeData", label: "Hinge", description: "Hinge summaries and hinge analysis panels." },
+  { key: "shearData", label: "Shear", description: "Static per-floor column shear summaries (kip)." },
   { key: "displacementRot", label: "Rot. disp.", description: "Node rotational displacement channels (rad)." },
   { key: "velocityLin", label: "Tra. velocity", description: "Translational velocity channels (in/s)." },
   { key: "velocityRot", label: "Rot. velocity", description: "Rotational velocity channels (rad/s)." },

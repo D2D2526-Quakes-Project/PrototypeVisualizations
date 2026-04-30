@@ -15,6 +15,7 @@ import { ChartNoAxesCombinedIcon, XIcon } from "lucide-react";
 import { stringToNumber } from "@/lib/utils";
 import { IsometricBuilding } from "@/components/IsometricBoundingBox";
 import { HingeLocalizedSummary } from "@/features/view-3d/components/HingeLocalizedSummary";
+import type { ShearRow } from "@/lib/types";
 
 // const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
@@ -50,6 +51,8 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const accelerationXColor = getMetricKeyColor("accelerationX", metricPaletteOverrides);
   const accelerationYColor = getMetricKeyColor("accelerationY", metricPaletteOverrides);
   const accelerationZColor = getMetricKeyColor("accelerationZ", metricPaletteOverrides);
+  const shearXColor = getMetricKeyColor("shearH1Abs", metricPaletteOverrides);
+  const shearYColor = getMetricKeyColor("shearH2Abs", metricPaletteOverrides);
   // const rotationXColor = getMetricKeyColor("rotationX", metricPaletteOverrides);
   // const rotationYColor = getMetricKeyColor("rotationY", metricPaletteOverrides);
   // const rotationZColor = getMetricKeyColor("rotationZ", metricPaletteOverrides);
@@ -90,6 +93,10 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
       totalFloors: animationData.metadata.storyOrder.length,
     };
   }, [storyId, animationData]);
+
+  const shearSummary = useMemo<ShearRow | null>(() => {
+    return animationData.shearData?.getByStory(storyId) ?? null;
+  }, [animationData.shearData, storyId]);
 
   // const floorTorsionPeak = useMemo(
   //   () => computeStoryPlanRotationPeak(animationData, storyId),
@@ -709,6 +716,56 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               subtitle="Hinge data localized to this floor's nodes."
               nodeIds={nodeIds}
             />
+          </div>
+        )}
+
+        {shearSummary && (
+          <div className="animate-fade-in">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h3 className="text-sm font-bold">Static Shear</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: shearXColor }} />
+                  <span className="text-xs font-medium text-neutral-700">X Direction</span>
+                </div>
+                <div className="grid grid-cols-2 gap-1 text-xs">
+                  <span className="text-neutral-600">Max</span>
+                  <span className="font-mono text-neutral-800">
+                    <UnitTooltip value={shearSummary.h1Max} unit="kip" />
+                  </span>
+                  <span className="text-neutral-600">Min</span>
+                  <span className="font-mono text-neutral-800">
+                    <UnitTooltip value={shearSummary.h1Min} unit="kip" />
+                  </span>
+                  <span className="text-neutral-600">Abs</span>
+                  <span className="font-mono text-neutral-800">
+                    <UnitTooltip value={shearSummary.h1Abs} unit="kip" />
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: shearYColor }} />
+                  <span className="text-xs font-medium text-neutral-700">Y Direction</span>
+                </div>
+                <div className="grid grid-cols-2 gap-1 text-xs">
+                  <span className="text-neutral-600">Max</span>
+                  <span className="font-mono text-neutral-800">
+                    <UnitTooltip value={shearSummary.h2Max} unit="kip" />
+                  </span>
+                  <span className="text-neutral-600">Min</span>
+                  <span className="font-mono text-neutral-800">
+                    <UnitTooltip value={shearSummary.h2Min} unit="kip" />
+                  </span>
+                  <span className="text-neutral-600">Abs</span>
+                  <span className="font-mono text-neutral-800">
+                    <UnitTooltip value={shearSummary.h2Abs} unit="kip" />
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

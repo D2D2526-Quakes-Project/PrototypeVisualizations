@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useViewStore } from "@/state";
-import { isHingeMetric } from "@/lib/metrics";
+import { isStaticMetric } from "@/lib/metrics";
 
 export function SmallTimeline() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -10,7 +10,7 @@ export function SmallTimeline() {
 
   const { frameIndex, setFrameIndex } = usePlayback();
   const currentMetric = useViewStore((s) => s.currentMetric);
-  const hingeStaticMode = isHingeMetric(currentMetric);
+  const staticMetricMode = isStaticMetric(currentMetric);
 
   /**
    * Displacement Data
@@ -58,7 +58,7 @@ export function SmallTimeline() {
   const scrubbingRef = useRef(false);
 
   useEffect(() => {
-    if (hingeStaticMode) return;
+    if (staticMetricMode) return;
 
     const svg = svgRef.current;
     if (!svg) return;
@@ -95,7 +95,7 @@ export function SmallTimeline() {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [hingeStaticMode, maxFrame, setFrameIndex]);
+  }, [staticMetricMode, maxFrame, setFrameIndex]);
 
   /**
    * Graph data
@@ -120,7 +120,7 @@ export function SmallTimeline() {
     <div ref={panelRef} className="h-full w-full">
       <svg
         ref={svgRef}
-        className={`select-none ${hingeStaticMode ? "cursor-not-allowed opacity-60" : "cursor-crosshair"}`}
+        className={`select-none ${staticMetricMode ? "cursor-not-allowed opacity-60" : "cursor-crosshair"}`}
         width="100%"
         viewBox={`0 0 100 ${viewBoxHeight}`}>
         <line
@@ -134,9 +134,9 @@ export function SmallTimeline() {
         />
         <polyline points={linePoints} fill="none" className={strokeColor} strokeWidth="0.2" />
         <circle transform={playheadTransform} r=".5" className="fill-amber-500" />
-        {hingeStaticMode && (
+        {staticMetricMode && (
           <text x="50" y="10" textAnchor="middle" className="fill-neutral-600 text-[4px]">
-            Satic Hinges
+            Static Floor Metric
           </text>
         )}
       </svg>

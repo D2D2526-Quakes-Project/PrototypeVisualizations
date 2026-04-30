@@ -50,7 +50,7 @@ fi
 
 # Choose metrics
 echo
-METRICS=$(gum choose --limit=1 "all" "displacement" "velocity" "acceleration" "ground_motion" "hinge" "building" --header="Select metrics to generate")
+METRICS=$(gum choose --limit=1 "all" "displacement" "velocity" "acceleration" "ground_motion" "hinge" "shear" "building" --header="Select metrics to generate")
 
 # Build command
 CMD="python $SCRIPT_DIR/generate_binary_data.py"

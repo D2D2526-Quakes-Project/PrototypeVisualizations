@@ -6,6 +6,7 @@ import gzip
 import re
 import os
 import argparse
+import csv
 from pathlib import Path
 from multiprocessing import Pool, cpu_count
 from functools import partial
@@ -42,7 +43,11 @@ Examples:
     parser.add_argument("--building", nargs="+", help="Building folder name(s) to process (e.g., --building 15story 20story)")
     parser.add_argument("--simulation", nargs="+", help="Simulation name(s) to process (requires --building)")
     parser.add_argument(
-        "--metrics", nargs="+", choices=["displacement", "velocity", "acceleration", "ground_motion", "hinge", "building", "all"], default=["all"], help="Data types to generate (default: all)"
+        "--metrics",
+        nargs="+",
+        choices=["displacement", "velocity", "acceleration", "ground_motion", "hinge", "shear", "building", "all"],
+        default=["all"],
+        help="Data types to generate (default: all)",
     )
     return parser
 
@@ -80,8 +85,10 @@ def check_outputs_exist(building_name, simulation_name=None):
             expected_files.append("ground_motion.bld")
         if "all" in metrics or "hinge" in metrics:
             expected_files.append("hinge_data.bld")
+        if "all" in metrics or "shear" in metrics:
+            expected_files.append("shear_data.bld")
     else:
-        expected_files = ["building.bld", "displacement_lin.bld", "velocity_lin.bld", "acceleration_lin.bld", "ground_motion.bld", "hinge_data.bld"]
+        expected_files = ["building.bld", "displacement_lin.bld", "velocity_lin.bld", "acceleration_lin.bld", "ground_motion.bld", "hinge_data.bld", "shear_data.bld"]
 
     for fname in expected_files:
         if not os.path.exists(os.path.join(simulation_output_dir, fname)):
@@ -213,6 +220,24 @@ def discover_hinge_file(simulation_path):
     return None
 
 
+def discover_shear_files(simulation_path):
+    """Locate paired H1/H2 shear summary files in a simulation folder."""
+    shear_dir = os.path.join(simulation_path, "Shears")
+    if not os.path.exists(shear_dir):
+        return None
+
+    txt_files = [f for f in os.listdir(shear_dir) if f.endswith(".txt")]
+    h1_files = sorted(f for f in txt_files if re.search(r"_H1M\.txt$", f))
+    h2_files = sorted(f for f in txt_files if re.search(r"_H2M\.txt$", f))
+    if not h1_files or not h2_files:
+        return None
+
+    return {
+        "h1": os.path.join(shear_dir, h1_files[0]),
+        "h2": os.path.join(shear_dir, h2_files[0]),
+    }
+
+
 def discover_simulations(building_folder):
     """Discover all simulations for a building (subdirectories with data files)"""
     simulations = []
@@ -243,6 +268,7 @@ def discover_simulations(building_folder):
                 "has_acceleration": False,
                 "has_ground_motion": False,
                 "has_hinge_data": False,
+                "has_shear_data": False,
                 "file_pattern": None,  # "Entire" or "Grid"
             }
 
@@ -300,17 +326,26 @@ def discover_simulations(building_folder):
                 sim_data["hinge_file"] = hinge_file
                 print(f"      hinge file: {hinge_file}")
 
+            # Check for shear summaries (static per-floor data)
+            shear_files = discover_shear_files(item_path)
+            print(f"      shear summaries: {'✓' if shear_files else '✗ not found'}")
+            if shear_files:
+                sim_data["has_shear_data"] = True
+                sim_data["shear_files"] = shear_files
+                print(f"      shear H1 file: {shear_files['h1']}")
+                print(f"      shear H2 file: {shear_files['h2']}")
+
             # Only add if it has at least some data
-            if sim_data["has_displacement"] or sim_data["has_velocity"] or sim_data["has_acceleration"] or sim_data["has_hinge_data"]:
+            if sim_data["has_displacement"] or sim_data["has_velocity"] or sim_data["has_acceleration"] or sim_data["has_hinge_data"] or sim_data["has_shear_data"]:
                 simulations.append(sim_data)
                 print(f"    → Simulation ACCEPTED: {item}")
                 print(
                     f"      Displacement: {sim_data['has_displacement']}, Velocity: {sim_data['has_velocity']}, "
                     f"Acceleration: {sim_data['has_acceleration']}, Ground Motion: {sim_data['has_ground_motion']}, "
-                    f"Hinge: {sim_data['has_hinge_data']}"
+                    f"Hinge: {sim_data['has_hinge_data']}, Shear: {sim_data['has_shear_data']}"
                 )
             else:
-                print(f"    → Simulation REJECTED: {item} " f"(no displacement, velocity, acceleration, or hinge data found)")
+                print(f"    → Simulation REJECTED: {item} " f"(no displacement, velocity, acceleration, hinge, or shear data found)")
 
     print(f"\n  Found {len(simulations)} simulation(s) for {building_folder}")
     return simulations
@@ -494,7 +529,7 @@ def compute_missing_node_indices(num_nodes, id_to_index, *coverage_sources):
 
 def get_simulation_files(building_folder, simulation):
     """Get file paths for a simulation based on detected pattern"""
-    files: dict = {"displacement": None, "velocity": None, "acceleration": None, "ground_motion": None, "hinge": None}
+    files: dict = {"displacement": None, "velocity": None, "acceleration": None, "ground_motion": None, "hinge": None, "shear": None}
 
     sim_path = simulation["path"]
     pattern = simulation.get("file_pattern", "Entire")
@@ -709,6 +744,15 @@ def get_simulation_files(building_folder, simulation):
         files["hinge"] = hinge_file
         exists = "✓" if hinge_file and os.path.exists(hinge_file) else "✗"
         print(f"      {exists} {hinge_file}")
+
+    if simulation.get("has_shear_data"):
+        print(f"\n    Shear summary files:")
+        shear_files = simulation.get("shear_files")
+        files["shear"] = shear_files
+        if shear_files:
+            for axis, path in shear_files.items():
+                exists = "✓" if path and os.path.exists(path) else "✗"
+                print(f"      {axis.upper()}: {exists} {path}")
 
     return files
 
@@ -1283,7 +1327,7 @@ def process_building(building):
     # 5. Write beam/member connectivity using the same node ordering used for all simulation arrays.
     beam_index_by_group2_element_id = process_beam_data(building, id_to_index, building_output_dir)
 
-    return id_to_index, beam_index_by_group2_element_id, building_output_dir
+    return id_to_index, beam_index_by_group2_element_id, building_output_dir, storyOrder
 
 
 def process_response_file(file_key, type_name, id_to_index, files_config, simulation_output_dir):
@@ -1807,6 +1851,123 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
     write_bld_file("hinge_data.bld", header, encoded.flatten().tobytes(), simulation_output_dir)
 
 
+SHEAR_STORY_ALIASES = {
+    "Int Mezz": "Mezzanine",
+    "Int Mezzanine": "Mezzanine",
+}
+
+
+def normalize_shear_story_label(story_label):
+    story = str(story_label).strip()
+    return SHEAR_STORY_ALIASES.get(story, story)
+
+
+def parse_shear_summary_file(filepath):
+    """Parse a PERFORM shear summary file into story -> max/min values for column-only sections."""
+    column_pattern = re.compile(r"^Column,\s*(\d+),\s*=\s*section no\.?,\s*[^,]+,\s*name\s*=\s*,?\s*(.*?)\s*$")
+    story_pattern = re.compile(r"^Story\s+(.+?)\s+Bottom\s*-\s*C\s*$")
+    columns = []
+    maximum_values = None
+    minimum_values = None
+
+    with open(filepath, "r", encoding="utf-8-sig", errors="replace") as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            column_match = column_pattern.match(line)
+            if column_match:
+                column_number = int(column_match.group(1))
+                section_name = column_match.group(2).strip()
+                story_match = story_pattern.match(section_name)
+                if story_match:
+                    columns.append((column_number, normalize_shear_story_label(story_match.group(1))))
+                continue
+
+            if line.startswith("Maximum"):
+                maximum_values = next(csv.reader([line]))[1:]
+            elif line.startswith("Minimum"):
+                minimum_values = next(csv.reader([line]))[1:]
+
+    if maximum_values is None or minimum_values is None:
+        raise ValueError(f"Shear file missing Maximum/Minimum rows: {filepath}")
+
+    values_by_story = {}
+    duplicate_stories = []
+    for column_number, story in columns:
+        value_index = column_number - 2
+        if value_index < 0 or value_index >= len(maximum_values) or value_index >= len(minimum_values):
+            raise ValueError(f"Shear column {column_number} is out of range for value rows in: {filepath}")
+
+        if story in values_by_story:
+            duplicate_stories.append(story)
+            continue
+
+        values_by_story[story] = {
+            "max": np.float32(float(maximum_values[value_index])),
+            "min": np.float32(float(minimum_values[value_index])),
+        }
+
+    if duplicate_stories:
+        raise ValueError(f"Duplicate column-only shear stories in {filepath}: {sorted(set(duplicate_stories))}")
+
+    return values_by_story
+
+
+def process_shear_data(files_config, simulation_output_dir, story_order):
+    """Process static per-floor shear summary data into story-aligned rows."""
+    print("\n--- Processing Shear Data ---")
+    shear_files = files_config.get("shear")
+    if not shear_files:
+        print("Shear summary files not found, skipping.")
+        return
+
+    h1_file = shear_files.get("h1")
+    h2_file = shear_files.get("h2")
+    if not h1_file or not h2_file or not os.path.exists(h1_file) or not os.path.exists(h2_file):
+        print("Shear H1/H2 file pair incomplete, skipping.")
+        return
+
+    h1_by_story = parse_shear_summary_file(h1_file)
+    h2_by_story = parse_shear_summary_file(h2_file)
+    print(f"  H1 column-only story rows: {len(h1_by_story)}")
+    print(f"  H2 column-only story rows: {len(h2_by_story)}")
+
+    all_source_stories = set(h1_by_story.keys()) | set(h2_by_story.keys())
+    unknown_stories = sorted(story for story in all_source_stories if story not in story_order)
+    if unknown_stories:
+        raise ValueError(f"Shear source contains stories not present in building metadata: {unknown_stories}")
+
+    row_count = len(story_order)
+    fields = ["h1Max", "h1Min", "h2Max", "h2Min"]
+    stride = len(fields)
+    encoded = np.full((row_count, stride), np.nan, dtype=np.float32)
+
+    for story_index, story in enumerate(story_order):
+        h1 = h1_by_story.get(story)
+        h2 = h2_by_story.get(story)
+        if h1:
+            encoded[story_index, 0] = h1["max"]
+            encoded[story_index, 1] = h1["min"]
+        if h2:
+            encoded[story_index, 2] = h2["max"]
+            encoded[story_index, 3] = h2["min"]
+
+    populated_rows = int(np.sum(~np.isnan(encoded).all(axis=1)))
+    missing_stories = [story for story, row in zip(story_order, encoded) if np.isnan(row).all()]
+    print(f"  Story-aligned shear rows: {populated_rows}/{row_count}")
+    if missing_stories:
+        print(f"  Missing shear stories: {missing_stories}")
+
+    header = {
+        "count_rows": row_count,
+        "stride": stride,
+        "fields": fields,
+        "story_order": story_order,
+        "units": "kip",
+    }
+
+    write_bld_file("shear_data.bld", header, encoded.flatten().tobytes(), simulation_output_dir)
+
+
 def should_process_metric(metric_name):
     """Check if a metric should be processed based on --metrics filter."""
     if ARGS is None:
@@ -1828,7 +1989,7 @@ def process_simulation_response_type(args):
         return (type_name, "error", e)
 
 
-def process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir, max_workers=3):
+def process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order, max_workers=3):
     """Process a single simulation with parallel response type processing"""
     simulation_name = simulation["name"]
     simulation_output_dir = os.path.join(building_output_dir, simulation_name)
@@ -1837,7 +1998,9 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_index_by
     print(f"Processing Simulation: {simulation_name}")
     print(f"Pattern: {simulation.get('file_pattern', 'Unknown')}")
     print(
-        f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, " f"Acceleration: {simulation['has_acceleration']}, Hinge: {simulation.get('has_hinge_data', False)}"
+        f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, "
+        f"Acceleration: {simulation['has_acceleration']}, Hinge: {simulation.get('has_hinge_data', False)}, "
+        f"Shear: {simulation.get('has_shear_data', False)}"
     )
     print(f"{'-'*60}")
 
@@ -1871,6 +2034,10 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_index_by
     if simulation.get("has_hinge_data") and should_process_metric("hinge"):
         process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2_element_id)
 
+    # Process static per-floor shear data
+    if simulation.get("has_shear_data") and should_process_metric("shear"):
+        process_shear_data(files_config, simulation_output_dir, story_order)
+
 
 def process_complete_building(building):
     """Process a complete building with all its simulations (for multiprocessing)"""
@@ -1884,11 +2051,11 @@ def process_complete_building(building):
             return (building_name, "skipped", "no simulations found")
 
         # Process building (creates building.bld)
-        id_to_index, beam_index_by_group2_element_id, building_output_dir = process_building(building)
+        id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order = process_building(building)
 
         # Process each simulation (can also be parallelized per simulation)
         for simulation in simulations:
-            process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir)
+            process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order)
 
         return (building_name, "success", f"processed {len(simulations)} simulation(s)")
     except Exception as e:
@@ -1933,6 +2100,7 @@ if __name__ == "__main__":
     print(f"    - Acceleration: A_H1R_Entire.txt, A_H2R_Entire.txt, A_VR_Entire.txt (rotation)")
     print(f"    - Ground Motion: ground_motion.txt")
     print(f"    - Hinge Results: Hinge results/hinge_data.csv (or first CSV in folder)")
+    print(f"    - Shear Results: Shears/*_H1M.txt + Shears/*_H2M.txt")
     print(f"=" * 70)
 
     buildings = discover_buildings()
@@ -1985,7 +2153,7 @@ if __name__ == "__main__":
                 results.append((building_name, "skipped", "no simulations found"))
                 continue
 
-            id_to_index, beam_index_by_group2_element_id, building_output_dir = process_building(building)
+            id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order = process_building(building)
 
             for simulation in simulations:
                 sim_name = simulation["name"]
@@ -1996,7 +2164,7 @@ if __name__ == "__main__":
                         results.append((building_name, "skipped", f"{sim_name} outputs exist"))
                         continue
 
-                process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir)
+                process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order)
 
             results.append((building_name, "success", f"processed {len(simulations)} simulation(s)"))
         except Exception as e:

@@ -16,7 +16,7 @@ import { formatFixed3 } from "@/lib/utils";
 import { formatCompactNumber } from "@/lib/utils";
 import { getDefaultTimelinePanelState } from "@/features/view-3d/lib/statePersistence";
 import { useViewStore } from "@/state";
-import { getMetricKeyColor, isHingeMetric, UNITS, type UnitConfig } from "@/lib/metrics";
+import { getMetricKeyColor, isStaticMetric, UNITS, type UnitConfig } from "@/lib/metrics";
 
 const GROUND_CHANNEL_CONFIG = {
   x: {
@@ -389,7 +389,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
   const currentMetric = useViewStore((s) => s.currentMetric);
   const savedState = savedPanelState?.type === "timeline" ? savedPanelState.state : defaultState;
-  const hingeStaticMode = isHingeMetric(currentMetric);
+  const staticMetricMode = isStaticMetric(currentMetric);
 
   const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(savedState.selectedKeys);
 
@@ -799,7 +799,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
   // Scrubbing logic - uses refs to access current values and tracks chart instance changes
   useEffect(() => {
-    if (hingeStaticMode) {
+    if (staticMetricMode) {
       return;
     }
 
@@ -885,7 +885,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       window.removeEventListener("mouseup", handleMouseUp);
       currentChart = null;
     };
-  }, [hingeStaticMode, setFrameIndex]);
+  }, [staticMetricMode, setFrameIndex]);
 
   // Update for MarkLine and MarkPoint
   useEffect(() => {
@@ -973,15 +973,15 @@ export function Timeline({ api }: IDockviewPanelProps) {
             <ReactECharts
               ref={chartRef}
               option={option}
-              style={{ height: "100%", width: "100%", opacity: hingeStaticMode ? 0.65 : 1 }}
+              style={{ height: "100%", width: "100%", opacity: staticMetricMode ? 0.65 : 1 }}
               opts={{ renderer: "canvas" }}
               notMerge={true}
               onChartReady={() => setChartReadyVersion((v) => v + 1)}
             />
-            {hingeStaticMode && (
+            {staticMetricMode && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="rounded border border-neutral-200 bg-white/95 px-3 py-2 text-center text-xs text-neutral-600 shadow-sm">
-                  Hinge metrics are static.
+                  This metric is static.
                   <div className="mt-1 text-[10px] text-neutral-500">
                     Playback and scrubbing are disabled in this mode.
                   </div>

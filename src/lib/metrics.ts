@@ -31,6 +31,12 @@ export type Metric =
   | "hingeRotationAbs"
   | "hingeRotationMax"
   | "hingeRotationMin"
+  | "shearH1Max"
+  | "shearH1Min"
+  | "shearH1Abs"
+  | "shearH2Max"
+  | "shearH2Min"
+  | "shearH2Abs"
   | "interstoryDrift"
   | "floorIndex"
   | "nodeZ"
@@ -39,6 +45,22 @@ export type Metric =
 
 export function isHingeMetric(metric: Metric): metric is HingeNodeMetricKey {
   return metric === "hingeRotationMax" || metric === "hingeRotationMin" || metric === "hingeRotationAbs";
+}
+
+const STATIC_METRICS: ReadonlySet<Metric> = new Set<Metric>([
+  "hingeRotationMax",
+  "hingeRotationMin",
+  "hingeRotationAbs",
+  "shearH1Max",
+  "shearH1Min",
+  "shearH1Abs",
+  "shearH2Max",
+  "shearH2Min",
+  "shearH2Abs",
+]);
+
+export function isStaticMetric(metric: Metric): boolean {
+  return STATIC_METRICS.has(metric);
 }
 
 export type ThresholdKey =
@@ -50,6 +72,7 @@ export type ThresholdKey =
   | "rotationAcceleration"
   | "interstoryDrift"
   | "hingeRotation"
+  | "shear"
   | "inf";
 
 export interface ColorScale {
@@ -88,7 +111,8 @@ export type Unit =
   | "meters/second"
   | "meters/second²"
   | "radians/second"
-  | "radians/second²";
+  | "radians/second²"
+  | "kip";
 
 export interface UnitConfig {
   label: Unit;
@@ -171,6 +195,11 @@ export const UNITS: Record<Unit, UnitConfig> = {
     label: "g",
     singular: "gravity (g)",
     abbr: "g",
+  },
+  kip: {
+    label: "kip",
+    singular: "kip",
+    abbr: "kip",
   },
 };
 
@@ -616,6 +645,34 @@ function get<T extends NumericKeys<ComputedStats> & keyof ComputedStats>(
   return (animationData) => animationData.precomputed[stat] ?? 0;
 }
 
+function getShearValue(
+  animationData: BuildingAnimationData,
+  nodeId: number,
+  field: "h1Max" | "h1Min" | "h1Abs" | "h2Max" | "h2Min" | "h2Abs"
+): number | undefined {
+  const nodeToStory =
+    animationData.metadata.nodeToStory && animationData.metadata.nodeToStory.length === animationData.metadata.nodeCount
+      ? animationData.metadata.nodeToStory
+      : null;
+
+  let storyId = nodeToStory?.[nodeId];
+  if (!storyId) {
+    for (const candidateStoryId of animationData.metadata.storyOrder) {
+      const storyNodes = animationData.metadata.stories[candidateStoryId] ?? [];
+      if (storyNodes.includes(nodeId)) {
+        storyId = candidateStoryId;
+        break;
+      }
+    }
+  }
+
+  if (!storyId || storyId === "Ground" || storyId === "1") return undefined;
+  const row = animationData.shearData?.getByStory(storyId);
+  if (!row) return undefined;
+  const value = row[field];
+  return Number.isFinite(value) ? value : undefined;
+}
+
 export interface ThresholdConfig {
   key: ThresholdKey;
   label: string;
@@ -680,6 +737,14 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
     unit: UNITS["radians"],
     getPrecomputedMax: (animationData) => animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
     isAvailable: (animationData) => !!animationData.precomputed.hingeNodeMetrics,
+  },
+  shear: {
+    key: "shear",
+    label: "Shear",
+    unit: UNITS["kip"],
+    getPrecomputedMax: (animationData) =>
+      Math.max(animationData.precomputed.maxShearH1Abs ?? 0, animationData.precomputed.maxShearH2Abs ?? 0),
+    isAvailable: (animationData) => !!animationData.shearData,
   },
   inf: {
     key: "inf",
@@ -1168,6 +1233,90 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return undefined;
     },
   },
+  shearH1Max: {
+    metric: "shearH1Max",
+    thresholdKey: "shear",
+    label: "Shear X Max",
+    shortLabel: "X Shear Max",
+    unit: UNITS["kip"],
+    defaultPalette: "blue",
+    hasPositive: true,
+    hasNegative: false,
+    getPrecomputedMax: get("maxShearH1Max"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
+      getShearValue(animationData, nodeId, "h1Max"),
+  },
+  shearH1Min: {
+    metric: "shearH1Min",
+    thresholdKey: "shear",
+    label: "Shear X Min",
+    shortLabel: "X Shear Min",
+    unit: UNITS["kip"],
+    defaultPalette: "teal",
+    hasPositive: false,
+    hasNegative: true,
+    getPrecomputedMax: get("maxShearH1Min"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
+      getShearValue(animationData, nodeId, "h1Min"),
+  },
+  shearH1Abs: {
+    metric: "shearH1Abs",
+    thresholdKey: "shear",
+    label: "Shear X Abs",
+    shortLabel: "X Shear Abs",
+    unit: UNITS["kip"],
+    defaultPalette: "blue",
+    hasPositive: true,
+    hasNegative: false,
+    getPrecomputedMax: get("maxShearH1Abs"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
+      getShearValue(animationData, nodeId, "h1Abs"),
+  },
+  shearH2Max: {
+    metric: "shearH2Max",
+    thresholdKey: "shear",
+    label: "Shear Y Max",
+    shortLabel: "Y Shear Max",
+    unit: UNITS["kip"],
+    defaultPalette: "green",
+    hasPositive: true,
+    hasNegative: false,
+    getPrecomputedMax: get("maxShearH2Max"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
+      getShearValue(animationData, nodeId, "h2Max"),
+  },
+  shearH2Min: {
+    metric: "shearH2Min",
+    thresholdKey: "shear",
+    label: "Shear Y Min",
+    shortLabel: "Y Shear Min",
+    unit: UNITS["kip"],
+    defaultPalette: "teal",
+    hasPositive: false,
+    hasNegative: true,
+    getPrecomputedMax: get("maxShearH2Min"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
+      getShearValue(animationData, nodeId, "h2Min"),
+  },
+  shearH2Abs: {
+    metric: "shearH2Abs",
+    thresholdKey: "shear",
+    label: "Shear Y Abs",
+    shortLabel: "Y Shear Abs",
+    unit: UNITS["kip"],
+    defaultPalette: "green",
+    hasPositive: true,
+    hasNegative: false,
+    getPrecomputedMax: get("maxShearH2Abs"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
+    getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
+      getShearValue(animationData, nodeId, "h2Abs"),
+  },
   // Debug metrics
   floorIndex: {
     metric: "floorIndex",
@@ -1278,6 +1427,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
 export const THRESHOLD_KEY_ORDER: ThresholdKey[] = [
   "interstoryDrift",
   "hingeRotation",
+  "shear",
   "displacement",
   "rotation",
   "velocity",

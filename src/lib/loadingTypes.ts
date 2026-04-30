@@ -5,6 +5,7 @@ export const REQUIRED_DATASET_KEYS = ["building", "displacementLin", "groundMoti
 export const OPTIONAL_DATASET_KEYS = [
   "beamData",
   "hingeData",
+  "shearData",
   "displacementRot",
   "velocityLin",
   "velocityRot",
@@ -38,6 +39,7 @@ export const DATASET_LABELS: Record<DatasetKey, string> = {
   groundMotion: "Ground Motion",
   beamData: "Beam Data",
   hingeData: "Hinge Data",
+  shearData: "Shear Data",
   displacementRot: "Displacement (Rotational)",
   velocityLin: "Velocity (Translational)",
   velocityRot: "Velocity (Rotational)",
@@ -59,6 +61,7 @@ export function getDatasetAvailability(
     groundMotion: Boolean(simulation.groundMotion),
     beamData: Boolean(building.beamData),
     hingeData: Boolean(simulation.hingeData),
+    shearData: Boolean(simulation.shearData),
     displacementRot: Boolean(simulation.displacementRot),
     velocityLin: Boolean(simulation.velocityLin),
     velocityRot: Boolean(simulation.velocityRot),

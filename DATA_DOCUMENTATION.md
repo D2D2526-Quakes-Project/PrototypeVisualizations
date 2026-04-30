@@ -205,6 +205,22 @@ _Naming Convention_:
   - `Step Type` (usually `Max` / `Min`)
   - `Performance Level`
 
+#### Shear Results Data (Non-Time-Series)
+
+`Shears/` contains static per-floor column shear force summaries.
+
+- Typical files:
+  - `V_ST3138_H1M.txt` / `V_ST3139_H1M.txt`
+  - `V_ST3138_H2M.txt` / `V_ST3139_H2M.txt`
+- This data is **not frame/time indexed**.
+- Units are `kip`.
+- Parser behavior:
+  - Reads the `Column` header mappings plus the final `Maximum` and `Minimum` rows.
+  - Keeps only exact column-only sections named `Story <floor> Bottom - C`.
+  - Excludes wall, brace, and combined sections such as `- W`, `- B`, `- C+W`, and `- C+B`.
+  - Normalizes source story labels to building metadata labels, including `Int Mezz` → `Mezzanine`.
+  - Emits missing floor values as `NaN`; simulations without a complete H1/H2 file pair do not produce `shear_data.bld`.
+
 ### 2. Binary Format Data (Binary15Story folder)
 
 **File Extension**: `.bld` (binary format)
@@ -467,6 +483,7 @@ Contains older format data with similar structure to main 15story data but with 
 - Simulation folders with response data files
 - Ground motion files (`ground_motion.txt`)
 - Optional hinge summary files in `Hinge results/` (`hinge_data.csv` preferred, `.xlsx` supported with `openpyxl`)
+- Optional shear summary file pairs in `Shears/` (`*_H1M.txt` and `*_H2M.txt`)
 
 **Output**:
 
@@ -476,6 +493,7 @@ Contains older format data with similar structure to main 15story data but with 
 - `acceleration_lin.bld` / `acceleration_rot.bld`: Time-series acceleration data
 - `ground_motion.bld`: Ground motion acceleration data
 - `hinge_data.bld`: Non-time-series hinge summary data with metadata distributions
+- `shear_data.bld`: Non-time-series story-aligned shear summary data (`h1Max`, `h1Min`, `h2Max`, `h2Min`, `kip`)
 
 **Running the Script**:
 

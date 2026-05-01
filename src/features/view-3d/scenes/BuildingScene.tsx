@@ -177,8 +177,12 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         const iNodePos = [iNodePosFloat[0], iNodePosFloat[1], iNodePosFloat[2]];
         const jNodePos = [jNodePosFloat[0], jNodePosFloat[1], jNodePosFloat[2]];
 
-        visibleNodesWithHinges.push({ hingeIdx: i, endCap: 1, pos: iNodePos, otherPos: jNodePos });
-        visibleNodesWithHinges.push({ hingeIdx: i, endCap: 2, pos: jNodePos, otherPos: iNodePos });
+        if (row.endMask & 0b01) {
+          visibleNodesWithHinges.push({ hingeIdx: i, endCap: 1, pos: iNodePos, otherPos: jNodePos });
+        }
+        if (row.endMask & 0b10) {
+          visibleNodesWithHinges.push({ hingeIdx: i, endCap: 2, pos: jNodePos, otherPos: iNodePos });
+        }
       }
     }
 
@@ -316,7 +320,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         if (!(e.ctrlKey || e.metaKey) || e.button !== 0) return;
 
         const rect = domElement.getBoundingClientRect();
-        console.log(domElement, rect);
         if (rect.width <= 0 || rect.height <= 0) return;
 
         dragRectRef.current = rect;

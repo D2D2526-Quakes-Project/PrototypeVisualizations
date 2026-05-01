@@ -31,12 +31,12 @@ export type Metric =
   | "hingeRotationAbs"
   | "hingeRotationMax"
   | "hingeRotationMin"
-  | "shearH1Max"
-  | "shearH1Min"
-  | "shearH1Abs"
-  | "shearH2Max"
-  | "shearH2Min"
-  | "shearH2Abs"
+  | "shearXMax"
+  | "shearXMin"
+  | "shearXAbs"
+  | "shearYMax"
+  | "shearYMin"
+  | "shearYAbs"
   | "interstoryDrift"
   | "floorIndex"
   | "nodeZ"
@@ -51,12 +51,12 @@ const STATIC_METRICS: ReadonlySet<Metric> = new Set<Metric>([
   "hingeRotationMax",
   "hingeRotationMin",
   "hingeRotationAbs",
-  "shearH1Max",
-  "shearH1Min",
-  "shearH1Abs",
-  "shearH2Max",
-  "shearH2Min",
-  "shearH2Abs",
+  "shearXMax",
+  "shearXMin",
+  "shearXAbs",
+  "shearYMax",
+  "shearYMin",
+  "shearYAbs",
 ]);
 
 export function isStaticMetric(metric: Metric): boolean {
@@ -648,7 +648,7 @@ function get<T extends NumericKeys<ComputedStats> & keyof ComputedStats>(
 function getShearValue(
   animationData: BuildingAnimationData,
   nodeId: number,
-  field: "h1Max" | "h1Min" | "h1Abs" | "h2Max" | "h2Min" | "h2Abs"
+  field: "xMax" | "xMin" | "xAbs" | "yMax" | "yMin" | "yAbs"
 ): number | undefined {
   const nodeToStory =
     animationData.metadata.nodeToStory && animationData.metadata.nodeToStory.length === animationData.metadata.nodeCount
@@ -743,7 +743,7 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
     label: "Shear",
     unit: UNITS["kip"],
     getPrecomputedMax: (animationData) =>
-      Math.max(animationData.precomputed.maxShearH1Abs ?? 0, animationData.precomputed.maxShearH2Abs ?? 0),
+      Math.max(animationData.precomputed.maxShearXAbs ?? 0, animationData.precomputed.maxShearYAbs ?? 0),
     isAvailable: (animationData) => !!animationData.shearData,
   },
   inf: {
@@ -1176,10 +1176,10 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, endCap: number, hingeIdx: number) => {
       const row = animationData.hingeData!.getRow(hingeIdx);
       if (endCap === 1) {
-        // I
+        if ((row.endMask & 0b01) === 0) return undefined;
         return Math.max(Math.abs(row.iR3Max), Math.abs(row.iR3Min));
       } else if (endCap === 2) {
-        // J
+        if ((row.endMask & 0b10) === 0) return undefined;
         return Math.max(Math.abs(row.jR3Max), Math.abs(row.jR3Min));
       }
       return undefined;
@@ -1200,10 +1200,10 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, endCap: number, hingeIdx: number) => {
       const row = animationData.hingeData!.getRow(hingeIdx);
       if (endCap === 1) {
-        // I
+        if ((row.endMask & 0b01) === 0) return undefined;
         return row.iR3Max;
       } else if (endCap === 2) {
-        // J
+        if ((row.endMask & 0b10) === 0) return undefined;
         return row.jR3Max;
       }
       return undefined;
@@ -1224,17 +1224,17 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, endCap: number, hingeIdx: number) => {
       const row = animationData.hingeData!.getRow(hingeIdx);
       if (endCap === 1) {
-        // I
+        if ((row.endMask & 0b01) === 0) return undefined;
         return row.iR3Min;
       } else if (endCap === 2) {
-        // J
+        if ((row.endMask & 0b10) === 0) return undefined;
         return row.jR3Min;
       }
       return undefined;
     },
   },
-  shearH1Max: {
-    metric: "shearH1Max",
+  shearXMax: {
+    metric: "shearXMax",
     thresholdKey: "shear",
     label: "Shear X Max",
     shortLabel: "X Shear Max",
@@ -1242,13 +1242,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     defaultPalette: "blue",
     hasPositive: true,
     hasNegative: false,
-    getPrecomputedMax: get("maxShearH1Max"),
+    getPrecomputedMax: get("maxshearXMax"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
-      getShearValue(animationData, nodeId, "h1Max"),
+      getShearValue(animationData, nodeId, "xMax"),
   },
-  shearH1Min: {
-    metric: "shearH1Min",
+  shearXMin: {
+    metric: "shearXMin",
     thresholdKey: "shear",
     label: "Shear X Min",
     shortLabel: "X Shear Min",
@@ -1256,13 +1256,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     defaultPalette: "teal",
     hasPositive: false,
     hasNegative: true,
-    getPrecomputedMax: get("maxShearH1Min"),
+    getPrecomputedMax: get("maxShearXMin"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
-      getShearValue(animationData, nodeId, "h1Min"),
+      getShearValue(animationData, nodeId, "xMin"),
   },
-  shearH1Abs: {
-    metric: "shearH1Abs",
+  shearXAbs: {
+    metric: "shearXAbs",
     thresholdKey: "shear",
     label: "Shear X Abs",
     shortLabel: "X Shear Abs",
@@ -1270,13 +1270,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     defaultPalette: "blue",
     hasPositive: true,
     hasNegative: false,
-    getPrecomputedMax: get("maxShearH1Abs"),
+    getPrecomputedMax: get("maxShearXAbs"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
-      getShearValue(animationData, nodeId, "h1Abs"),
+      getShearValue(animationData, nodeId, "xAbs"),
   },
-  shearH2Max: {
-    metric: "shearH2Max",
+  shearYMax: {
+    metric: "shearYMax",
     thresholdKey: "shear",
     label: "Shear Y Max",
     shortLabel: "Y Shear Max",
@@ -1284,13 +1284,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     defaultPalette: "green",
     hasPositive: true,
     hasNegative: false,
-    getPrecomputedMax: get("maxShearH2Max"),
+    getPrecomputedMax: get("maxShearYMax"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
-      getShearValue(animationData, nodeId, "h2Max"),
+      getShearValue(animationData, nodeId, "yMax"),
   },
-  shearH2Min: {
-    metric: "shearH2Min",
+  shearYMin: {
+    metric: "shearYMin",
     thresholdKey: "shear",
     label: "Shear Y Min",
     shortLabel: "Y Shear Min",
@@ -1298,13 +1298,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     defaultPalette: "teal",
     hasPositive: false,
     hasNegative: true,
-    getPrecomputedMax: get("maxShearH2Min"),
+    getPrecomputedMax: get("maxShearYMin"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
-      getShearValue(animationData, nodeId, "h2Min"),
+      getShearValue(animationData, nodeId, "yMin"),
   },
-  shearH2Abs: {
-    metric: "shearH2Abs",
+  shearYAbs: {
+    metric: "shearYAbs",
     thresholdKey: "shear",
     label: "Shear Y Abs",
     shortLabel: "Y Shear Abs",
@@ -1312,10 +1312,10 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     defaultPalette: "green",
     hasPositive: true,
     hasNegative: false,
-    getPrecomputedMax: get("maxShearH2Abs"),
+    getPrecomputedMax: get("maxShearYAbs"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
-      getShearValue(animationData, nodeId, "h2Abs"),
+      getShearValue(animationData, nodeId, "yAbs"),
   },
   // Debug metrics
   floorIndex: {

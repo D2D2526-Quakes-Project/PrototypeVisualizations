@@ -1,8 +1,4 @@
-import {
-  buildBeamToHingeIndexMap,
-  buildHingeNodeMetrics,
-  buildNodeToHingeIndexMap,
-} from "@/lib/hingeMetrics";
+import { buildBeamToHingeIndexMap, buildHingeNodeMetrics, buildNodeToHingeIndexMap } from "@/lib/hingeMetrics";
 import type { DatasetKey, OptionalDatasetKey } from "@/lib/loadingTypes";
 import type {
   AnimationMetadata,
@@ -112,12 +108,12 @@ export interface OptionalStatsDelta {
   avgVelocityPerStory?: Float32Array;
   avgAccelerationPerStory?: Float32Array;
   hinge?: undefined; // TODO: Compute this summary (less values)
-  maxShearH1Max?: number;
-  maxShearH1Min?: number;
-  maxShearH1Abs?: number;
-  maxShearH2Max?: number;
-  maxShearH2Min?: number;
-  maxShearH2Abs?: number;
+  maxshearXMax?: number;
+  maxShearXMin?: number;
+  maxShearXAbs?: number;
+  maxShearYMax?: number;
+  maxShearYMin?: number;
+  maxShearYAbs?: number;
 }
 
 export interface SerializedOptionalDatasetResult {
@@ -217,7 +213,9 @@ function makeNodeValueTimeAccessor(data: Float32Array, frameCount: number, nodeC
   };
 }
 
-function buildNodeToStoryMap(metadata: Pick<AnimationMetadata, "nodeCount" | "storyOrder" | "stories">): Array<string | null> {
+function buildNodeToStoryMap(
+  metadata: Pick<AnimationMetadata, "nodeCount" | "storyOrder" | "stories">
+): Array<string | null> {
   const nodeToStory = Array.from({ length: metadata.nodeCount }, () => null as string | null);
   metadata.storyOrder.forEach((storyId) => {
     const nodes = metadata.stories[storyId] ?? [];
@@ -301,18 +299,18 @@ function makeShearAccessor(metadata: ShearMetadata, body: Float32Array): ShearDa
   };
   const buildRow = (idx: number): ShearRow => {
     const row = data.subarray(idx * stride, (idx + 1) * stride);
-    const h1Max = valueAt(row, 0);
-    const h1Min = valueAt(row, 1);
-    const h2Max = valueAt(row, 2);
-    const h2Min = valueAt(row, 3);
+    const xMax = valueAt(row, 0);
+    const xMin = valueAt(row, 1);
+    const yMax = valueAt(row, 2);
+    const yMin = valueAt(row, 3);
     return {
       storyId: metadata.story_order[idx] ?? "",
-      h1Max,
-      h1Min,
-      h1Abs: absEnvelope(h1Max, h1Min),
-      h2Max,
-      h2Min,
-      h2Abs: absEnvelope(h2Max, h2Min),
+      xMax,
+      xMin,
+      xAbs: absEnvelope(xMax, xMin),
+      yMax,
+      yMin,
+      yAbs: absEnvelope(yMax, yMin),
     };
   };
 
@@ -710,10 +708,7 @@ export function mergeOptionalDatasetIntoAnimationData(
     nextAnimationData.beamData,
     nextAnimationData.metadata.nodeCount
   );
-  const beamToHingeIndexMap = buildBeamToHingeIndexMap(
-    nextAnimationData.hingeData,
-    nextAnimationData.beamData
-  );
+  const beamToHingeIndexMap = buildBeamToHingeIndexMap(nextAnimationData.hingeData, nextAnimationData.beamData);
   if (hingeNodeMetrics) {
     nextAnimationData.precomputed = {
       ...nextAnimationData.precomputed,
@@ -785,16 +780,16 @@ export async function parseOptionalDatasetFromRawBuffer(
 
 function calculateShearStats(metadata: ShearMetadata, body: Float32Array): OptionalStatsDelta {
   const maxAbsByColumn = [0, 0, 0, 0];
-  let maxShearH1Abs = 0;
-  let maxShearH2Abs = 0;
+  let maxShearXAbs = 0;
+  let maxShearYAbs = 0;
 
   for (let rowIdx = 0; rowIdx < metadata.count_rows; rowIdx++) {
     const offset = rowIdx * metadata.stride;
-    const h1Max = body[offset];
-    const h1Min = body[offset + 1];
-    const h2Max = body[offset + 2];
-    const h2Min = body[offset + 3];
-    const values = [h1Max, h1Min, h2Max, h2Min];
+    const xMax = body[offset];
+    const xMin = body[offset + 1];
+    const yMax = body[offset + 2];
+    const yMin = body[offset + 3];
+    const values = [xMax, xMin, yMax, yMin];
 
     values.forEach((value, index) => {
       if (Number.isFinite(value)) {
@@ -802,25 +797,25 @@ function calculateShearStats(metadata: ShearMetadata, body: Float32Array): Optio
       }
     });
 
-    maxShearH1Abs = Math.max(
-      maxShearH1Abs,
-      Number.isFinite(h1Max) ? Math.abs(h1Max) : 0,
-      Number.isFinite(h1Min) ? Math.abs(h1Min) : 0
+    maxShearXAbs = Math.max(
+      maxShearXAbs,
+      Number.isFinite(xMax) ? Math.abs(xMax) : 0,
+      Number.isFinite(xMin) ? Math.abs(xMin) : 0
     );
-    maxShearH2Abs = Math.max(
-      maxShearH2Abs,
-      Number.isFinite(h2Max) ? Math.abs(h2Max) : 0,
-      Number.isFinite(h2Min) ? Math.abs(h2Min) : 0
+    maxShearYAbs = Math.max(
+      maxShearYAbs,
+      Number.isFinite(yMax) ? Math.abs(yMax) : 0,
+      Number.isFinite(yMin) ? Math.abs(yMin) : 0
     );
   }
 
   return {
-    maxShearH1Max: maxAbsByColumn[0],
-    maxShearH1Min: maxAbsByColumn[1],
-    maxShearH1Abs,
-    maxShearH2Max: maxAbsByColumn[2],
-    maxShearH2Min: maxAbsByColumn[3],
-    maxShearH2Abs,
+    maxshearXMax: maxAbsByColumn[0],
+    maxShearXMin: maxAbsByColumn[1],
+    maxShearXAbs,
+    maxShearYMax: maxAbsByColumn[2],
+    maxShearYMin: maxAbsByColumn[3],
+    maxShearYAbs,
   };
 }
 

@@ -31,11 +31,11 @@ export function useFloorVisibility(): FloorVisibilityContextType {
     const storyOrderKey = storyOrder.join("|");
     if (initializedStoryOrderKeyRef.current === storyOrderKey) return;
 
-    if (visibleFloorsArray.length === 0) {
-      const hiddenFloorsSet = new Set(animationData.metadata.hiddenFloors ?? []);
-      const visible = storyOrder.filter((story) => !hiddenFloorsSet.has(story));
-      showAllFloorsStore(visible);
-    }
+    // if (visibleFloorsArray.length === 0) {
+    //   const hiddenFloorsSet = new Set(animationData.metadata.hiddenFloors ?? []);
+    //   const visible = storyOrder.filter((story) => !hiddenFloorsSet.has(story));
+    //   showAllFloorsStore(visible);
+    // }
     initializedStoryOrderKeyRef.current = storyOrderKey;
   }, [
     animationData.metadata.storyOrder,

@@ -84,8 +84,12 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
         const iNodePos = [iNodePosFloat[0], iNodePosFloat[1], iNodePosFloat[2]];
         const jNodePos = [jNodePosFloat[0], jNodePosFloat[1], jNodePosFloat[2]];
 
-        visibleNodesWithHinges.push({ hingeIdx: i, endCap: 1, pos: iNodePos, otherPos: jNodePos });
-        visibleNodesWithHinges.push({ hingeIdx: i, endCap: 2, pos: jNodePos, otherPos: iNodePos });
+        if (row.endMask & 0b01) {
+          visibleNodesWithHinges.push({ hingeIdx: i, endCap: 1, pos: iNodePos, otherPos: jNodePos });
+        }
+        if (row.endMask & 0b10) {
+          visibleNodesWithHinges.push({ hingeIdx: i, endCap: 2, pos: jNodePos, otherPos: iNodePos });
+        }
       }
     }
 

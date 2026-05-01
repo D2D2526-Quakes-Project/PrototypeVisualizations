@@ -83,6 +83,7 @@
 - [x] Treat hinge rotations as static node metrics that can drive scene/floor/slice coloring
 - [x] Make hinge metric selection force static presentation mode (`frameIndex = 0`, playback off, undeformed geometry)
 - [x] Integrate static hinge rotation summaries into floor, slice, node, statistics, and floor-average analysis surfaces
+- [x] Honor hinge `endMask` when rendering end caps so one-sided hinge rows do not request nonexistent J-side values
 - [ ] Add binary generation diagnostics for response-grid coverage
   - Report source response node coverage per component/grid file, unmatched source node IDs, all-zero mapped nodes, and the percentage of building nodes left zero-filled so sparse grid datasets are clearly distinguished from parser failures.
 - [ ] Decide whether any corner/threshold-oriented panels should gain hinge-specific variants

@@ -51,8 +51,8 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const accelerationXColor = getMetricKeyColor("accelerationX", metricPaletteOverrides);
   const accelerationYColor = getMetricKeyColor("accelerationY", metricPaletteOverrides);
   const accelerationZColor = getMetricKeyColor("accelerationZ", metricPaletteOverrides);
-  const shearXColor = getMetricKeyColor("shearH1Abs", metricPaletteOverrides);
-  const shearYColor = getMetricKeyColor("shearH2Abs", metricPaletteOverrides);
+  const shearXColor = getMetricKeyColor("shearXAbs", metricPaletteOverrides);
+  const shearYColor = getMetricKeyColor("shearYAbs", metricPaletteOverrides);
   // const rotationXColor = getMetricKeyColor("rotationX", metricPaletteOverrides);
   // const rotationYColor = getMetricKeyColor("rotationY", metricPaletteOverrides);
   // const rotationZColor = getMetricKeyColor("rotationZ", metricPaletteOverrides);
@@ -733,15 +733,15 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 <div className="grid grid-cols-2 gap-1 text-xs">
                   <span className="text-neutral-600">Max</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.h1Max} unit="kip" />
+                    <UnitTooltip value={shearSummary.xMax} unit="kip" />
                   </span>
                   <span className="text-neutral-600">Min</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.h1Min} unit="kip" />
+                    <UnitTooltip value={shearSummary.xMin} unit="kip" />
                   </span>
                   <span className="text-neutral-600">Abs</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.h1Abs} unit="kip" />
+                    <UnitTooltip value={shearSummary.xAbs} unit="kip" />
                   </span>
                 </div>
               </div>
@@ -753,15 +753,15 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 <div className="grid grid-cols-2 gap-1 text-xs">
                   <span className="text-neutral-600">Max</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.h2Max} unit="kip" />
+                    <UnitTooltip value={shearSummary.yMax} unit="kip" />
                   </span>
                   <span className="text-neutral-600">Min</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.h2Min} unit="kip" />
+                    <UnitTooltip value={shearSummary.yMin} unit="kip" />
                   </span>
                   <span className="text-neutral-600">Abs</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.h2Abs} unit="kip" />
+                    <UnitTooltip value={shearSummary.yAbs} unit="kip" />
                   </span>
                 </div>
               </div>

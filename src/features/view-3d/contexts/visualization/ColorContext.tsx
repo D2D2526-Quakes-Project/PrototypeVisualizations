@@ -81,7 +81,7 @@ export function useColor(): ColorContextType {
       if (maxValue === 0) return grayColor;
 
       const value = metricConfig.getValue(animationData, frameIndex, nodeId);
-      if (value === undefined) return grayColor;
+      if (value === undefined || !Number.isFinite(value)) return grayColor;
 
       const negative = value < 0;
       const normalizedValue = Math.min(1, Math.max(0, Math.abs(value / maxValue)));

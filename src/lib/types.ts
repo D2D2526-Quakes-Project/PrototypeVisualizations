@@ -221,7 +221,7 @@ export interface BuildingAnimationData {
 
   /**
    * Shear Data (non-time-series), story-aligned column-only section forces.
-   * Layout per row: [h1Max, h1Min, h2Max, h2Min]
+   * Layout per row: [xMax, xMin, yMax, yMin]
    * Units: KIP
    */
   shearData?: ShearDataAccessor;
@@ -296,12 +296,12 @@ export interface HingeDataAccessor {
 
 export interface ShearRow {
   storyId: string;
-  h1Max: number;
-  h1Min: number;
-  h1Abs: number;
-  h2Max: number;
-  h2Min: number;
-  h2Abs: number;
+  xMax: number;
+  xMin: number;
+  xAbs: number;
+  yMax: number;
+  yMin: number;
+  yAbs: number;
 }
 
 export interface ShearDataAccessor {
@@ -432,12 +432,12 @@ export interface ComputedStats {
   beamToHingeIndexMap?: BeamHingeIndexEntry[][];
 
   // SHEAR SUMMARY (if shear data exists)
-  maxShearH1Max?: number;
-  maxShearH1Min?: number;
-  maxShearH1Abs?: number;
-  maxShearH2Max?: number;
-  maxShearH2Min?: number;
-  maxShearH2Abs?: number;
+  maxshearXMax?: number;
+  maxShearXMin?: number;
+  maxShearXAbs?: number;
+  maxShearYMax?: number;
+  maxShearYMin?: number;
+  maxShearYAbs?: number;
 
   // CROSS-SECTIONS
   numCrossSectionsX: number;

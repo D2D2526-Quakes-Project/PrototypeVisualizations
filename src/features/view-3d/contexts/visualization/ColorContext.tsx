@@ -43,6 +43,7 @@ export function useColor(): ColorContextType {
   const setMetricPalette = useViewStore((s) => s.setMetricPalette);
   const thresholdHighlighting = useViewStore((s) => s.thresholdHighlighting);
   const setThresholdHighlighting = useViewStore((s) => s.setThresholdHighlighting);
+  const showHiddenMetrics = useViewStore((s) => s.showHiddenMetrics);
 
   const metricConfig = useMemo(() => getMetricConfig(currentMetric), [currentMetric]);
   const metricColorScale = useMemo(
@@ -125,10 +126,13 @@ export function useColor(): ColorContextType {
   );
 
   const availableMetrics = useMemo((): Metric[] => {
-    return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) =>
-      METRIC_CONFIGS[metric].isAvailable(animationData)
-    );
-  }, [animationData]);
+    return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) => {
+      const config = METRIC_CONFIGS[metric];
+      if (!config.isAvailable(animationData)) return false;
+      if (config.hiddenByDefault && !showHiddenMetrics) return false;
+      return true;
+    });
+  }, [animationData, showHiddenMetrics]);
 
   return {
     currentMetric,

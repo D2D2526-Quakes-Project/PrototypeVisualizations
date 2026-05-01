@@ -123,6 +123,8 @@ export interface ViewState {
   setMetricPalette: (metric: Metric, palette: MetricPaletteKey | null) => void;
   thresholdHighlighting: boolean;
   setThresholdHighlighting: (enabled: boolean) => void;
+  showHiddenMetrics: boolean;
+  setShowHiddenMetrics: (enabled: boolean) => void;
 
   // Floor Visibility - initialized later with actual story order
   visibleFloors: string[];
@@ -312,6 +314,8 @@ export const createViewStore = () =>
         }),
       thresholdHighlighting: true,
       setThresholdHighlighting: (thresholdHighlighting) => set({ thresholdHighlighting }),
+      showHiddenMetrics: false,
+      setShowHiddenMetrics: (showHiddenMetrics) => set({ showHiddenMetrics }),
 
       // Floor Visibility
       visibleFloors: [],

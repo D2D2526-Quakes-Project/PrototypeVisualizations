@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router";
 
 import {
   Menubar,
+  MenubarCheckboxItem,
   MenubarContent,
   MenubarItem,
   MenubarLabel,
@@ -45,6 +46,8 @@ export function NavigationBar() {
   const renderVerticalConnections = useViewStore((state) => state.renderVerticalConnections);
   const renderHorizontalConnections = useViewStore((state) => state.renderHorizontalConnections);
   const hiddenNodeCount = useViewStore((state) => state.hiddenNodeIds.length);
+  const showHiddenMetrics = useViewStore((state) => state.showHiddenMetrics);
+  const setShowHiddenMetrics = useViewStore((state) => state.setShowHiddenMetrics);
   const setRenderNodes = useViewStore((state) => state.setRenderNodes);
   const {
     animationData,
@@ -215,6 +218,12 @@ export function NavigationBar() {
                 <AlertTriangle />
                 Datasets
               </MenubarItem>
+
+              <MenubarSeparator />
+
+              <MenubarCheckboxItem checked={showHiddenMetrics} onCheckedChange={setShowHiddenMetrics}>
+                Show Hidden Metrics
+              </MenubarCheckboxItem>
 
               <MenubarSeparator />
 

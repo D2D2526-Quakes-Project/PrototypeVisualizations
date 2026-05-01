@@ -160,6 +160,7 @@ export interface AppState {
   currentMetric: Metric;
   metricPaletteOverrides: MetricPaletteOverrides;
   thresholdHighlighting: boolean;
+  showHiddenMetrics: boolean;
   thresholds: ThresholdState;
   visibleFloors: string[];
   selectedNodeIds: number[];
@@ -429,6 +430,7 @@ function getDriftAnalysisDefaultState(layout?: SerializedDockview | null): AppSt
     ...base,
     currentMetric: "interstoryDrift",
     thresholdHighlighting: true,
+    showHiddenMetrics: false,
     thresholds: {
       ...base.thresholds,
       interstoryDrift: 0.35,
@@ -455,6 +457,7 @@ function getAccelerationReviewDefaultState(layout?: SerializedDockview | null): 
     ...base,
     currentMetric: "accelerationMag",
     thresholdHighlighting: true,
+    showHiddenMetrics: false,
     thresholds: {
       ...base.thresholds,
       acceleration: 1.5,
@@ -509,6 +512,7 @@ function getDamageScreeningDefaultState(layout?: SerializedDockview | null): App
     ...base,
     currentMetric: "rotationZ",
     thresholdHighlighting: true,
+    showHiddenMetrics: false,
     thresholds: {
       ...base.thresholds,
       rotation: 0.008,
@@ -638,6 +642,7 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     currentMetric: "interstoryDrift",
     metricPaletteOverrides: {},
     thresholdHighlighting: true,
+    showHiddenMetrics: false,
     thresholds: { ...DEFAULT_THRESHOLDS },
     visibleFloors: [],
     selectedNodeIds: [],
@@ -1446,6 +1451,7 @@ export function getCurrentAppStateSnapshot(store: ReturnType<typeof useViewStore
     currentMetric: state.currentMetric,
     metricPaletteOverrides: state.metricPaletteOverrides,
     thresholdHighlighting: state.thresholdHighlighting,
+    showHiddenMetrics: state.showHiddenMetrics,
     thresholds: state.thresholds,
     visibleFloors: state.visibleFloors,
     selectedNodeIds: state.selectedNodeIds,

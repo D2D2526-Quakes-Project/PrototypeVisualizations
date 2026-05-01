@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, CircleIcon, SquareIcon } from "lucide-react";
 import { Menubar as MenubarPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
@@ -109,6 +109,7 @@ function MenubarCheckboxItem({
         <MenubarPrimitive.ItemIndicator>
           <CheckIcon className="size-4" />
         </MenubarPrimitive.ItemIndicator>
+        {!checked && <SquareIcon className="size-4" />}
       </span>
       {children}
     </MenubarPrimitive.CheckboxItem>

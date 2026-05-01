@@ -20,8 +20,7 @@
           "hingeData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138/hinge_data.bld",
           "nodeStoryDrift": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138/node_story_drift.bld",
           "velocityLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138/velocity_lin.bld",
-          "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138/velocity_rot.bld",
-          "shearData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138/shear_data.bld"
+          "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138/velocity_rot.bld"
         },
         {
           "name": "station3139",
@@ -35,8 +34,7 @@
           "hingeData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139/hinge_data.bld",
           "nodeStoryDrift": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139/node_story_drift.bld",
           "velocityLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139/velocity_lin.bld",
-          "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139/velocity_rot.bld",
-          "shearData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139/shear_data.bld"
+          "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139/velocity_rot.bld"
         }
       ],
       "size": 4138113566,
@@ -75,8 +73,7 @@
           "hingeData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/hinge_data.bld",
           "nodeStoryDrift": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/node_story_drift.bld",
           "velocityLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/velocity_lin.bld",
-          "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/velocity_rot.bld",
-          "shearData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/shear_data.bld"
+          "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/velocity_rot.bld"
         }
       ],
       "size": 364049867,

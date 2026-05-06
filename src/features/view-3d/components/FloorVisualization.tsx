@@ -40,7 +40,7 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
 
   useEffect(() => {
     invalidate();
-  }, [nodeScale, nodeOpacity, belowThresholdNodeScale, hingeNodeScale, renderHingeNodes, invalidate]);
+  }, [nodeScale, frameIndex, nodeOpacity, belowThresholdNodeScale, hingeNodeScale, renderHingeNodes, invalidate]);
 
   const offsets = useMemo(
     () => ({

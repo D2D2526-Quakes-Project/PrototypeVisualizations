@@ -68,8 +68,6 @@ function Cams() {
 function CameraControls() {
   const { orbitControlsRef } = useCamera();
   const autoRotate = useViewStore((s) => s.autoRotate);
-  // const camera = useThree((state) => state.camera)
-  // const gl = useThree((state) => state.gl)
 
   return <OrbitControls ref={orbitControlsRef} enableDamping={false} autoRotate={autoRotate} />;
 }

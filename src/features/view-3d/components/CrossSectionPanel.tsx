@@ -29,6 +29,20 @@ export function getCrossSectionColorLight(type: "X" | "Y", position: number): st
   return `hsl(${hue + offset}, 70%, 90%)`;
 }
 
+/** Returns the index of the absolute-maximum value in an array. */
+function peakAbsIndex(arr: number[]): number {
+  let idx = 0;
+  let best = 0;
+  for (let i = 0; i < arr.length; i++) {
+    const a = Math.abs(arr[i]);
+    if (a > best) {
+      best = a;
+      idx = i;
+    }
+  }
+  return idx;
+}
+
 export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>) {
   const { crossSectionType, position, nodeIds } = props.params;
   const { animationData } = useAnimationData();
@@ -36,6 +50,7 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
   const nodePanelGraphVisibility = useViewStore((s) => s.nodePanelGraphVisibility);
   const toggleNodePanelGraph = useViewStore((s) => s.toggleNodePanelGraph);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
+
   const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
   const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
   const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
@@ -45,398 +60,6 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
   const accelerationXColor = getMetricKeyColor("accelerationX", metricPaletteOverrides);
   const accelerationYColor = getMetricKeyColor("accelerationY", metricPaletteOverrides);
   const accelerationZColor = getMetricKeyColor("accelerationZ", metricPaletteOverrides);
-
-  const displacementData = useMemo(() => {
-    const nodeCount = nodeIds.length;
-    if (nodeCount === 0) return null;
-
-    let totalMag = 0;
-    let maxMag = 0;
-    let maxMagFrame = 0;
-    let maxX = 0,
-      maxY = 0,
-      maxZ = 0;
-    let maxXFrame = 0,
-      maxYFrame = 0,
-      maxZFrame = 0;
-    let sumX = 0,
-      sumY = 0,
-      sumZ = 0;
-
-    for (let f = 0; f < animationData.metadata.frameCount; f++) {
-      let frameMag = 0;
-      let frameX = 0,
-        frameY = 0,
-        frameZ = 0;
-
-      for (const nodeId of nodeIds) {
-        const disp = animationData.displacementLin.atFrame(f).at(nodeId);
-        frameMag += Math.hypot(disp[0], disp[1], disp[2]);
-        frameX += disp[0];
-        frameY += disp[1];
-        frameZ += disp[2];
-      }
-
-      const avgMag = frameMag / nodeCount;
-      const avgX = frameX / nodeCount;
-      const avgY = frameY / nodeCount;
-      const avgZ = frameZ / nodeCount;
-
-      if (avgMag > maxMag) {
-        maxMag = avgMag;
-        maxMagFrame = f;
-      }
-      if (Math.abs(avgX) > Math.abs(maxX)) {
-        maxX = avgX;
-        maxXFrame = f;
-      }
-      if (Math.abs(avgY) > Math.abs(maxY)) {
-        maxY = avgY;
-        maxYFrame = f;
-      }
-      if (Math.abs(avgZ) > Math.abs(maxZ)) {
-        maxZ = avgZ;
-        maxZFrame = f;
-      }
-    }
-
-    const currentDisp = animationData.displacementLin.atFrame(frameIndex);
-    for (const nodeId of nodeIds) {
-      const disp = currentDisp.at(nodeId);
-      totalMag += Math.hypot(disp[0], disp[1], disp[2]);
-      sumX += disp[0];
-      sumY += disp[1];
-      sumZ += disp[2];
-    }
-
-    return {
-      current: {
-        magnitude: totalMag / nodeCount,
-        x: sumX / nodeCount,
-        y: sumY / nodeCount,
-        z: sumZ / nodeCount,
-      },
-      peak: {
-        magnitude: maxMag,
-        magnitudeTime: maxMagFrame * animationData.metadata.dt,
-        x: maxX,
-        xTime: maxXFrame * animationData.metadata.dt,
-        y: maxY,
-        yTime: maxYFrame * animationData.metadata.dt,
-        z: maxZ,
-        zTime: maxZFrame * animationData.metadata.dt,
-      },
-    };
-  }, [nodeIds, animationData, frameIndex]);
-
-  const velocityData = useMemo(() => {
-    if (!animationData.velocityLin || nodeIds.length === 0) return null;
-
-    let maxMag = 0,
-      maxMagFrame = 0;
-    let maxX = 0,
-      maxY = 0,
-      maxZ = 0;
-    let maxXFrame = 0,
-      maxYFrame = 0,
-      maxZFrame = 0;
-
-    const nodeCount = nodeIds.length;
-
-    for (let f = 0; f < animationData.metadata.frameCount; f++) {
-      let frameMag = 0;
-      let frameX = 0,
-        frameY = 0,
-        frameZ = 0;
-
-      for (const nodeId of nodeIds) {
-        const vel = animationData.velocityLin.atFrame(f).at(nodeId);
-        frameMag += Math.hypot(vel[0], vel[1], vel[2]);
-        frameX += vel[0];
-        frameY += vel[1];
-        frameZ += vel[2];
-      }
-
-      const avgMag = frameMag / nodeCount;
-      const avgX = frameX / nodeCount;
-      const avgY = frameY / nodeCount;
-      const avgZ = frameZ / nodeCount;
-
-      if (avgMag > maxMag) {
-        maxMag = avgMag;
-        maxMagFrame = f;
-      }
-      if (Math.abs(avgX) > Math.abs(maxX)) {
-        maxX = avgX;
-        maxXFrame = f;
-      }
-      if (Math.abs(avgY) > Math.abs(maxY)) {
-        maxY = avgY;
-        maxYFrame = f;
-      }
-      if (Math.abs(avgZ) > Math.abs(maxZ)) {
-        maxZ = avgZ;
-        maxZFrame = f;
-      }
-    }
-
-    const currentVel = animationData.velocityLin.atFrame(frameIndex);
-    let sumMag = 0,
-      sumX = 0,
-      sumY = 0,
-      sumZ = 0;
-
-    for (const nodeId of nodeIds) {
-      const vel = currentVel.at(nodeId);
-      sumMag += Math.hypot(vel[0], vel[1], vel[2]);
-      sumX += vel[0];
-      sumY += vel[1];
-      sumZ += vel[2];
-    }
-
-    return {
-      current: {
-        magnitude: sumMag / nodeCount,
-        x: sumX / nodeCount,
-        y: sumY / nodeCount,
-        z: sumZ / nodeCount,
-      },
-      peak: {
-        magnitude: maxMag,
-        magnitudeTime: maxMagFrame * animationData.metadata.dt,
-        x: maxX,
-        xTime: maxXFrame * animationData.metadata.dt,
-        y: maxY,
-        yTime: maxYFrame * animationData.metadata.dt,
-        z: maxZ,
-        zTime: maxZFrame * animationData.metadata.dt,
-      },
-    };
-  }, [nodeIds, animationData, frameIndex]);
-
-  const accelerationData = useMemo(() => {
-    if (!animationData.accelerationLin || nodeIds.length === 0) return null;
-
-    let maxMag = 0,
-      maxMagFrame = 0;
-    let maxX = 0,
-      maxY = 0,
-      maxZ = 0;
-    let maxXFrame = 0,
-      maxYFrame = 0,
-      maxZFrame = 0;
-
-    const nodeCount = nodeIds.length;
-
-    for (let f = 0; f < animationData.metadata.frameCount; f++) {
-      let frameMag = 0;
-      let frameX = 0,
-        frameY = 0,
-        frameZ = 0;
-
-      for (const nodeId of nodeIds) {
-        const acc = animationData.accelerationLin.atFrame(f).at(nodeId);
-        frameMag += Math.hypot(acc[0], acc[1], acc[2]);
-        frameX += acc[0];
-        frameY += acc[1];
-        frameZ += acc[2];
-      }
-
-      const avgMag = frameMag / nodeCount;
-      const avgX = frameX / nodeCount;
-      const avgY = frameY / nodeCount;
-      const avgZ = frameZ / nodeCount;
-
-      if (avgMag > maxMag) {
-        maxMag = avgMag;
-        maxMagFrame = f;
-      }
-      if (Math.abs(avgX) > Math.abs(maxX)) {
-        maxX = avgX;
-        maxXFrame = f;
-      }
-      if (Math.abs(avgY) > Math.abs(maxY)) {
-        maxY = avgY;
-        maxYFrame = f;
-      }
-      if (Math.abs(avgZ) > Math.abs(maxZ)) {
-        maxZ = avgZ;
-        maxZFrame = f;
-      }
-    }
-
-    const currentAcc = animationData.accelerationLin.atFrame(frameIndex);
-    let sumMag = 0,
-      sumX = 0,
-      sumY = 0,
-      sumZ = 0;
-
-    for (const nodeId of nodeIds) {
-      const acc = currentAcc.at(nodeId);
-      sumMag += Math.hypot(acc[0], acc[1], acc[2]);
-      sumX += acc[0];
-      sumY += acc[1];
-      sumZ += acc[2];
-    }
-
-    return {
-      current: {
-        magnitude: sumMag / nodeCount,
-        x: sumX / nodeCount,
-        y: sumY / nodeCount,
-        z: sumZ / nodeCount,
-      },
-      peak: {
-        magnitude: maxMag,
-        magnitudeTime: maxMagFrame * animationData.metadata.dt,
-        x: maxX,
-        xTime: maxXFrame * animationData.metadata.dt,
-        y: maxY,
-        yTime: maxYFrame * animationData.metadata.dt,
-        z: maxZ,
-        zTime: maxZFrame * animationData.metadata.dt,
-      },
-    };
-  }, [nodeIds, animationData, frameIndex]);
-
-  const displacementTimeSeries = useMemo(() => {
-    const times = Array.from({ length: animationData.metadata.frameCount }, (_, i) => i * animationData.metadata.dt);
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    const zValues: number[] = [];
-    const peakTimes: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 };
-
-    let maxX = 0,
-      maxY = 0,
-      maxZ = 0;
-
-    for (let f = 0; f < animationData.metadata.frameCount; f++) {
-      let sumX = 0,
-        sumY = 0,
-        sumZ = 0;
-      const frameData = animationData.displacementLin.atFrame(f);
-      for (const nodeId of nodeIds) {
-        const disp = frameData.at(nodeId);
-        sumX += disp[0];
-        sumY += disp[1];
-        sumZ += disp[2];
-      }
-      const avgX = sumX / nodeIds.length;
-      const avgY = sumY / nodeIds.length;
-      const avgZ = sumZ / nodeIds.length;
-      xValues.push(avgX);
-      yValues.push(avgY);
-      zValues.push(avgZ);
-      if (Math.abs(avgX) > Math.abs(maxX)) {
-        maxX = Math.abs(avgX);
-        peakTimes.x = times[f];
-      }
-      if (Math.abs(avgY) > Math.abs(maxY)) {
-        maxY = Math.abs(avgY);
-        peakTimes.y = times[f];
-      }
-      if (Math.abs(avgZ) > Math.abs(maxZ)) {
-        maxZ = Math.abs(avgZ);
-        peakTimes.z = times[f];
-      }
-    }
-
-    return { times, xValues, yValues, zValues, peakTimes };
-  }, [nodeIds, animationData]);
-
-  const velocityTimeSeries = useMemo(() => {
-    if (!nodeIds.length || !animationData.velocityLin) return null;
-
-    const times = Array.from({ length: animationData.metadata.frameCount }, (_, i) => i * animationData.metadata.dt);
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    const zValues: number[] = [];
-    const peakTimes: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 };
-
-    let maxX = 0,
-      maxY = 0,
-      maxZ = 0;
-
-    for (let f = 0; f < animationData.metadata.frameCount; f++) {
-      let sumX = 0,
-        sumY = 0,
-        sumZ = 0;
-      const frameData = animationData.velocityLin.atFrame(f);
-      for (const nodeId of nodeIds) {
-        const vel = frameData.at(nodeId);
-        sumX += vel[0];
-        sumY += vel[1];
-        sumZ += vel[2];
-      }
-      const avgX = sumX / nodeIds.length;
-      const avgY = sumY / nodeIds.length;
-      const avgZ = sumZ / nodeIds.length;
-      xValues.push(avgX);
-      yValues.push(avgY);
-      zValues.push(avgZ);
-      if (Math.abs(avgX) > Math.abs(maxX)) {
-        maxX = Math.abs(avgX);
-        peakTimes.x = times[f];
-      }
-      if (Math.abs(avgY) > Math.abs(maxY)) {
-        maxY = Math.abs(avgY);
-        peakTimes.y = times[f];
-      }
-      if (Math.abs(avgZ) > Math.abs(maxZ)) {
-        maxZ = Math.abs(avgZ);
-        peakTimes.z = times[f];
-      }
-    }
-
-    return { times, xValues, yValues, zValues, peakTimes };
-  }, [nodeIds, animationData]);
-
-  const accelerationTimeSeries = useMemo(() => {
-    if (!nodeIds.length || !animationData.accelerationLin) return null;
-
-    const times = Array.from({ length: animationData.metadata.frameCount }, (_, i) => i * animationData.metadata.dt);
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    const zValues: number[] = [];
-    const peakTimes: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 };
-
-    let maxX = 0,
-      maxY = 0,
-      maxZ = 0;
-
-    for (let f = 0; f < animationData.metadata.frameCount; f++) {
-      let sumX = 0,
-        sumY = 0,
-        sumZ = 0;
-      const frameData = animationData.accelerationLin.atFrame(f);
-      for (const nodeId of nodeIds) {
-        const acc = frameData.at(nodeId);
-        sumX += acc[0];
-        sumY += acc[1];
-        sumZ += acc[2];
-      }
-      const avgX = sumX / nodeIds.length;
-      const avgY = sumY / nodeIds.length;
-      const avgZ = sumZ / nodeIds.length;
-      xValues.push(avgX);
-      yValues.push(avgY);
-      zValues.push(avgZ);
-      if (Math.abs(avgX) > Math.abs(maxX)) {
-        maxX = Math.abs(avgX);
-        peakTimes.x = times[f];
-      }
-      if (Math.abs(avgY) > Math.abs(maxY)) {
-        maxY = Math.abs(avgY);
-        peakTimes.y = times[f];
-      }
-      if (Math.abs(avgZ) > Math.abs(maxZ)) {
-        maxZ = Math.abs(avgZ);
-        peakTimes.z = times[f];
-      }
-    }
-
-    return { times, xValues, yValues, zValues, peakTimes };
-  }, [nodeIds, animationData]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState(300);
@@ -448,14 +71,233 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
         setDimensions(width);
       }
     };
-
     updateDimensions();
     const observer = new ResizeObserver(updateDimensions);
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
+    if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
+
+  // TIME SERIES
+  const displacementTimeSeries = useMemo(() => {
+    const nodeCount = nodeIds.length;
+    if (nodeCount === 0) return null;
+    const { frameCount, dt } = animationData.metadata;
+
+    const times: number[] = [];
+    const xValues: number[] = [];
+    const yValues: number[] = [];
+    const zValues: number[] = [];
+
+    for (let f = 0; f < frameCount; f++) {
+      times.push(f * dt);
+      let sx = 0,
+        sy = 0,
+        sz = 0;
+      const frame = animationData.displacementLin.atFrame(f);
+      for (const nodeId of nodeIds) {
+        const d = frame.at(nodeId);
+        sx += d[0];
+        sy += d[1];
+        sz += d[2];
+      }
+      xValues.push(sx / nodeCount);
+      yValues.push(sy / nodeCount);
+      zValues.push(sz / nodeCount);
+    }
+
+    return {
+      times,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        x: times[peakAbsIndex(xValues)],
+        y: times[peakAbsIndex(yValues)],
+        z: times[peakAbsIndex(zValues)],
+      },
+    };
+  }, [nodeIds, animationData.displacementLin, animationData.metadata]);
+
+  const velocityTimeSeries = useMemo(() => {
+    if (!animationData.velocityLin || nodeIds.length === 0) return null;
+    const nodeCount = nodeIds.length;
+    const { frameCount, dt } = animationData.metadata;
+
+    const times: number[] = [];
+    const xValues: number[] = [];
+    const yValues: number[] = [];
+    const zValues: number[] = [];
+
+    for (let f = 0; f < frameCount; f++) {
+      times.push(f * dt);
+      let sx = 0,
+        sy = 0,
+        sz = 0;
+      const frame = animationData.velocityLin.atFrame(f);
+      for (const nodeId of nodeIds) {
+        const v = frame.at(nodeId);
+        sx += v[0];
+        sy += v[1];
+        sz += v[2];
+      }
+      xValues.push(sx / nodeCount);
+      yValues.push(sy / nodeCount);
+      zValues.push(sz / nodeCount);
+    }
+
+    return {
+      times,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        x: times[peakAbsIndex(xValues)],
+        y: times[peakAbsIndex(yValues)],
+        z: times[peakAbsIndex(zValues)],
+      },
+    };
+  }, [nodeIds, animationData.velocityLin, animationData.metadata]);
+
+  const accelerationTimeSeries = useMemo(() => {
+    if (!animationData.accelerationLin || nodeIds.length === 0) return null;
+    const nodeCount = nodeIds.length;
+    const { frameCount, dt } = animationData.metadata;
+
+    const times: number[] = [];
+    const xValues: number[] = [];
+    const yValues: number[] = [];
+    const zValues: number[] = [];
+
+    for (let f = 0; f < frameCount; f++) {
+      times.push(f * dt);
+      let sx = 0,
+        sy = 0,
+        sz = 0;
+      const frame = animationData.accelerationLin.atFrame(f);
+      for (const nodeId of nodeIds) {
+        const a = frame.at(nodeId);
+        sx += a[0];
+        sy += a[1];
+        sz += a[2];
+      }
+      xValues.push(sx / nodeCount);
+      yValues.push(sy / nodeCount);
+      zValues.push(sz / nodeCount);
+    }
+
+    return {
+      times,
+      xValues,
+      yValues,
+      zValues,
+      peakTimes: {
+        x: times[peakAbsIndex(xValues)],
+        y: times[peakAbsIndex(yValues)],
+        z: times[peakAbsIndex(zValues)],
+      },
+    };
+  }, [nodeIds, animationData.accelerationLin, animationData.metadata]);
+
+  // PEAK VALUES
+  const displacementPeak = useMemo(() => {
+    if (!displacementTimeSeries) return null;
+    const { times, xValues, yValues, zValues } = displacementTimeSeries;
+    const xi = peakAbsIndex(xValues);
+    const yi = peakAbsIndex(yValues);
+    const zi = peakAbsIndex(zValues);
+    return {
+      x: xValues[xi],
+      xTime: times[xi],
+      y: yValues[yi],
+      yTime: times[yi],
+      z: zValues[zi],
+      zTime: times[zi],
+    };
+  }, [displacementTimeSeries]);
+
+  const velocityPeak = useMemo(() => {
+    if (!velocityTimeSeries) return null;
+    const { times, xValues, yValues, zValues } = velocityTimeSeries;
+    const xi = peakAbsIndex(xValues);
+    const yi = peakAbsIndex(yValues);
+    const zi = peakAbsIndex(zValues);
+    return {
+      x: xValues[xi],
+      xTime: times[xi],
+      y: yValues[yi],
+      yTime: times[yi],
+      z: zValues[zi],
+      zTime: times[zi],
+    };
+  }, [velocityTimeSeries]);
+
+  const accelerationPeak = useMemo(() => {
+    if (!accelerationTimeSeries) return null;
+    const { times, xValues, yValues, zValues } = accelerationTimeSeries;
+    const xi = peakAbsIndex(xValues);
+    const yi = peakAbsIndex(yValues);
+    const zi = peakAbsIndex(zValues);
+    return {
+      x: xValues[xi],
+      xTime: times[xi],
+      y: yValues[yi],
+      yTime: times[yi],
+      z: zValues[zi],
+      zTime: times[zi],
+    };
+  }, [accelerationTimeSeries]);
+
+  // -------------------------------------------------------------------------
+  // CURRENT-FRAME VALUES  (cheap — only depend on frameIndex)
+  // -------------------------------------------------------------------------
+
+  const displacementCurrent = useMemo(() => {
+    if (nodeIds.length === 0) return null;
+    const nodeCount = nodeIds.length;
+    let sx = 0,
+      sy = 0,
+      sz = 0;
+    const frame = animationData.displacementLin.atFrame(frameIndex);
+    for (const nodeId of nodeIds) {
+      const d = frame.at(nodeId);
+      sx += d[0];
+      sy += d[1];
+      sz += d[2];
+    }
+    return { x: sx / nodeCount, y: sy / nodeCount, z: sz / nodeCount };
+  }, [nodeIds, animationData.displacementLin, frameIndex]);
+
+  const velocityCurrent = useMemo(() => {
+    if (!animationData.velocityLin || nodeIds.length === 0) return null;
+    const nodeCount = nodeIds.length;
+    let sx = 0,
+      sy = 0,
+      sz = 0;
+    const frame = animationData.velocityLin.atFrame(frameIndex);
+    for (const nodeId of nodeIds) {
+      const v = frame.at(nodeId);
+      sx += v[0];
+      sy += v[1];
+      sz += v[2];
+    }
+    return { x: sx / nodeCount, y: sy / nodeCount, z: sz / nodeCount };
+  }, [nodeIds, animationData.velocityLin, frameIndex]);
+
+  const accelerationCurrent = useMemo(() => {
+    if (!animationData.accelerationLin || nodeIds.length === 0) return null;
+    const nodeCount = nodeIds.length;
+    let sx = 0,
+      sy = 0,
+      sz = 0;
+    const frame = animationData.accelerationLin.atFrame(frameIndex);
+    for (const nodeId of nodeIds) {
+      const a = frame.at(nodeId);
+      sx += a[0];
+      sy += a[1];
+      sz += a[2];
+    }
+    return { x: sx / nodeCount, y: sy / nodeCount, z: sz / nodeCount };
+  }, [nodeIds, animationData.accelerationLin, frameIndex]);
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -490,14 +332,14 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
         )}
 
         {/* DISPLACEMENT */}
-        {displacementData && (
+        {displacementCurrent && displacementPeak && displacementTimeSeries && (
           <div className="animate-fade-in">
             <h3 className="mb-2 text-sm font-bold">Displacement</h3>
             <div className="mt-2 space-y-1">
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.current.x} unit="in" />
+                  <UnitTooltip value={displacementCurrent.x} unit="in" />
                   <button
                     onClick={() => toggleNodePanelGraph("dispX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -511,14 +353,14 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.peak.x} unit="in" />
-                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.xTime.toFixed(2)} s</span>
+                  <UnitTooltip value={displacementPeak.x} unit="in" />
+                  <span className="text-[9px] text-neutral-500"> @ {displacementPeak.xTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.current.y} unit="in" />
+                  <UnitTooltip value={displacementCurrent.y} unit="in" />
                   <button
                     onClick={() => toggleNodePanelGraph("dispY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -532,40 +374,39 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementData.peak.y} unit="in" />
-                  <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.yTime.toFixed(2)} s</span>
+                  <UnitTooltip value={displacementPeak.y} unit="in" />
+                  <span className="text-[9px] text-neutral-500"> @ {displacementPeak.yTime.toFixed(2)} s</span>
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-neutral-600">Current Z:</span>
+                <span className="flex items-end justify-between font-mono text-neutral-800">
+                  <UnitTooltip value={displacementCurrent.z} unit="in" />
+                  <button
+                    onClick={() => toggleNodePanelGraph("dispZ")}
+                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
+                    title={nodePanelGraphVisibility[`dispZ`] ? "Hide graph" : "Show graph"}>
+                    <ChartNoAxesCombinedIcon
+                      className={`size-4 ${nodePanelGraphVisibility[`dispZ`] ? "text-blue-500" : "text-neutral-300"}`}
+                    />
+                  </button>
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-neutral-600">Peak Z:</span>
+                <span className="flex items-baseline justify-between font-mono text-neutral-800">
+                  <UnitTooltip value={displacementPeak.z} unit="in" />
+                  <span className="text-[9px] text-neutral-500"> @ {displacementPeak.zTime.toFixed(2)} s</span>
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Current Z:</span>
-              <span className="flex items-end justify-between font-mono text-neutral-800">
-                <UnitTooltip value={displacementData.current.z} unit="in" />
-                <button
-                  onClick={() => toggleNodePanelGraph("dispZ")}
-                  className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                  title={nodePanelGraphVisibility[`dispZ`] ? "Hide graph" : "Show graph"}>
-                  <ChartNoAxesCombinedIcon
-                    className={`size-4 ${nodePanelGraphVisibility[`dispZ`] ? "text-blue-500" : "text-neutral-300"}`}
-                  />
-                </button>
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Peak Z:</span>
-              <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                <UnitTooltip value={displacementData.peak.z} unit="in" />
-                <span className="text-[9px] text-neutral-500"> @ {displacementData.peak.zTime.toFixed(2)} s</span>
-              </span>
-            </div>
-
             <div className="mt-3 space-y-2">
               {nodePanelGraphVisibility[`dispX`] && (
                 <MiniTimeSeries
                   data={displacementTimeSeries.xValues}
                   times={displacementTimeSeries.times}
                   color={displacementXColor}
-                  currentValue={displacementData.current.x}
+                  currentValue={displacementCurrent.x}
                   unit="in"
                   label="Displacement X"
                   peakTime={displacementTimeSeries.peakTimes.x}
@@ -576,7 +417,7 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
                   data={displacementTimeSeries.yValues}
                   times={displacementTimeSeries.times}
                   color={displacementYColor}
-                  currentValue={displacementData.current.y}
+                  currentValue={displacementCurrent.y}
                   unit="in"
                   label="Displacement Y"
                   peakTime={displacementTimeSeries.peakTimes.y}
@@ -587,7 +428,7 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
                   data={displacementTimeSeries.zValues}
                   times={displacementTimeSeries.times}
                   color={displacementZColor}
-                  currentValue={displacementData.current.z}
+                  currentValue={displacementCurrent.z}
                   unit="in"
                   label="Displacement Z"
                   peakTime={displacementTimeSeries.peakTimes.z}
@@ -598,15 +439,14 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
         )}
 
         {/* VELOCITY */}
-        {velocityData && (
+        {velocityCurrent && velocityPeak && velocityTimeSeries && (
           <div className="animate-fade-in">
             <h3 className="mb-2 text-sm font-bold">Velocity</h3>
-
             <div className="mt-2 space-y-1">
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityData.current.x} unit="in/s" />
+                  <UnitTooltip value={velocityCurrent.x} unit="in/s" />
                   <button
                     onClick={() => toggleNodePanelGraph("velX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -620,14 +460,14 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityData.peak.x} unit="in/s" />
-                  <span className="text-[9px] text-neutral-500">@ {velocityData.peak.xTime.toFixed(2)} s</span>
+                  <UnitTooltip value={velocityPeak.x} unit="in/s" />
+                  <span className="text-[9px] text-neutral-500">@ {velocityPeak.xTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityData.current.y} unit="in/s" />
+                  <UnitTooltip value={velocityCurrent.y} unit="in/s" />
                   <button
                     onClick={() => toggleNodePanelGraph("velY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -641,14 +481,14 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityData.peak.y} unit="in/s" />
-                  <span className="text-[9px] text-neutral-500">@ {velocityData.peak.yTime.toFixed(2)} s</span>
+                  <UnitTooltip value={velocityPeak.y} unit="in/s" />
+                  <span className="text-[9px] text-neutral-500">@ {velocityPeak.yTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityData.current.z} unit="in/s" />
+                  <UnitTooltip value={velocityCurrent.z} unit="in/s" />
                   <button
                     onClick={() => toggleNodePanelGraph("velZ")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -662,61 +502,58 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityData.peak.z} unit="in/s" />
-                  <span className="text-[9px] text-neutral-500">@ {velocityData.peak.zTime.toFixed(2)} s</span>
+                  <UnitTooltip value={velocityPeak.z} unit="in/s" />
+                  <span className="text-[9px] text-neutral-500">@ {velocityPeak.zTime.toFixed(2)} s</span>
                 </span>
               </div>
             </div>
-            {velocityTimeSeries && (
-              <div className="mt-3 space-y-2">
-                {nodePanelGraphVisibility[`velX`] && (
-                  <MiniTimeSeries
-                    data={velocityTimeSeries.xValues}
-                    times={velocityTimeSeries.times}
-                    color={velocityXColor}
-                    currentValue={velocityData.current.x}
-                    unit="in/s"
-                    label="Velocity X"
-                    peakTime={velocityTimeSeries.peakTimes.x}
-                  />
-                )}
-                {nodePanelGraphVisibility[`velY`] && (
-                  <MiniTimeSeries
-                    data={velocityTimeSeries.yValues}
-                    times={velocityTimeSeries.times}
-                    color={velocityYColor}
-                    currentValue={velocityData.current.y}
-                    unit="in/s"
-                    label="Velocity Y"
-                    peakTime={velocityTimeSeries.peakTimes.y}
-                  />
-                )}
-                {nodePanelGraphVisibility[`velZ`] && (
-                  <MiniTimeSeries
-                    data={velocityTimeSeries.zValues}
-                    times={velocityTimeSeries.times}
-                    color={velocityZColor}
-                    currentValue={velocityData.current.z}
-                    unit="in/s"
-                    label="Velocity Z"
-                    peakTime={velocityTimeSeries.peakTimes.z}
-                  />
-                )}
-              </div>
-            )}
+            <div className="mt-3 space-y-2">
+              {nodePanelGraphVisibility[`velX`] && (
+                <MiniTimeSeries
+                  data={velocityTimeSeries.xValues}
+                  times={velocityTimeSeries.times}
+                  color={velocityXColor}
+                  currentValue={velocityCurrent.x}
+                  unit="in/s"
+                  label="Velocity X"
+                  peakTime={velocityTimeSeries.peakTimes.x}
+                />
+              )}
+              {nodePanelGraphVisibility[`velY`] && (
+                <MiniTimeSeries
+                  data={velocityTimeSeries.yValues}
+                  times={velocityTimeSeries.times}
+                  color={velocityYColor}
+                  currentValue={velocityCurrent.y}
+                  unit="in/s"
+                  label="Velocity Y"
+                  peakTime={velocityTimeSeries.peakTimes.y}
+                />
+              )}
+              {nodePanelGraphVisibility[`velZ`] && (
+                <MiniTimeSeries
+                  data={velocityTimeSeries.zValues}
+                  times={velocityTimeSeries.times}
+                  color={velocityZColor}
+                  currentValue={velocityCurrent.z}
+                  unit="in/s"
+                  label="Velocity Z"
+                  peakTime={velocityTimeSeries.peakTimes.z}
+                />
+              )}
+            </div>
           </div>
         )}
 
         {/* ACCELERATION */}
-        {accelerationData && (
+        {accelerationCurrent && accelerationPeak && accelerationTimeSeries && (
           <div className="animate-fade-in">
             <h3 className="mb-2 text-sm font-bold">Acceleration</h3>
-
             <div className="mt-2 space-y-1">
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationData.current.x} unit="in/s²" />
+                  <UnitTooltip value={accelerationCurrent.x} unit="in/s²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -730,14 +567,14 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationData.peak.x} unit="in/s²" />
-                  <span className="text-[9px] text-neutral-500">@ {accelerationData.peak.xTime.toFixed(2)} s</span>
+                  <UnitTooltip value={accelerationPeak.x} unit="in/s²" />
+                  <span className="text-[9px] text-neutral-500">@ {accelerationPeak.xTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationData.current.y} unit="in/s²" />
+                  <UnitTooltip value={accelerationCurrent.y} unit="in/s²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -751,14 +588,14 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationData.peak.y} unit="in/s²" />
-                  <span className="text-[9px] text-neutral-500">@ {accelerationData.peak.yTime.toFixed(2)} s</span>
+                  <UnitTooltip value={accelerationPeak.y} unit="in/s²" />
+                  <span className="text-[9px] text-neutral-500">@ {accelerationPeak.yTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationData.current.z} unit="in/s²" />
+                  <UnitTooltip value={accelerationCurrent.z} unit="in/s²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accZ")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -772,48 +609,46 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationData.peak.z} unit="in/s²" />
-                  <span className="text-[9px] text-neutral-500">@ {accelerationData.peak.zTime.toFixed(2)} s</span>
+                  <UnitTooltip value={accelerationPeak.z} unit="in/s²" />
+                  <span className="text-[9px] text-neutral-500">@ {accelerationPeak.zTime.toFixed(2)} s</span>
                 </span>
               </div>
             </div>
-            {accelerationTimeSeries && (
-              <div className="mt-3 space-y-2">
-                {nodePanelGraphVisibility[`accX`] && (
-                  <MiniTimeSeries
-                    data={accelerationTimeSeries.xValues}
-                    times={accelerationTimeSeries.times}
-                    color={accelerationXColor}
-                    currentValue={accelerationData.current.x}
-                    unit="in/s²"
-                    label="Acceleration X"
-                    peakTime={accelerationTimeSeries.peakTimes.x}
-                  />
-                )}
-                {nodePanelGraphVisibility[`accY`] && (
-                  <MiniTimeSeries
-                    data={accelerationTimeSeries.yValues}
-                    times={accelerationTimeSeries.times}
-                    color={accelerationYColor}
-                    currentValue={accelerationData.current.y}
-                    unit="in/s²"
-                    label="Acceleration Y"
-                    peakTime={accelerationTimeSeries.peakTimes.y}
-                  />
-                )}
-                {nodePanelGraphVisibility[`accZ`] && (
-                  <MiniTimeSeries
-                    data={accelerationTimeSeries.zValues}
-                    times={accelerationTimeSeries.times}
-                    color={accelerationZColor}
-                    currentValue={accelerationData.current.z}
-                    unit="in/s²"
-                    label="Acceleration Z"
-                    peakTime={accelerationTimeSeries.peakTimes.z}
-                  />
-                )}
-              </div>
-            )}
+            <div className="mt-3 space-y-2">
+              {nodePanelGraphVisibility[`accX`] && (
+                <MiniTimeSeries
+                  data={accelerationTimeSeries.xValues}
+                  times={accelerationTimeSeries.times}
+                  color={accelerationXColor}
+                  currentValue={accelerationCurrent.x}
+                  unit="in/s²"
+                  label="Acceleration X"
+                  peakTime={accelerationTimeSeries.peakTimes.x}
+                />
+              )}
+              {nodePanelGraphVisibility[`accY`] && (
+                <MiniTimeSeries
+                  data={accelerationTimeSeries.yValues}
+                  times={accelerationTimeSeries.times}
+                  color={accelerationYColor}
+                  currentValue={accelerationCurrent.y}
+                  unit="in/s²"
+                  label="Acceleration Y"
+                  peakTime={accelerationTimeSeries.peakTimes.y}
+                />
+              )}
+              {nodePanelGraphVisibility[`accZ`] && (
+                <MiniTimeSeries
+                  data={accelerationTimeSeries.zValues}
+                  times={accelerationTimeSeries.times}
+                  color={accelerationZColor}
+                  currentValue={accelerationCurrent.z}
+                  unit="in/s²"
+                  label="Acceleration Z"
+                  peakTime={accelerationTimeSeries.peakTimes.z}
+                />
+              )}
+            </div>
           </div>
         )}
 
@@ -856,7 +691,6 @@ export function CrossSectionTab(props: IDockviewPanelHeaderProps<CrossSectionPar
           />
         </div>
       </div>
-
       <div className="flex items-center gap-1">
         <button
           onClick={handleClose}

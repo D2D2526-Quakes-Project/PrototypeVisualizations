@@ -38,6 +38,8 @@ interface ViewControlsProps {
   setIsExpanded: (expanded: boolean) => void;
   onExpandedWidthChange: (width: number) => void;
   docked: boolean;
+  autoRotate: boolean;
+  setAutoRotate: (value: boolean) => void;
 }
 
 export function ViewControls({
@@ -48,6 +50,8 @@ export function ViewControls({
   setIsExpanded,
   onExpandedWidthChange,
   docked,
+  autoRotate,
+  setAutoRotate,
 }: ViewControlsProps) {
   const { animationData } = useAnimationData();
 
@@ -266,6 +270,23 @@ export function ViewControls({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
+                    onClick={() => setAutoRotate(!autoRotate)}
+                    className={`rounded p-1 transition-colors ${
+                      autoRotate ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
+                    }`}
+                    title="Auto Rotate">
+                    <RotateCcw size={14} className={autoRotate ? "animate-spin" : undefined} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}>
+                  Auto Rotate
+                </TooltipContent>
+              </Tooltip>
+              <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+              <Tooltip disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200">
                     <ChevronLeftIcon size={14} className={isExpanded ? "rotate-180" : undefined} />
@@ -431,6 +452,9 @@ export function ViewControls({
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-neutral-700">Ortho</span>
                     <Switch size="sm" checked={isOrthographic} onCheckedChange={setIsOrthographic} />
+                    <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+                    <span className="text-xs font-medium text-neutral-700">Spin</span>
+                    <Switch size="sm" checked={autoRotate} onCheckedChange={setAutoRotate} />
                   </div>
                 </motion.div>
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>

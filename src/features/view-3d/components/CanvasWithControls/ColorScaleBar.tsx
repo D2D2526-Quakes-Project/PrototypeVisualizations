@@ -63,28 +63,39 @@ function getScaleStopsAndLabels(
   const relativeStops: [number, string][] = [];
   if (hasNegative) {
     const negThresholdPos = (1 - thresholdRatio) * 50;
+    let negativeStopsReversed = negativeStops.toReversed();
     if (thresholdHighlighting) {
       relativeStops.push(
         ...negativeTStops
           .toReversed()
           .map((color, i) => [(i / (negativeTStops.length - 1)) * negThresholdPos, color] as [number, string])
       );
+    } else {
+      negativeStopsReversed = [...negativeTStops.toReversed(), ...negativeStopsReversed];
     }
+
     relativeStops.push(
-      ...negativeStops
-        .toReversed()
-        .map(
-          (color, i) =>
-            [(i / (negativeStops.length - 1)) * (50 - negThresholdPos) + negThresholdPos, color] as [number, string]
-        )
+      ...negativeStopsReversed.map(
+        (color, i) =>
+          [(i / (negativeStopsReversed.length - 1)) * (50 - negThresholdPos) + negThresholdPos, color] as [
+            number,
+            string,
+          ]
+      )
     );
   }
 
   if (hasPositive) {
     const posThresholdPos = thresholdRatio * 50 + 50;
+    let positiveStopsComplete = positiveStops;
+    if (!thresholdHighlighting) {
+      positiveStopsComplete = [...positiveStops, ...positiveTStops];
+    }
+
     relativeStops.push(
-      ...positiveStops.map(
-        (color, i) => [(i / (positiveStops.length - 1)) * (posThresholdPos - 50) + 50, color] as [number, string]
+      ...positiveStopsComplete.map(
+        (color, i) =>
+          [(i / (positiveStopsComplete.length - 1)) * (posThresholdPos - 50) + 50, color] as [number, string]
       )
     );
 
@@ -284,13 +295,9 @@ function ColorScaleBarPopover({ children }: { children: React.ReactNode }) {
                 }`}
                 title={`Use ${palette.label.toLowerCase()} palette`}>
                 <div
-                  className="h-3 w-full rounded-l-sm"
-                  style={{ background: `linear-gradient(to right, ${palette.positiveColorStops.join(", ")})` }}
-                />
-                <div
-                  className="h-3 w-full rounded-r-sm"
+                  className="h-3 w-full rounded-sm"
                   style={{
-                    background: `linear-gradient(to right, ${palette.positiveThresholdColorStops.join(", ")})`,
+                    background: `linear-gradient(to right, ${[...palette.positiveColorStops, palette.positiveThresholdColorStops].join(", ")})`,
                   }}
                 />
               </button>

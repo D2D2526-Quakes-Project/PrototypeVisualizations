@@ -14,9 +14,10 @@ interface CameraManagerProps {
   isOrthographic: boolean;
   enableSmoothing: boolean;
   enablePan: boolean;
+  autoRotate: boolean;
 }
 
-export function CameraManager({ isOrthographic, enableSmoothing, enablePan }: CameraManagerProps) {
+export function CameraManager({ isOrthographic, enableSmoothing, enablePan, autoRotate }: CameraManagerProps) {
   const { orbitControlsRef } = useCamera();
   const perspectiveCamRef = useRef<PerspectiveCameraImpl>(null);
   const orthoCamRef = useRef<OrthographicCameraImpl>(null);
@@ -33,8 +34,9 @@ export function CameraManager({ isOrthographic, enableSmoothing, enablePan }: Ca
     const controls = orbitControlsRef.current;
     if (controls) {
       controls.enablePan = enablePan;
+      controls.autoRotate = autoRotate;
     }
-  }, [enablePan, orbitControlsRef]);
+  }, [enablePan, autoRotate, orbitControlsRef]);
 
   useEffect(() => {
     const perspective = perspectiveCamRef.current;

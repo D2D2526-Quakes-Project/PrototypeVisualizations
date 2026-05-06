@@ -54,6 +54,7 @@ export function CanvasWithControls({
   const [isViewControlsExpanded, setIsViewControlsExpanded] = useState(false);
   const [isControlsDocked, setIsControlsDocked] = useState(false);
   const [cameraModeOverride, setCameraModeOverride] = useState<{ panelId: string; value: boolean } | null>(null);
+  const [autoRotate, setAutoRotate] = useState(false);
   const hasWrittenCameraModeRef = useRef(false);
   const hasPersistedCameraModeRef = useRef(false);
   const { orbitControlsRef, getCameraState } = useCamera();
@@ -315,7 +316,7 @@ export function CanvasWithControls({
             <LayoutSizeSync />
             <color attach="background" args={[backgroundColor]} />
             {children}
-            <CameraManager isOrthographic={isOrthographic} enableSmoothing={false} enablePan />
+            <CameraManager isOrthographic={isOrthographic} enableSmoothing={false} enablePan autoRotate={autoRotate} />
             <OrientationCube />
           </Canvas>
           <BoxSelectionOverlay panelId={panelId} />
@@ -348,6 +349,8 @@ export function CanvasWithControls({
             setIsExpanded={handleSetIsViewControlsExpanded}
             onExpandedWidthChange={handleExpandedWidthChange}
             docked={isControlsDocked}
+            autoRotate={autoRotate}
+            setAutoRotate={setAutoRotate}
           />
         </div>
       )}

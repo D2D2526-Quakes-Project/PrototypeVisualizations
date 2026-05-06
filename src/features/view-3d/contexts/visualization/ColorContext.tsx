@@ -51,23 +51,41 @@ export function useColor(): ColorContextType {
     [currentMetric, metricPaletteOverrides]
   );
 
-  const { positiveInterpolator, positiveThresholdInterpolator, negativeInterpolator, negativeThresholdInterpolator } =
-    useMemo(() => {
-      return {
-        positiveInterpolator: metricConfig.hasPositive
-          ? interpolate(metricColorScale.positiveColorStops, "oklab")
-          : ERROR_MAGENTA,
-        positiveThresholdInterpolator: metricConfig.hasPositive
-          ? interpolate(metricColorScale.positiveThresholdColorStops, "oklab")
-          : ERROR_MAGENTA,
-        negativeInterpolator: metricConfig.hasNegative
-          ? interpolate(metricColorScale.negativeColorStops, "oklab")
-          : ERROR_MAGENTA,
-        negativeThresholdInterpolator: metricConfig.hasNegative
-          ? interpolate(metricColorScale.negativeThresholdColorStops, "oklab")
-          : ERROR_MAGENTA,
-      };
-    }, [metricConfig, metricColorScale]);
+  const {
+    positiveInterpolator,
+    positiveThresholdInterpolator,
+    negativeInterpolator,
+    negativeThresholdInterpolator,
+    fullPositiveInterpolator,
+    fullNegativeInterpolator,
+  } = useMemo(() => {
+    return {
+      positiveInterpolator: metricConfig.hasPositive
+        ? interpolate(metricColorScale.positiveColorStops, "oklab")
+        : ERROR_MAGENTA,
+      positiveThresholdInterpolator: metricConfig.hasPositive
+        ? interpolate(metricColorScale.positiveThresholdColorStops, "oklab")
+        : ERROR_MAGENTA,
+      negativeInterpolator: metricConfig.hasNegative
+        ? interpolate(metricColorScale.negativeColorStops, "oklab")
+        : ERROR_MAGENTA,
+      negativeThresholdInterpolator: metricConfig.hasNegative
+        ? interpolate(metricColorScale.negativeThresholdColorStops, "oklab")
+        : ERROR_MAGENTA,
+      fullPositiveInterpolator: metricConfig.hasPositive
+        ? interpolate(
+            [...metricColorScale.positiveColorStops, ...metricColorScale.positiveThresholdColorStops],
+            "oklab"
+          )
+        : ERROR_MAGENTA,
+      fullNegativeInterpolator: metricConfig.hasNegative
+        ? interpolate(
+            [...metricColorScale.negativeColorStops, ...metricColorScale.negativeThresholdColorStops],
+            "oklab"
+          )
+        : ERROR_MAGENTA,
+    };
+  }, [metricConfig, metricColorScale]);
 
   const maxValue = useMemo(() => {
     return metricConfig.getPrecomputedMax(animationData);
@@ -94,12 +112,14 @@ export function useColor(): ColorContextType {
       let t: number = normalizedValue;
       let interpolator: (t: number) => FindColorByMode<"oklab">;
 
-      if (negative) interpolator = negativeInterpolator;
-      else interpolator = positiveInterpolator;
+      if (negative) interpolator = fullNegativeInterpolator;
+      else interpolator = fullPositiveInterpolator;
 
       if (thresholdHighlighting) {
         if (normalizedValue < normalizedThreshold) {
           t = normalizedValue / normalizedThreshold;
+          if (negative) interpolator = negativeInterpolator;
+          else interpolator = positiveInterpolator;
         } else {
           t = (normalizedValue - normalizedThreshold) / (1 - normalizedThreshold);
           if (negative) interpolator = negativeThresholdInterpolator;
@@ -122,6 +142,8 @@ export function useColor(): ColorContextType {
       thresholdHighlighting,
       negativeThresholdInterpolator,
       positiveThresholdInterpolator,
+      fullPositiveInterpolator,
+      fullNegativeInterpolator,
     ]
   );
 

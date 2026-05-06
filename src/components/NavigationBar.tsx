@@ -210,14 +210,14 @@ export function NavigationBar() {
                 <Film />
                 Export
               </MenubarItem>
-              <MenubarItem>
+              {/* <MenubarItem>
                 <AlertTriangle />
                 Add Split View
-              </MenubarItem>
-              <MenubarItem>
+              </MenubarItem> */}
+              {/* <MenubarItem>
                 <AlertTriangle />
                 Datasets
-              </MenubarItem>
+              </MenubarItem> */}
 
               <MenubarSeparator />
 

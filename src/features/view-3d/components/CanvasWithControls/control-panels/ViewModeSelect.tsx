@@ -67,13 +67,13 @@ export function ViewModeSelect() {
       icon: MaximizeIcon,
     },
     {
-      label: "Vert",
+      label: "Vertical",
       value: renderVerticalConnections,
       setter: setRenderVerticalConnections,
       icon: MoveVerticalIcon,
     },
     {
-      label: "Horiz",
+      label: "Beams",
       value: renderHorizontalConnections,
       setter: setRenderHorizontalConnections,
       icon: MoveHorizontalIcon,

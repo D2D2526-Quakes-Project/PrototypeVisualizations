@@ -4,6 +4,30 @@
 
 ---
 
+- [x] Update unit labels that use absolute values to include “(maximum absolute value)” or “(absolute maximum)”
+  - Ensures consistency and clarity in how peak values are presented across views
+
+- [ ] Create presets for different visualization modes (hinges, displacement, story drift, shears)
+  - Allows quick switching between common analysis views without reconfiguring settings each time
+
+- [ ] Add an auto-orbiting camera/view mode
+  - Enables continuous rotation of the canvas for passive viewing or presentations
+
+- [ ] Improve non-threshold color bar gradients to include darker tones smoothly
+  - Produces a more continuous and visually accurate gradient across the full value range
+
+- [ ] Rename “15Story” and “52Story” to “15-story” and “52-storys”
+  - Aligns naming with desired formatting conventions for identifiers
+
+- [ ] Fix floor slab interpolation when nodes have no assigned color/value
+  - Use averaged values instead of default gray to avoid misleading visual output
+
+- [ ] Adjust connection line colors (vertical and horizontal) based on background
+  - Default to black, but switch to white automatically on dark/black backgrounds for visibility
+
+- [ ] Add adaptive coloring for UI elements based on background (tick marks, floor grid, direction labels)
+  - Ensures readability and contrast regardless of theme or background color settings
+
 ### 3.1 Time Context Sync
 
 - [ ] Add time range selection (start/end frames) for analysis

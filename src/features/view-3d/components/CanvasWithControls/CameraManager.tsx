@@ -25,12 +25,16 @@ function Cams() {
   const orthoRef = useRef<OrthographicCameraImpl>(null);
   const pixelsFromCenterToTop = useThree((state) => state.size.height / 2);
 
+  const prevOrthographic = useRef(orthographic);
+
   useLayoutEffect(() => {
-    // convert to radians and half angle since we're only interested in the angle from the center to the top of frame
     const fovFactor = Math.tan(((fov / 2) * Math.PI) / 180) / pixelsFromCenterToTop;
     const persDistanceToOrthoZoom = (distance: number) => 1 / fovFactor / distance;
     const orthoZoomToPersDistance = (zoom: number) => 1 / zoom / fovFactor;
     if (!persRef.current || !orthoRef.current || !persRef.current.position) return;
+
+    if (prevOrthographic.current === orthographic) return;
+    prevOrthographic.current = orthographic;
 
     const savedTarget = orbitControlsRef.current?.target.clone();
     setTimeout(() => {

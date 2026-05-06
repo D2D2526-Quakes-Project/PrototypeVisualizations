@@ -8,6 +8,7 @@ import { useViewStore } from "@/state";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { BoundingGeometryRenderer } from "./renderers/BoundingGeometryRenderer";
 import { HorizontalConnectionsRenderer } from "./renderers/HorizontalConnectionsRenderer";
 import { VerticalConnectionsRenderer } from "./renderers/VerticalConnectionsRenderer";
 
@@ -20,7 +21,7 @@ interface CrossSectionVisualizationProps {
   width: number;
 }
 
-function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
+function CrossSectionScene({ nodeIds, axis }: { nodeIds: number[]; axis: "x" | "y" }) {
   const { invalidate } = useThree();
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
@@ -199,6 +200,8 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
   return (
     <group scale={UNIT_SCALE}>
       <group position={[offsets.x, offsets.y, offsets.z]}>
+        <BoundingGeometryRenderer axis={axis} opacity={0.15} />
+
         {renderVerticalConnections && (
           <VerticalConnectionsRenderer
             nodeIds={nodeIds}
@@ -281,7 +284,7 @@ export function CrossSectionVisualization({ nodeIds, crossSectionType, width }: 
         <color attach="background" args={[colorTheme.background]} />
         <ambientLight intensity={2} />
         <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
-        <CrossSectionScene nodeIds={nodeIds} />
+        <CrossSectionScene nodeIds={nodeIds} axis={crossSectionType === "X" ? "x" : "y"} />
       </Canvas>
     </div>
   );

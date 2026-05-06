@@ -314,6 +314,17 @@ export interface ShearDataAccessor {
   getByStory: (storyId: string) => ShearRow | undefined;
 }
 
+export interface BoundingGeometry {
+  vertices: Float32Array;
+  triangleIndices: Uint32Array;
+}
+
+export interface BoundingGeometries {
+  zAxis: BoundingGeometry;
+  yAxis: BoundingGeometry;
+  xAxis: BoundingGeometry;
+}
+
 export interface ComputedStats {
   // GEOMETRY
   boundingBox: {
@@ -442,6 +453,9 @@ export interface ComputedStats {
   // CROSS-SECTIONS
   numCrossSectionsX: number;
   numCrossSectionsY: number;
+
+  // AXIS BOUNDING GEOMETRIES
+  boundingGeometries?: BoundingGeometries;
 }
 
 export interface HingeNodeMetrics {

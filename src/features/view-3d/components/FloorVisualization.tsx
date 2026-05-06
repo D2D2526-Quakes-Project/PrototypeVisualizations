@@ -8,6 +8,7 @@ import { useViewStore } from "@/state";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { BoundingGeometryRenderer } from "./renderers/BoundingGeometryRenderer";
 import { HorizontalConnectionsRenderer } from "./renderers/HorizontalConnectionsRenderer";
 import { VerticalConnectionsRenderer } from "./renderers/VerticalConnectionsRenderer";
 
@@ -198,6 +199,8 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
   return (
     <group scale={UNIT_SCALE}>
       <group position={[offsets.x, offsets.y, offsets.z]}>
+        <BoundingGeometryRenderer axis="z" opacity={0.15} />
+
         {renderVerticalConnections && (
           <VerticalConnectionsRenderer
             nodeIds={nodeIds}

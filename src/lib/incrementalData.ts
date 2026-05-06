@@ -18,14 +18,26 @@ import type {
   SimulationMetadata,
   TimeIndexAccessor,
 } from "@/lib/types";
+import Delaunay from "delaunator";
 
-export const PROCESSED_CACHE_VERSION = 4;
+export const PROCESSED_CACHE_VERSION = 5;
 
 export interface SerializedStoryDrift {
   data: Float32Array;
   storyCount: number;
   frameCount: number;
   cornerCount: number;
+}
+
+export interface SerializedBoundingGeometry {
+  vertices: Float32Array;
+  triangleIndices: Uint32Array;
+}
+
+export interface SerializedBoundingGeometries {
+  zAxis: SerializedBoundingGeometry;
+  yAxis: SerializedBoundingGeometry;
+  xAxis: SerializedBoundingGeometry;
 }
 
 export interface SerializedComputedStatsCore {
@@ -59,6 +71,7 @@ export interface SerializedComputedStatsCore {
   avgDisplacementPerStory: Float32Array;
   numCrossSectionsX: number;
   numCrossSectionsY: number;
+  boundingGeometries?: SerializedBoundingGeometries;
 }
 
 export interface SerializedRequiredAnimationData {
@@ -331,6 +344,94 @@ function makeShearAccessor(metadata: ShearMetadata, body: Float32Array): ShearDa
   };
 }
 
+function computeBoundingGeometry(positions: Float32Array, axis: "x" | "y" | "z"): SerializedBoundingGeometry {
+  const nodeCount = positions.length / 3;
+  const points2D: [number, number][] = [];
+
+  for (let i = 0; i < nodeCount; i++) {
+    const x = positions[i * 3];
+    const y = positions[i * 3 + 1];
+    const z = positions[i * 3 + 2];
+
+    if (axis === "z") {
+      points2D.push([x, y]);
+    } else if (axis === "y") {
+      points2D.push([x, z]);
+    } else {
+      points2D.push([y, z]);
+    }
+  }
+
+  if (points2D.length < 3) {
+    return { vertices: new Float32Array(0), triangleIndices: new Uint32Array(0) };
+  }
+
+  const delaunay = Delaunay.from(points2D);
+  const triangles = delaunay.triangles;
+
+  const edgeCount = new Map<string, number>();
+  const addEdge = (a: number, b: number) => {
+    const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+    edgeCount.set(key, (edgeCount.get(key) || 0) + 1);
+  };
+
+  for (let i = 0; i < triangles.length; i += 3) {
+    const t0 = triangles[i];
+    const t1 = triangles[i + 1];
+    const t2 = triangles[i + 2];
+    addEdge(t0, t1);
+    addEdge(t1, t2);
+    addEdge(t2, t0);
+  }
+
+  const boundaryEdges: [number, number][] = [];
+  for (const [edge, count] of edgeCount) {
+    if (count === 1) {
+      const [a, b] = edge.split("-").map(Number);
+      boundaryEdges.push([a, b]);
+    }
+  }
+
+  if (boundaryEdges.length === 0) {
+    return { vertices: new Float32Array(0), triangleIndices: new Uint32Array(0) };
+  }
+
+  // const edgeSet = new Set(boundaryEdges.map(([a, b]) => (a < b ? `${a}-${b}` : `${b}-${a}`)));
+  const usedPoints = new Set<number>();
+  for (const [a, b] of boundaryEdges) {
+    usedPoints.add(a);
+    usedPoints.add(b);
+  }
+
+  const boundaryIndices = Array.from(usedPoints);
+  const pointIndexMap = new Map<number, number>();
+  boundaryIndices.forEach((idx, newIdx) => pointIndexMap.set(idx, newIdx));
+
+  const boundaryPoints2D = boundaryIndices.map((i) => points2D[i]);
+  const boundaryDelaunay = Delaunay.from(boundaryPoints2D);
+  const boundaryTriangles = boundaryDelaunay.triangles;
+
+  const vertexCount = boundaryIndices.length;
+  const vertices = new Float32Array(vertexCount * 3);
+  boundaryIndices.forEach((originalIdx, newIdx) => {
+    const x = positions[originalIdx * 3];
+    const y = positions[originalIdx * 3 + 1];
+    const z = positions[originalIdx * 3 + 2];
+
+    vertices[newIdx * 3] = x;
+    vertices[newIdx * 3 + 1] = y;
+    vertices[newIdx * 3 + 2] = z;
+  });
+
+  const triangleIndices = new Uint32Array(boundaryTriangles.length);
+  for (let i = 0; i < boundaryTriangles.length; i++) {
+    const origIdx = boundaryIndices[boundaryTriangles[i]];
+    triangleIndices[i] = pointIndexMap.get(origIdx)!;
+  }
+
+  return { vertices, triangleIndices };
+}
+
 function serializeRequiredComputedStats(
   metadata: AnimationMetadata,
   positions: Float32Array,
@@ -500,6 +601,18 @@ function serializeRequiredComputedStats(
   const spanY = maxY - minY;
   const spanZ = maxZ - minZ;
 
+  const boundingGeometries: SerializedBoundingGeometries | undefined = (() => {
+    try {
+      return {
+        zAxis: computeBoundingGeometry(positions, "z"),
+        yAxis: computeBoundingGeometry(positions, "y"),
+        xAxis: computeBoundingGeometry(positions, "x"),
+      };
+    } catch {
+      return undefined;
+    }
+  })();
+
   return {
     boundingBox: { min: [minX, minY, minZ], max: [maxX, maxY, maxZ], center, radius, span: [spanX, spanY, spanZ] },
     storyElevations,
@@ -526,6 +639,7 @@ function serializeRequiredComputedStats(
     avgDisplacementPerStory,
     numCrossSectionsX,
     numCrossSectionsY,
+    boundingGeometries,
   };
 }
 

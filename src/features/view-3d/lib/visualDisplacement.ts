@@ -116,7 +116,7 @@ export function useVisualDisplacement() {
       if (isNodeInterpolated(nodeId)) return GRAY_COLOR;
       return fallback(nodeId, frameIndex);
     },
-    [isNodeInterpolated, interpolationActive]
+    [isNodeInterpolated]
   );
 
   return {

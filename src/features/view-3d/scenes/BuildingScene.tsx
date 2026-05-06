@@ -83,6 +83,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const belowThresholdHingeScale = useViewStore((s) => s.belowThresholdHingeScale);
   const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
   const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
+  const colorTheme = useViewStore((s) => s.colorTheme);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
   const hiddenNodeIdSet = useMemo(() => new Set(hiddenNodeIds), [hiddenNodeIds]);
 
@@ -723,7 +724,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         </group>
       </group>
 
-      <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 1]} />
+      <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 1, colorTheme.grid, colorTheme.grid]} />
 
       <FloorTickMarks />
 
@@ -733,7 +734,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         font={SCENE_LABEL_FONT}
         characters={SCENE_LABEL_CHARACTERS}
         fontSize={15}
-        color="#fff"
+        color={colorTheme.directionLabels}
         anchorX="center"
         anchorY="middle">
         +Y
@@ -744,7 +745,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, Math.PI]}
         fontSize={15}
-        color="#fff"
+        color={colorTheme.directionLabels}
         anchorX="center"
         anchorY="middle">
         -Y
@@ -755,7 +756,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, -Math.PI / 2]}
         fontSize={15}
-        color="#fff"
+        color={colorTheme.directionLabels}
         anchorX="center"
         anchorY="middle">
         +X
@@ -766,7 +767,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, Math.PI / 2]}
         fontSize={15}
-        color="#fff"
+        color={colorTheme.directionLabels}
         anchorX="center"
         anchorY="middle">
         -X
@@ -779,7 +780,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, -Math.PI / 4]}
         fontSize={15}
-        color="#eee"
+        color={colorTheme.directionLabels}
         anchorX="center"
         anchorY="middle">
         NE
@@ -790,7 +791,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, Math.PI / 4]}
         fontSize={15}
-        color="#eee"
+        color={colorTheme.directionLabels}
         anchorX="center"
         anchorY="middle">
         NW
@@ -801,7 +802,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, (-3 * Math.PI) / 4]}
         fontSize={15}
-        color="#eee"
+        color={colorTheme.directionLabels}
         anchorX="center"
         anchorY="middle">
         SE
@@ -812,7 +813,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         characters={SCENE_LABEL_CHARACTERS}
         rotation={[0, 0, (3 * Math.PI) / 4]}
         fontSize={15}
-        color="#eee"
+        color={colorTheme.directionLabels}
         anchorX="center"
         anchorY="middle">
         SW

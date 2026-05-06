@@ -247,7 +247,7 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
 
 export function FloorVisualization({ nodeIds, width }: FloorVisualizationProps) {
   const { animationData } = useAnimationData();
-  const backgroundColor = useViewStore((s) => s.backgroundColor);
+  const colorTheme = useViewStore((s) => s.colorTheme);
   const boundingBox = useMemo(() => animationData.precomputed.boundingBox, [animationData.precomputed.boundingBox]);
   const widthSpan = boundingBox.span[0];
   const heightSpan = boundingBox.span[1];
@@ -276,7 +276,7 @@ export function FloorVisualization({ nodeIds, width }: FloorVisualizationProps) 
         }}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
         style={{ width: width, height: height }}>
-        <color attach="background" args={[backgroundColor]} />
+        <color attach="background" args={[colorTheme.background]} />
         <ambientLight intensity={2} />
         <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
         <FloorScene nodeIds={nodeIds} />

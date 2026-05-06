@@ -19,6 +19,7 @@ export function HorizontalConnectionsRenderer({
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getExpandedPosition } = useExpandedScale();
+  // const connectionLineColor = useViewStore((s) => s.colorTheme.connectionLines);
   const { getNodeColor: getRawNodeColor } = useColor();
   const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
 
@@ -42,8 +43,6 @@ export function HorizontalConnectionsRenderer({
       const row = beamData.getRow(i);
       const iNode = row.iNodeIndex;
       const jNode = row.jNodeIndex;
-
-      // console.log(iNode, jNode);
 
       if (iNode >= 0 && jNode >= 0 && nodeIdSet.has(iNode) && nodeIdSet.has(jNode)) {
         result.push({ nodeA: iNode, nodeB: jNode });

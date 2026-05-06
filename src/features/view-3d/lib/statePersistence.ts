@@ -2,11 +2,12 @@ import LZString from "lz-string";
 import type { Metric, MetricPaletteKey, MetricPaletteOverrides } from "@/lib/metrics";
 import type { SerializedDockview } from "dockview";
 import {
-  DEFAULT_BACKGROUND_COLOR,
   DEFAULT_CAMERA_STATE,
+  DEFAULT_COLOR_THEMES,
   DEFAULT_EXPANDED_SCALE_STATE,
   DEFAULT_SLICE_RANGES,
   DEFAULT_THRESHOLDS,
+  type ColorTheme,
   type ExpandedScaleState,
   type ThresholdState,
 } from "@/state/viewStore";
@@ -172,7 +173,7 @@ export interface AppState {
   yRange: [number, number];
   zRange: [number, number];
   camera: CameraState;
-  backgroundColor: string;
+  colorTheme: ColorTheme;
   layout: SerializedDockview | null;
   panelStates: Partial<Record<string, PanelState>>;
   dataSelection?: DataSelection;
@@ -654,7 +655,7 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     yRange: [...DEFAULT_SLICE_RANGES.y] as [number, number],
     zRange: [...DEFAULT_SLICE_RANGES.z] as [number, number],
     camera: getDefaultCameraState(),
-    backgroundColor: DEFAULT_BACKGROUND_COLOR,
+    colorTheme: DEFAULT_COLOR_THEMES[0],
     layout: layout ?? null,
     panelStates: {},
     dataSelection: undefined,
@@ -1463,7 +1464,7 @@ export function getCurrentAppStateSnapshot(store: ReturnType<typeof useViewStore
     yRange: state.yRange,
     zRange: state.zRange,
     camera: state.cameraState,
-    backgroundColor: state.backgroundColor,
+    colorTheme: state.colorTheme,
     layout: state.dockviewLayout ?? getDefaultAppState().layout,
     panelStates: state.panelStates,
     dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,

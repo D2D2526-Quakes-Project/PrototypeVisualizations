@@ -96,8 +96,10 @@ export function View3d() {
     })();
   }, []);
 
-  return (
-    isReady && initialState ? <View3dWorkspace initialState={initialState} /> : <div className="flex min-h-0 flex-1 flex-col" />
+  return isReady && initialState ? (
+    <View3dWorkspace initialState={initialState} />
+  ) : (
+    <div className="flex min-h-0 flex-1 flex-col" />
   );
 }
 
@@ -157,7 +159,7 @@ function DockviewContainer({ initialState, autoSave = true }: { initialState: Ap
       s.setCameraState(initialState.camera);
     }
 
-    s.setBackgroundColor(initialState.backgroundColor);
+    s.setColorTheme(initialState.colorTheme);
 
     if (initialState.renderNodes !== undefined) s.setRenderNodes(initialState.renderNodes);
     if (initialState.renderFloorSlabs !== undefined) s.setRenderFloorSlabs(initialState.renderFloorSlabs);

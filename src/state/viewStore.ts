@@ -50,7 +50,50 @@ export const DEFAULT_SLICE_RANGES = {
   z: [0, 100] as [number, number],
 };
 
-export const DEFAULT_BACKGROUND_COLOR = "#dcdcdc";
+export interface ColorTheme {
+  label: string;
+  background: string;
+  connectionLines: string;
+  tickMarks: string;
+  grid: string;
+  directionLabels: string;
+}
+
+export const DEFAULT_COLOR_THEMES: ColorTheme[] = [
+  {
+    label: "Gray",
+    background: "#dcdcdc",
+    connectionLines: "#aaaaaa",
+    tickMarks: "#aaaaaa",
+    grid: "#888888",
+    directionLabels: "#aaaaaa",
+  },
+  {
+    label: "White",
+    connectionLines: "#000000",
+    tickMarks: "#666666",
+    grid: "#888888",
+    background: "#ffffff",
+    directionLabels: "#000000",
+  },
+  {
+    label: "Black",
+    background: "#1a1a1a",
+    connectionLines: "#ffffff",
+    tickMarks: "#999999",
+    grid: "#666666",
+    directionLabels: "#ffffff",
+  },
+  {
+    label: "Dark Blue",
+
+    background: "#1e3a5f",
+    connectionLines: "#ffffff",
+    tickMarks: "#888888",
+    grid: "#555555",
+    directionLabels: "#ffffff",
+  },
+];
 
 export const DEFAULT_CAMERA_STATE: CameraState = {
   isOrthographic: false,
@@ -153,9 +196,9 @@ export interface ViewState {
   setZRange: (range: [number, number]) => void;
   setSliceRanges: (x: [number, number], y: [number, number], z: [number, number]) => void;
 
-  // Background Color
-  backgroundColor: string;
-  setBackgroundColor: (color: string) => void;
+  // Background Colors
+  colorTheme: ColorTheme;
+  setColorTheme: (theme: ColorTheme) => void;
 
   // Node Visibility / Selection
   // Global selection state shared across scene and panels.
@@ -370,9 +413,9 @@ export const createViewStore = () =>
       setZRange: (zRange) => set({ zRange }),
       setSliceRanges: (x, y, z) => set({ xRange: x, yRange: y, zRange: z }),
 
-      // Background Color
-      backgroundColor: DEFAULT_BACKGROUND_COLOR,
-      setBackgroundColor: (backgroundColor) => set({ backgroundColor }),
+      // Background Colors
+      colorTheme: DEFAULT_COLOR_THEMES[0],
+      setColorTheme: (theme) => set({ colorTheme: theme }),
 
       // Node Visibility / Selection
       selectedNodeIds: [],

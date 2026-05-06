@@ -108,7 +108,6 @@ function FloorSlab({
     if (count === 0) return new THREE.Color(0.5, 0.5, 0.5);
 
     const avgValue = sum / count;
-    console.log(avgValue, sum, count);
     return getColorFromValue(avgValue);
   }, [animationData, frameIndex, maxValue, metricConfig, nodeIds, getColorFromValue, isNodeInterpolated]);
 

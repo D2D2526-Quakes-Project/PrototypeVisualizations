@@ -8,7 +8,7 @@ import {
   EyeOff,
   Grid3X3,
   Home,
-  RotateCcw,
+  RotateCw,
   ScanEye,
   XCircle,
 } from "lucide-react";
@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
+import { DEFAULT_COLOR_THEMES } from "@/state/viewStore";
 import { ColorPanel } from "./control-panels/ColorPanel";
 import { ExpandedScalePanel } from "./control-panels/ExpandedScalePanel";
 import { NodeDisplayPanel } from "./control-panels/NodeDisplayPanel";
@@ -61,8 +62,8 @@ export function ViewControls({
   const hideNodes = useViewStore((s) => s.hideNodes);
   const showNodes = useViewStore((s) => s.showNodes);
   const showAllNodes = useViewStore((s) => s.showAllNodes);
-  const backgroundColor = useViewStore((s) => s.backgroundColor);
-  const setBackgroundColor = useViewStore((s) => s.setBackgroundColor);
+  const colorTheme = useViewStore((s) => s.colorTheme);
+  const setColorTheme = useViewStore((s) => s.setColorTheme);
 
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
   const buildingVerticalCenter =
@@ -275,7 +276,7 @@ export function ViewControls({
                       autoRotate ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
                     }`}
                     title="Auto Rotate">
-                    <RotateCcw size={14} className={autoRotate ? "animate-spin" : undefined} />
+                    <RotateCw size={14} className={autoRotate ? "animate-spin" : undefined} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" sideOffset={8}>
@@ -359,7 +360,7 @@ export function ViewControls({
                       onClick={showAllNodes}
                       disabled={hiddenCount === 0}
                       className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                      <RotateCcw size={14} />
+                      <RotateCw size={14} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" sideOffset={8}>
@@ -433,7 +434,7 @@ export function ViewControls({
                         onClick={showAllNodes}
                         disabled={hiddenCount === 0}
                         className="inline-flex items-center justify-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-1.5 py-1 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                        <RotateCcw size={10} />
+                        <RotateCw size={10} />
                         Show All ({hiddenCount})
                       </button>
                     </div>
@@ -484,22 +485,17 @@ export function ViewControls({
                     <span className="text-xs font-medium text-neutral-700">Background</span>
                   </div>
                   <div className="flex gap-1 px-1">
-                    {[
-                      { label: "Gray", value: "#dcdcdc" },
-                      { label: "White", value: "#ffffff" },
-                      { label: "Black", value: "#1a1a1a" },
-                      { label: "Dark Blue", value: "#1e3a5f" },
-                    ].map((color) => (
+                    {DEFAULT_COLOR_THEMES.map((preset) => (
                       <button
-                        key={color.value}
-                        onClick={() => setBackgroundColor(color.value)}
+                        key={preset.label}
+                        onClick={() => setColorTheme(preset)}
                         className={`h-6 w-6 rounded border-2 transition-all ${
-                          backgroundColor === color.value
+                          colorTheme.background === preset.background
                             ? "scale-110 border-blue-500"
                             : "border-neutral-300 hover:border-neutral-400"
                         }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.label}
+                        style={{ backgroundColor: preset.background }}
+                        title={preset.label}
                       />
                     ))}
                   </div>

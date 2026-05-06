@@ -60,7 +60,7 @@ export function CanvasWithControls({
   const { orbitControlsRef, getCameraState } = useCamera();
   const { animationData } = useAnimationData();
   const exportRenderMode = useExportRenderMode();
-  const backgroundColor = useViewStore((s) => s.backgroundColor);
+  const colorTheme = useViewStore((s) => s.colorTheme);
   const visibleFloorCount = useViewStore((s) => s.visibleFloors.length);
   const { showAllDefaultFloors } = useFloorVisibility();
 
@@ -314,7 +314,7 @@ export function CanvasWithControls({
               scene.fog = null;
             }}>
             <LayoutSizeSync />
-            <color attach="background" args={[backgroundColor]} />
+            <color attach="background" args={[colorTheme.background]} />
             {children}
             <CameraManager isOrthographic={isOrthographic} enableSmoothing={false} enablePan autoRotate={autoRotate} />
             <OrientationCube />

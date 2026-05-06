@@ -248,7 +248,7 @@ function CrossSectionScene({ nodeIds }: { nodeIds: number[] }) {
 
 export function CrossSectionVisualization({ nodeIds, crossSectionType, width }: CrossSectionVisualizationProps) {
   const { animationData } = useAnimationData();
-  const backgroundColor = useViewStore((s) => s.backgroundColor);
+  const colorTheme = useViewStore((s) => s.colorTheme);
   const boundingBox = useMemo(() => animationData.precomputed.boundingBox, [animationData.precomputed.boundingBox]);
   const widthSpan = crossSectionType == "X" ? boundingBox.span[1] : boundingBox.span[0];
   const aspect = boundingBox.span[2] / widthSpan;
@@ -278,7 +278,7 @@ export function CrossSectionVisualization({ nodeIds, crossSectionType, width }: 
         }}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
         style={{ width: width, height: height }}>
-        <color attach="background" args={[backgroundColor]} />
+        <color attach="background" args={[colorTheme.background]} />
         <ambientLight intensity={2} />
         <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
         <CrossSectionScene nodeIds={nodeIds} />

@@ -19,6 +19,7 @@ export function VerticalConnectionsRenderer({
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getExpandedPosition } = useExpandedScale();
+  // const connectionLineColor = useViewStore((s) => s.colorTheme.connectionLines);
   const { getNodeColor: getRawNodeColor } = useColor();
   const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
 

@@ -19,7 +19,7 @@
 - [ ] Rename “15Story” and “52Story” to “15-story” and “52-storys”
   - Aligns naming with desired formatting conventions for identifiers
 
-- [ ] Fix floor slab interpolation when nodes have no assigned color/value
+- [x] Fix floor slab interpolation when nodes have no assigned color/value
   - Use averaged values instead of default gray to avoid misleading visual output
 
 - [ ] Adjust connection line colors (vertical and horizontal) based on background

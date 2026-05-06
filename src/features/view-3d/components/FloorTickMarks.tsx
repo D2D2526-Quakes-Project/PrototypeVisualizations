@@ -4,17 +4,18 @@ import { useFrame, useThree } from "@react-three/fiber";
 import React, { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFloorVisibility } from "../contexts/visualization";
+import { useViewStore } from "@/state";
 
 const TICK_LENGTH = 4;
 const TICK_THICKNESS = 0.4;
 const TICK_PADDING = 8;
-const TICK_COLOR = "#aaa";
 
 export function FloorTickMarks() {
   const { animationData } = useAnimationData();
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const { visibleFloors } = useFloorVisibility();
+  const tickMarksColor = useViewStore((s) => s.colorTheme.tickMarks);
 
   const { offset, xPositions, yPositions, zPositions } = useMemo(() => {
     const metadata = animationData.metadata;
@@ -72,11 +73,11 @@ export function FloorTickMarks() {
         return (
           <mesh key={`x-${xPos}`} position={[xPos, offset[0], 0]}>
             <planeGeometry args={[TICK_THICKNESS, TICK_LENGTH]} />
-            <meshBasicMaterial color={TICK_COLOR} side={THREE.DoubleSide} />
+            <meshBasicMaterial color={tickMarksColor} side={THREE.DoubleSide} />
           </mesh>
         );
       }),
-    [xPositions, offset]
+    [xPositions, offset, tickMarksColor]
   );
 
   const yTicks = useMemo(
@@ -85,11 +86,11 @@ export function FloorTickMarks() {
         return (
           <mesh key={`y-${yPos}`} position={[offset[1], yPos, 0]}>
             <planeGeometry args={[TICK_LENGTH, TICK_THICKNESS]} />
-            <meshBasicMaterial color={TICK_COLOR} side={THREE.DoubleSide} />
+            <meshBasicMaterial color={tickMarksColor} side={THREE.DoubleSide} />
           </mesh>
         );
       }),
-    [yPositions, offset]
+    [yPositions, offset, tickMarksColor]
   );
 
   const zTicks = useMemo(
@@ -99,16 +100,16 @@ export function FloorTickMarks() {
           <React.Fragment key={`z-${zPos}`}>
             <mesh position={[-offset[1], offset[0], zPos]} rotation={[0, Math.PI / 2, Math.PI / 2]}>
               <planeGeometry args={[TICK_LENGTH, TICK_THICKNESS]} />
-              <meshBasicMaterial color={TICK_COLOR} side={THREE.DoubleSide} />
+              <meshBasicMaterial color={tickMarksColor} side={THREE.DoubleSide} />
             </mesh>
             <mesh position={[offset[1], -offset[0], zPos]} rotation={[Math.PI / 2, 0, 0]}>
               <planeGeometry args={[TICK_LENGTH, TICK_THICKNESS]} />
-              <meshBasicMaterial color={TICK_COLOR} side={THREE.DoubleSide} />
+              <meshBasicMaterial color={tickMarksColor} side={THREE.DoubleSide} />
             </mesh>
           </React.Fragment>
         );
       }),
-    [zPositions, offset]
+    [zPositions, offset, tickMarksColor]
   );
 
   return (

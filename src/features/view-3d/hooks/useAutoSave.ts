@@ -36,7 +36,7 @@ export function useAutoSave(enabled = true) {
       yRange: state.yRange,
       zRange: state.zRange,
       camera: state.cameraState,
-      backgroundColor: state.backgroundColor,
+      colorTheme: state.colorTheme,
       layout: state.dockviewLayout,
       panelStates: state.panelStates,
       nodePanelGraphVisibility: state.nodePanelGraphVisibility,
@@ -50,6 +50,7 @@ export function useAutoSave(enabled = true) {
       visualInterpolationEnabled: state.visualInterpolationEnabled,
       renderVerticalConnections: state.renderVerticalConnections,
       renderHorizontalConnections: state.renderHorizontalConnections,
+      showHiddenMetrics: state.showHiddenMetrics,
     };
   }, [store]);
 
@@ -102,7 +103,7 @@ export function useAutoSave(enabled = true) {
       "yRange",
       "zRange",
       "cameraState",
-      "backgroundColor",
+      "backgroundColors",
       "panelStates",
       "nodePanelGraphVisibility",
       "renderNodes",

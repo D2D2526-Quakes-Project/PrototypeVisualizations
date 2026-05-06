@@ -73,8 +73,6 @@ export function ISDThresholdPanel() {
     [storyOrder]
   );
 
-  // console.log(cornerNodes);
-
   const storyThresholdFrame = useMemo(() => {
     const storyThresholds = new Map<string, ThresholdCrossingFrames>();
 

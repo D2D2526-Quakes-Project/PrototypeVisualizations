@@ -222,6 +222,7 @@ export interface ViewState {
   belowThresholdNodeOpacity: number;
   floorOpacity: number;
   hingeNodeScale: number;
+  belowThresholdHingeScale: number;
   connectionLineWidth: number;
   connectionLineOpacity: number;
   setNodeScale: (scale: number) => void;
@@ -229,6 +230,7 @@ export interface ViewState {
   setBelowThresholdNodeScale: (scale: number) => void;
   setBelowThresholdNodeOpacity: (opacity: number) => void;
   setHingeNodeScale: (scale: number) => void;
+  setBelowThresholdHingeScale: (scale: number) => void;
   setFloorOpacity: (opacity: number) => void;
   setConnectionLineWidth: (width: number) => void;
   setConnectionLineOpacity: (opacity: number) => void;
@@ -498,6 +500,7 @@ export const createViewStore = () =>
       belowThresholdNodeOpacity: 0.2,
       floorOpacity: 0.2,
       hingeNodeScale: 1,
+      belowThresholdHingeScale: 0.5,
       connectionLineWidth: 2,
       connectionLineOpacity: 0.6,
       setNodeScale: (nodeScale) => set({ nodeScale }),
@@ -505,6 +508,7 @@ export const createViewStore = () =>
       setBelowThresholdNodeScale: (belowThresholdNodeScale) => set({ belowThresholdNodeScale }),
       setBelowThresholdNodeOpacity: (belowThresholdNodeOpacity) => set({ belowThresholdNodeOpacity }),
       setHingeNodeScale: (hingeNodeScale) => set({ hingeNodeScale }),
+      setBelowThresholdHingeScale: (belowThresholdHingeScale) => set({ belowThresholdHingeScale }),
       setFloorOpacity: (floorOpacity) => set({ floorOpacity }),
       setConnectionLineWidth: (connectionLineWidth) => set({ connectionLineWidth }),
       setConnectionLineOpacity: (connectionLineOpacity) => set({ connectionLineOpacity }),

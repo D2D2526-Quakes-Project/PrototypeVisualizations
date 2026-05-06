@@ -84,6 +84,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const floorOpacity = useViewStore((s) => s.floorOpacity);
   const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
   const hingeNodeScale = useViewStore((s) => s.hingeNodeScale);
+  const belowThresholdHingeScale = useViewStore((s) => s.belowThresholdHingeScale);
   const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
   const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
   const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -564,7 +565,6 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       );
 
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
-      // const nudge = Math.max((0.5 / UNIT_SCALE) * nodeScale, UNIT_SCALE * 15/2 * nodeScale * UNIT_SCALE);
       const nudge = Math.max(nodeScale / UNIT_SCALE, hingeNodeScale / UNIT_SCALE / 5);
       const nudgedPos = [
         expandedPosition[0] + (dx / dist) * nudge,
@@ -572,11 +572,20 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
         expandedPosition[2] + (dz / dist) * nudge,
       ];
 
-      tempObject.scale.set(hingeNodeScale, hingeNodeScale, hingeNodeScale);
+      // tempObject.scale.set(hingeNodeScale, hingeNodeScale, hingeNodeScale);
+      const metricConfig = getMetricConfig(currentMetric);
+      const thresholdValue = thresholds[metricConfig.thresholdKey] ?? 0;
+      const nodeValue = metricConfig.getValue(animationData, endCap, hingeIdx);
+      const maxValue = metricConfig.getPrecomputedMax(animationData);
+      const normalizedThreshold = maxValue > 0 ? thresholdValue / maxValue : 0;
+      const normalizedValue = nodeValue !== undefined && maxValue > 0 ? Math.abs(nodeValue) / maxValue : 0;
+
+      const baseHingeNodeScale = hingeNodeScale;
+      const passesThreshold = normalizedValue >= normalizedThreshold && thresholdValue > 0;
+      const effectiveScale = passesThreshold ? baseHingeNodeScale : baseHingeNodeScale * belowThresholdHingeScale;
+      tempObject.scale.set(effectiveScale, effectiveScale, effectiveScale);
+
       tempObject.rotation.set(0, 0, Math.atan2(dy, dx) - Math.PI / 2);
-      // tempObject.up.set(0, 0, 1);
-      // tempObject.position.set(pos[0], pos[1], pos[2]);
-      // tempObject.lookAt(otherPos[0], otherPos[1], otherPos[2]);
       tempObject.position.set(nudgedPos[0], nudgedPos[1], nudgedPos[2]);
       tempObject.updateMatrix();
       hingeNodesMeshRef.current.setMatrixAt(i, tempObject.matrix);

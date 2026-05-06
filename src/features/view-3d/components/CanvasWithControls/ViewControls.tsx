@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import {
   BoxSelect,
@@ -20,6 +20,7 @@ import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
 import { DEFAULT_COLOR_THEMES } from "@/state/viewStore";
+import { useCamera } from "../../contexts/CameraContext";
 import { ColorPanel } from "./control-panels/ColorPanel";
 import { ExpandedScalePanel } from "./control-panels/ExpandedScalePanel";
 import { NodeDisplayPanel } from "./control-panels/NodeDisplayPanel";
@@ -29,32 +30,25 @@ import { ViewModeSelect } from "./control-panels/ViewModeSelect";
 import { ViewsPanel } from "./control-panels/ViewsPanel";
 import { COLLAPSED_VIEW_PRESET_OPTIONS, type ViewPresetMode } from "./viewPresets";
 
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-
-interface ViewControlsProps {
-  orbitControlsRef: RefObject<OrbitControlsImpl | null>;
-  isOrthographic: boolean;
-  setIsOrthographic: (value: boolean) => void;
-  isExpanded: boolean;
-  setIsExpanded: (expanded: boolean) => void;
-  onExpandedWidthChange: (width: number) => void;
-  docked: boolean;
-  autoRotate: boolean;
-  setAutoRotate: (value: boolean) => void;
-}
-
 export function ViewControls({
-  orbitControlsRef,
-  isOrthographic,
-  setIsOrthographic,
   isExpanded,
   setIsExpanded,
-  onExpandedWidthChange,
   docked,
-  autoRotate,
-  setAutoRotate,
-}: ViewControlsProps) {
+}: {
+  isExpanded: boolean;
+  setIsExpanded: (expanded: boolean) => void;
+  docked: boolean;
+}) {
+  const { orbitControlsRef } = useCamera();
+  const orthographic = useViewStore((s) => s.orthographic);
+  const setOrthographic = useViewStore((s) => s.setOrthographic);
+  const autoRotate = useViewStore((s) => s.autoRotate);
+  const setAutoRotate = useViewStore((s) => s.setAutoRotate);
+
   const { animationData } = useAnimationData();
+
+  // const [isExpanded, setIsExpanded] = useState(true);
+  // const [docked, setDocked] = useState(true);
 
   const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
   const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
@@ -107,10 +101,6 @@ export function ViewControls({
     controls.update();
   };
 
-  const toggleCameraType = useCallback(() => {
-    setIsOrthographic(!isOrthographic);
-  }, [isOrthographic, setIsOrthographic]);
-
   const childVariants = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -152,7 +142,7 @@ export function ViewControls({
       }
       if (key === "o") {
         e.preventDefault();
-        toggleCameraType();
+        setOrthographic(!orthographic);
         return;
       }
       if (key === "h" && visibleSelectedCount > 0) {
@@ -182,38 +172,16 @@ export function ViewControls({
     selectedIds,
     setIsExpanded,
     showAllNodes,
-    toggleCameraType,
     visibleSelectedCount,
+    setOrthographic,
+    orthographic,
   ]);
 
-  useEffect(() => {
-    if (!isExpanded) {
-      onExpandedWidthChange(0);
-      return;
-    }
-
-    const element = expandedLayoutRef.current;
-    if (!element) return;
-
-    onExpandedWidthChange(element.offsetWidth);
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        const borderBoxSize = Array.isArray(entry.borderBoxSize) ? entry.borderBoxSize[0] : entry.borderBoxSize;
-        onExpandedWidthChange(borderBoxSize?.inlineSize ?? element.getBoundingClientRect().width);
-      }
-    });
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [isExpanded, onExpandedWidthChange]);
-
   return (
-    <div
-      className={`pointer-events-none absolute z-60 ${docked ? "top-0 right-0 bottom-0" : "top-2 right-2 bottom-2"}`}>
+    <div className={`pointer-events-none z-60 w-fit ${docked ? "h-full" : "absolute top-2 right-2 bottom-2"}`}>
       <div className="flex h-full max-h-full min-h-0 items-start gap-2">
-        <div className={`pointer-events-auto relative flex flex-col items-end gap-2 ${docked ? "top-2" : ""}`}>
-          {!docked && (
+        {!isExpanded && (
+          <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>
             <motion.div
               key="collapsed"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -240,15 +208,15 @@ export function ViewControls({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    onClick={toggleCameraType}
+                    onClick={() => setOrthographic(!orthographic)}
                     className={`rounded p-1 transition-colors ${
-                      isOrthographic ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
+                      orthographic ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
                     }`}>
-                    {isOrthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
+                    {orthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" sideOffset={8}>
-                  {isOrthographic ? "Orthographic" : "Perspective"}
+                  {orthographic ? "Orthographic" : "Perspective"}
                 </TooltipContent>
               </Tooltip>
               <div className="mx-0.5 h-4 w-px bg-neutral-300" />
@@ -298,9 +266,7 @@ export function ViewControls({
                 </TooltipContent>
               </Tooltip>
             </motion.div>
-          )}
 
-          <AnimatePresence>
             {showNodeVisibilityMenu && (
               <motion.div
                 key="node-visibility-menu"
@@ -384,8 +350,8 @@ export function ViewControls({
                 </Tooltip>
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
+          </div>
+        )}
 
         <AnimatePresence mode="popLayout">
           {isExpanded && (
@@ -406,7 +372,7 @@ export function ViewControls({
                   ? "h-full origin-top-right border-l border-neutral-200 bg-white"
                   : "origin-top-right rounded-lg border border-neutral-200 bg-white/90 shadow-lg backdrop-blur-sm"
               }`}>
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between pr-2">
                 <div className="text-xs font-semibold text-neutral-700">Views</div>
                 <button
                   onClick={() => setIsExpanded(false)}
@@ -452,7 +418,7 @@ export function ViewControls({
                   variants={childVariants}>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-neutral-700">Ortho</span>
-                    <Switch size="sm" checked={isOrthographic} onCheckedChange={setIsOrthographic} />
+                    <Switch size="sm" checked={orthographic} onCheckedChange={setOrthographic} />
                     <div className="mx-0.5 h-4 w-px bg-neutral-300" />
                     <span className="text-xs font-medium text-neutral-700">Spin</span>
                     <Switch size="sm" checked={autoRotate} onCheckedChange={setAutoRotate} />

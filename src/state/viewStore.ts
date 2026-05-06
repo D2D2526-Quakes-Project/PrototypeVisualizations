@@ -136,6 +136,10 @@ export interface ViewState {
   setTotalFrames: (frames: number) => void;
 
   // View Mode
+  orthographic: boolean;
+  setOrthographic: (orthographic: boolean) => void;
+  autoRotate: boolean;
+  setAutoRotate: (autoRotate: boolean) => void;
   renderNodes: boolean;
   setRenderNodes: (value: boolean) => void;
   renderFloorSlabs: boolean;
@@ -310,6 +314,10 @@ export const createViewStore = () =>
       setTotalFrames: (totalFrames) => set({ totalFrames }),
 
       // View Mode
+      orthographic: false,
+      setOrthographic: (orthographic) => set({ orthographic }),
+      autoRotate: false,
+      setAutoRotate: (autoRotate) => set({ autoRotate }),
       renderNodes: true,
       setRenderNodes: (renderNodes) => set({ renderNodes }),
       renderFloorSlabs: true,

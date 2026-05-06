@@ -1,93 +1,71 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { Vector3 } from "three";
+import { useThree } from "@react-three/fiber";
 
-import { useCamera } from "@/features/view-3d/contexts/CameraContext";
-import { useAnimationData } from "@/lib/useAnimationData";
-import { UNIT_SCALE } from "@/lib/utils";
-
+import { useViewStore } from "@/state";
 import type { OrthographicCamera as OrthographicCameraImpl, PerspectiveCamera as PerspectiveCameraImpl } from "three";
+import { useCamera } from "../../contexts/CameraContext";
 
-interface CameraManagerProps {
-  isOrthographic: boolean;
-  enableSmoothing: boolean;
-  enablePan: boolean;
-  autoRotate: boolean;
+export function CameraManager() {
+  return (
+    <>
+      <Cams />
+      <CameraControls />
+    </>
+  );
 }
 
-export function CameraManager({ isOrthographic, enableSmoothing, enablePan, autoRotate }: CameraManagerProps) {
+function Cams() {
   const { orbitControlsRef } = useCamera();
-  const perspectiveCamRef = useRef<PerspectiveCameraImpl>(null);
-  const orthoCamRef = useRef<OrthographicCameraImpl>(null);
-  const { animationData } = useAnimationData();
+  const orthographic = useViewStore((s) => s.orthographic);
+  const fov = 50;
 
-  const buildingVerticalCenter =
-    (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
-  const cameraDistance = animationData.precomputed.boundingBox.radius * UNIT_SCALE;
-  const previousIsOrthographicRef = useRef(isOrthographic);
+  const persRef = useRef<PerspectiveCameraImpl>(null);
+  const orthoRef = useRef<OrthographicCameraImpl>(null);
+  const pixelsFromCenterToTop = useThree((state) => state.size.height / 2);
 
-  const stableTarget = useMemo(() => new Vector3(0, 0, buildingVerticalCenter), [buildingVerticalCenter]);
+  useLayoutEffect(() => {
+    // convert to radians and half angle since we're only interested in the angle from the center to the top of frame
+    const fovFactor = Math.tan(((fov / 2) * Math.PI) / 180) / pixelsFromCenterToTop;
+    const persDistanceToOrthoZoom = (distance: number) => 1 / fovFactor / distance;
+    const orthoZoomToPersDistance = (zoom: number) => 1 / zoom / fovFactor;
+    if (!persRef.current || !orthoRef.current || !persRef.current.position) return;
 
-  useEffect(() => {
-    const controls = orbitControlsRef.current;
-    if (controls) {
-      controls.enablePan = enablePan;
-      controls.autoRotate = autoRotate;
-    }
-  }, [enablePan, autoRotate, orbitControlsRef]);
+    const savedTarget = orbitControlsRef.current?.target.clone();
+    setTimeout(() => {
+      if (!persRef.current || !orthoRef.current || !persRef.current.position) return;
 
-  useEffect(() => {
-    const perspective = perspectiveCamRef.current;
-    const ortho = orthoCamRef.current;
-    const controls = orbitControlsRef.current;
+      if (!orthographic) {
+        persRef.current.position.copy(orthoRef.current.position.clone());
+        const distance = orthoZoomToPersDistance(orthoRef.current.zoom);
+        persRef.current.position.setLength(distance);
+      } else {
+        orthoRef.current.position.copy(persRef.current.position.clone());
+        orthoRef.current.zoom = persDistanceToOrthoZoom(orthoRef.current.position.length());
+        orthoRef.current.updateProjectionMatrix();
+      }
 
-    if (!perspective || !ortho || !controls) return;
-    const wasOrthographic = previousIsOrthographicRef.current;
-    previousIsOrthographicRef.current = isOrthographic;
-    if (wasOrthographic === isOrthographic) return;
-
-    const savedTarget = controls.target.clone();
-
-    if (isOrthographic) {
-      const distanceToTarget = Math.max(controls.object.position.distanceTo(savedTarget), 1e-6);
-      ortho.position.copy(perspective.position);
-      ortho.zoom = (cameraDistance / distanceToTarget) * 8;
-      ortho.updateProjectionMatrix();
-    } else {
-      perspective.position.copy(ortho.position);
-    }
-
-    controls.target.copy(savedTarget);
-    controls.update();
-  }, [isOrthographic, cameraDistance, orbitControlsRef]);
-
-  useFrame(() => {
-    const controls = orbitControlsRef.current;
-    if (controls) {
-      controls.object.up.set(0, 0, 1);
-      stableTarget.copy(controls.target);
-    }
-  });
+      if (savedTarget && orbitControlsRef.current) {
+        orbitControlsRef.current.target.copy(savedTarget);
+        orbitControlsRef.current.update();
+      }
+    });
+  }, [orthographic, pixelsFromCenterToTop, orbitControlsRef]);
 
   return (
     <>
-      <PerspectiveCamera
-        ref={perspectiveCamRef}
-        makeDefault={!isOrthographic}
-        position={[-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance]}
-        fov={75}
-        up={[0, 0, 1]}
-      />
-      <OrthographicCamera
-        ref={orthoCamRef}
-        makeDefault={isOrthographic}
-        position={[-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance]}
-        zoom={50}
-        up={[0, 0, 1]}
-      />
-      <OrbitControls ref={orbitControlsRef} enableDamping={enableSmoothing} target={stableTarget} />
+      <PerspectiveCamera ref={persRef} makeDefault={!orthographic} fov={fov} up={[0, 0, 1]} />
+      <OrthographicCamera ref={orthoRef} makeDefault={orthographic} up={[0, 0, 1]} />
     </>
   );
+}
+
+function CameraControls() {
+  const { orbitControlsRef } = useCamera();
+  const autoRotate = useViewStore((s) => s.autoRotate);
+  // const camera = useThree((state) => state.camera)
+  // const gl = useThree((state) => state.gl)
+
+  return <OrbitControls ref={orbitControlsRef} enableDamping={false} autoRotate={autoRotate} />;
 }

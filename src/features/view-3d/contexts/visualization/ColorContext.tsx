@@ -23,6 +23,7 @@ interface ColorContextType {
   metricPaletteOverrides: MetricPaletteOverrides;
   setMetricPalette: (metric: Metric, palette: MetricPaletteKey | null) => void;
   getNodeColor: (nodeId: number, frameIndex: number) => THREE.Color;
+  getColorFromValue: (value: number) => THREE.Color;
   availableMetrics: Metric[];
   thresholdHighlighting: boolean;
   setThresholdHighlighting: (enabled: boolean) => void;
@@ -147,6 +148,51 @@ export function useColor(): ColorContextType {
     ]
   );
 
+  const getColorFromValue = useCallback(
+    (value: number): THREE.Color => {
+      if (maxValue === 0) return grayColor;
+
+      if (!Number.isFinite(value)) return grayColor;
+
+      const negative = value < 0;
+      const normalizedValue = Math.min(1, Math.max(0, Math.abs(value / maxValue)));
+      const normalizedThreshold = Math.min(1, Math.max(0, thresholdValue / maxValue));
+
+      let t: number = normalizedValue;
+      let interpolator: (t: number) => FindColorByMode<"oklab">;
+
+      if (negative) interpolator = fullNegativeInterpolator;
+      else interpolator = fullPositiveInterpolator;
+
+      if (thresholdHighlighting) {
+        if (normalizedValue < normalizedThreshold) {
+          t = normalizedValue / normalizedThreshold;
+          if (negative) interpolator = negativeInterpolator;
+          else interpolator = positiveInterpolator;
+        } else {
+          t = (normalizedValue - normalizedThreshold) / (1 - normalizedThreshold);
+          if (negative) interpolator = negativeThresholdInterpolator;
+          else interpolator = positiveThresholdInterpolator;
+        }
+      }
+
+      const rgbColor: [number, number, number] = interpolateColor(interpolator, t);
+
+      return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);
+    },
+    [
+      maxValue,
+      positiveInterpolator,
+      negativeInterpolator,
+      thresholdValue,
+      thresholdHighlighting,
+      negativeThresholdInterpolator,
+      positiveThresholdInterpolator,
+      fullPositiveInterpolator,
+      fullNegativeInterpolator,
+    ]
+  );
+
   const availableMetrics = useMemo((): Metric[] => {
     return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) => {
       const config = METRIC_CONFIGS[metric];
@@ -162,6 +208,7 @@ export function useColor(): ColorContextType {
     metricPaletteOverrides,
     setMetricPalette,
     getNodeColor,
+    getColorFromValue,
     availableMetrics,
     thresholdHighlighting,
     setThresholdHighlighting,

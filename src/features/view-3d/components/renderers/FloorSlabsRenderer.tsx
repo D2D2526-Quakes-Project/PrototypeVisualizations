@@ -1,7 +1,9 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useExpandedScale, useFloorVisibility } from "@/features/view-3d/contexts/visualization";
 import { useVisualDisplacement } from "@/features/view-3d/lib/visualDisplacement";
+import { getMetricConfig } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
+import { useViewStore } from "@/state";
 import Delaunay from "delaunator";
 import { useMemo } from "react";
 import * as THREE from "three";
@@ -77,8 +79,38 @@ function FloorSlab({
 }: FloorSlabProps) {
   const { animationData } = useAnimationData();
   const { getNodeColor: getRawNodeColor } = useColor();
+  const { getColorFromValue } = useColor();
   const { hoveredCrossSection, selectCrossSection, setHovered } = useCrossSectionSelection();
-  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
+  const {
+    displacement: visualDisplacement,
+    isNodeInterpolated,
+    getNodeColor: getVisualNodeColor,
+  } = useVisualDisplacement();
+
+  const currentMetric_ = useViewStore((s) => s.currentMetric);
+  const metricConfig = useMemo(() => getMetricConfig(currentMetric_), [currentMetric_]);
+  const maxValue = useMemo(() => metricConfig.getPrecomputedMax(animationData), [animationData, metricConfig]);
+
+  const avgFloorColor = useMemo((): THREE.Color => {
+    if (nodeIds.length === 0 || maxValue === 0) return new THREE.Color(0.5, 0.5, 0.5);
+
+    let sum = 0;
+    let count = 0;
+
+    for (const nodeId of nodeIds) {
+      const isNodeMissing = isNodeInterpolated(nodeId);
+      if (isNodeMissing) continue;
+      const value = metricConfig.getValue(animationData, frameIndex, nodeId)!;
+      sum += value;
+      count += 1;
+    }
+
+    if (count === 0) return new THREE.Color(0.5, 0.5, 0.5);
+
+    const avgValue = sum / count;
+    console.log(avgValue, sum, count);
+    return getColorFromValue(avgValue);
+  }, [animationData, frameIndex, maxValue, metricConfig, nodeIds, getColorFromValue, isNodeInterpolated]);
 
   const isHovered = hoveredCrossSection?.storyId === storyId;
 
@@ -128,7 +160,10 @@ function FloorSlab({
       positions[i * 3 + 1] = nodePos.y;
       positions[i * 3 + 2] = nodePos.z;
 
-      const nodeColor = getVisualNodeColor(nodeId, frameIndex, getRawNodeColor);
+      const nodeColor = isNodeInterpolated(nodeId)
+        ? avgFloorColor
+        : getVisualNodeColor(nodeId, frameIndex, getRawNodeColor);
+
       colors[i * 3] = nodeColor.r;
       colors[i * 3 + 1] = nodeColor.g;
       colors[i * 3 + 2] = nodeColor.b;
@@ -160,6 +195,8 @@ function FloorSlab({
     storyId,
     floorOpacity,
     visualDisplacement,
+    avgFloorColor,
+    isNodeInterpolated,
   ]);
 
   const handlePointerOver = (e: PointerEvent) => {

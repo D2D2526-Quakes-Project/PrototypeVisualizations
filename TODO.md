@@ -10,10 +10,10 @@
 - [ ] Create presets for different visualization modes (hinges, displacement, story drift, shears)
   - Allows quick switching between common analysis views without reconfiguring settings each time
 
-- [ ] Add an auto-orbiting camera/view mode
+- [x] Add an auto-orbiting camera/view mode
   - Enables continuous rotation of the canvas for passive viewing or presentations
 
-- [ ] Improve non-threshold color bar gradients to include darker tones smoothly
+- [x] Improve non-threshold color bar gradients to include darker tones smoothly
   - Produces a more continuous and visually accurate gradient across the full value range
 
 - [ ] Rename “15Story” and “52Story” to “15-story” and “52-storys”

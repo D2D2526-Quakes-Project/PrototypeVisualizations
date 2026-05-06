@@ -109,19 +109,14 @@ export function useVisualDisplacement() {
     storyIndexByNode,
   ]);
 
-  const isNodeInterpolated = useCallback(
-    (nodeId: number) => interpolationActive && missingNodeSet.has(nodeId),
-    [interpolationActive, missingNodeSet]
-  );
+  const isNodeInterpolated = useCallback((nodeId: number) => missingNodeSet.has(nodeId), [missingNodeSet]);
 
   const getNodeColor = useCallback(
     (nodeId: number, frameIndex: number, fallback: (nodeId: number, frameIndex: number) => THREE.Color) => {
-      if (isNodeInterpolated(nodeId)) {
-        return GRAY_COLOR;
-      }
+      if (isNodeInterpolated(nodeId)) return GRAY_COLOR;
       return fallback(nodeId, frameIndex);
     },
-    [isNodeInterpolated]
+    [isNodeInterpolated, interpolationActive]
   );
 
   return {

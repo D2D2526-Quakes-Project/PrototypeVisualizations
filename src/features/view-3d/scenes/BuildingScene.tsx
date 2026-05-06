@@ -50,11 +50,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { thresholds } = useThresholds();
   const { getVisibleNodes } = useViewMode();
   const { getExpandedPosition } = useExpandedScale();
-  const {
-    displacement: visualDisplacement,
-    getNodeColor: getVisualNodeColor,
-    isNodeInterpolated,
-  } = useVisualDisplacement();
+  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
   const { sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
   const { setHovered: setHoveredCrossSection, deselectCrossSection } = useCrossSectionSelection();
   const { camera } = useThree();
@@ -523,11 +519,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
       tempObject.updateMatrix();
       nodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
 
-      // Compute color directly in the loop
-      if (isNodeInterpolated(nodeId)) {
-        const color = getVisualNodeColor(nodeId, currentFrame, getRawNodeColor);
-        tempColor.setRGB(color.r, color.g, color.b);
-      } else if (hoveredNodeId === nodeId || boxSelectedIndices.has(i)) {
+      if (hoveredNodeId === nodeId || boxSelectedIndices.has(i)) {
         tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
       } else {
         const color = getVisualNodeColor(nodeId, currentFrame, getRawNodeColor);

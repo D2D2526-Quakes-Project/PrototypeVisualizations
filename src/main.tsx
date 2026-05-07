@@ -6,7 +6,6 @@ import { ErrorPage } from "./components/ErrorPage";
 import { NavigationBar } from "./components/NavigationBar";
 import { AnimationDataProvider } from "./lib/useAnimationData";
 import "./index.css";
-import { View3d } from "./pages";
 import { PlaybackProvider } from "./features/playback/PlaybackContext";
 import { ExportProvider } from "./features/export/ExportProvider";
 import { SliceSelectionProvider } from "./features/view-3d/contexts/visualization";
@@ -15,6 +14,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { Box } from "lucide-react";
 import { CrossSectionSelectionProvider } from "./features/view-3d/contexts/visualization/CrossSectionSelectionContext";
 import { ExportRenderModeProvider } from "./features/export/renderMode";
+import { View3d } from "./features/view-3d/page";
 
 const routes = [
   {

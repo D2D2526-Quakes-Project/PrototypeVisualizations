@@ -1,0 +1,83 @@
+import type { Metric, MetricPaletteKey, MetricPaletteOverrides } from "@/lib/metrics";
+import { type StateCreator } from "zustand";
+import type { AppState } from ".";
+
+export interface GlobalState {
+  metricPaletteOverrides: MetricPaletteOverrides;
+  setMetricPalette: (metric: Metric, palette: MetricPaletteKey | null) => void;
+
+  showHiddenMetrics: boolean;
+  setShowHiddenMetrics: (enabled: boolean) => void;
+
+  colorTheme: ColorTheme;
+  setColorTheme: (theme: ColorTheme) => void;
+}
+
+export const createGlobalSlice: StateCreator<AppState, [], [], GlobalState> = (set) => ({
+  metricPaletteOverrides: {},
+  setMetricPalette: (metric, palette) =>
+    set((state) => {
+      if (palette === null) {
+        const { [metric]: _removed, ...rest } = state.metricPaletteOverrides;
+        return { metricPaletteOverrides: rest };
+      }
+
+      return {
+        metricPaletteOverrides: {
+          ...state.metricPaletteOverrides,
+          [metric]: palette,
+        },
+      };
+    }),
+
+  showHiddenMetrics: false,
+  setShowHiddenMetrics: (showHiddenMetrics) => set({ showHiddenMetrics }),
+
+  colorTheme: DEFAULT_COLOR_THEMES[0],
+  setColorTheme: (theme) => set({ colorTheme: theme }),
+});
+
+export interface ColorTheme {
+  label: string;
+  background: string;
+  connectionLines: string;
+  tickMarks: string;
+  grid: string;
+  directionLabels: string;
+}
+
+export const DEFAULT_COLOR_THEMES: ColorTheme[] = [
+  {
+    label: "Gray",
+    background: "#dcdcdc",
+    connectionLines: "#aaaaaa",
+    tickMarks: "#aaaaaa",
+    grid: "#888888",
+    directionLabels: "#aaaaaa",
+  },
+  {
+    label: "White",
+    connectionLines: "#000000",
+    tickMarks: "#666666",
+    grid: "#888888",
+    background: "#ffffff",
+    directionLabels: "#000000",
+  },
+  {
+    label: "Black",
+    background: "#1a1a1a",
+    connectionLines: "#ffffff",
+    tickMarks: "#999999",
+    grid: "#666666",
+    directionLabels: "#ffffff",
+  },
+  {
+    label: "Dark Blue",
+
+    background: "#1e3a5f",
+    connectionLines: "#ffffff",
+    tickMarks: "#888888",
+    grid: "#555555",
+    directionLabels: "#ffffff",
+  },
+];

@@ -25,7 +25,7 @@ import { type DockviewApi, type DockviewReadyEvent, type SerializedDockview } fr
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { useCrossSectionSelection } from "./contexts/visualization/CrossSectionSelectionContext";
 import type { SavedPanelState } from "@/state/profileState";
-import type { useViewStoreRaw } from "@/state/ViewProvider";
+import type { useViewStoreRaw } from "@/state/StateProvider";
 
 const components = {
   nodePanel: NodePanel,

@@ -1,13 +1,13 @@
 import { useAnimationData } from "@/lib/useAnimationData";
 import { isStaticMetric } from "@/lib/metrics";
-import { useViewStore } from "@/state";
+import { useLiveStore, useProfileStore } from "@/state";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 export type PlaybackControlParams = {
   frameIndex: number;
-  playing: boolean;
   setFrameIndex: (index: number | ((prevState: number) => number)) => void;
-  handlePlayPause: () => void;
+  playing: boolean;
+  setPlaying: (playing: boolean) => void;
   skipToStart: () => void;
   skipToEnd: () => void;
   fps: number;
@@ -15,14 +15,17 @@ export type PlaybackControlParams = {
 };
 
 export const usePlayback = (): PlaybackControlParams => {
-  const frameIndex = useViewStore((s) => s.frameIndex);
-  const playing = useViewStore((s) => s.playing);
-  const fps = useViewStore((s) => s.fps);
-  const skippedPerFrame = useViewStore((s) => s.skippedPerFrame);
-  const totalFrames = useViewStore((s) => s.totalFrames);
-  const currentMetric = useViewStore((s) => s.currentMetric);
-  const setStoreFrameIndex = useViewStore((s) => s.setFrameIndex);
-  const setPlaying = useViewStore((s) => s.setPlaying);
+  const { animationData } = useAnimationData();
+
+  const totalFrames = animationData.metadata.frameCount;
+
+  const frameIndex = useProfileStore((s) => s.frameIndex);
+  const currentMetric = useProfileStore((s) => s.currentMetric);
+  const playing = useLiveStore((s) => s.playing);
+  const setStoreFrameIndex = useProfileStore((s) => s.setFrameIndex);
+  const setPlaying = useLiveStore((s) => s.setPlaying);
+  const fps = useLiveStore((s) => s.fps);
+  const skippedPerFrame = useLiveStore((s) => s.skippedPerFrame);
   const staticMetricMode = isStaticMetric(currentMetric);
 
   const setFrameIndex = useCallback(
@@ -74,42 +77,19 @@ export const usePlayback = (): PlaybackControlParams => {
   };
 };
 
-export function PlaybackProvider({ children }: { children: ReactNode }) {
+export function PlaybackKeyboardEvents({ children }: { children: ReactNode }) {
   const { animationData } = useAnimationData();
 
-  const playing = useViewStore((s) => s.playing);
-  const frameIndex = useViewStore((s) => s.frameIndex);
-  const currentMetric = useViewStore((s) => s.currentMetric);
-  const totalFrames = useViewStore((s) => s.totalFrames);
-  const setFrameIndex = useViewStore((s) => s.setFrameIndex);
-  const setPlaying = useViewStore((s) => s.setPlaying);
-  const setFps = useViewStore((s) => s.setFps);
-  const setSkippedPerFrame = useViewStore((s) => s.setSkippedPerFrame);
-  const setTotalFrames = useViewStore((s) => s.setTotalFrames);
+  const { frameIndex, setFrameIndex, playing, setPlaying, fps, setFps, skippedPerFrame, setSkippedPerFrame } =
+    usePlayback();
 
-  const requestedAnimationFrameRef = useRef<number | null>(null);
-  const playbackStartFrameRef = useRef(0);
-  const playbackStartTimeRef = useRef(0);
-  const frameCountRef = useRef(0);
-  const lastFpsUpdateRef = useRef(0);
   const displayedFrameRef = useRef(frameIndex);
   const frameIndexRef = useRef(frameIndex);
 
-  const frameRate = animationData.metadata.dt > 0 ? 1 / animationData.metadata.dt : 30;
+  const currentMetric = useProfileStore((s) => s.currentMetric);
   const staticMetricMode = isStaticMetric(currentMetric);
 
-  useEffect(() => {
-    if (!staticMetricMode) return;
-
-    if (playing) {
-      setPlaying(false);
-    }
-    if (frameIndex !== 0) {
-      setFrameIndex(0);
-    }
-    setSkippedPerFrame(0);
-    setFps(0);
-  }, [frameIndex, staticMetricMode, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame]);
+  const frameRate = animationData.metadata.dt > 0 ? 1 / animationData.metadata.dt : 30;
 
   useEffect(() => {
     frameIndexRef.current = frameIndex;

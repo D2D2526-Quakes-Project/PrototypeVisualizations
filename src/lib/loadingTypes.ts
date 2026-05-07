@@ -21,6 +21,17 @@ export type DatasetKey = (typeof DATASET_KEYS)[number];
 
 export type DatasetLoadStage = "idle" | "queued" | "fetching" | "parsing" | "ready" | "error";
 
+export interface OptionalDataLoadOptions {
+  beamData: boolean;
+  hingeData: boolean;
+  shearData: boolean;
+  displacementRot: boolean;
+  velocityLin: boolean;
+  velocityRot: boolean;
+  accelerationLin: boolean;
+  accelerationRot: boolean;
+}
+
 export interface DatasetLoadState {
   key: DatasetKey;
   label: string;

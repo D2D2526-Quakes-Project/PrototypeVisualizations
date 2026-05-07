@@ -1,7 +1,7 @@
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 
 export interface CanvasPanelState {
   camera: {

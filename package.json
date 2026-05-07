@@ -29,6 +29,7 @@
     "dockview-react": "^5.0.0",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.6",
+    "immer": "^11.1.7",
     "lucide-react": "^0.574.0",
     "lz-string": "^1.5.0",
     "motion": "^12.34.2",

@@ -1,7 +1,3 @@
-import { clearAllLocalStorage } from "@/features/view-3d/lib/statePersistence";
-
-// lib/DataLoader.ts
-
 const DB_NAME = "QuakesCache";
 const RAW_STORE_NAME = "files";
 const PROCESSED_STORE_NAME = "processed";
@@ -87,7 +83,6 @@ export const clearCache = async () => {
   } catch (e) {
     console.warn("Cache write failed (likely quota exceeded)", e);
   }
-  clearAllLocalStorage();
 };
 
 export const clearProcessedCache = async () => {

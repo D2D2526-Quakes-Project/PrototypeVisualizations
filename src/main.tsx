@@ -7,14 +7,11 @@ import { ErrorPage } from "./components/ErrorPage";
 import { NavigationBar } from "./components/NavigationBar";
 
 import { TooltipProvider } from "./components/ui/tooltip";
-import { ExportProvider } from "./features/export/ExportProvider";
-import { ExportRenderModeProvider } from "./features/export/renderMode";
-import { View3d } from "./features/view-3d/page";
 import { PlaybackProvider } from "./features/playback/PlaybackContext";
-import { CrossSectionSelectionProvider } from "./features/view-3d/contexts/visualization/CrossSectionSelectionContext";
+import { View3d } from "./features/view-3d/page";
 import "./index.css";
 import { AnimationDataProvider } from "./lib/useAnimationData";
-import { ViewProvider } from "./state/ViewProvider";
+import { StateProvider } from "./state/StateProvider";
 
 const routes = [
   {
@@ -30,24 +27,22 @@ const router = createBrowserRouter([
     element: (
       <>
         <TooltipProvider>
-          <ViewProvider>
-            <AnimationDataProvider>
-              <ExportProvider>
+          <AnimationDataProvider>
+            <StateProvider>
+              {/* <ExportProvider>
                 <ExportRenderModeProvider
                   value={{
                     showPanelHeaders: true,
                     showTransientUi: true,
-                  }}>
-                  <NavigationBar />
-                  <PlaybackProvider>
-                    <CrossSectionSelectionProvider>
-                      <Outlet />
-                    </CrossSectionSelectionProvider>
-                  </PlaybackProvider>
-                </ExportRenderModeProvider>
-              </ExportProvider>
-            </AnimationDataProvider>
-          </ViewProvider>
+                  }}> */}
+              <NavigationBar />
+              <PlaybackProvider>
+                <Outlet />
+              </PlaybackProvider>
+              {/* </ExportRenderModeProvider>
+              </ExportProvider> */}
+            </StateProvider>
+          </AnimationDataProvider>
         </TooltipProvider>
       </>
     ),

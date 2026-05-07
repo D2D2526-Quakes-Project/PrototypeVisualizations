@@ -4,11 +4,6 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DataSources from "@/data/index";
 import {
-  getSelectionFromCurrentUrlStateOrParams,
-  OPTIONAL_DATA_LOAD_OPTION_KEYS,
-  type OptionalDataLoadOptions,
-} from "@/features/view-3d/lib/statePersistence";
-import {
   clearCache,
   clearProcessedCache,
   fetchWithProgressAndCache,
@@ -36,12 +31,14 @@ import {
   REQUIRED_DATASET_KEYS,
   type DatasetKey,
   type DatasetLoadState,
+  type OptionalDataLoadOptions,
   type OptionalDatasetKey,
 } from "@/lib/loadingTypes";
 import type { BinaryBuilding, BinarySimulation, BuildingAnimationData, Simulation } from "@/lib/types";
 import { CheckIcon, ChevronRightIcon, LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { getSelectionFromCurrentUrl } from "./urlState";
 
 export type AnimationDataContextType = {
   animationData: BuildingAnimationData;
@@ -203,9 +200,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       url.searchParams.set("simulation", simulation.folder);
 
       const optionalLoads = normalizeOptionalDataLoadOptions(options);
-      const optionalLoadsEncoded = OPTIONAL_DATA_LOAD_OPTION_KEYS.map((key) => (optionalLoads[key] ? "1" : "0")).join(
-        ""
-      );
+      const optionalLoadsEncoded = OPTIONAL_DATASET_KEYS.map((key) => (optionalLoads[key] ? "1" : "0")).join("");
       url.searchParams.set("optionalLoads", optionalLoadsEncoded);
     } else {
       url.searchParams.delete("building");
@@ -392,7 +387,13 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       if (sessionIdRef.current !== sessionId) return;
 
       const sourcePath =
-        key === "beamData" ? building.beamData : key === "hingeData" ? simulation.hingeData : key === "shearData" ? simulation.shearData : simulation[key];
+        key === "beamData"
+          ? building.beamData
+          : key === "hingeData"
+            ? simulation.hingeData
+            : key === "shearData"
+              ? simulation.shearData
+              : simulation[key];
       if (!sourcePath) return;
 
       const selectionKey = `${building.folder}::${simulation.folder}`;
@@ -691,7 +692,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     initializedRef.current = true;
 
     void (async () => {
-      const selection = await getSelectionFromCurrentUrlStateOrParams();
+      const selection = await getSelectionFromCurrentUrl();
 
       if (selection) {
         const building = DataSources.buildings.find((item) => item.folder === selection.building);

@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import DataSources from "@/data/index";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useExportVideo } from "@/features/export/ExportProvider";
-import { useColor, useFloorVisibility } from "@/features/view-3d/contexts/visualization";
+import { useColor, useFloorVisibility } from "@/features/3d/contexts/visualization";
 import {
   applyWorkspaceState,
   copyShareableUrlToClipboard,
@@ -35,14 +35,14 @@ import {
   deleteUserProfile,
   resetProfileToDefault,
   setActiveProfile,
-} from "@/features/view-3d/lib/statePersistence";
+} from "@/features/3d/lib/statePersistence";
 import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
 import { getMetricConfig } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { formatFixed3 } from "@/lib/utils";
 import { useViewStore, useViewStoreRaw } from "@/state";
-import { ColorScaleBarTooltip } from "../features/view-3d/components/CanvasWithControls/ColorScaleBar";
-import { SelectionShortcuts } from "../features/view-3d/components/CanvasWithControls/SelectionShortcuts";
+import { ColorScaleBarTooltip } from "../features/3d/components/CanvasWithControls/ColorScaleBar";
+import { SelectionShortcuts } from "../features/3d/components/CanvasWithControls/SelectionShortcuts";
 import { Sheet, SheetContent } from "./ui/sheet";
 
 export function NavigationBar() {

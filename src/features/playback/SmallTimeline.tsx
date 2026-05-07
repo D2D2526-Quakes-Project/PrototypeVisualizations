@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { useViewStore } from "@/state";
+
 import { isStaticMetric } from "@/lib/metrics";
 
 export function SmallTimeline() {

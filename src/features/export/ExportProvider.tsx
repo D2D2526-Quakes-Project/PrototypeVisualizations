@@ -23,10 +23,10 @@ import { canvasToPngBytes, getFfmpegEncoder, type ExportVideoFormat } from "@/fe
 import { ExportRenderModeProvider } from "@/features/export/renderMode";
 import { createZipArchive } from "@/features/export/zip";
 import { PlaybackProvider } from "@/features/playback/PlaybackContext";
-import { MagicPanel, type MagicPanelParams } from "@/features/view-3d/components/MagicPanel";
-import { CrossSectionSelectionProvider } from "@/features/view-3d/contexts/visualization/CrossSectionSelectionContext";
-import { getCurrentWorkspaceStateSnapshot, type WorkspaceState } from "@/features/view-3d/lib/statePersistence";
-import { View3dWorkspace } from "@/features/view-3d/page";
+import { MagicPanel, type MagicPanelParams } from "@/features/dockview/MagicPanel";
+import { CrossSectionSelectionProvider } from "@/features/3d/contexts/visualization/CrossSectionSelectionContext";
+import { getCurrentWorkspaceStateSnapshot, type WorkspaceState } from "@/features/3d/lib/statePersistence";
+import { View3dWorkspace } from "@/features/3d/page";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { ViewProvider, useViewStoreRaw, type ViewStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview";

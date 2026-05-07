@@ -8,7 +8,7 @@ import { NavigationBar } from "./components/NavigationBar";
 
 import { TooltipProvider } from "./components/ui/tooltip";
 import { PlaybackProvider } from "./features/playback/PlaybackContext";
-import { View3d } from "./features/view-3d/page";
+import { View3d } from "./features/3d/page";
 import "./index.css";
 import { AnimationDataProvider } from "./lib/useAnimationData";
 import { StateProvider } from "./state/StateProvider";

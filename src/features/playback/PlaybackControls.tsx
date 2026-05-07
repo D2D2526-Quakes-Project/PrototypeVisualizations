@@ -1,7 +1,7 @@
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "./PlaybackContext";
-import { useViewStore } from "@/state";
+
 import { isStaticMetric } from "@/lib/metrics";
 
 export function PlaybackControls() {
@@ -79,7 +79,9 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
         title="Skip to End">
         <SkipForwardIcon />
       </button>
-      {staticMetricMode && <span className="border-l border-neutral-300 pl-1 text-[10px] text-neutral-500">Static</span>}
+      {staticMetricMode && (
+        <span className="border-l border-neutral-300 pl-1 text-[10px] text-neutral-500">Static</span>
+      )}
       {playing && (
         <div className="flex items-center gap-1 border-l border-neutral-300 pl-1">
           <span className="text-[10px] font-medium text-neutral-700" title="Frames per second">

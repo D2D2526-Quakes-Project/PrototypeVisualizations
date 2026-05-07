@@ -1,5 +1,5 @@
 import { clearCache, clearProcessedCache } from "@/lib/dataLoader";
-import { clearLayoutFromLocalStorage } from "@/features/view-3d/lib/layoutPersistence";
+import { clearLayoutFromLocalStorage } from "@/features/3d/lib/layoutPersistence";
 import { Link, useRouteError } from "react-router";
 
 export function ErrorPage() {

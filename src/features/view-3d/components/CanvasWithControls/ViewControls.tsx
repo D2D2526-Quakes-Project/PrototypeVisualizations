@@ -19,7 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAnimationData } from "@/lib/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
-import { DEFAULT_COLOR_THEMES } from "@/state/viewStore";
+import { DEFAULT_COLOR_THEMES } from "@/state/profileState";
 import { useCamera } from "../../contexts/CameraContext";
 import { ColorPanel } from "./control-panels/ColorPanel";
 import { ExpandedScalePanel } from "./control-panels/ExpandedScalePanel";
@@ -39,9 +39,7 @@ export function ViewControls({
   setIsExpanded: (expanded: boolean) => void;
   docked: boolean;
 }) {
-  const { orbitControlsRef } = useCamera();
-  const orthographic = useViewStore((s) => s.orthographic);
-  const setOrthographic = useViewStore((s) => s.setOrthographic);
+  const { orbitControlsRef, orthographic, setOrthographic } = useCamera();
   const autoRotate = useViewStore((s) => s.autoRotate);
   const setAutoRotate = useViewStore((s) => s.setAutoRotate);
 

@@ -2,6 +2,7 @@ import { CanvasWithControls } from "@/features/view-3d/components/CanvasWithCont
 import { SceneTooltip } from "@/features/view-3d/components/SceneContextMenu";
 import { BuildingScene } from "@/features/view-3d/scenes/BuildingScene";
 import type { IDockviewPanelProps } from "dockview";
+import { CameraProvider } from "../contexts/CameraContext";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps) => {
   const panelId = props.api?.id ?? "main-canvas";
@@ -9,9 +10,11 @@ export const MainCanvasPanel = (props: IDockviewPanelProps) => {
   return (
     <div className="relative h-full w-full">
       <SceneTooltip>
-        <CanvasWithControls showPlaybackControls panelId={panelId}>
-          <BuildingScene panelId={panelId} />
-        </CanvasWithControls>
+        <CameraProvider>
+          <CanvasWithControls showPlaybackControls panelId={panelId}>
+            <BuildingScene panelId={panelId} />
+          </CanvasWithControls>
+        </CameraProvider>
       </SceneTooltip>
     </div>
   );

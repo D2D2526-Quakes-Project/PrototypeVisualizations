@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { getDefaultDataExplorerPanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { getMetricKeyColor } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { formatFixed3 } from "@/lib/utils";
@@ -22,6 +22,19 @@ type SortKey =
   | "peakMagnitude"
   | "peakFrame";
 type SortDir = "asc" | "desc";
+type DataExplorerPanelState = {
+  query: string;
+  page: number;
+  sortKey: string;
+  sortDir: SortDir;
+};
+
+const DEFAULT_DATA_EXPLORER_PANEL_STATE: DataExplorerPanelState = {
+  query: "",
+  page: 0,
+  sortKey: "currentMagnitude",
+  sortDir: "desc",
+};
 
 type ExplorerRow = {
   node: number;
@@ -90,12 +103,13 @@ function SortHeader({
 export function DataExplorerPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-  const panelId = api?.id ?? "data-explorer";
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const defaultState = getDefaultDataExplorerPanelState();
-  const savedState = savedPanelState?.type === "dataExplorer" ? savedPanelState.state : defaultState;
+  const { state: savedState, setState: setSavedState } = usePanelState<DataExplorerPanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "data-explorer",
+    panelType: "dataExplorer",
+    defaultState: DEFAULT_DATA_EXPLORER_PANEL_STATE,
+  });
 
   const [query, setQuery] = useState(() => sanitizeQuery(savedState.query));
   const [page, setPage] = useState(() => sanitizePage(savedState.page));
@@ -171,13 +185,13 @@ export function DataExplorerPanel({ api }: IDockviewPanelProps) {
   const safePage = Math.min(page, totalPages - 1);
 
   useEffect(() => {
-    setPanelState(panelId, "dataExplorer", {
+    setSavedState({
       query,
       page: safePage,
       sortKey,
       sortDir,
     });
-  }, [panelId, query, safePage, setPanelState, sortDir, sortKey]);
+  }, [query, safePage, setSavedState, sortDir, sortKey]);
 
   const pagedRows = useMemo(() => {
     const start = safePage * PAGE_SIZE;

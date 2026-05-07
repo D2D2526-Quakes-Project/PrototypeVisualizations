@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
-import { getDefaultFloorDisplacementChartPanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { formatValue, getMetricConfig, getMetricKeyColor, type Metric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { formatStoryLabel } from "@/lib/utils";
@@ -23,6 +23,13 @@ type MetricOption = {
 };
 
 const MIN_X_AXIS_MAX = 0.01;
+type FloorDisplacementChartPanelState = {
+  selectedMetrics: Metric[];
+};
+
+const DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE: FloorDisplacementChartPanelState = {
+  selectedMetrics: ["displacementX", "displacementY"],
+};
 
 function sanitizeSelectedMetrics(value: unknown, availableMetrics: Metric[]): Metric[] {
   if (!Array.isArray(value)) {
@@ -108,17 +115,19 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   const { visibleFloors } = useFloorVisibility();
   const { availableMetrics } = useColor();
   const { thresholds } = useThresholds();
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
 
-  const panelId = api?.id ?? "floor-displacement";
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const defaultState = getDefaultFloorDisplacementChartPanelState();
-  const panelState = savedPanelState?.type === "floorDisplacementChart" ? savedPanelState.state : defaultState;
+  const { state: panelState, setState: setPanelState } = usePanelState<FloorDisplacementChartPanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "floor-displacement",
+    panelType: "floorDisplacementChart",
+    defaultState: DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE,
+  });
 
   const metricOptions = useMemo<MetricOption[]>(() => {
-    const metrics = availableMetrics.length > 0 ? availableMetrics : defaultState.selectedMetrics;
-    return metrics.map((metric) => {
+    const metrics =
+      availableMetrics.length > 0 ? availableMetrics : DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE.selectedMetrics;
+    return metrics.map((metric: Metric) => {
       const config = getMetricConfig(metric);
       return {
         metric,
@@ -127,7 +136,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
         color: getMetricKeyColor(metric, metricPaletteOverrides),
       };
     });
-  }, [availableMetrics, defaultState.selectedMetrics, metricPaletteOverrides]);
+  }, [availableMetrics, metricPaletteOverrides]);
 
   const effectiveSelectedMetrics = useMemo(
     () =>
@@ -144,10 +153,10 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       sameLength && panelState.selectedMetrics.every((metric, index) => metric === effectiveSelectedMetrics[index]);
     if (sameOrder) return;
 
-    setPanelState(panelId, "floorDisplacementChart", {
+    setPanelState({
       selectedMetrics: effectiveSelectedMetrics,
     });
-  }, [effectiveSelectedMetrics, panelId, panelState.selectedMetrics, setPanelState]);
+  }, [effectiveSelectedMetrics, panelState.selectedMetrics, setPanelState]);
 
   const storyIds = useMemo(() => Array.from(visibleFloors).slice(1), [visibleFloors]);
 
@@ -440,7 +449,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
         <MetricSelect
           options={metricOptions}
           selected={effectiveSelectedMetrics}
-          onChange={(selectedMetrics) => setPanelState(panelId, "floorDisplacementChart", { selectedMetrics })}
+          onChange={(selectedMetrics) => setPanelState({ selectedMetrics })}
         />
       </div>
 

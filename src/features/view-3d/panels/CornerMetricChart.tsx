@@ -3,11 +3,10 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
-import { getDefaultCornerMetricChartPanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { formatStoryLabel } from "@/lib/utils";
 import { formatValue, getMetricConfig, isHingeMetric, type Metric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useViewStore } from "@/state";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import type { DockviewPanelApi } from "dockview";
@@ -26,6 +25,17 @@ const cornerColors = {
 } as const;
 
 type CornerKey = keyof typeof cornerColors;
+type CornerMetricChartPanelState = {
+  visibleCorners: string[];
+  metric: Metric;
+  displayMode: "bar" | "line";
+};
+
+const DEFAULT_CORNER_METRIC_CHART_PANEL_STATE: CornerMetricChartPanelState = {
+  visibleCorners: ["NW", "NE", "SW", "SE"],
+  metric: "interstoryDrift",
+  displayMode: "bar",
+};
 
 const corners: CornerKey[] = ["NW", "NE", "SW", "SE"];
 const MIN_X_AXIS_MAX = 0.01;
@@ -126,13 +136,16 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   const { visibleFloors } = useFloorVisibility();
   const { thresholds } = useThresholds();
   const { availableMetrics } = useColor();
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const chartRef = useRef<ReactECharts>(null);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
 
-  const defaultState = getDefaultCornerMetricChartPanelState();
-  const savedPanelState = useViewStore((s) => s.panelStates[api.id]);
-  const panelState = savedPanelState?.type === "cornerMetricChart" ? savedPanelState.state : defaultState;
+  const defaultState = DEFAULT_CORNER_METRIC_CHART_PANEL_STATE;
+  const { state: panelState, setState: setPanelState } = usePanelState<CornerMetricChartPanelState>({
+    panelId: api.id,
+    fallbackPanelId: "corner-metric-chart",
+    panelType: "cornerMetricChart",
+    defaultState,
+  });
 
   const selectableMetrics = useMemo(() => {
     const supportedMetrics = availableMetrics.filter((metric) => !isHingeMetric(metric));
@@ -145,12 +158,12 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   useEffect(() => {
     if (panelState.metric === selectedMetric) return;
 
-    setPanelState(api.id, "cornerMetricChart", {
+    setPanelState({
       visibleCorners: panelState.visibleCorners,
       metric: selectedMetric,
       displayMode: panelState.displayMode,
     });
-  }, [api.id, panelState.metric, panelState.visibleCorners, panelState.displayMode, selectedMetric, setPanelState]);
+  }, [panelState.displayMode, panelState.metric, panelState.visibleCorners, selectedMetric, setPanelState]);
 
   const metricConfig = useMemo(() => getMetricConfig(selectedMetric), [selectedMetric]);
   const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
@@ -168,7 +181,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
         .filter(([, isVisible]) => isVisible)
         .map(([name]) => name);
 
-      setPanelState(api.id, "cornerMetricChart", {
+      setPanelState({
         visibleCorners: selected,
         metric: selectedMetric,
         displayMode: panelState.displayMode,
@@ -549,7 +562,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
           id={`${api.id}-metric`}
           value={selectedMetric}
           onChange={(event) =>
-            setPanelState(api.id, "cornerMetricChart", {
+            setPanelState({
               visibleCorners: panelState.visibleCorners,
               metric: event.target.value as Metric,
               displayMode: panelState.displayMode,
@@ -569,7 +582,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
           value={displayMode}
           onValueChange={(value) => {
             if (!value) return;
-            setPanelState(api.id, "cornerMetricChart", {
+            setPanelState({
               visibleCorners: panelState.visibleCorners,
               metric: panelState.metric,
               displayMode: value as "bar" | "line",

@@ -33,7 +33,7 @@ import ReactECharts from "echarts-for-react";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useThresholds } from "@/features/view-3d/contexts/visualization";
-import { getDefaultVelocityTimeChartPanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -62,6 +62,13 @@ const CHANNEL_CONFIG = {
 } as const;
 
 type ChannelKey = keyof typeof CHANNEL_CONFIG;
+type VelocityTimeChartPanelState = {
+  selectedKeys: ChannelKey[];
+};
+
+const DEFAULT_VELOCITY_TIME_CHART_PANEL_STATE: VelocityTimeChartPanelState = {
+  selectedKeys: ["magnitude"],
+};
 const CHANNEL_ORDER: ChannelKey[] = ["x", "y", "z", "magnitude"];
 
 function TooltipContent({
@@ -171,16 +178,16 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const { thresholds } = useThresholds();
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-  const panelId = api?.id ?? "velocity-time-chart";
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const defaultState = getDefaultVelocityTimeChartPanelState();
-  const savedState = savedPanelState?.type === "velocityTimeChart" ? savedPanelState.state : defaultState;
+  const { state: savedState, setState: setSavedState } = usePanelState<VelocityTimeChartPanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "velocity-time-chart",
+    panelType: "velocityTimeChart",
+    defaultState: DEFAULT_VELOCITY_TIME_CHART_PANEL_STATE,
+  });
   const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(() => sanitizeSelectedKeys(savedState.selectedKeys));
   const chartRef = useRef<ReactECharts>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const panelIdRef = useRef(panelId);
   const channelConfig = useMemo(
     () =>
       Object.fromEntries(
@@ -360,8 +367,8 @@ export function VelocityTimeChart({ api }: IDockviewPanelProps) {
   }, [selectedKeys, frameIndex, thresholds, animationData.metadata.dt, maxFrame, times, getChannelData, channelConfig]);
 
   useEffect(() => {
-    setPanelState(panelIdRef.current, "velocityTimeChart", { selectedKeys });
-  }, [selectedKeys, setPanelState]);
+    setSavedState({ selectedKeys });
+  }, [selectedKeys, setSavedState]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();

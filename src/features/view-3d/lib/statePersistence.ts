@@ -1,26 +1,27 @@
 import LZString from "lz-string";
+
+import DataSources from "@/data/index";
+import { DEFAULT_TIMELINE_PANEL_STATE, type TimelinePanelState } from "@/features/view-3d/components/Timeline";
 import type { Metric, MetricPaletteKey, MetricPaletteOverrides } from "@/lib/metrics";
 import type { SerializedDockview } from "dockview";
+
 import {
-  DEFAULT_CAMERA_STATE,
   DEFAULT_COLOR_THEMES,
-  DEFAULT_EXPANDED_SCALE_STATE,
-  DEFAULT_SLICE_RANGES,
   DEFAULT_THRESHOLDS,
   type ColorTheme,
-  type ExpandedScaleState,
+  type SavedPanelState,
   type ThresholdState,
-} from "@/state/viewStore";
+} from "@/state/profileState";
 import type { useViewStoreRaw } from "@/state";
+import { DEFAULT_CANVAS_PANEL_STATE, type CanvasPanelState } from "../contexts/CameraContext";
 
-const STATE_VERSION = 1;
+export const STATE_VERSION = 3;
 
-const AUTO_SAVE_KEY = "visuals_auto_save";
-const PRESETS_KEY = "visuals_presets";
 const LAST_URL_STATE_KEY = "visuals_last_url_state";
-const SAVE_PROFILES_KEY = "visuals_save_profiles_v2";
-const ACTIVE_PROFILE_KEY = "visuals_active_profile_v2";
+const APP_PREFERENCES_KEY = "visuals_app_preferences_v3";
+const BUILDING_PROFILE_SETS_KEY = "visuals_building_profile_sets_v3";
 export const PROFILES_UPDATED_EVENT = "visuals:profiles-updated";
+export const APPLY_WORKSPACE_STATE_EVENT = "visuals:apply-workspace-state";
 
 export const SYSTEM_PROFILE_DEFAULT_ID = "system-default";
 export const SYSTEM_PROFILE_FLOOR_TORSION_ID = "system-floor-torsion";
@@ -29,156 +30,26 @@ export const SYSTEM_PROFILE_ACCELERATION_REVIEW_ID = "system-acceleration-review
 export const SYSTEM_PROFILE_DAMAGE_SCREENING_ID = "system-damage-screening";
 export const EPHEMERAL_SHARE_PROFILE_ID = "ephemeral-share-session";
 
-export interface CameraState {
-  isOrthographic: boolean;
-  position: [number, number, number];
-  target: [number, number, number];
-  zoom?: number;
+export interface AppPreferences {
+  showHiddenMetrics: boolean;
 }
 
-export interface CanvasPanelState {
-  camera: CameraState;
-  expandedScale?: {
-    expansionEnabled: boolean;
-    displacementEnabled: boolean;
-    xExpansion: number;
-    yExpansion: number;
-    zExpansion: number;
-    xzDisplacementScale: number;
-    zDisplacementScale: number;
-  };
-  sliceView?: {
-    sliceEnabled: boolean;
-    xRange: [number, number];
-    yRange: [number, number];
-    zRange: [number, number];
-  };
-}
-
-export interface TimelinePanelState {
-  selectedKeys: (
-    | "x"
-    | "y"
-    | "z"
-    | "magnitude"
-    | "avgDisplacementX"
-    | "avgDisplacementY"
-    | "avgDisplacementZ"
-    | "avgDisplacementMag"
-    | "avgVelocityX"
-    | "avgVelocityY"
-    | "avgVelocityZ"
-    | "avgVelocityMag"
-    | "avgAccelerationX"
-    | "avgAccelerationY"
-    | "avgAccelerationZ"
-    | "avgAccelerationMag"
-    | "avgRotationX"
-    | "avgRotationY"
-    | "avgRotationZ"
-    | "avgRotationMag"
-  )[];
-}
-
-export interface StoryDriftHeatmapPanelState {
-  selectedCorners: string[];
-  resolution: number;
-}
-
-export interface InterstoryDriftChartPanelState {
-  visibleCorners: string[];
-}
-
-export interface CornerMetricChartPanelState {
-  visibleCorners: string[];
-  metric: Metric;
-  displayMode: "bar" | "line";
-}
-
-export interface FloorDisplacementChartPanelState {
-  selectedMetrics: Metric[];
-}
-
-export interface VelocityTimeChartPanelState {
-  selectedKeys: ("x" | "y" | "z" | "magnitude")[];
-}
-
-export interface RotationTimeChartPanelState {
-  selectedKeys: ("rx" | "ry" | "rz" | "magnitude")[];
-}
-
-export interface HistogramChartPanelState {
-  positionAxis: "x" | "y" | "z";
-  valueType: string;
-}
-
-export interface DataTablePanelState {
-  page: number;
-}
-
-export interface PeakValuesPanelState {
-  sortKey: "node" | "x" | "y" | "z" | "magnitude";
-  sortDir: "asc" | "desc";
-}
-
-export interface DataExplorerPanelState {
-  query: string;
-  page: number;
-  sortKey: string;
-  sortDir: "asc" | "desc";
-}
-
-export interface HingeDistributionPanelState {
-  binCount: number;
-  logScale: boolean;
-  clipPercentile: number;
-}
-
-export interface HingeHotspotsPanelState {
-  stepType: string;
-}
-
-export type PanelState =
-  | { type: "canvas"; state: CanvasPanelState; panelId: string }
-  | { type: "timeline"; state: TimelinePanelState; panelId: string }
-  | { type: "storyDriftHeatmap"; state: StoryDriftHeatmapPanelState; panelId: string }
-  | { type: "interstoryDriftChart"; state: InterstoryDriftChartPanelState; panelId: string }
-  | { type: "cornerMetricChart"; state: CornerMetricChartPanelState; panelId: string }
-  | { type: "floorDisplacementChart"; state: FloorDisplacementChartPanelState; panelId: string }
-  | { type: "velocityTimeChart"; state: VelocityTimeChartPanelState; panelId: string }
-  | { type: "rotationTimeChart"; state: RotationTimeChartPanelState; panelId: string }
-  | { type: "histogramChart"; state: HistogramChartPanelState; panelId: string }
-  | { type: "dataTable"; state: DataTablePanelState; panelId: string }
-  | { type: "peakValues"; state: PeakValuesPanelState; panelId: string }
-  | { type: "dataExplorer"; state: DataExplorerPanelState; panelId: string }
-  | { type: "hingeDistribution"; state: HingeDistributionPanelState; panelId: string }
-  | { type: "unknown"; state: Record<string, unknown>; panelId: string };
-
-export interface AppState {
+export interface WorkspaceState {
   version: number;
   timestamp: number;
   frameIndex: number;
   currentMetric: Metric;
   metricPaletteOverrides: MetricPaletteOverrides;
   thresholdHighlighting: boolean;
-  showHiddenMetrics: boolean;
   thresholds: ThresholdState;
   visibleFloors: string[];
   selectedNodeIds: number[];
   hiddenNodeIds: number[];
   hideSelectedNodes: boolean;
-  expandedScale: ExpandedScaleState;
-  sliceEnabled: boolean;
-  xRange: [number, number];
-  yRange: [number, number];
-  zRange: [number, number];
-  camera: CameraState;
   colorTheme: ColorTheme;
   layout: SerializedDockview | null;
-  panelStates: Partial<Record<string, PanelState>>;
+  panelStates: Partial<Record<string, SavedPanelState>>;
   dataSelection?: DataSelection;
-
-  // Render Modes
   renderNodes: boolean;
   renderFloorSlabs: boolean;
   renderXCrossSectionSlabs: boolean;
@@ -223,54 +94,38 @@ export type SaveProfileKind = "system" | "user" | "ephemeral";
 export interface SaveProfile {
   id: string;
   name: string;
+  buildingId: string;
   kind: SaveProfileKind;
   createdAt: number;
   updatedAt: number;
-  defaultState: AppState;
-  currentState: AppState;
+  defaultState: WorkspaceState;
+  currentState: WorkspaceState;
 }
 
 export interface NamedPreset {
   name: string;
-  state: AppState;
+  state: WorkspaceState;
   createdAt: number;
+}
+
+interface BuildingProfileSet {
+  buildingId: string;
+  activeProfileId: string;
+  profiles: SaveProfile[];
+}
+
+interface StoredBuildingProfileSets {
+  version: number;
+  lastActiveBuildingId: string | null;
+  sets: Record<string, BuildingProfileSet>;
+}
+
+interface UrlStateResolution {
+  state: WorkspaceState | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-function isAppStateLike(value: unknown): value is AppState {
-  if (!isRecord(value)) return false;
-  const dataSelection = value.dataSelection;
-  if (dataSelection !== undefined) {
-    if (
-      !isRecord(dataSelection) ||
-      typeof dataSelection.building !== "string" ||
-      typeof dataSelection.simulation !== "string"
-    ) {
-      return false;
-    }
-    if (dataSelection.optionalLoads !== undefined) {
-      if (!isRecord(dataSelection.optionalLoads)) return false;
-      for (const key of OPTIONAL_DATA_LOAD_OPTION_KEYS) {
-        const maybeValue = dataSelection.optionalLoads[key];
-        if (maybeValue !== undefined && typeof maybeValue !== "boolean") {
-          return false;
-        }
-      }
-    }
-  }
-  return (
-    typeof value.version === "number" &&
-    typeof value.timestamp === "number" &&
-    typeof value.frameIndex === "number" &&
-    typeof value.currentMetric === "string"
-  );
-}
-
-function cloneAppState(state: AppState): AppState {
-  return JSON.parse(JSON.stringify(state)) as AppState;
 }
 
 function isBoolean(value: unknown): value is boolean {
@@ -279,6 +134,40 @@ function isBoolean(value: unknown): value is boolean {
 
 function isNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function sanitizeProfileName(name: string): string {
+  return name.trim().replace(/\s+/g, " ");
+}
+
+function cloneState<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function normalizeOptionalLoads(
+  optionalLoads?: Partial<OptionalDataLoadOptions> | null
+): Partial<OptionalDataLoadOptions> | undefined {
+  if (!optionalLoads || !isRecord(optionalLoads)) return undefined;
+
+  const normalized: Partial<OptionalDataLoadOptions> = {};
+  for (const key of OPTIONAL_DATA_LOAD_OPTION_KEYS) {
+    const value = optionalLoads[key];
+    if (typeof value === "boolean") {
+      normalized[key] = value;
+    }
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function normalizeSelection(selection?: DataSelection | null): DataSelection | undefined {
+  if (!selection) return undefined;
+  if (!selection.building || !selection.simulation) return undefined;
+  return {
+    building: selection.building,
+    simulation: selection.simulation,
+    optionalLoads: normalizeOptionalLoads(selection.optionalLoads),
+  };
 }
 
 function getMetricPaletteOverridesPatch(value: unknown): MetricPaletteOverrides {
@@ -290,59 +179,124 @@ function getMetricPaletteOverridesPatch(value: unknown): MetricPaletteOverrides 
       patch[metric as Metric] = palette as MetricPaletteKey;
     }
   }
-  return patch;
-}
-
-function getExpandedScalePatch(value: unknown): Partial<ExpandedScaleState> {
-  if (!isRecord(value)) return {};
-
-  const patch: Partial<ExpandedScaleState> = {};
-
-  if (isBoolean(value.expansionEnabled)) patch.expansionEnabled = value.expansionEnabled;
-  else if (isBoolean(value.explodedEnabled)) patch.expansionEnabled = value.explodedEnabled;
-
-  if (isBoolean(value.displacementEnabled)) patch.displacementEnabled = value.displacementEnabled;
-
-  if (isNumber(value.xExpansion)) patch.xExpansion = value.xExpansion;
-  else if (isNumber(value.xExplosion)) patch.xExpansion = value.xExplosion;
-
-  if (isNumber(value.yExpansion)) patch.yExpansion = value.yExpansion;
-  else if (isNumber(value.yExplosion)) patch.yExpansion = value.yExplosion;
-
-  if (isNumber(value.zExpansion)) patch.zExpansion = value.zExpansion;
-  else if (isNumber(value.zExplosion)) patch.zExpansion = value.zExplosion;
-
-  if (isNumber(value.xzDisplacementScale)) patch.xzDisplacementScale = value.xzDisplacementScale;
-  if (isNumber(value.zDisplacementScale)) patch.zDisplacementScale = value.zDisplacementScale;
 
   return patch;
 }
 
-function normalizeState(state: AppState): AppState {
-  const stateWithLegacy = state as AppState & { explodedView?: unknown };
-  const { explodedView: _legacyExplodedView, ...stateWithoutLegacy } = stateWithLegacy;
-  const legacySelectedAsHidden =
-    (!Array.isArray(state.hiddenNodeIds) || state.hiddenNodeIds.length === 0) && state.hideSelectedNodes
-      ? [...state.selectedNodeIds]
-      : [];
-  const expandedScale = {
-    ...DEFAULT_EXPANDED_SCALE_STATE,
-    ...getExpandedScalePatch(stateWithLegacy.explodedView),
-    ...getExpandedScalePatch(state.expandedScale),
+function getDefaultBuildingSelection(): DataSelection | undefined {
+  const firstBuilding = DataSources.buildings[0];
+  const firstSimulation = firstBuilding?.simulations[0];
+  if (!firstBuilding || !firstSimulation) return undefined;
+  return {
+    building: firstBuilding.folder,
+    simulation: firstSimulation.folder,
   };
+}
+
+function normalizeWorkspaceState(raw: Partial<WorkspaceState> & Record<string, unknown>): WorkspaceState {
+  const selection = normalizeSelection(raw.dataSelection as DataSelection | undefined) ?? getDefaultBuildingSelection();
+  const thresholds = isRecord(raw.thresholds)
+    ? { ...DEFAULT_THRESHOLDS, ...(raw.thresholds as Partial<ThresholdState>) }
+    : { ...DEFAULT_THRESHOLDS };
 
   return {
-    ...stateWithoutLegacy,
-    metricPaletteOverrides: getMetricPaletteOverridesPatch(state.metricPaletteOverrides),
-    expandedScale,
-    hiddenNodeIds: Array.isArray(state.hiddenNodeIds) ? state.hiddenNodeIds : legacySelectedAsHidden,
     version: STATE_VERSION,
     timestamp: Date.now(),
+    frameIndex: isNumber(raw.frameIndex) ? raw.frameIndex : 0,
+    currentMetric: typeof raw.currentMetric === "string" ? (raw.currentMetric as Metric) : "interstoryDrift",
+    metricPaletteOverrides: getMetricPaletteOverridesPatch(raw.metricPaletteOverrides),
+    thresholdHighlighting: isBoolean(raw.thresholdHighlighting) ? raw.thresholdHighlighting : true,
+    thresholds,
+    visibleFloors: Array.isArray(raw.visibleFloors)
+      ? raw.visibleFloors.filter((value) => typeof value === "string")
+      : [],
+    selectedNodeIds: Array.isArray(raw.selectedNodeIds)
+      ? raw.selectedNodeIds.filter((value): value is number => typeof value === "number")
+      : [],
+    hiddenNodeIds: Array.isArray(raw.hiddenNodeIds)
+      ? raw.hiddenNodeIds.filter((value): value is number => typeof value === "number")
+      : [],
+    hideSelectedNodes: isBoolean(raw.hideSelectedNodes) ? raw.hideSelectedNodes : false,
+    colorTheme: isRecord(raw.colorTheme)
+      ? ({ ...DEFAULT_COLOR_THEMES[0], ...raw.colorTheme } as ColorTheme)
+      : DEFAULT_COLOR_THEMES[0],
+    layout: (raw.layout as SerializedDockview | null | undefined) ?? null,
+    panelStates: isRecord(raw.panelStates) ? (raw.panelStates as Partial<Record<string, SavedPanelState>>) : {},
+    dataSelection: selection,
+    renderNodes: isBoolean(raw.renderNodes) ? raw.renderNodes : true,
+    renderFloorSlabs: isBoolean(raw.renderFloorSlabs) ? raw.renderFloorSlabs : true,
+    renderXCrossSectionSlabs: isBoolean(raw.renderXCrossSectionSlabs) ? raw.renderXCrossSectionSlabs : false,
+    renderYCrossSectionSlabs: isBoolean(raw.renderYCrossSectionSlabs) ? raw.renderYCrossSectionSlabs : false,
+    showCornersOnly: isBoolean(raw.showCornersOnly) ? raw.showCornersOnly : false,
+    visualInterpolationEnabled: isBoolean(raw.visualInterpolationEnabled) ? raw.visualInterpolationEnabled : false,
+    renderVerticalConnections: isBoolean(raw.renderVerticalConnections) ? raw.renderVerticalConnections : false,
+    renderHorizontalConnections: isBoolean(raw.renderHorizontalConnections) ? raw.renderHorizontalConnections : false,
+    nodePanelGraphVisibility: isRecord(raw.nodePanelGraphVisibility)
+      ? Object.fromEntries(
+          Object.entries(raw.nodePanelGraphVisibility).filter(
+            (entry): entry is [string, boolean] => typeof entry[1] === "boolean"
+          )
+        )
+      : {},
   };
 }
 
-function sanitizeProfileName(name: string): string {
-  return name.trim().replace(/\s+/g, " ");
+export function getDefaultAppPreferences(): AppPreferences {
+  return {
+    showHiddenMetrics: false,
+  };
+}
+
+export function loadAppPreferences(): AppPreferences {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(APP_PREFERENCES_KEY) ?? "null") as unknown;
+    if (!isRecord(parsed)) return getDefaultAppPreferences();
+    return {
+      showHiddenMetrics: isBoolean(parsed.showHiddenMetrics) ? parsed.showHiddenMetrics : false,
+    };
+  } catch {
+    return getDefaultAppPreferences();
+  }
+}
+
+export function saveAppPreferences(preferences: AppPreferences): void {
+  localStorage.setItem(APP_PREFERENCES_KEY, JSON.stringify(preferences));
+}
+
+function buildEmptyStorage(): StoredBuildingProfileSets {
+  return {
+    version: STATE_VERSION,
+    lastActiveBuildingId: null,
+    sets: {},
+  };
+}
+
+function readStoredBuildingSets(): StoredBuildingProfileSets {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(BUILDING_PROFILE_SETS_KEY) ?? "null") as unknown;
+    if (!isRecord(parsed) || !isRecord(parsed.sets)) {
+      return buildEmptyStorage();
+    }
+
+    const sets = Object.fromEntries(
+      Object.entries(parsed.sets).filter((entry): entry is [string, BuildingProfileSet] => {
+        const value = entry[1];
+        return isRecord(value) && typeof value.buildingId === "string" && Array.isArray(value.profiles);
+      })
+    );
+
+    return {
+      version: STATE_VERSION,
+      lastActiveBuildingId: typeof parsed.lastActiveBuildingId === "string" ? parsed.lastActiveBuildingId : null,
+      sets,
+    };
+  } catch {
+    return buildEmptyStorage();
+  }
+}
+
+function writeStoredBuildingSets(storage: StoredBuildingProfileSets): void {
+  localStorage.setItem(BUILDING_PROFILE_SETS_KEY, JSON.stringify(storage));
 }
 
 function generateUserProfileId(name: string): string {
@@ -357,19 +311,25 @@ function generateUserProfileId(name: string): string {
 function createProfile(params: {
   id: string;
   name: string;
+  buildingId: string;
   kind: SaveProfileKind;
-  defaultState: AppState;
-  currentState?: AppState;
+  defaultState: WorkspaceState;
+  currentState?: WorkspaceState;
   createdAt?: number;
   updatedAt?: number;
 }): SaveProfile {
   const now = Date.now();
-  const defaultState = normalizeState(cloneAppState(params.defaultState));
-  const currentState = normalizeState(cloneAppState(params.currentState ?? params.defaultState));
+  const defaultState = normalizeWorkspaceState(
+    cloneState(params.defaultState) as WorkspaceState & Record<string, unknown>
+  );
+  const currentState = normalizeWorkspaceState(
+    cloneState(params.currentState ?? params.defaultState) as WorkspaceState & Record<string, unknown>
+  );
 
   return {
     id: params.id,
     name: sanitizeProfileName(params.name),
+    buildingId: params.buildingId,
     kind: params.kind,
     createdAt: params.createdAt ?? now,
     updatedAt: params.updatedAt ?? now,
@@ -378,287 +338,26 @@ function createProfile(params: {
   };
 }
 
-function getFloorTorsionDefaultState(layout?: SerializedDockview | null): AppState {
-  const base = getDefaultAppState(layout);
-  return {
-    ...base,
-    currentMetric: "rotationZ",
-    camera: {
-      isOrthographic: true,
-      position: [0, 120, 0],
-      target: [0, 0, 0],
-      zoom: 45,
-    },
-  };
-}
-
-function getDriftAnalysisDefaultState(layout?: SerializedDockview | null): AppState {
-  const base = getDefaultAppState(layout);
-  const camera: CameraState = {
-    isOrthographic: true,
-    position: [85, 110, 85],
-    target: [0, 0, 0],
-    zoom: 42,
-  };
-  const canvasPanel = getDefaultCanvasPanelState();
-
-  const panelStates: Record<string, PanelState> = {
-    "main-canvas": {
-      type: "canvas",
-      panelId: "main-canvas",
-      state: {
-        ...canvasPanel,
-        camera,
-      },
-    },
-    timeline: {
-      type: "timeline",
-      panelId: "timeline",
-      state: {
-        selectedKeys: ["avgDisplacementX", "avgDisplacementY", "avgDisplacementMag", "avgRotationZ"],
-      },
-    },
-    "interstory-drift-chart": {
-      type: "interstoryDriftChart",
-      panelId: "interstory-drift-chart",
-      state: {
-        visibleCorners: ["NW", "NE", "SW", "SE"],
-      },
-    },
-  };
-
-  return {
-    ...base,
-    currentMetric: "interstoryDrift",
-    thresholdHighlighting: true,
-    showHiddenMetrics: false,
-    thresholds: {
-      ...base.thresholds,
-      interstoryDrift: 0.35,
-    },
-    camera,
-    panelStates,
-  };
-}
-
-function getAccelerationReviewDefaultState(layout?: SerializedDockview | null): AppState {
-  const base = getDefaultAppState(layout);
-
-  const panelStates: Record<string, PanelState> = {
-    timeline: {
-      type: "timeline",
-      panelId: "timeline",
-      state: {
-        selectedKeys: ["x", "y", "magnitude", "avgAccelerationX", "avgAccelerationY", "avgAccelerationMag"],
-      },
-    },
-  };
-
-  return {
-    ...base,
-    currentMetric: "accelerationMag",
-    thresholdHighlighting: true,
-    showHiddenMetrics: false,
-    thresholds: {
-      ...base.thresholds,
-      acceleration: 1.5,
-    },
-    panelStates,
-  };
-}
-
-function getDamageScreeningDefaultState(layout?: SerializedDockview | null): AppState {
-  const base = getDefaultAppState(layout);
-  const camera: CameraState = {
-    isOrthographic: true,
-    position: [120, 90, 0],
-    target: [0, 0, 0],
-    zoom: 48,
-  };
-  const canvasPanel = getDefaultCanvasPanelState();
-  const canvasExpandedScale = canvasPanel.expandedScale ?? { ...DEFAULT_EXPANDED_SCALE_STATE };
-
-  const panelStates: Record<string, PanelState> = {
-    "main-canvas": {
-      type: "canvas",
-      panelId: "main-canvas",
-      state: {
-        ...canvasPanel,
-        camera,
-        expandedScale: {
-          ...canvasExpandedScale,
-          displacementEnabled: true,
-          xzDisplacementScale: 8,
-          zDisplacementScale: 4,
-        },
-      },
-    },
-    timeline: {
-      type: "timeline",
-      panelId: "timeline",
-      state: {
-        selectedKeys: ["avgDisplacementMag", "avgVelocityMag", "avgRotationZ", "avgRotationMag"],
-      },
-    },
-    "interstory-drift-chart": {
-      type: "interstoryDriftChart",
-      panelId: "interstory-drift-chart",
-      state: {
-        visibleCorners: ["NW", "NE", "SW", "SE"],
-      },
-    },
-  };
-
-  return {
-    ...base,
-    currentMetric: "rotationZ",
-    thresholdHighlighting: true,
-    showHiddenMetrics: false,
-    thresholds: {
-      ...base.thresholds,
-      rotation: 0.008,
-      interstoryDrift: 0.35,
-    },
-    expandedScale: {
-      ...base.expandedScale,
-      displacementEnabled: true,
-      xzDisplacementScale: 8,
-      zDisplacementScale: 4,
-    },
-    camera,
-    panelStates,
-  };
-}
-
-export function getDefaultCameraState(): CameraState {
-  return { ...DEFAULT_CAMERA_STATE };
-}
-
-export function getDefaultCanvasPanelState(): CanvasPanelState {
-  return {
-    camera: getDefaultCameraState(),
-    expandedScale: { ...DEFAULT_EXPANDED_SCALE_STATE },
-    sliceView: {
-      sliceEnabled: false,
-      xRange: [...DEFAULT_SLICE_RANGES.x] as [number, number],
-      yRange: [...DEFAULT_SLICE_RANGES.y] as [number, number],
-      zRange: [...DEFAULT_SLICE_RANGES.z] as [number, number],
-    },
-  };
-}
-
-export function getDefaultTimelinePanelState(): TimelinePanelState {
-  return {
-    selectedKeys: ["x", "y"],
-  };
-}
-
-export function getDefaultStoryDriftHeatmapPanelState(): StoryDriftHeatmapPanelState {
-  return {
-    selectedCorners: ["NE"],
-    resolution: 50,
-  };
-}
-
-export function getDefaultInterstoryDriftChartPanelState(): InterstoryDriftChartPanelState {
-  return {
-    visibleCorners: ["NW", "NE", "SW", "SE"],
-  };
-}
-
-export function getDefaultCornerMetricChartPanelState(): CornerMetricChartPanelState {
-  return {
-    visibleCorners: ["NW", "NE", "SW", "SE"],
-    metric: "interstoryDrift",
-    displayMode: "bar",
-  };
-}
-
-export function getDefaultFloorDisplacementChartPanelState(): FloorDisplacementChartPanelState {
-  return {
-    selectedMetrics: ["displacementX", "displacementY"],
-  };
-}
-
-export function getDefaultVelocityTimeChartPanelState(): VelocityTimeChartPanelState {
-  return {
-    selectedKeys: ["magnitude"],
-  };
-}
-
-export function getDefaultRotationTimeChartPanelState(): RotationTimeChartPanelState {
-  return {
-    selectedKeys: ["magnitude"],
-  };
-}
-
-export function getDefaultHistogramChartPanelState(): HistogramChartPanelState {
-  return {
-    positionAxis: "x",
-    valueType: "displacementMag",
-  };
-}
-
-export function getDefaultDataTablePanelState(): DataTablePanelState {
-  return {
-    page: 0,
-  };
-}
-
-export function getDefaultPeakValuesPanelState(): PeakValuesPanelState {
-  return {
-    sortKey: "magnitude",
-    sortDir: "desc",
-  };
-}
-
-export function getDefaultDataExplorerPanelState(): DataExplorerPanelState {
-  return {
-    query: "",
-    page: 0,
-    sortKey: "currentMagnitude",
-    sortDir: "desc",
-  };
-}
-
-export function getDefaultHingeDistributionPanelState(): HingeDistributionPanelState {
-  return {
-    binCount: 24,
-    logScale: false,
-    clipPercentile: 99,
-  };
-}
-
-export function getDefaultHingeHotspotsPanelState(): HingeHotspotsPanelState {
-  return {
-    stepType: "Max",
-  };
-}
-
-export function getDefaultAppState(layout?: SerializedDockview | null): AppState {
-  return {
+export function getDefaultWorkspaceState(
+  layout?: SerializedDockview | null,
+  selection?: DataSelection | null
+): WorkspaceState {
+  return normalizeWorkspaceState({
     version: STATE_VERSION,
     timestamp: Date.now(),
     frameIndex: 0,
     currentMetric: "interstoryDrift",
     metricPaletteOverrides: {},
     thresholdHighlighting: true,
-    showHiddenMetrics: false,
     thresholds: { ...DEFAULT_THRESHOLDS },
     visibleFloors: [],
     selectedNodeIds: [],
     hiddenNodeIds: [],
     hideSelectedNodes: false,
-    expandedScale: { ...DEFAULT_EXPANDED_SCALE_STATE },
-    sliceEnabled: false,
-    xRange: [...DEFAULT_SLICE_RANGES.x] as [number, number],
-    yRange: [...DEFAULT_SLICE_RANGES.y] as [number, number],
-    zRange: [...DEFAULT_SLICE_RANGES.z] as [number, number],
-    camera: getDefaultCameraState(),
     colorTheme: DEFAULT_COLOR_THEMES[0],
     layout: layout ?? null,
     panelStates: {},
-    dataSelection: undefined,
+    dataSelection: normalizeSelection(selection) ?? getDefaultBuildingSelection(),
     renderNodes: true,
     renderFloorSlabs: true,
     renderXCrossSectionSlabs: false,
@@ -668,7 +367,251 @@ export function getDefaultAppState(layout?: SerializedDockview | null): AppState
     renderVerticalConnections: false,
     renderHorizontalConnections: false,
     nodePanelGraphVisibility: {},
+  });
+}
+
+function withSelection(state: WorkspaceState, selection: DataSelection): WorkspaceState {
+  return normalizeWorkspaceState({
+    ...cloneState(state),
+    dataSelection: selection,
+  } as WorkspaceState & Record<string, unknown>);
+}
+
+function createCanvasPanelState(overrides?: Partial<CanvasPanelState>): CanvasPanelState {
+  return {
+    ...DEFAULT_CANVAS_PANEL_STATE,
+    ...overrides,
+    camera: {
+      ...DEFAULT_CANVAS_PANEL_STATE.camera,
+      ...overrides?.camera,
+    },
+    expandedScale: {
+      ...DEFAULT_CANVAS_PANEL_STATE.expandedScale,
+      ...overrides?.expandedScale,
+    },
+    sliceView: {
+      ...DEFAULT_CANVAS_PANEL_STATE.sliceView,
+      ...overrides?.sliceView,
+    },
   };
+}
+
+function getFloorTorsionDefaultState(selection: DataSelection, layout?: SerializedDockview | null): WorkspaceState {
+  return normalizeWorkspaceState({
+    ...getDefaultWorkspaceState(layout, selection),
+    currentMetric: "rotationZ",
+    panelStates: {
+      "main-canvas": {
+        panelId: "main-canvas",
+        type: "canvas",
+        state: createCanvasPanelState({
+          camera: {
+            isOrthographic: true,
+            position: [0, 120, 0],
+            target: [0, 0, 0],
+            zoom: 45,
+          },
+        }),
+      },
+    },
+  } as WorkspaceState & Record<string, unknown>);
+}
+
+function getDriftAnalysisDefaultState(selection: DataSelection, layout?: SerializedDockview | null): WorkspaceState {
+  return normalizeWorkspaceState({
+    ...getDefaultWorkspaceState(layout, selection),
+    currentMetric: "interstoryDrift",
+    thresholds: {
+      ...DEFAULT_THRESHOLDS,
+      interstoryDrift: 0.35,
+    },
+    panelStates: {
+      timeline: {
+        panelId: "timeline",
+        type: "timeline",
+        state: {
+          ...DEFAULT_TIMELINE_PANEL_STATE,
+          selectedKeys: ["avgDisplacementX", "avgDisplacementY", "avgDisplacementMag", "avgRotationZ"],
+        } satisfies TimelinePanelState,
+      },
+      "main-canvas": {
+        panelId: "main-canvas",
+        type: "canvas",
+        state: createCanvasPanelState({
+          camera: {
+            isOrthographic: true,
+            position: [85, 110, 85],
+            target: [0, 0, 0],
+            zoom: 42,
+          },
+        }),
+      },
+    },
+  } as WorkspaceState & Record<string, unknown>);
+}
+
+function getAccelerationReviewDefaultState(
+  selection: DataSelection,
+  layout?: SerializedDockview | null
+): WorkspaceState {
+  return normalizeWorkspaceState({
+    ...getDefaultWorkspaceState(layout, selection),
+    currentMetric: "accelerationMag",
+    thresholds: {
+      ...DEFAULT_THRESHOLDS,
+      acceleration: 1.5,
+    },
+    panelStates: {
+      timeline: {
+        panelId: "timeline",
+        type: "timeline",
+        state: {
+          ...DEFAULT_TIMELINE_PANEL_STATE,
+          selectedKeys: ["x", "y", "magnitude", "avgAccelerationX", "avgAccelerationY", "avgAccelerationMag"],
+        } satisfies TimelinePanelState,
+      },
+    },
+  } as WorkspaceState & Record<string, unknown>);
+}
+
+function getDamageScreeningDefaultState(selection: DataSelection, layout?: SerializedDockview | null): WorkspaceState {
+  return normalizeWorkspaceState({
+    ...getDefaultWorkspaceState(layout, selection),
+    currentMetric: "rotationZ",
+    thresholds: {
+      ...DEFAULT_THRESHOLDS,
+      rotation: 0.008,
+      interstoryDrift: 0.35,
+    },
+    panelStates: {
+      timeline: {
+        panelId: "timeline",
+        type: "timeline",
+        state: {
+          ...DEFAULT_TIMELINE_PANEL_STATE,
+          selectedKeys: ["avgDisplacementMag", "avgVelocityMag", "avgRotationZ", "avgRotationMag"],
+        } satisfies TimelinePanelState,
+      },
+      "main-canvas": {
+        panelId: "main-canvas",
+        type: "canvas",
+        state: createCanvasPanelState({
+          camera: {
+            isOrthographic: true,
+            position: [120, 90, 0],
+            target: [0, 0, 0],
+            zoom: 48,
+          },
+          expandedScale: {
+            expansionEnabled: false,
+            displacementEnabled: true,
+            xExpansion: 0,
+            yExpansion: 0,
+            zExpansion: 1,
+            xzDisplacementScale: 8,
+            zDisplacementScale: 4,
+          },
+        }),
+      },
+    },
+  } as WorkspaceState & Record<string, unknown>);
+}
+
+function createSystemProfilesForBuilding(selection: DataSelection, layout?: SerializedDockview | null): SaveProfile[] {
+  return [
+    createProfile({
+      id: SYSTEM_PROFILE_DEFAULT_ID,
+      name: "Default View",
+      buildingId: selection.building,
+      kind: "system",
+      defaultState: getDefaultWorkspaceState(layout, selection),
+    }),
+    createProfile({
+      id: SYSTEM_PROFILE_FLOOR_TORSION_ID,
+      name: "Floor Torsion",
+      buildingId: selection.building,
+      kind: "system",
+      defaultState: getFloorTorsionDefaultState(selection, layout),
+    }),
+    createProfile({
+      id: SYSTEM_PROFILE_DRIFT_ANALYSIS_ID,
+      name: "Drift Analysis",
+      buildingId: selection.building,
+      kind: "system",
+      defaultState: getDriftAnalysisDefaultState(selection, layout),
+    }),
+    createProfile({
+      id: SYSTEM_PROFILE_ACCELERATION_REVIEW_ID,
+      name: "Acceleration Review",
+      buildingId: selection.building,
+      kind: "system",
+      defaultState: getAccelerationReviewDefaultState(selection, layout),
+    }),
+    createProfile({
+      id: SYSTEM_PROFILE_DAMAGE_SCREENING_ID,
+      name: "ISD Screening",
+      buildingId: selection.building,
+      kind: "system",
+      defaultState: getDamageScreeningDefaultState(selection, layout),
+    }),
+  ];
+}
+
+function ensureProfileBuildingSelection(profile: SaveProfile, selection: DataSelection): SaveProfile {
+  return {
+    ...profile,
+    defaultState: withSelection(profile.defaultState, selection),
+    currentState: withSelection(profile.currentState, selection),
+  };
+}
+
+function ensureBuildingProfileSet(
+  storage: StoredBuildingProfileSets,
+  selection: DataSelection,
+  layout?: SerializedDockview | null
+): BuildingProfileSet {
+  const existing = storage.sets[selection.building];
+  if (!existing) {
+    const created: BuildingProfileSet = {
+      buildingId: selection.building,
+      activeProfileId: SYSTEM_PROFILE_DEFAULT_ID,
+      profiles: createSystemProfilesForBuilding(selection, layout),
+    };
+    storage.sets[selection.building] = created;
+    storage.lastActiveBuildingId = selection.building;
+    return created;
+  }
+
+  existing.profiles = existing.profiles.map((profile) =>
+    ensureProfileBuildingSelection(profile, {
+      ...selection,
+      simulation: profile.currentState.dataSelection?.simulation ?? selection.simulation,
+      optionalLoads: profile.currentState.dataSelection?.optionalLoads ?? selection.optionalLoads,
+    })
+  );
+  storage.lastActiveBuildingId = selection.building;
+  return existing;
+}
+
+function getActiveProfileFromSet(profileSet: BuildingProfileSet): SaveProfile {
+  return (
+    profileSet.profiles.find((profile) => profile.id === profileSet.activeProfileId) ??
+    profileSet.profiles[0] ??
+    createSystemProfilesForBuilding({
+      building: profileSet.buildingId,
+      simulation: getDefaultBuildingSelection()?.simulation ?? "",
+    })[0]
+  );
+}
+
+function emitProfilesUpdated(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(PROFILES_UPDATED_EVENT));
+  }
+}
+
+function getStorage(): StoredBuildingProfileSets {
+  return readStoredBuildingSets();
 }
 
 export function getDataSelectionFromUrlSearch(search: string): DataSelection | null {
@@ -686,471 +629,216 @@ export function getDataSelectionFromCurrentUrl(): DataSelection | null {
   return getDataSelectionFromUrlSearch(window.location.search);
 }
 
-function getSystemDefaultProfiles(layout?: SerializedDockview | null): SaveProfile[] {
-  const defaultState = getDefaultAppState(layout);
-  const floorTorsionState = getFloorTorsionDefaultState(layout);
-  const driftAnalysisState = getDriftAnalysisDefaultState(layout);
-  const accelerationReviewState = getAccelerationReviewDefaultState(layout);
-  const damageScreeningState = getDamageScreeningDefaultState(layout);
+function getStoredFallbackSelection(): DataSelection | null {
+  const storage = getStorage();
+  const lastBuildingId = storage.lastActiveBuildingId;
+  if (!lastBuildingId) return getDefaultBuildingSelection() ?? null;
 
-  return [
-    createProfile({
-      id: SYSTEM_PROFILE_DEFAULT_ID,
-      name: "Default View",
-      kind: "system",
-      defaultState,
-    }),
-    createProfile({
-      id: SYSTEM_PROFILE_FLOOR_TORSION_ID,
-      name: "Floor Torsion",
-      kind: "system",
-      defaultState: floorTorsionState,
-    }),
-    createProfile({
-      id: SYSTEM_PROFILE_DRIFT_ANALYSIS_ID,
-      name: "Drift Analysis",
-      kind: "system",
-      defaultState: driftAnalysisState,
-    }),
-    createProfile({
-      id: SYSTEM_PROFILE_ACCELERATION_REVIEW_ID,
-      name: "Acceleration Review",
-      kind: "system",
-      defaultState: accelerationReviewState,
-    }),
-    createProfile({
-      id: SYSTEM_PROFILE_DAMAGE_SCREENING_ID,
-      name: "ISD Screening",
-      kind: "system",
-      defaultState: damageScreeningState,
-    }),
-  ];
+  const profileSet = storage.sets[lastBuildingId];
+  if (!profileSet) return getDefaultBuildingSelection() ?? null;
+
+  return getActiveProfileFromSet(profileSet).currentState.dataSelection ?? getDefaultBuildingSelection() ?? null;
 }
 
-function serializeState(state: AppState): string {
-  return JSON.stringify(state);
+export function loadSaveProfiles(selection?: DataSelection | null): SaveProfile[] {
+  const fallback = selection ?? getStoredFallbackSelection();
+  if (!fallback) return [];
+  const storage = getStorage();
+  const profileSet = ensureBuildingProfileSet(storage, fallback);
+  writeStoredBuildingSets(storage);
+  return profileSet.profiles.map((profile) => cloneState(profile));
 }
 
-function deserializeState(json: string): AppState | null {
-  try {
-    const parsed: unknown = JSON.parse(json);
-    if (!isAppStateLike(parsed)) {
-      return null;
-    }
-    if (parsed.version > STATE_VERSION) {
-      console.warn("State version mismatch or invalid");
-      return null;
-    }
-    return parsed;
-  } catch (e) {
-    console.error("Failed to deserialize state:", e);
-    return null;
-  }
+export function getActiveProfile(selection?: DataSelection | null): SaveProfile | null {
+  const fallback = selection ?? getStoredFallbackSelection();
+  if (!fallback) return null;
+  const storage = getStorage();
+  const profileSet = ensureBuildingProfileSet(storage, fallback);
+  writeStoredBuildingSets(storage);
+  return cloneState(getActiveProfileFromSet(profileSet));
 }
 
-function saveProfiles(profiles: SaveProfile[]): void {
-  localStorage.setItem(SAVE_PROFILES_KEY, JSON.stringify(profiles));
-}
-
-function parseProfiles(raw: string | null): SaveProfile[] {
-  if (!raw) return [];
-
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-
-    const profiles: SaveProfile[] = [];
-    for (const item of parsed) {
-      if (!isRecord(item)) continue;
-
-      const { id, name, kind, createdAt, updatedAt, defaultState, currentState } = item;
-      if (
-        typeof id !== "string" ||
-        typeof name !== "string" ||
-        (kind !== "system" && kind !== "user" && kind !== "ephemeral") ||
-        typeof createdAt !== "number" ||
-        typeof updatedAt !== "number" ||
-        !isAppStateLike(defaultState) ||
-        !isAppStateLike(currentState)
-      ) {
-        continue;
-      }
-
-      profiles.push({
-        id,
-        name,
-        kind,
-        createdAt,
-        updatedAt,
-        defaultState,
-        currentState,
-      });
-    }
-    return profiles;
-  } catch {
-    return [];
-  }
-}
-
-function parseLegacyNamedPresets(): NamedPreset[] {
-  try {
-    const json = localStorage.getItem(PRESETS_KEY);
-    if (!json) return [];
-
-    const parsed: unknown = JSON.parse(json);
-    if (!Array.isArray(parsed)) return [];
-
-    const presets: NamedPreset[] = [];
-    for (const item of parsed) {
-      if (!isRecord(item)) continue;
-      const { name, state, createdAt } = item;
-      if (typeof name === "string" && typeof createdAt === "number" && isAppStateLike(state)) {
-        presets.push({ name, state, createdAt });
-      }
-    }
-
-    return presets;
-  } catch {
-    return [];
-  }
-}
-
-function parseLegacyAutoSave(): AppState | null {
-  const json = localStorage.getItem(AUTO_SAVE_KEY);
-  if (!json) return null;
-  return deserializeState(json);
-}
-
-function migrateLegacyData(layout?: SerializedDockview | null): SaveProfile[] {
-  const systemProfiles = getSystemDefaultProfiles(layout);
-  const migratedProfiles = [...systemProfiles];
-
-  const legacyAutoSave = parseLegacyAutoSave();
-  if (legacyAutoSave) {
-    const defaultProfileIndex = migratedProfiles.findIndex((p) => p.id === SYSTEM_PROFILE_DEFAULT_ID);
-    if (defaultProfileIndex >= 0) {
-      const defaultProfile = migratedProfiles[defaultProfileIndex];
-      migratedProfiles[defaultProfileIndex] = {
-        ...defaultProfile,
-        currentState: normalizeState(cloneAppState(legacyAutoSave)),
-        updatedAt: Date.now(),
-      };
-    }
-  }
-
-  const legacyPresets = parseLegacyNamedPresets();
-  for (const preset of legacyPresets) {
-    migratedProfiles.push(
-      createProfile({
-        id: generateUserProfileId(preset.name),
-        name: preset.name,
-        kind: "user",
-        defaultState: preset.state,
-        currentState: preset.state,
-        createdAt: preset.createdAt,
-        updatedAt: preset.state.timestamp,
-      })
-    );
-  }
-
-  localStorage.removeItem(PRESETS_KEY);
-  localStorage.removeItem(AUTO_SAVE_KEY);
-
-  return migratedProfiles;
-}
-
-function ensureSystemProfiles(profiles: SaveProfile[], layout?: SerializedDockview | null): SaveProfile[] {
-  const defaults = getSystemDefaultProfiles(layout);
-  const byId = new Map<string, SaveProfile>();
-
-  for (const profile of profiles) {
-    byId.set(profile.id, profile);
-  }
-
-  for (const defaultProfile of defaults) {
-    const existing = byId.get(defaultProfile.id);
-    if (!existing) {
-      byId.set(defaultProfile.id, defaultProfile);
-      continue;
-    }
-
-    if (existing.kind !== "system") {
-      byId.set(defaultProfile.id, {
-        ...defaultProfile,
-        currentState: existing.currentState,
-        updatedAt: existing.updatedAt,
-      });
-      continue;
-    }
-
-    byId.set(defaultProfile.id, {
-      ...existing,
-      name: defaultProfile.name,
-      defaultState: defaultProfile.defaultState,
-    });
-  }
-
-  return Array.from(byId.values());
-}
-
-export function loadSaveProfiles(layout?: SerializedDockview | null): SaveProfile[] {
-  try {
-    const existingProfiles = parseProfiles(localStorage.getItem(SAVE_PROFILES_KEY));
-
-    let profiles: SaveProfile[];
-    if (existingProfiles.length === 0) {
-      profiles = migrateLegacyData(layout);
-    } else {
-      profiles = ensureSystemProfiles(existingProfiles, layout);
-    }
-
-    if (profiles.length === 0) {
-      profiles = getSystemDefaultProfiles(layout);
-    }
-
-    saveProfiles(profiles);
-
-    const activeProfileId = localStorage.getItem(ACTIVE_PROFILE_KEY);
-    const hasValidActive = activeProfileId && profiles.some((p) => p.id === activeProfileId);
-    if (!hasValidActive) {
-      localStorage.setItem(ACTIVE_PROFILE_KEY, SYSTEM_PROFILE_DEFAULT_ID);
-    }
-
-    return profiles;
-  } catch {
-    const fallback = getSystemDefaultProfiles(layout);
-    saveProfiles(fallback);
-    localStorage.setItem(ACTIVE_PROFILE_KEY, SYSTEM_PROFILE_DEFAULT_ID);
-    return fallback;
-  }
-}
-
-export function getActiveProfileId(): string {
-  return localStorage.getItem(ACTIVE_PROFILE_KEY) ?? SYSTEM_PROFILE_DEFAULT_ID;
-}
-
-export function setActiveProfileId(profileId: string): void {
-  localStorage.setItem(ACTIVE_PROFILE_KEY, profileId);
-}
-
-export function getActiveProfile(layout?: SerializedDockview | null): SaveProfile | null {
-  const profiles = loadSaveProfiles(layout);
-  const activeId = getActiveProfileId();
-  return profiles.find((profile) => profile.id === activeId) ?? null;
-}
-
-export function setActiveProfile(profileId: string, layout?: SerializedDockview | null): boolean {
-  const profiles = loadSaveProfiles(layout);
-  if (!profiles.some((profile) => profile.id === profileId)) return false;
-  setActiveProfileId(profileId);
+export function setActiveProfile(profileId: string, selection?: DataSelection | null): boolean {
+  const fallback = selection ?? getStoredFallbackSelection();
+  if (!fallback) return false;
+  const storage = getStorage();
+  const profileSet = ensureBuildingProfileSet(storage, fallback);
+  if (!profileSet.profiles.some((profile) => profile.id === profileId)) return false;
+  profileSet.activeProfileId = profileId;
+  storage.lastActiveBuildingId = profileSet.buildingId;
+  writeStoredBuildingSets(storage);
+  emitProfilesUpdated();
   return true;
 }
 
-export function saveStateToActiveProfile(state: AppState): void {
-  try {
-    const profiles = loadSaveProfiles(state.layout ?? undefined);
-    const activeId = getActiveProfileId();
-    const normalizedState = normalizeState(cloneAppState(state));
-
-    const updatedProfiles = profiles.map((profile) => {
-      if (profile.id !== activeId) return profile;
-      return {
-        ...profile,
-        currentState: normalizedState,
-        updatedAt: Date.now(),
-      };
-    });
-
-    saveProfiles(updatedProfiles);
-  } catch (e) {
-    console.error("Failed to save state to active profile:", e);
-  }
-}
-
-export function loadActiveProfileState(layout?: SerializedDockview | null): AppState | null {
-  const profile = getActiveProfile(layout);
-  return profile ? cloneAppState(profile.currentState) : null;
-}
-
-function getEphemeralShareProfileName(selection?: DataSelection): string {
-  if (!selection) {
-    return "Shared Session";
-  }
-  return `Shared Session (${selection.building}/${selection.simulation})`;
-}
-
-export function activateEphemeralShareProfile(state: AppState): void {
-  try {
-    const profiles = loadSaveProfiles(state.layout ?? undefined).filter(
-      (profile) => profile.id !== EPHEMERAL_SHARE_PROFILE_ID
-    );
-
-    const sessionProfile = createProfile({
-      id: EPHEMERAL_SHARE_PROFILE_ID,
-      name: getEphemeralShareProfileName(state.dataSelection),
-      kind: "ephemeral",
-      defaultState: state,
-      currentState: state,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-
-    saveProfiles([...profiles, sessionProfile]);
-    setActiveProfileId(EPHEMERAL_SHARE_PROFILE_ID);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event(PROFILES_UPDATED_EVENT));
-    }
-  } catch (e) {
-    console.error("Failed to activate ephemeral share profile:", e);
-  }
-}
-
-export function createUserProfile(name: string, fromState?: AppState): SaveProfile | null {
+export function createUserProfile(name: string, fromState?: WorkspaceState): SaveProfile | null {
   const trimmedName = sanitizeProfileName(name);
   if (!trimmedName) return null;
 
-  const profiles = loadSaveProfiles(fromState?.layout ?? undefined);
-  const existing = profiles.find((profile) => profile.name.toLowerCase() === trimmedName.toLowerCase());
-  const baseState = fromState ?? loadActiveProfileState() ?? getDefaultAppState();
+  const selection = fromState?.dataSelection ?? getStoredFallbackSelection();
+  if (!selection) return null;
 
-  if (existing && existing.kind === "user") {
-    const updated: SaveProfile = {
+  const storage = getStorage();
+  const profileSet = ensureBuildingProfileSet(storage, selection, fromState?.layout ?? undefined);
+  const baseState =
+    fromState ?? getActiveProfile(selection)?.currentState ?? getDefaultWorkspaceState(undefined, selection);
+  const existing = profileSet.profiles.find(
+    (profile) => profile.kind === "user" && profile.name.toLowerCase() === trimmedName.toLowerCase()
+  );
+
+  let created: SaveProfile;
+  if (existing) {
+    created = {
       ...existing,
-      name: trimmedName,
-      currentState: normalizeState(cloneAppState(baseState)),
+      currentState: normalizeWorkspaceState(cloneState(baseState) as WorkspaceState & Record<string, unknown>),
       updatedAt: Date.now(),
     };
-
-    saveProfiles(profiles.map((profile) => (profile.id === existing.id ? updated : profile)));
-    return updated;
+    profileSet.profiles = profileSet.profiles.map((profile) => (profile.id === existing.id ? created : profile));
+  } else {
+    created = createProfile({
+      id: generateUserProfileId(trimmedName),
+      name: trimmedName,
+      buildingId: selection.building,
+      kind: "user",
+      defaultState: baseState,
+      currentState: baseState,
+    });
+    profileSet.profiles.push(created);
   }
 
-  const newProfile = createProfile({
-    id: generateUserProfileId(trimmedName),
-    name: trimmedName,
-    kind: "user",
-    defaultState: baseState,
-    currentState: baseState,
-  });
-
-  saveProfiles([...profiles, newProfile]);
-  return newProfile;
+  writeStoredBuildingSets(storage);
+  emitProfilesUpdated();
+  return cloneState(created);
 }
 
 export function renameUserProfile(profileId: string, nextName: string): boolean {
   const trimmedName = sanitizeProfileName(nextName);
   if (!trimmedName) return false;
 
-  const profiles = loadSaveProfiles();
-  const profile = profiles.find((item) => item.id === profileId);
-  if (!profile || profile.kind !== "user") return false;
+  const storage = getStorage();
+  for (const profileSet of Object.values(storage.sets)) {
+    const profile = profileSet.profiles.find((item) => item.id === profileId);
+    if (!profile || profile.kind !== "user") continue;
 
-  const duplicate = profiles.find(
-    (item) => item.id !== profileId && item.name.toLowerCase() === trimmedName.toLowerCase()
-  );
-  if (duplicate) return false;
+    const duplicate = profileSet.profiles.find(
+      (item) => item.id !== profileId && item.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (duplicate) return false;
 
-  saveProfiles(
-    profiles.map((item) =>
-      item.id === profileId
-        ? {
-            ...item,
-            name: trimmedName,
-            updatedAt: Date.now(),
-          }
-        : item
-    )
-  );
+    profile.name = trimmedName;
+    profile.updatedAt = Date.now();
+    writeStoredBuildingSets(storage);
+    emitProfilesUpdated();
+    return true;
+  }
 
-  return true;
+  return false;
 }
 
 export function deleteUserProfile(profileId: string): boolean {
-  const profiles = loadSaveProfiles();
-  const profile = profiles.find((item) => item.id === profileId);
-  if (!profile || profile.kind !== "user") return false;
+  const storage = getStorage();
+  for (const profileSet of Object.values(storage.sets)) {
+    const profile = profileSet.profiles.find((item) => item.id === profileId);
+    if (!profile || profile.kind !== "user") continue;
 
-  const filtered = profiles.filter((item) => item.id !== profileId);
-  saveProfiles(filtered);
-
-  if (getActiveProfileId() === profileId) {
-    setActiveProfileId(SYSTEM_PROFILE_DEFAULT_ID);
+    profileSet.profiles = profileSet.profiles.filter((item) => item.id !== profileId);
+    if (profileSet.activeProfileId === profileId) {
+      profileSet.activeProfileId = SYSTEM_PROFILE_DEFAULT_ID;
+    }
+    writeStoredBuildingSets(storage);
+    emitProfilesUpdated();
+    return true;
   }
 
-  return true;
+  return false;
 }
 
 export function resetProfileToDefault(profileId: string): boolean {
-  const profiles = loadSaveProfiles();
-  const profile = profiles.find((item) => item.id === profileId);
-  if (!profile || profile.kind !== "system") return false;
+  const storage = getStorage();
+  for (const profileSet of Object.values(storage.sets)) {
+    const profile = profileSet.profiles.find((item) => item.id === profileId);
+    if (!profile) continue;
 
-  saveProfiles(
-    profiles.map((item) =>
-      item.id === profileId
-        ? {
-            ...item,
-            currentState: normalizeState(cloneAppState(item.defaultState)),
-            updatedAt: Date.now(),
-          }
-        : item
-    )
+    profile.currentState = cloneState(profile.defaultState);
+    profile.updatedAt = Date.now();
+    writeStoredBuildingSets(storage);
+    emitProfilesUpdated();
+    return true;
+  }
+
+  return false;
+}
+
+export function loadFromLocalStorage(selection?: DataSelection | null): WorkspaceState | null {
+  const fallback = selection ?? getStoredFallbackSelection();
+  if (!fallback) return null;
+
+  const storage = getStorage();
+  const profileSet = ensureBuildingProfileSet(storage, fallback);
+  const activeProfile = getActiveProfileFromSet(profileSet);
+  const workspace = cloneState(activeProfile.currentState);
+
+  if (selection) {
+    workspace.dataSelection = normalizeSelection(selection);
+  }
+
+  writeStoredBuildingSets(storage);
+  return workspace;
+}
+
+export function saveStateToActiveProfile(state: WorkspaceState): void {
+  const selection = normalizeSelection(state.dataSelection) ?? getStoredFallbackSelection();
+  if (!selection) return;
+
+  const storage = getStorage();
+  const profileSet = ensureBuildingProfileSet(storage, selection, state.layout ?? undefined);
+  const activeProfile = getActiveProfileFromSet(profileSet);
+  const normalizedState = normalizeWorkspaceState(cloneState(state) as WorkspaceState & Record<string, unknown>);
+
+  profileSet.profiles = profileSet.profiles.map((profile) =>
+    profile.id === activeProfile.id
+      ? {
+          ...profile,
+          currentState: normalizedState,
+          updatedAt: Date.now(),
+        }
+      : profile
   );
 
-  return true;
+  profileSet.activeProfileId = activeProfile.id;
+  storage.lastActiveBuildingId = selection.building;
+  writeStoredBuildingSets(storage);
 }
 
-export function encodeStateForUrl(state: AppState): string {
-  const stateToEncode = state;
-
-  const json = serializeState(stateToEncode);
-  return LZString.compressToEncodedURIComponent(json);
-}
-
-export function decodeStateFromUrl(encoded: string): AppState | null {
-  try {
-    const json = LZString.decompressFromEncodedURIComponent(encoded);
-    if (!json) return null;
-    return deserializeState(json);
-  } catch (e) {
-    console.error("Failed to decode state from URL:", e);
-    return null;
-  }
-}
-
-export function saveToLocalStorage(state: AppState): void {
+export function saveToLocalStorage(state: WorkspaceState): void {
   saveStateToActiveProfile(state);
-}
-
-export function loadFromLocalStorage(): AppState | null {
-  return loadActiveProfileState();
 }
 
 export function clearLocalStorage(): void {
   const activeProfile = getActiveProfile();
   if (!activeProfile) return;
 
-  if (activeProfile.kind === "system") {
-    resetProfileToDefault(activeProfile.id);
+  if (activeProfile.kind === "user") {
+    saveStateToActiveProfile(activeProfile.defaultState);
     return;
   }
 
-  saveStateToActiveProfile(getDefaultAppState());
+  resetProfileToDefault(activeProfile.id);
 }
 
-export function saveNamedPreset(name: string, state: AppState): void {
+export function saveNamedPreset(name: string, state: WorkspaceState): void {
   createUserProfile(name, state);
 }
 
-export function loadNamedPreset(name: string): AppState | null {
-  const profile = loadSaveProfiles().find((item) => item.name === name);
-  return profile ? profile.currentState : null;
+export function loadNamedPreset(name: string): WorkspaceState | null {
+  return loadSaveProfiles().find((profile) => profile.name === name)?.currentState ?? null;
 }
 
 export function deleteNamedPreset(name: string): void {
   const profile = loadSaveProfiles().find((item) => item.name === name && item.kind === "user");
-  if (!profile) return;
-  deleteUserProfile(profile.id);
+  if (profile) {
+    deleteUserProfile(profile.id);
+  }
 }
 
 export function loadNamedPresets(): NamedPreset[] {
@@ -1165,26 +853,20 @@ export function loadNamedPresets(): NamedPreset[] {
 
 export function renameNamedPreset(oldName: string, newName: string): void {
   const profile = loadSaveProfiles().find((item) => item.name === oldName && item.kind === "user");
-  if (!profile) return;
-  renameUserProfile(profile.id, newName);
-}
-
-export function saveUrlState(state: AppState): void {
-  try {
-    const json = serializeState(state);
-    localStorage.setItem(LAST_URL_STATE_KEY, json);
-  } catch (e) {
-    console.error("Failed to save URL state:", e);
+  if (profile) {
+    renameUserProfile(profile.id, newName);
   }
 }
 
-export function loadUrlState(): AppState | null {
+export function saveUrlState(state: WorkspaceState): void {
+  localStorage.setItem(LAST_URL_STATE_KEY, JSON.stringify(state));
+}
+
+export function loadUrlState(): WorkspaceState | null {
   try {
-    const json = localStorage.getItem(LAST_URL_STATE_KEY);
-    if (!json) return null;
-    return deserializeState(json);
-  } catch (e) {
-    console.error("Failed to load URL state:", e);
+    const parsed = JSON.parse(localStorage.getItem(LAST_URL_STATE_KEY) ?? "null") as unknown;
+    return isRecord(parsed) ? normalizeWorkspaceState(parsed as Record<string, unknown>) : null;
+  } catch {
     return null;
   }
 }
@@ -1193,51 +875,58 @@ export function clearUrlState(): void {
   localStorage.removeItem(LAST_URL_STATE_KEY);
 }
 
-function _lastLayoutKey(): string {
-  return "last_view3d_layout";
-}
-
 export function clearAllLocalStorage(): void {
   if (typeof window === "undefined") return;
-  const keysToRemove: string[] = [
-    AUTO_SAVE_KEY,
-    PRESETS_KEY,
-    LAST_URL_STATE_KEY,
-    SAVE_PROFILES_KEY,
-    ACTIVE_PROFILE_KEY,
-    _lastLayoutKey(),
-  ];
-  for (const key of keysToRemove) {
-    localStorage.removeItem(key);
+  localStorage.removeItem(LAST_URL_STATE_KEY);
+  localStorage.removeItem(APP_PREFERENCES_KEY);
+  localStorage.removeItem(BUILDING_PROFILE_SETS_KEY);
+}
+
+export function encodeStateForUrl(state: WorkspaceState): string {
+  return LZString.compressToEncodedURIComponent(JSON.stringify(state));
+}
+
+function deserializeWorkspaceState(json: string): WorkspaceState | null {
+  try {
+    const parsed = JSON.parse(json) as unknown;
+    return isRecord(parsed) ? normalizeWorkspaceState(parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
   }
 }
 
-interface UrlStateResolution {
-  state: AppState | null;
+export function decodeStateFromUrl(encoded: string): WorkspaceState | null {
+  try {
+    const json = LZString.decompressFromEncodedURIComponent(encoded);
+    return json ? deserializeWorkspaceState(json) : null;
+  } catch {
+    return null;
+  }
 }
 
 const OPTIONAL_LOADS_URL_PARAM = "optionalLoads";
 
 function parseOptionalDataLoadsFromUrlParams(params: URLSearchParams): Partial<OptionalDataLoadOptions> | undefined {
   const encoded = params.get(OPTIONAL_LOADS_URL_PARAM);
-  if (!encoded) return undefined;
-  if (encoded.length !== OPTIONAL_DATA_LOAD_OPTION_KEYS.length) return undefined;
+  if (!encoded || encoded.length !== OPTIONAL_DATA_LOAD_OPTION_KEYS.length) return undefined;
 
   const parsed: Partial<OptionalDataLoadOptions> = {};
-  for (let i = 0; i < OPTIONAL_DATA_LOAD_OPTION_KEYS.length; i += 1) {
-    const char = encoded[i];
+  for (let index = 0; index < OPTIONAL_DATA_LOAD_OPTION_KEYS.length; index += 1) {
+    const char = encoded[index];
     if (char !== "0" && char !== "1") return undefined;
-    parsed[OPTIONAL_DATA_LOAD_OPTION_KEYS[i]] = char === "1";
+    parsed[OPTIONAL_DATA_LOAD_OPTION_KEYS[index]] = char === "1";
   }
+
   return parsed;
 }
 
 function encodeOptionalDataLoadsForUrl(optionalLoads?: Partial<OptionalDataLoadOptions>): string | null {
-  if (!optionalLoads) return null;
+  const normalized = normalizeOptionalLoads(optionalLoads);
+  if (!normalized) return null;
 
   let hasAny = false;
   const bits = OPTIONAL_DATA_LOAD_OPTION_KEYS.map((key) => {
-    const value = optionalLoads[key];
+    const value = normalized[key];
     if (typeof value === "boolean") {
       hasAny = true;
       return value ? "1" : "0";
@@ -1249,21 +938,21 @@ function encodeOptionalDataLoadsForUrl(optionalLoads?: Partial<OptionalDataLoadO
 }
 
 function applyDataSelectionToUrlParams(url: URL, selection?: DataSelection): void {
-  if (selection) {
-    url.searchParams.set("building", selection.building);
-    url.searchParams.set("simulation", selection.simulation);
-    const encodedOptionalLoads = encodeOptionalDataLoadsForUrl(selection.optionalLoads);
-    if (encodedOptionalLoads) {
-      url.searchParams.set(OPTIONAL_LOADS_URL_PARAM, encodedOptionalLoads);
-    } else {
-      url.searchParams.delete(OPTIONAL_LOADS_URL_PARAM);
-    }
+  if (!selection) {
+    url.searchParams.delete("building");
+    url.searchParams.delete("simulation");
+    url.searchParams.delete(OPTIONAL_LOADS_URL_PARAM);
     return;
   }
 
-  url.searchParams.delete("building");
-  url.searchParams.delete("simulation");
-  url.searchParams.delete(OPTIONAL_LOADS_URL_PARAM);
+  url.searchParams.set("building", selection.building);
+  url.searchParams.set("simulation", selection.simulation);
+  const encodedOptionalLoads = encodeOptionalDataLoadsForUrl(selection.optionalLoads);
+  if (encodedOptionalLoads) {
+    url.searchParams.set(OPTIONAL_LOADS_URL_PARAM, encodedOptionalLoads);
+  } else {
+    url.searchParams.delete(OPTIONAL_LOADS_URL_PARAM);
+  }
 }
 
 function mergeDataSelections(
@@ -1294,26 +983,50 @@ function getShareApiBase(): string {
 function extractShareIdFromCurrentUrl(url: URL): string | null {
   const queryShareId = url.searchParams.get(SHARE_URL_PARAM);
   if (queryShareId) return queryShareId;
-  const pathMatch = url.pathname.match(SHORT_LINK_PATH_REGEX);
-  return pathMatch?.[1] ?? null;
+  return url.pathname.match(SHORT_LINK_PATH_REGEX)?.[1] ?? null;
 }
 
-async function fetchStateFromShareId(shareId: string): Promise<AppState | null> {
+async function fetchStateFromShareId(shareId: string): Promise<WorkspaceState | null> {
   try {
     const shareApiUrl = new URL(`/api/share/${encodeURIComponent(shareId)}`, getShareApiBase());
     const response = await fetch(shareApiUrl.toString());
-    if (!response.ok) {
-      return null;
-    }
+    if (!response.ok) return null;
     const payload = (await response.json()) as { state?: unknown };
-    if (!isRecord(payload) || typeof payload.state !== "string") {
-      return null;
-    }
+    if (!isRecord(payload) || typeof payload.state !== "string") return null;
     return decodeStateFromUrl(payload.state);
-  } catch (e) {
-    console.error("Failed to load share state:", e);
+  } catch {
     return null;
   }
+}
+
+function getEphemeralShareProfileName(selection?: DataSelection): string {
+  if (!selection) return "Shared Session";
+  return `Shared Session (${selection.building}/${selection.simulation})`;
+}
+
+export function activateEphemeralShareProfile(state: WorkspaceState): void {
+  const selection = normalizeSelection(state.dataSelection) ?? getDefaultBuildingSelection();
+  if (!selection) return;
+
+  const storage = getStorage();
+  const profileSet = ensureBuildingProfileSet(storage, selection, state.layout ?? undefined);
+  const sessionProfile = createProfile({
+    id: EPHEMERAL_SHARE_PROFILE_ID,
+    name: getEphemeralShareProfileName(selection),
+    buildingId: selection.building,
+    kind: "ephemeral",
+    defaultState: state,
+    currentState: state,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  profileSet.profiles = profileSet.profiles.filter((profile) => profile.id !== EPHEMERAL_SHARE_PROFILE_ID);
+  profileSet.profiles.push(sessionProfile);
+  profileSet.activeProfileId = EPHEMERAL_SHARE_PROFILE_ID;
+  storage.lastActiveBuildingId = selection.building;
+  writeStoredBuildingSets(storage);
+  emitProfilesUpdated();
 }
 
 async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution> {
@@ -1324,8 +1037,8 @@ async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution>
   const encodedState = currentUrl.searchParams.get("state");
   const shareId = extractShareIdFromCurrentUrl(currentUrl);
   const isShortShareRoute = SHORT_LINK_PATH_REGEX.test(currentUrl.pathname);
-  let state: AppState | null = null;
 
+  let state: WorkspaceState | null = null;
   if (encodedState) {
     state = decodeStateFromUrl(encodedState);
   } else if (shareId) {
@@ -1337,18 +1050,15 @@ async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution>
     if (selection) {
       state.dataSelection = selection;
     }
-
     activateEphemeralShareProfile(state);
   }
 
   if (state && isShortShareRoute) {
-    const selection = state.dataSelection;
     const nextUrl = new URL(currentUrl.toString());
     nextUrl.pathname = "/";
     nextUrl.searchParams.delete(SHARE_URL_PARAM);
     nextUrl.searchParams.delete("state");
-    applyDataSelectionToUrlParams(nextUrl, selection);
-
+    applyDataSelectionToUrlParams(nextUrl, state.dataSelection);
     const nextHref = nextUrl.toString();
     if (nextHref !== currentUrl.toString()) {
       window.history.replaceState({}, "", nextHref);
@@ -1359,39 +1069,34 @@ async function resolveStateFromCurrentUrlInternal(): Promise<UrlStateResolution>
 }
 
 async function resolveStateFromCurrentUrl(): Promise<UrlStateResolution> {
-  if (resolvedUrlStatePromise === null) {
+  if (!resolvedUrlStatePromise) {
     resolvedUrlStatePromise = resolveStateFromCurrentUrlInternal();
   }
   return resolvedUrlStatePromise;
 }
 
-export async function getStateFromCurrentUrl(): Promise<AppState | null> {
-  const resolved = await resolveStateFromCurrentUrl();
-  return resolved.state;
+export async function getStateFromCurrentUrl(): Promise<WorkspaceState | null> {
+  return (await resolveStateFromCurrentUrl()).state;
 }
 
 export async function getSelectionFromCurrentUrlStateOrParams(): Promise<DataSelection | null> {
   const explicitSelection = getDataSelectionFromCurrentUrl();
   const state = await getStateFromCurrentUrl();
-  return mergeDataSelections(state?.dataSelection, explicitSelection);
+  return mergeDataSelections(state?.dataSelection, explicitSelection) ?? getStoredFallbackSelection();
 }
 
-export function createShareableUrl(state: AppState): string {
+export function createShareableUrl(state: WorkspaceState): string {
   const url = new URL(window.location.href);
   const encodedState = encodeStateForUrl(state);
-
   applyDataSelectionToUrlParams(url, state.dataSelection);
-
   url.searchParams.delete(SHARE_URL_PARAM);
-
   if (encodedState) {
     url.searchParams.set("state", encodedState);
   }
-
   return url.toString();
 }
 
-async function createShareableShortUrl(state: AppState): Promise<string | null> {
+async function createShareableShortUrl(state: WorkspaceState): Promise<string | null> {
   try {
     const apiUrl = new URL("/api/share", getShareApiBase());
     const encodedState = encodeStateForUrl(state);
@@ -1408,68 +1113,34 @@ async function createShareableShortUrl(state: AppState): Promise<string | null> 
     if (!response.ok) return null;
 
     const payload = (await response.json()) as { id?: unknown; url?: unknown };
-    if (!isRecord(payload)) {
-      return null;
-    }
-
+    if (!isRecord(payload)) return null;
     if (typeof payload.id === "string" && payload.id.length > 0) {
       return `${window.location.origin}/s/${payload.id}`;
     }
-
-    if (typeof payload.url === "string") {
-      return payload.url;
-    }
-
-    return null;
-  } catch (e) {
-    console.error("Failed to create short share URL:", e);
+    return typeof payload.url === "string" ? payload.url : null;
+  } catch {
     return null;
   }
 }
 
-export async function copyShareableUrlToClipboard(store: ReturnType<typeof useViewStoreRaw>): Promise<boolean> {
-  const state = getCurrentAppStateSnapshot(store);
-  const shareableUrl = await createShareableShortUrl(state);
-
-  if (!shareableUrl) return false;
-
-  try {
-    await navigator.clipboard.writeText(shareableUrl);
-    return true;
-  } catch (e) {
-    console.error("Failed to copy URL to clipboard:", e);
-    return false;
-  }
-}
-
-export function getCurrentAppStateSnapshot(store: ReturnType<typeof useViewStoreRaw>): AppState {
+export function getCurrentWorkspaceStateSnapshot(store: ReturnType<typeof useViewStoreRaw>): WorkspaceState {
   const state = store.getState();
-
-  return {
-    version: 1,
+  return normalizeWorkspaceState({
+    version: STATE_VERSION,
     timestamp: Date.now(),
     frameIndex: state.frameIndex,
     currentMetric: state.currentMetric,
     metricPaletteOverrides: state.metricPaletteOverrides,
     thresholdHighlighting: state.thresholdHighlighting,
-    showHiddenMetrics: state.showHiddenMetrics,
     thresholds: state.thresholds,
     visibleFloors: state.visibleFloors,
     selectedNodeIds: state.selectedNodeIds,
     hiddenNodeIds: state.hiddenNodeIds,
     hideSelectedNodes: state.hideSelectedNodes,
-    expandedScale: state.expandedScale,
-    sliceEnabled: state.sliceEnabled,
-    xRange: state.xRange,
-    yRange: state.yRange,
-    zRange: state.zRange,
-    camera: state.cameraState,
     colorTheme: state.colorTheme,
-    layout: state.dockviewLayout ?? getDefaultAppState().layout,
+    layout: state.dockviewLayout ?? getDefaultWorkspaceState().layout,
     panelStates: state.panelStates,
-    dataSelection: getDataSelectionFromCurrentUrl() ?? undefined,
-
-    // Render Modes
+    dataSelection: getDataSelectionFromCurrentUrl() ?? getStoredFallbackSelection() ?? undefined,
     renderNodes: state.renderNodes,
     renderFloorSlabs: state.renderFloorSlabs,
     renderXCrossSectionSlabs: state.renderXCrossSectionSlabs,
@@ -1479,5 +1150,23 @@ export function getCurrentAppStateSnapshot(store: ReturnType<typeof useViewStore
     renderVerticalConnections: state.renderVerticalConnections,
     renderHorizontalConnections: state.renderHorizontalConnections,
     nodePanelGraphVisibility: state.nodePanelGraphVisibility,
-  };
+  } as WorkspaceState & Record<string, unknown>);
+}
+
+export function applyWorkspaceState(state: WorkspaceState): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<WorkspaceState>(APPLY_WORKSPACE_STATE_EVENT, { detail: state }));
+}
+
+export async function copyShareableUrlToClipboard(store: ReturnType<typeof useViewStoreRaw>): Promise<boolean> {
+  const state = getCurrentWorkspaceStateSnapshot(store);
+  const shareableUrl = await createShareableShortUrl(state);
+  if (!shareableUrl) return false;
+
+  try {
+    await navigator.clipboard.writeText(shareableUrl);
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -3,12 +3,11 @@ import { Switch } from "@/components/ui/switch";
 import { ScanEye } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { useSliceSelection } from "@/features/view-3d/contexts/visualization";
 import { useAnimationData } from "@/lib/useAnimationData";
+import { useCamera } from "@/features/view-3d/contexts/CameraContext";
 
 export function SliceViewPanel() {
-  const { sliceEnabled, xRange, yRange, zRange, toggleSliceEnabled, setXRange, setYRange, setZRange } =
-    useSliceSelection();
+  const { sliceEnabled, setSliceEnabled, xRange, yRange, zRange, setXRange, setYRange, setZRange } = useCamera();
   const { animationData } = useAnimationData();
 
   const maxBounds = animationData.precomputed.boundingBox.max;
@@ -21,7 +20,7 @@ export function SliceViewPanel() {
           <ScanEye size={12} className="text-neutral-500" />
           Slice View
         </Label>
-        <Switch size="sm" checked={sliceEnabled} onCheckedChange={toggleSliceEnabled} />
+        <Switch size="sm" checked={sliceEnabled} onCheckedChange={setSliceEnabled} />
       </div>
 
       {sliceEnabled && (

@@ -1,6 +1,6 @@
 import { useViewStore } from "@/state";
 import * as THREE from "three";
-import type { BoxSelection as StoreBoxSelection } from "@/state/viewStore";
+import type { BoxSelection as StoreBoxSelection } from "@/state/profileState";
 import { useCallback, useMemo, type RefObject } from "react";
 
 interface NodeVisibilityContextType {

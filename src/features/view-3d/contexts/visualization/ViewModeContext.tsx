@@ -2,6 +2,7 @@ import { useViewStore } from "@/state";
 import type { AnimationMetadata, IndexAccessor } from "@/lib/types";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useCallback } from "react";
+import { useCamera } from "../CameraContext";
 
 export type ViewMode = "all-nodes" | "floor-slabs";
 
@@ -23,10 +24,7 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
 
 export function useViewMode(): ViewModeContextType {
   const showCornersOnly = useViewStore((s) => s.showCornersOnly);
-  const sliceEnabled = useViewStore((s) => s.sliceEnabled);
-  const xRange = useViewStore((s) => s.xRange);
-  const yRange = useViewStore((s) => s.yRange);
-  const zRange = useViewStore((s) => s.zRange);
+  const { sliceEnabled, xRange, yRange, zRange } = useCamera();
   const { animationData } = useAnimationData();
 
   const getVisibleNodes = useCallback(

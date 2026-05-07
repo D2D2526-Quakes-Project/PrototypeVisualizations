@@ -1,6 +1,5 @@
 import {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -21,7 +20,6 @@ import { CameraManager } from "./CanvasWithControls/CameraManager";
 import { OrientationCube } from "./CanvasWithControls/OrientationCube";
 import { ViewControls } from "./CanvasWithControls/ViewControls";
 
-import { CameraProvider } from "../contexts/CameraContext";
 import { useFloorVisibility } from "../contexts/visualization";
 
 interface CanvasWithControlsProps {
@@ -64,7 +62,7 @@ export function CanvasWithControls({
         : nextContainerWidth >= dockThreshold + hysteresis;
     });
   }, []);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = containerRef.current;
     if (!element) return;
     const sideControls = sideControlsRef.current;
@@ -96,7 +94,7 @@ export function CanvasWithControls({
     observer.observe(sideControls);
 
     return () => observer.disconnect();
-  }, [getDockedState, isViewControlsExpanded, setContainerWidth, controlsWidth]);
+  }, [getDockedState, isViewControlsExpanded, controlsWidth]);
 
   const handleSetIsViewControlsExpanded = useCallback(
     (expanded: boolean) => {
@@ -107,59 +105,56 @@ export function CanvasWithControls({
   );
 
   return (
-    <CameraProvider>
-      <div
-        ref={containerRef}
-        className="relative flex h-full min-h-0 w-full"
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}>
-        <div className="min-h-0 max-w-full flex-1">
-          <Canvas
-            frameloop="demand"
-            linear
-            flat
-            onCreated={({ scene }) => {
-              scene.fog = null;
-            }}>
-            <LayoutSizeSync />
-            <color attach="background" args={[colorTheme.background]} />
-            {children}
-            <CameraManager />
-            <OrientationCube />
-          </Canvas>
-          <BoxSelectionOverlay panelId={panelId} />
+    <div
+      ref={containerRef}
+      className="relative flex h-full min-h-0 w-full"
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}>
+      <div className="min-h-0 max-w-full flex-1">
+        <Canvas
+          frameloop="demand"
+          linear
+          flat
+          onCreated={({ scene }) => {
+            scene.fog = null;
+          }}>
+          <LayoutSizeSync />
+          <color attach="background" args={[colorTheme.background]} />
+          {children}
+          <CameraManager />
+          <OrientationCube />
+        </Canvas>
+        <BoxSelectionOverlay panelId={panelId} />
 
-          {showPlaybackControls && exportRenderMode.showTransientUi && (
-            <div className="absolute bottom-2 left-2 z-50">
-              <div className="flex items-start gap-1">
-                <SmallPlaybackControls />
-                {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => showAllDefaultFloors()}
-                    className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1.5 py-1 text-[10px] font-medium text-amber-800 shadow-sm hover:bg-amber-100"
-                    title="All floors are hidden. Show all floors.">
-                    <AlertTriangle size={10} />
-                    No floors
-                  </button>
-                )}
-              </div>
+        {showPlaybackControls && exportRenderMode.showTransientUi && (
+          <div className="absolute bottom-2 left-2 z-50">
+            <div className="flex items-start gap-1">
+              <SmallPlaybackControls />
+              {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
+                <button
+                  type="button"
+                  onClick={() => showAllDefaultFloors()}
+                  className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1.5 py-1 text-[10px] font-medium text-amber-800 shadow-sm hover:bg-amber-100"
+                  title="All floors are hidden. Show all floors.">
+                  <AlertTriangle size={10} />
+                  No floors
+                </button>
+              )}
             </div>
-          )}
-        </div>
-        {exportRenderMode.showTransientUi && (
-          <div ref={sideControlsRef}>
-            <ViewControls
-              // onExpandedWidthChange={handleExpandedWidthChange}
-              docked={isControlsDocked}
-              isExpanded={isViewControlsExpanded}
-              setIsExpanded={handleSetIsViewControlsExpanded}
-            />
           </div>
         )}
       </div>
-    </CameraProvider>
+      {exportRenderMode.showTransientUi && (
+        <div ref={sideControlsRef}>
+          <ViewControls
+            docked={isControlsDocked}
+            isExpanded={isViewControlsExpanded}
+            setIsExpanded={handleSetIsViewControlsExpanded}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

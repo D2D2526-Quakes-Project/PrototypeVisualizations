@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/view-3d/contexts/visualization";
-import { getDefaultHistogramChartPanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { isHingeMetric, METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { EChartsOption } from "echarts";
@@ -48,7 +48,6 @@ import { useEffect, useMemo, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import type { IDockviewPanelProps } from "dockview";
-import { useViewStore } from "@/state";
 
 const POSITION_AXIS_CONFIG = {
   x: { id: "x", label: "X Position", color: "#f87171" },
@@ -57,6 +56,15 @@ const POSITION_AXIS_CONFIG = {
 } as const;
 
 type PositionAxis = keyof typeof POSITION_AXIS_CONFIG;
+type HistogramChartPanelState = {
+  positionAxis: PositionAxis;
+  valueType: string;
+};
+
+const DEFAULT_HISTOGRAM_CHART_PANEL_STATE: HistogramChartPanelState = {
+  positionAxis: "x",
+  valueType: "displacementMag",
+};
 
 interface HistogramChartProps {
   initialMetric?: Metric;
@@ -153,11 +161,12 @@ export function HistogramChart({
   const { thresholds } = useThresholds();
   const { visibleFloors } = useFloorVisibility();
   const { availableMetrics } = useColor();
-  const setPanelState = useViewStore((s) => s.setPanelState);
-  const panelId = api?.id ?? "histogram-chart";
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const defaultState = getDefaultHistogramChartPanelState();
-  const savedState = savedPanelState?.type === "histogramChart" ? savedPanelState.state : defaultState;
+  const { state: savedState, setState: setPanelState } = usePanelState<HistogramChartPanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "histogram-chart",
+    panelType: "histogramChart",
+    defaultState: DEFAULT_HISTOGRAM_CHART_PANEL_STATE,
+  });
   const seededMetric = typeof params?.initialMetric === "string" ? params.initialMetric : undefined;
 
   const [positionAxis, setPositionAxis] = useState<PositionAxis>(() =>
@@ -173,7 +182,7 @@ export function HistogramChart({
   }, [availableMetrics, metricOptions]);
   const [valueType, setValueType] = useState<Metric>(() => {
     const candidate = savedState.valueType;
-    if (savedPanelState?.type === "histogramChart" && typeof candidate === "string" && candidate in METRIC_CONFIGS) {
+    if (typeof candidate === "string" && candidate in METRIC_CONFIGS) {
       return candidate as Metric;
     }
     return seededMetric && seededMetric in METRIC_CONFIGS ? (seededMetric as Metric) : initialMetric;
@@ -190,8 +199,8 @@ export function HistogramChart({
   }, [filteredMetrics, valueType]);
 
   useEffect(() => {
-    setPanelState(panelId, "histogramChart", { positionAxis, valueType });
-  }, [panelId, positionAxis, setPanelState, valueType]);
+    setPanelState({ positionAxis, valueType });
+  }, [positionAxis, setPanelState, valueType]);
 
   const staticConfig = useMemo(() => {
     const { nodeCount, stories, storyOrder } = animationData.metadata;

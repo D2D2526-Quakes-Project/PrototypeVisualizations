@@ -1,5 +1,5 @@
 import { useViewStore } from "@/state";
-import type { ThresholdState as TS } from "@/state/viewStore";
+import type { ThresholdState as TS } from "@/state/profileState";
 import { getThresholdKey, THRESHOLD_CONFIGS, type Metric, type ThresholdKey } from "@/lib/metrics";
 
 interface ThresholdContextType {

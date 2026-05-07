@@ -24,9 +24,8 @@ import { ExportRenderModeProvider } from "@/features/export/renderMode";
 import { createZipArchive } from "@/features/export/zip";
 import { PlaybackProvider } from "@/features/playback/PlaybackContext";
 import { MagicPanel, type MagicPanelParams } from "@/features/view-3d/components/MagicPanel";
-import { SliceSelectionProvider } from "@/features/view-3d/contexts/visualization";
 import { CrossSectionSelectionProvider } from "@/features/view-3d/contexts/visualization/CrossSectionSelectionContext";
-import { getCurrentAppStateSnapshot, type AppState } from "@/features/view-3d/lib/statePersistence";
+import { getCurrentWorkspaceStateSnapshot, type WorkspaceState } from "@/features/view-3d/lib/statePersistence";
 import { View3dWorkspace } from "@/features/view-3d/page";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { ViewProvider, useViewStoreRaw, type ViewStore } from "@/state";
@@ -84,8 +83,8 @@ interface ExportContextValue {
 
 const ExportContext = createContext<ExportContextValue | null>(null);
 
-function cloneAppState(state: AppState): AppState {
-  return JSON.parse(JSON.stringify(state)) as AppState;
+function cloneWorkspaceState(state: WorkspaceState): WorkspaceState {
+  return JSON.parse(JSON.stringify(state)) as WorkspaceState;
 }
 
 function nextAnimationFrame(): Promise<void> {
@@ -306,7 +305,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   const separatePanelHostRef = useRef<HTMLDivElement | null>(null);
   const exportStartTimeRef = useRef<number | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [previewState, setPreviewState] = useState<AppState | null>(null);
+  const [previewState, setPreviewState] = useState<WorkspaceState | null>(null);
   const [spec, setSpec] = useState<VideoExportSpec>(() => buildDefaultSpec(0, 1));
   const [startFrameDraft, setStartFrameDraft] = useState("0");
   const [endFrameDraft, setEndFrameDraft] = useState("0");
@@ -387,7 +386,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   }, [setPreviewFrame]);
 
   const refreshPreview = useCallback(() => {
-    const currentState = cloneAppState(getCurrentAppStateSnapshot(store));
+    const currentState = cloneWorkspaceState(getCurrentWorkspaceStateSnapshot(store));
     const nextSpec = buildDefaultSpec(currentState.frameIndex, animationData.metadata.frameCount);
     setPreviewState(currentState);
     setSpec(nextSpec);
@@ -1106,7 +1105,7 @@ function WorkspacePreviewSurface({
 }: {
   visible: boolean;
   stage: ExportStageSize;
-  initialState: AppState;
+  initialState: WorkspaceState;
   showTransientUi: boolean;
   showPanelHeaders: boolean;
   showSeparatePanelPreview: boolean;
@@ -1185,9 +1184,7 @@ function SeparatePanelPreviewPortal({
         />
       ))}
       {panels.length === 0 && (
-        <div className="text-sm text-neutral-500">
-          Panel previews are still loading from the isolated workspace.
-        </div>
+        <div className="text-sm text-neutral-500">Panel previews are still loading from the isolated workspace.</div>
       )}
     </div>,
     host
@@ -1255,7 +1252,7 @@ function ExportPreviewWorkspace({
   outputFormat,
   onPreviewReady,
 }: {
-  initialState: AppState;
+  initialState: WorkspaceState;
   showTransientUi: boolean;
   showPanelHeaders: boolean;
   showSeparatePanelPreview: boolean;
@@ -1270,27 +1267,25 @@ function ExportPreviewWorkspace({
   return (
     <ViewProvider>
       <PlaybackProvider>
-        <SliceSelectionProvider>
-          <CrossSectionSelectionProvider>
-            <ExportRenderModeProvider
-              value={{
-                showTransientUi,
-                showPanelHeaders,
-              }}>
-              <ExportPreviewWorkspaceInner
-                initialState={initialState}
-                showPanelHeaders={showPanelHeaders}
-                showSeparatePanelPreview={showSeparatePanelPreview}
-                separatePanelHost={separatePanelHost}
-                panelDescriptors={panelDescriptors}
-                enabledPanelIds={enabledPanelIds}
-                outputFormat={outputFormat}
-                rootRef={rootRef}
-                onPreviewReady={onPreviewReady}
-              />
-            </ExportRenderModeProvider>
-          </CrossSectionSelectionProvider>
-        </SliceSelectionProvider>
+        <CrossSectionSelectionProvider>
+          <ExportRenderModeProvider
+            value={{
+              showTransientUi,
+              showPanelHeaders,
+            }}>
+            <ExportPreviewWorkspaceInner
+              initialState={initialState}
+              showPanelHeaders={showPanelHeaders}
+              showSeparatePanelPreview={showSeparatePanelPreview}
+              separatePanelHost={separatePanelHost}
+              panelDescriptors={panelDescriptors}
+              enabledPanelIds={enabledPanelIds}
+              outputFormat={outputFormat}
+              rootRef={rootRef}
+              onPreviewReady={onPreviewReady}
+            />
+          </ExportRenderModeProvider>
+        </CrossSectionSelectionProvider>
       </PlaybackProvider>
     </ViewProvider>
   );
@@ -1307,7 +1302,7 @@ function ExportPreviewWorkspaceInner({
   rootRef,
   onPreviewReady,
 }: {
-  initialState: AppState;
+  initialState: WorkspaceState;
   showPanelHeaders: boolean;
   showSeparatePanelPreview: boolean;
   separatePanelHost: HTMLDivElement | null;
@@ -1375,17 +1370,15 @@ function ExportPreviewWorkspaceInner({
         />
       </div>
       <div className="absolute inset-0 z-[200] bg-transparent" />
-      {showSeparatePanelPreview && separatePanelHost
-        ? (
-          <SeparatePanelPreviewPortal
-            host={separatePanelHost}
-            panels={panelDescriptors}
-            enabledPanelIds={enabledPanelIds}
-            showPanelHeaders={showPanelHeaders}
-            outputFormat={outputFormat}
-          />
-        )
-        : null}
+      {showSeparatePanelPreview && separatePanelHost ? (
+        <SeparatePanelPreviewPortal
+          host={separatePanelHost}
+          panels={panelDescriptors}
+          enabledPanelIds={enabledPanelIds}
+          showPanelHeaders={showPanelHeaders}
+          outputFormat={outputFormat}
+        />
+      ) : null}
     </div>
   );
 }

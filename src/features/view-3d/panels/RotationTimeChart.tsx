@@ -1,7 +1,7 @@
 import { usePlayback } from "@/features/playback/PlaybackContext";
 import { useThresholds } from "@/features/view-3d/contexts/visualization";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { getDefaultRotationTimeChartPanelState } from "@/features/view-3d/lib/statePersistence";
 import { formatFixed3 } from "@/lib/utils";
 import { formatCompactNumber } from "@/lib/utils";
 import type { EChartsOption } from "echarts";
@@ -53,6 +53,13 @@ const CHANNEL_CONFIG = {
 } as const;
 
 type ChannelKey = keyof typeof CHANNEL_CONFIG;
+type RotationTimeChartPanelState = {
+  selectedKeys: ChannelKey[];
+};
+
+const DEFAULT_ROTATION_TIME_CHART_PANEL_STATE: RotationTimeChartPanelState = {
+  selectedKeys: ["magnitude"],
+};
 const CHANNEL_ORDER: ChannelKey[] = ["rx", "ry", "rz", "magnitude"];
 
 function TooltipContent({
@@ -163,17 +170,17 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const { thresholds } = useThresholds();
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-  const panelId = api?.id ?? "rotation-time-chart";
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const defaultState = getDefaultRotationTimeChartPanelState();
-  const savedState = savedPanelState?.type === "rotationTimeChart" ? savedPanelState.state : defaultState;
+  const { state: savedState, setState: setSavedState } = usePanelState<RotationTimeChartPanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "rotation-time-chart",
+    panelType: "rotationTimeChart",
+    defaultState: DEFAULT_ROTATION_TIME_CHART_PANEL_STATE,
+  });
   const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(() => sanitizeSelectedKeys(savedState.selectedKeys));
   const chartRef = useRef<ReactECharts>(null);
   const [isDragging, setIsDragging] = useState(false);
   const hasRotationVelocity = Boolean(animationData.velocityRot);
-  const panelIdRef = useRef(panelId);
   const channelConfig = useMemo(
     () =>
       Object.fromEntries(
@@ -382,8 +389,8 @@ export function RotationTimeChart({ api }: IDockviewPanelProps) {
   }, [animationData.metadata.dt, channelConfig, frameIndex, maxFrame, rotationData, selectedKeys, thresholds, times]);
 
   useEffect(() => {
-    setPanelState(panelIdRef.current, "rotationTimeChart", { selectedKeys });
-  }, [selectedKeys, setPanelState]);
+    setSavedState({ selectedKeys });
+  }, [selectedKeys, setSavedState]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();

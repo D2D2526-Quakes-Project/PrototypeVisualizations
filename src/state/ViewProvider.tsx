@@ -1,5 +1,5 @@
 import { createContext, useContext, useSyncExternalStore, useMemo, type ReactNode } from "react";
-import { createViewStore, type ViewStore, type ViewState } from "./viewStore";
+import { createViewStore, type ViewStore, type ViewState } from "./profileState";
 
 const ViewStoreContext = createContext<ViewStore | null>(null);
 

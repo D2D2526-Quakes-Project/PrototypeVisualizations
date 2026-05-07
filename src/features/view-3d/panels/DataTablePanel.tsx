@@ -28,7 +28,7 @@
  */
 
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { getDefaultDataTablePanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -40,16 +40,24 @@ import { useViewStore } from "@/state";
 import { formatFixed3 } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
+type DataTablePanelState = {
+  page: number;
+};
+
+const DEFAULT_DATA_TABLE_PANEL_STATE: DataTablePanelState = {
+  page: 0,
+};
 
 export function DataTablePanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-  const panelId = api?.id ?? "data-table";
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const defaultState = getDefaultDataTablePanelState();
-  const savedState = savedPanelState?.type === "dataTable" ? savedPanelState.state : defaultState;
+  const { state: savedState, setState: setSavedState } = usePanelState<DataTablePanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "data-table",
+    panelType: "dataTable",
+    defaultState: DEFAULT_DATA_TABLE_PANEL_STATE,
+  });
   const [page, setPage] = useState(() => Math.max(0, Math.floor(savedState.page)));
   const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
   const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
@@ -60,8 +68,8 @@ export function DataTablePanel({ api }: IDockviewPanelProps) {
   const safePage = Math.min(page, Math.max(totalPages - 1, 0));
 
   useEffect(() => {
-    setPanelState(panelId, "dataTable", { page: safePage });
-  }, [panelId, safePage, setPanelState]);
+    setSavedState({ page: safePage });
+  }, [safePage, setSavedState]);
 
   const tableData = useMemo(() => {
     const { displacementLin } = animationData;

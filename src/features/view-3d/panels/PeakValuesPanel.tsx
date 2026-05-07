@@ -33,7 +33,7 @@
  */
 
 import { usePlayback } from "@/features/playback/PlaybackContext";
-import { getDefaultPeakValuesPanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -45,6 +45,15 @@ import { formatFixed3 } from "@/lib/utils";
 
 type SortKey = "node" | "x" | "y" | "z" | "magnitude";
 type SortDir = "asc" | "desc";
+type PeakValuesPanelState = {
+  sortKey: SortKey;
+  sortDir: SortDir;
+};
+
+const DEFAULT_PEAK_VALUES_PANEL_STATE: PeakValuesPanelState = {
+  sortKey: "magnitude",
+  sortDir: "desc",
+};
 
 function sanitizeSortKey(value: unknown): SortKey {
   return value === "node" || value === "x" || value === "y" || value === "z" || value === "magnitude"
@@ -82,12 +91,13 @@ function SortHeader({
 export function PeakValuesPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-  const panelId = api?.id ?? "peak-values";
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const defaultState = getDefaultPeakValuesPanelState();
-  const savedState = savedPanelState?.type === "peakValues" ? savedPanelState.state : defaultState;
+  const { state: savedState, setState: setSavedState } = usePanelState<PeakValuesPanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "peak-values",
+    panelType: "peakValues",
+    defaultState: DEFAULT_PEAK_VALUES_PANEL_STATE,
+  });
   const [sortKey, setSortKey] = useState<SortKey>(() => sanitizeSortKey(savedState.sortKey));
   const [sortDir, setSortDir] = useState<SortDir>(() => sanitizeSortDir(savedState.sortDir));
   const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
@@ -164,8 +174,8 @@ export function PeakValuesPanel({ api }: IDockviewPanelProps) {
   };
 
   useEffect(() => {
-    setPanelState(panelId, "peakValues", { sortKey, sortDir });
-  }, [panelId, setPanelState, sortDir, sortKey]);
+    setSavedState({ sortKey, sortDir });
+  }, [setSavedState, sortDir, sortKey]);
 
   return (
     <div className="flex h-full w-full flex-col bg-white">

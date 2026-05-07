@@ -37,8 +37,8 @@ import { usePlayback } from "@/features/playback/PlaybackContext";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFloorVisibility } from "@/features/view-3d/contexts/visualization";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { getDefaultStoryDriftHeatmapPanelState } from "@/features/view-3d/lib/statePersistence";
 import {
   amber50,
   amber600,
@@ -55,10 +55,18 @@ import { formatHex, interpolate } from "culori";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useViewStore } from "@/state";
 
 const CORNER_OPTIONS = ["NW", "NE", "SW", "SE", "Max"] as const;
 type Corner = (typeof CORNER_OPTIONS)[number];
+type StoryDriftHeatmapPanelState = {
+  selectedCorners: string[];
+  resolution: number;
+};
+
+const DEFAULT_STORY_DRIFT_HEATMAP_PANEL_STATE: StoryDriftHeatmapPanelState = {
+  selectedCorners: ["NE"],
+  resolution: 50,
+};
 
 const cornerColor: Record<Corner, [string, string]> = {
   NW: [blue50, blue600],
@@ -100,28 +108,27 @@ export function StoryDriftHeatmap({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const chartRef = useRef<ReactECharts>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
 
-  const panelId = api?.id ?? "story-drift-heatmap";
-  const defaultState = getDefaultStoryDriftHeatmapPanelState();
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const savedState = savedPanelState?.type === "storyDriftHeatmap" ? savedPanelState.state : defaultState;
+  const { state: savedState, setState: setSavedState } = usePanelState<StoryDriftHeatmapPanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "story-drift-heatmap",
+    panelType: "storyDriftHeatmap",
+    defaultState: DEFAULT_STORY_DRIFT_HEATMAP_PANEL_STATE,
+  });
 
   const [selectedCorners, setSelectedCorner] = useState<Corner[]>(() =>
     sanitizeSelectedCorners(savedState.selectedCorners)
   );
   const [resolution, setResolution] = useState<Resolution>(() => sanitizeResolution(savedState.resolution));
-  const panelIdRef = useRef(panelId);
-
   useEffect(() => {
-    setPanelState(panelIdRef.current, "storyDriftHeatmap", {
+    setSavedState({
       selectedCorners,
       resolution,
     });
-  }, [selectedCorners, resolution, setPanelState]);
+  }, [resolution, selectedCorners, setSavedState]);
 
   const isMaxSelected = selectedCorners.includes("Max");
   const legendCorner = selectedCorners[0] ?? "Max";

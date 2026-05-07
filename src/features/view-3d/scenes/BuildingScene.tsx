@@ -15,7 +15,6 @@ import {
   useColor,
   useExpandedScale,
   useFloorVisibility,
-  useSliceSelection,
   useThresholds,
   useViewMode,
 } from "@/features/view-3d/contexts/visualization";
@@ -51,7 +50,7 @@ export function BuildingScene({ panelId = "main-canvas" }: { panelId?: string })
   const { getVisibleNodes } = useViewMode();
   const { getExpandedPosition } = useExpandedScale();
   const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
-  const { sliceEnabled, xRange, yRange, zRange } = useSliceSelection();
+  const { sliceEnabled, xRange, yRange, zRange } = useCamera();
   const { setHovered: setHoveredCrossSection, deselectCrossSection } = useCrossSectionSelection();
   const { camera } = useThree();
   const { setEnablePan } = useCamera();

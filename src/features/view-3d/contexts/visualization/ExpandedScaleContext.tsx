@@ -1,8 +1,9 @@
-import { useViewStore } from "@/state";
 import type { AnimationMetadata } from "@/lib/types";
-import type { ExpandedScaleState as StoredExpandedScaleState } from "@/state/viewStore";
+import type { ExpandedScaleState as StoredExpandedScaleState } from "@/state/profileState";
 import { useCallback } from "react";
 import { isStaticMetric } from "@/lib/metrics";
+import { useCamera } from "../CameraContext";
+import { useViewStore } from "@/state";
 
 interface ExpandedScaleContextType {
   state: StoredExpandedScaleState;
@@ -24,13 +25,9 @@ export function ExpandedScaleProvider({ children }: { children: React.ReactNode 
 }
 
 export function useExpandedScale(): ExpandedScaleContextType {
-  const expandedScale = useViewStore((s) => s.expandedScale);
+  const { expandedScale, toggleExpansion, toggleDisplacement, setExpansion, setDisplacementScale, resetExpandedScale } =
+    useCamera();
   const currentMetric = useViewStore((s) => s.currentMetric);
-  const toggleExpansion = useViewStore((s) => s.toggleExpansion);
-  const toggleDisplacement = useViewStore((s) => s.toggleDisplacement);
-  const setExpansion = useViewStore((s) => s.setExpansion);
-  const setDisplacementScale = useViewStore((s) => s.setDisplacementScale);
-  const resetExpandedScale = useViewStore((s) => s.resetExpandedScale);
 
   const staticMetricMode = isStaticMetric(currentMetric);
 

@@ -1,10 +1,21 @@
-import { getDefaultHingeDistributionPanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useViewStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo } from "react";
+
+type HingeDistributionPanelState = {
+  binCount: number;
+  logScale: boolean;
+  clipPercentile: number;
+};
+
+const DEFAULT_HINGE_DISTRIBUTION_PANEL_STATE: HingeDistributionPanelState = {
+  binCount: 24,
+  logScale: false,
+  clipPercentile: 99,
+};
 
 function getClipCountFromPercentile(counts: number[], clipPercentile: number): number {
   if (counts.length === 0) return 0;
@@ -176,11 +187,12 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const hingeData = animationData.hingeData;
 
-  const setPanelState = useViewStore((s) => s.setPanelState);
-  const panelId = api?.id ?? "hinge-distribution";
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
-  const defaultState = getDefaultHingeDistributionPanelState();
-  const savedState = savedPanelState?.type === "hingeDistribution" ? savedPanelState.state : defaultState;
+  const { state: savedState, setState: setSavedState } = usePanelState<HingeDistributionPanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "hinge-distribution",
+    panelType: "hingeDistribution",
+    defaultState: DEFAULT_HINGE_DISTRIBUTION_PANEL_STATE,
+  });
 
   const binCount = useMemo(
     () => (typeof savedState.binCount === "number" ? Math.max(6, savedState.binCount) : 24),
@@ -240,12 +252,12 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   }, [binCount, histogramMetrics]);
 
   useEffect(() => {
-    setPanelState(panelId, "hingeDistribution", {
+    setSavedState({
       binCount,
       logScale,
       clipPercentile,
     });
-  }, [binCount, clipPercentile, logScale, panelId, setPanelState]);
+  }, [binCount, clipPercentile, logScale, setSavedState]);
 
   const allBinControls = useMemo(() => {
     return [
@@ -254,7 +266,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         type: "range" as const,
         value: binCount,
         onChange: (value: number) => {
-          setPanelState(panelId, "hingeDistribution", {
+          setSavedState({
             binCount: Math.max(6, Math.min(120, value)),
             logScale,
             clipPercentile,
@@ -266,7 +278,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         type: "range" as const,
         value: clipPercentile,
         onChange: (value: number) => {
-          setPanelState(panelId, "hingeDistribution", {
+          setSavedState({
             binCount,
             logScale,
             clipPercentile: Math.min(100, Math.max(60, value)),
@@ -274,7 +286,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
         },
       },
     ];
-  }, [binCount, clipPercentile, logScale, panelId, setPanelState]);
+  }, [binCount, clipPercentile, logScale, setSavedState]);
 
   if (!hingeData) {
     return (
@@ -312,7 +324,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
             type="checkbox"
             checked={logScale}
             onChange={(event) =>
-              setPanelState(panelId, "hingeDistribution", {
+              setSavedState({
                 binCount,
                 logScale: event.target.checked,
                 clipPercentile,

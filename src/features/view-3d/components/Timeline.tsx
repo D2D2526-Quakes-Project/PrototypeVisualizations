@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { formatFixed3 } from "@/lib/utils";
 import { formatCompactNumber } from "@/lib/utils";
-import { getDefaultTimelinePanelState } from "@/features/view-3d/lib/statePersistence";
+import { usePanelState } from "@/features/view-3d/hooks/usePanelState";
 import { useViewStore } from "@/state";
 import { getMetricKeyColor, isStaticMetric, UNITS, type UnitConfig } from "@/lib/metrics";
 
@@ -193,6 +193,14 @@ type ChannelOption = {
   color: string;
   unit: UnitConfig;
   group: "Ground Motion" | "Node Averages";
+};
+
+export type TimelinePanelState = {
+  selectedKeys: ChannelKey[];
+};
+
+export const DEFAULT_TIMELINE_PANEL_STATE: TimelinePanelState = {
+  selectedKeys: ["x", "y"],
 };
 
 const CHANNEL_ORDER: ChannelKey[] = [
@@ -381,14 +389,14 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
   const isDraggingRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
-  const setPanelState = useViewStore((s) => s.setPanelState);
   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-
-  const panelId = api?.id ?? "timeline";
-  const defaultState = getDefaultTimelinePanelState();
-  const savedPanelState = useViewStore((s) => s.panelStates[panelId]);
+  const { state: savedState, setState: setSavedState } = usePanelState<TimelinePanelState>({
+    panelId: api?.id,
+    fallbackPanelId: "timeline",
+    panelType: "timeline",
+    defaultState: DEFAULT_TIMELINE_PANEL_STATE,
+  });
   const currentMetric = useViewStore((s) => s.currentMetric);
-  const savedState = savedPanelState?.type === "timeline" ? savedPanelState.state : defaultState;
   const staticMetricMode = isStaticMetric(currentMetric);
 
   const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(savedState.selectedKeys);
@@ -399,8 +407,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const dtRef = useRef(dt);
   const maxFrameRef = useRef(maxFrame);
   const selectedKeysRef = useRef(selectedKeys);
-  const panelIdRef = useRef(panelId);
-
   const averageRotationByFrame = useMemo(() => {
     const result = {
       x: new Array<number>(animationData.metadata.frameCount).fill(0),
@@ -584,10 +590,10 @@ export function Timeline({ api }: IDockviewPanelProps) {
   }, [dt, maxFrame, effectiveSelectedKeys]);
 
   useEffect(() => {
-    setPanelState(panelIdRef.current, "timeline", {
+    setSavedState({
       selectedKeys: effectiveSelectedKeys,
     });
-  }, [effectiveSelectedKeys, setPanelState]);
+  }, [effectiveSelectedKeys, setSavedState]);
 
   const times = useMemo(() => {
     const times: number[] = [];

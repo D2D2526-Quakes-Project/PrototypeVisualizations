@@ -4,29 +4,20 @@
 
 ---
 
-- [x] Update unit labels that use absolute values to include “(maximum absolute value)” or “(absolute maximum)”
-  - Ensures consistency and clarity in how peak values are presented across views
+- [x] Refactor view-3d persistence into building-scoped profile sets with profile-owned workspace state
+  - Replaced the old split autosave/profile flow with building-level profile buckets that each track an active profile and workspace snapshot.
+  - Moved `showHiddenMetrics` into app-level preferences so it no longer rides along with profile/workspace restores.
+  - URL-loaded workspace state now activates as an ephemeral shared-session profile instead of overwriting the user's saved workspace.
+- [x] Finish panel-local persistence hooks and profile management UI for view-3d
+  - Panel state defaults and saved-state types now live alongside the panel implementations instead of in central persistence helpers.
+  - Canvas camera/slice/expanded-scale state now persists under the canvas panel state rather than top-level workspace persistence.
+  - Added profile switching, reset, rename, delete, and save-as-new controls in the navigation bar for building-scoped workspaces.
 
 - [ ] Create presets for different visualization modes (hinges, displacement, story drift, shears)
   - Allows quick switching between common analysis views without reconfiguring settings each time
 
-- [x] Add an auto-orbiting camera/view mode
-  - Enables continuous rotation of the canvas for passive viewing or presentations
-
-- [x] Improve non-threshold color bar gradients to include darker tones smoothly
-  - Produces a more continuous and visually accurate gradient across the full value range
-
 - [ ] Rename “15Story” and “52Story” to “15-story” and “52-storys”
   - Aligns naming with desired formatting conventions for identifiers
-
-- [x] Fix floor slab interpolation when nodes have no assigned color/value
-  - Use averaged values instead of default gray to avoid misleading visual output
-
-- [x] Adjust connection line colors (vertical and horizontal) based on background
-  - Default to black, but switch to white automatically on dark/black backgrounds for visibility
-
-- [ ] Add adaptive coloring for UI elements based on background (tick marks, floor grid, direction labels)
-  - Ensures readability and contrast regardless of theme or background color settings
 
 ### 3.1 Time Context Sync
 

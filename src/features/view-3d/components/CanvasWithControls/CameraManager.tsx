@@ -1,8 +1,10 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 
+import { useAnimationData } from "@/lib/useAnimationData";
+import { UNIT_SCALE } from "@/lib/utils";
 import { useViewStore } from "@/state";
 import type { OrthographicCamera as OrthographicCameraImpl, PerspectiveCamera as PerspectiveCameraImpl } from "three";
 import { useCamera } from "../../contexts/CameraContext";
@@ -17,8 +19,7 @@ export function CameraManager() {
 }
 
 function Cams() {
-  const { orbitControlsRef } = useCamera();
-  const orthographic = useViewStore((s) => s.orthographic);
+  const { orbitControlsRef, orthographic, cameraState } = useCamera();
   const fov = 50;
 
   const persRef = useRef<PerspectiveCameraImpl>(null);
@@ -57,6 +58,24 @@ function Cams() {
     });
   }, [orthographic, pixelsFromCenterToTop, orbitControlsRef]);
 
+  useEffect(() => {
+    const controls = orbitControlsRef.current;
+    const perspectiveCamera = persRef.current;
+    const orthographicCamera = orthoRef.current;
+    if (!controls || !perspectiveCamera || !orthographicCamera) return;
+
+    const activeCamera = orthographic ? orthographicCamera : perspectiveCamera;
+    activeCamera.position.set(cameraState.position[0], cameraState.position[1], cameraState.position[2]);
+    controls.target.set(cameraState.target[0], cameraState.target[1], cameraState.target[2]);
+
+    if (orthographic && typeof cameraState.zoom === "number") {
+      orthographicCamera.zoom = cameraState.zoom;
+      orthographicCamera.updateProjectionMatrix();
+    }
+
+    controls.update();
+  }, [cameraState, orthographic, orbitControlsRef]);
+
   return (
     <>
       <PerspectiveCamera ref={persRef} makeDefault={!orthographic} fov={fov} up={[0, 0, 1]} />
@@ -66,8 +85,45 @@ function Cams() {
 }
 
 function CameraControls() {
-  const { orbitControlsRef } = useCamera();
+  const { orbitControlsRef, setCameraState } = useCamera();
   const autoRotate = useViewStore((s) => s.autoRotate);
+
+  const { animationData } = useAnimationData();
+  const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
+  const buildingVerticalCenter =
+    (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
+
+  useEffect(() => {
+    if (!orbitControlsRef?.current) return;
+    const controls = orbitControlsRef.current;
+    const camera = controls.object;
+    controls.target.set(0, 0, buildingVerticalCenter);
+    camera.position.set(-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance);
+    controls.update();
+  }, [buildingVerticalCenter, cameraDistance, orbitControlsRef]);
+
+  useEffect(() => {
+    const controls = orbitControlsRef.current;
+    if (!controls) return;
+
+    const syncCameraState = () => {
+      const camera = controls.object;
+      setCameraState({
+        position: [camera.position.x, camera.position.y, camera.position.z],
+        target: [controls.target.x, controls.target.y, controls.target.z],
+        zoom: "zoom" in camera && typeof camera.zoom === "number" ? camera.zoom : undefined,
+      });
+    };
+
+    syncCameraState();
+    // controls.addEventListener("change", syncCameraState);
+    controls.addEventListener("end", syncCameraState);
+
+    return () => {
+      // controls.removeEventListener("change", syncCameraState);
+      controls.removeEventListener("end", syncCameraState);
+    };
+  }, [orbitControlsRef, setCameraState]);
 
   return <OrbitControls ref={orbitControlsRef} enableDamping={false} autoRotate={autoRotate} />;
 }

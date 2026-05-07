@@ -1,20 +1,20 @@
+import { Box } from "lucide-react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 import * as THREE from "three";
 import { ErrorPage } from "./components/ErrorPage";
 import { NavigationBar } from "./components/NavigationBar";
-import { AnimationDataProvider } from "./lib/useAnimationData";
-import "./index.css";
-import { PlaybackProvider } from "./features/playback/PlaybackContext";
-import { ExportProvider } from "./features/export/ExportProvider";
-import { SliceSelectionProvider } from "./features/view-3d/contexts/visualization";
-import { ViewProvider } from "./state";
+
 import { TooltipProvider } from "./components/ui/tooltip";
-import { Box } from "lucide-react";
-import { CrossSectionSelectionProvider } from "./features/view-3d/contexts/visualization/CrossSectionSelectionContext";
+import { ExportProvider } from "./features/export/ExportProvider";
 import { ExportRenderModeProvider } from "./features/export/renderMode";
 import { View3d } from "./features/view-3d/page";
+import { PlaybackProvider } from "./features/playback/PlaybackContext";
+import { CrossSectionSelectionProvider } from "./features/view-3d/contexts/visualization/CrossSectionSelectionContext";
+import "./index.css";
+import { AnimationDataProvider } from "./lib/useAnimationData";
+import { ViewProvider } from "./state/ViewProvider";
 
 const routes = [
   {
@@ -40,11 +40,9 @@ const router = createBrowserRouter([
                   }}>
                   <NavigationBar />
                   <PlaybackProvider>
-                    <SliceSelectionProvider>
-                      <CrossSectionSelectionProvider>
-                        <Outlet />
-                      </CrossSectionSelectionProvider>
-                    </SliceSelectionProvider>
+                    <CrossSectionSelectionProvider>
+                      <Outlet />
+                    </CrossSectionSelectionProvider>
                   </PlaybackProvider>
                 </ExportRenderModeProvider>
               </ExportProvider>

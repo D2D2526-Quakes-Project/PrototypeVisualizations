@@ -1,4 +1,3 @@
-import { useViewStore, useViewStoreRaw } from "@/state";
 import type { DockviewApi } from "dockview";
 import { useCallback, useEffect } from "react";
 

@@ -1,5 +1,5 @@
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { getMetricKeyColor } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 

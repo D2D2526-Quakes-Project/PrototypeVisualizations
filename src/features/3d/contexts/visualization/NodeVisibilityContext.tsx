@@ -1,58 +1,30 @@
-import * as THREE from "three";
-import type { BoxSelection as StoreBoxSelection } from "@/state/profileState";
+import { useLiveStore, useProfileStore } from "@/state";
+import type { BoxSelection } from "@/state/liveState";
 import { useCallback, useMemo, type RefObject } from "react";
+import * as THREE from "three";
 
-interface NodeVisibilityContextType {
-  selectedNodeIds: Set<number>;
-  hiddenNodeIds: Set<number>;
-  boxSelection: StoreBoxSelection | null;
-  boxSelectionPanelId: string | null;
-  isBoxSelecting: boolean;
-  hoveredNodeId: number | null;
-  hideSelectedNodes: boolean;
-  setSelectedNodes: (nodes: number[]) => void;
-  setHiddenNodeIds: (nodes: number[]) => void;
-  addSelectedNodes: (nodes: number[]) => void;
-  removeSelectedNode: (nodeId: number) => void;
-  hideNodes: (nodes: number[]) => void;
-  showNodes: (nodes: number[]) => void;
-  showAllNodes: () => void;
-  setHideSelectedNodes: (hide: boolean) => void;
-  toggleHideSelectedNodes: () => void;
-  clearSelection: () => void;
-  startBoxSelection: (start: { x: number; y: number }, panelId?: string) => void;
-  updateBoxSelection: (end: { x: number; y: number }, panelId?: string) => void;
-  endBoxSelection: (panelId?: string) => void;
-  cancelBoxSelection: () => void;
-  setHoveredNodeId: (nodeId: number | null) => void;
-}
-
-export function NodeVisibilityProvider({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
-
-export function useNodeVisibility(): NodeVisibilityContextType {
-  const selectedNodeIdsArray = useViewStore((s) => s.selectedNodeIds);
-  const hiddenNodeIdsArray = useViewStore((s) => s.hiddenNodeIds);
-  const boxSelection = useViewStore((s) => s.boxSelection);
-  const boxSelectionPanelId = useViewStore((s) => s.boxSelectionPanelId);
-  const isBoxSelecting = useViewStore((s) => s.isBoxSelecting);
-  const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
-  const hideSelectedNodes = useViewStore((s) => s.hideSelectedNodes);
-  const setSelectedNodesStore = useViewStore((s) => s.setSelectedNodes);
-  const setHiddenNodeIdsStore = useViewStore((s) => s.setHiddenNodeIds);
-  const removeSelectedNodeStore = useViewStore((s) => s.removeSelectedNode);
-  const addSelectedNodesStore = useViewStore((s) => s.addSelectedNodes);
-  const hideNodesStore = useViewStore((s) => s.hideNodes);
-  const showNodesStore = useViewStore((s) => s.showNodes);
-  const showAllNodesStore = useViewStore((s) => s.showAllNodes);
-  const setHideSelectedNodesStore = useViewStore((s) => s.setHideSelectedNodes);
-  const toggleHideSelectedNodesStore = useViewStore((s) => s.toggleHideSelectedNodes);
-  const clearSelectionStore = useViewStore((s) => s.clearSelection);
-  const startBoxSelectionStore = useViewStore((s) => s.startBoxSelection);
-  const updateBoxSelectionStore = useViewStore((s) => s.updateBoxSelection);
-  const endBoxSelectionStore = useViewStore((s) => s.endBoxSelection);
-  const setHoveredNodeIdStore = useViewStore((s) => s.setHoveredNodeId);
+export function useNodeVisibility() {
+  const selectedNodeIdsArray = useLiveStore((s) => s.selectedNodeIds);
+  const hiddenNodeIdsArray = useProfileStore((s) => s.hiddenNodeIds);
+  const boxSelection = useLiveStore((s) => s.boxSelection);
+  const boxSelectionPanelId = useLiveStore((s) => s.boxSelectionPanelId);
+  const isBoxSelecting = useLiveStore((s) => s.isBoxSelecting);
+  const hoveredNodeId = useLiveStore((s) => s.hoveredNodeId);
+  // const hideSelectedNodes = useProfileStore((s) => s.hideSelectedNodes);
+  const setSelectedNodesStore = useLiveStore((s) => s.setSelectedNodes);
+  const setHiddenNodeIdsStore = useProfileStore((s) => s.setHiddenNodeIds);
+  const removeSelectedNodeStore = useLiveStore((s) => s.removeSelectedNode);
+  const addSelectedNodesStore = useLiveStore((s) => s.addSelectedNodes);
+  const hideNodesStore = useProfileStore((s) => s.hideNodes);
+  const showNodesStore = useProfileStore((s) => s.showNodes);
+  const showAllNodesStore = useProfileStore((s) => s.showAllNodes);
+  // const setHideSelectedNodesStore = useProfileStore((s) => s.setHideSelectedNodes);
+  // const toggleHideSelectedNodesStore = useProfileStore((s) => s.toggleHideSelectedNodes);
+  const clearSelectionStore = useLiveStore((s) => s.clearSelection);
+  const startBoxSelectionStore = useLiveStore((s) => s.startBoxSelection);
+  const updateBoxSelectionStore = useLiveStore((s) => s.updateBoxSelection);
+  const endBoxSelectionStore = useLiveStore((s) => s.endBoxSelection);
+  const setHoveredNodeIdStore = useLiveStore((s) => s.setHoveredNodeId);
 
   const selectedNodeIds = useMemo(() => new Set(selectedNodeIdsArray), [selectedNodeIdsArray]);
   const hiddenNodeIds = useMemo(() => new Set(hiddenNodeIdsArray), [hiddenNodeIdsArray]);
@@ -105,9 +77,13 @@ export function useNodeVisibility(): NodeVisibilityContextType {
 
   const setHideSelectedNodes = useCallback(
     (hide: boolean) => {
-      setHideSelectedNodesStore(hide);
+      if (hide) {
+        hideNodes(Array.from(selectedNodeIds));
+      } else {
+        showNodes(Array.from(selectedNodeIds));
+      }
     },
-    [setHideSelectedNodesStore]
+    [hideNodes, selectedNodeIds, showNodes]
   );
 
   const toggleHideSelectedNodes = useCallback(() => {
@@ -179,7 +155,7 @@ export function useNodeVisibility(): NodeVisibilityContextType {
 export function performBoxSelection(
   camera: THREE.Camera,
   meshRef: RefObject<THREE.InstancedMesh | null>,
-  box: StoreBoxSelection,
+  box: BoxSelection,
   visibleNodes: number[]
 ): number[] {
   const minX = Math.min(box.start.x, box.end.x);

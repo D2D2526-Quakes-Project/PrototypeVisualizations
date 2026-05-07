@@ -19,36 +19,32 @@ import {
 } from "@/components/ui/menubar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import DataSources from "@/data/index";
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { useExportVideo } from "@/features/export/ExportProvider";
 import { useColor, useFloorVisibility } from "@/features/3d/contexts/visualization";
-import {
-  applyWorkspaceState,
-  copyShareableUrlToClipboard,
-  createUserProfile,
-  getActiveProfile,
-  getCurrentWorkspaceStateSnapshot,
-  loadFromLocalStorage,
-  loadSaveProfiles,
-  PROFILES_UPDATED_EVENT,
-  renameUserProfile,
-  deleteUserProfile,
-  resetProfileToDefault,
-  setActiveProfile,
-} from "@/features/3d/lib/statePersistence";
+// import {
+//   applyWorkspaceState,
+//   copyShareableUrlToClipboard,
+//   createUserProfile,
+//   getActiveProfile,
+//   getCurrentWorkspaceStateSnapshot,
+//   loadFromLocalStorage,
+//   loadSaveProfiles,
+//   PROFILES_UPDATED_EVENT,
+//   renameUserProfile,
+//   deleteUserProfile,
+//   resetProfileToDefault,
+//   setActiveProfile,
+// } from "@/features/3d/lib/statePersistence";
 import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
 import { getMetricConfig } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { formatFixed3 } from "@/lib/utils";
-import { useViewStore, useViewStoreRaw } from "@/state";
-import { ColorScaleBarTooltip } from "../features/3d/components/CanvasWithControls/ColorScaleBar";
-import { SelectionShortcuts } from "../features/3d/components/CanvasWithControls/SelectionShortcuts";
 import { Sheet, SheetContent } from "./ui/sheet";
 
 export function NavigationBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const store = useViewStoreRaw();
   const { showAllDefaultFloors } = useFloorVisibility();
   const visibleFloorCount = useViewStore((state) => state.visibleFloors.length);
   const showAllNodes = useViewStore((state) => state.showAllNodes);

@@ -27,7 +27,7 @@
  * =============================================================================
  */
 
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useEffect, useMemo, useState } from "react";

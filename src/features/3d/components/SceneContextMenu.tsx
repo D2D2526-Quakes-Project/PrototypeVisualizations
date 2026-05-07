@@ -1,4 +1,4 @@
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { useColor } from "@/features/3d/contexts/visualization";
 import { formatValue, getMetricConfig } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";

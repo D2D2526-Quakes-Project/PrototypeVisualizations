@@ -32,7 +32,7 @@
  * =============================================================================
  */
 
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { useMemo } from "react";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";

@@ -27,7 +27,7 @@ import { useAnimationData } from "@/lib/useAnimationData";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IDockviewPanelProps } from "dockview";
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { useColor } from "@/features/3d/contexts/visualization/ColorContext";
 import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 

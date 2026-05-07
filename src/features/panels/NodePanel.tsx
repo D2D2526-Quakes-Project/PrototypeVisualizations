@@ -1,9 +1,9 @@
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { interpolateColor } from "@/lib/colors";
 import { getMetricColorScale, getMetricConfig, getMetricKeyColor, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";
-import { useViewStore, useViewStoreRaw } from "@/state";
+
 import { interpolate } from "culori";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
 import { ChartNoAxesCombinedIcon, InfoIcon, TriangleIcon, XIcon } from "lucide-react";

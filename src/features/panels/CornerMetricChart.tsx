@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/3d/contexts/visualization";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { formatStoryLabel } from "@/lib/utils";

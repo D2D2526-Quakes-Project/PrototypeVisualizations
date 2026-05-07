@@ -1,4 +1,4 @@
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { useThresholds } from "@/features/3d/contexts/visualization";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { useAnimationData } from "@/lib/useAnimationData";

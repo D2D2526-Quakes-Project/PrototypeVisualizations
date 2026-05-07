@@ -1,12 +1,13 @@
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 import { useExportRenderMode } from "@/features/export/renderMode";
-import { usePlayback } from "./PlaybackContext";
 
 import { isStaticMetric } from "@/lib/metrics";
+import { usePlayback } from "./usePlayback";
+import { useProfileStore } from "@/state";
 
 export function PlaybackControls() {
-  const { playing, handlePlayPause, skipToStart, skipToEnd } = usePlayback();
-  const currentMetric = useViewStore((s) => s.currentMetric);
+  const { playing, togglePlaying, skipToStart, skipToEnd } = usePlayback();
+  const currentMetric = useProfileStore((s) => s.currentMetric);
   const staticMetricMode = isStaticMetric(currentMetric);
 
   return (
@@ -23,7 +24,7 @@ export function PlaybackControls() {
 
       <button
         className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
-        onClick={handlePlayPause}
+        onClick={togglePlaying}
         disabled={staticMetricMode}
         title={staticMetricMode ? "Static metrics do not support playback" : playing ? "Pause" : "Play"}>
         {playing ? <PauseIcon /> : <PlayIcon />}
@@ -44,9 +45,9 @@ export function PlaybackControls() {
 }
 
 export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) {
-  const { playing, handlePlayPause, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
+  const { playing, togglePlaying, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
   const exportRenderMode = useExportRenderMode();
-  const currentMetric = useViewStore((s) => s.currentMetric);
+  const currentMetric = useProfileStore((s) => s.currentMetric);
   const staticMetricMode = isStaticMetric(currentMetric);
 
   if (!exportRenderMode.showTransientUi) return null;
@@ -66,7 +67,7 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
         <SkipBackIcon />
       </button>
       <button
-        onClick={handlePlayPause}
+        onClick={togglePlaying}
         disabled={staticMetricMode}
         className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         title={staticMetricMode ? "Static metrics do not support playback" : playing ? "Pause" : "Play"}>

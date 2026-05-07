@@ -2,14 +2,13 @@ import { type StateCreator } from "zustand";
 import type { AppState } from ".";
 
 export interface LiveState {
-  playing: boolean;
-  fps: number;
-  skippedPerFrame: number;
+  _playing: boolean;
+  _fps: number;
+  _skippedPerFrame: number;
 
-  setPlaying: (playing: boolean) => void;
-  setFps: (fps: number) => void;
-  setSkippedPerFrame: (frames: number) => void;
-  handlePlayPause: () => void;
+  _setPlaying: (playing: boolean) => void;
+  _setFps: (fps: number) => void;
+  _setSkippedPerFrame: (frames: number) => void;
 
   autoRotate: boolean;
   setAutoRotate: (autoRotate: boolean) => void;
@@ -43,13 +42,12 @@ export interface LiveState {
 
 export const createLiveSlice: StateCreator<AppState, [], [], LiveState> = (set) => ({
   // Playback
-  playing: false,
-  setPlaying: (playing) => set({ playing }),
-  fps: 0,
-  setFps: (fps) => set({ fps }),
-  skippedPerFrame: 0,
-  setSkippedPerFrame: (skippedPerFrame) => set({ skippedPerFrame }),
-  handlePlayPause: () => set((state) => ({ playing: !state.playing })),
+  _playing: false,
+  _setPlaying: (_playing) => set({ _playing }),
+  _fps: 0,
+  _setFps: (_fps) => set({ _fps }),
+  _skippedPerFrame: 0,
+  _setSkippedPerFrame: (_skippedPerFrame) => set({ _skippedPerFrame }),
 
   autoRotate: false,
   setAutoRotate: (autoRotate) => set({ autoRotate }),
@@ -130,13 +128,12 @@ export interface CrossSectionSelectionState {
 }
 
 export const LIVE_STATE_KEYS = [
-  "playing",
-  "fps",
-  "skippedPerFrame",
-  "setPlaying",
-  "setFps",
-  "setSkippedPerFrame",
-  "handlePlayPause",
+  "_playing",
+  "_fps",
+  "_skippedPerFrame",
+  "_setPlaying",
+  "_setFps",
+  "_setSkippedPerFrame",
   "autoRotate",
   "setAutoRotate",
   "selectedNodeIds",

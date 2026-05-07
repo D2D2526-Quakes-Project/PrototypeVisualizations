@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { getMetricKeyColor } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/useAnimationData";

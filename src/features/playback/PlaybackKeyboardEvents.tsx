@@ -1,90 +1,24 @@
-import { useAnimationData } from "@/lib/useAnimationData";
 import { isStaticMetric } from "@/lib/metrics";
+import { useAnimationData } from "@/lib/useAnimationData";
 import { useLiveStore, useProfileStore } from "@/state";
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef } from "react";
+import { usePlayback } from "./usePlayback";
 
-export type PlaybackControlParams = {
-  frameIndex: number;
-  setFrameIndex: (index: number | ((prevState: number) => number)) => void;
-  playing: boolean;
-  setPlaying: (playing: boolean) => void;
-  skipToStart: () => void;
-  skipToEnd: () => void;
-  fps: number;
-  skippedPerFrame: number;
-};
-
-export const usePlayback = (): PlaybackControlParams => {
+export function PlaybackKeyboardEvents() {
   const { animationData } = useAnimationData();
 
-  const totalFrames = animationData.metadata.frameCount;
+  const { frameIndex, setFrameIndex, totalFrames, playing, setPlaying } = usePlayback();
 
-  const frameIndex = useProfileStore((s) => s.frameIndex);
-  const currentMetric = useProfileStore((s) => s.currentMetric);
-  const playing = useLiveStore((s) => s.playing);
-  const setStoreFrameIndex = useProfileStore((s) => s.setFrameIndex);
-  const setPlaying = useLiveStore((s) => s.setPlaying);
-  const fps = useLiveStore((s) => s.fps);
-  const skippedPerFrame = useLiveStore((s) => s.skippedPerFrame);
-  const staticMetricMode = isStaticMetric(currentMetric);
-
-  const setFrameIndex = useCallback(
-    (nextIndex: number | ((prevState: number) => number)) => {
-      if (staticMetricMode) {
-        setStoreFrameIndex(0);
-        return;
-      }
-      const resolvedIndex = typeof nextIndex === "number" ? nextIndex : nextIndex(frameIndex);
-      const clamped = Math.max(0, Math.min(totalFrames - 1, resolvedIndex));
-      setStoreFrameIndex(clamped);
-    },
-    [frameIndex, staticMetricMode, totalFrames, setStoreFrameIndex]
-  );
-
-  const handlePlayPause = useCallback(() => {
-    if (staticMetricMode) {
-      setStoreFrameIndex(0);
-      setPlaying(false);
-      return;
-    }
-    if (frameIndex >= totalFrames - 1) {
-      setStoreFrameIndex(0);
-    }
-    setPlaying(!playing);
-  }, [frameIndex, staticMetricMode, totalFrames, setPlaying, playing, setStoreFrameIndex]);
-
-  const skipToStart = useCallback(() => {
-    setStoreFrameIndex(0);
-  }, [setStoreFrameIndex]);
-
-  const skipToEnd = useCallback(() => {
-    if (staticMetricMode) {
-      setStoreFrameIndex(0);
-      return;
-    }
-    setStoreFrameIndex(totalFrames - 1);
-  }, [staticMetricMode, setStoreFrameIndex, totalFrames]);
-
-  return {
-    frameIndex,
-    playing,
-    setFrameIndex,
-    handlePlayPause,
-    skipToStart,
-    skipToEnd,
-    fps,
-    skippedPerFrame,
-  };
-};
-
-export function PlaybackKeyboardEvents({ children }: { children: ReactNode }) {
-  const { animationData } = useAnimationData();
-
-  const { frameIndex, setFrameIndex, playing, setPlaying, fps, setFps, skippedPerFrame, setSkippedPerFrame } =
-    usePlayback();
+  const setFps = useLiveStore((s) => s._setFps);
+  const setSkippedPerFrame = useLiveStore((s) => s._setSkippedPerFrame);
 
   const displayedFrameRef = useRef(frameIndex);
   const frameIndexRef = useRef(frameIndex);
+  const playbackStartFrameRef = useRef(frameIndex);
+  const playbackStartTimeRef = useRef(0);
+  const frameCountRef = useRef(totalFrames);
+  const lastFpsUpdateRef = useRef(0);
+  const requestedAnimationFrameRef = useRef<number | null>(null);
 
   const currentMetric = useProfileStore((s) => s.currentMetric);
   const staticMetricMode = isStaticMetric(currentMetric);
@@ -104,16 +38,11 @@ export function PlaybackKeyboardEvents({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Treat external frame changes during playback as live seeks.
     playbackStartFrameRef.current = frameIndex;
     playbackStartTimeRef.current = performance.now();
     displayedFrameRef.current = frameIndex;
     setSkippedPerFrame(0);
   }, [frameIndex, playing, setSkippedPerFrame]);
-
-  useEffect(() => {
-    setTotalFrames(animationData.metadata.frameCount);
-  }, [animationData.metadata.frameCount, setTotalFrames]);
 
   useEffect(() => {
     if (staticMetricMode) {
@@ -254,5 +183,5 @@ export function PlaybackKeyboardEvents({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", windowKeydown);
   }, [frameIndex, staticMetricMode, playing, setFrameIndex, setPlaying, totalFrames]);
 
-  return <>{children}</>;
+  return null;
 }

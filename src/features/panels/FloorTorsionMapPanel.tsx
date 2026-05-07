@@ -1,5 +1,5 @@
 import { FloorTorsionPlanPreview } from "@/features/3d/components/FloorTorsionPlanPreview";
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { buildFloorTorsionSnapshot } from "@/features/3d/lib/floorTorsion";
 import { useAnimationData } from "@/lib/useAnimationData";
 import { formatCompactNumber } from "@/lib/utils";

@@ -22,7 +22,7 @@ import { rasterizeElementToCanvas } from "@/features/export/domCapture";
 import { canvasToPngBytes, getFfmpegEncoder, type ExportVideoFormat } from "@/features/export/ffmpegEncoder";
 import { ExportRenderModeProvider } from "@/features/export/renderMode";
 import { createZipArchive } from "@/features/export/zip";
-import { PlaybackProvider } from "@/features/playback/PlaybackContext";
+import { PlaybackProvider } from "@/features/playback/PlaybackKeyboardEvents";
 import { MagicPanel, type MagicPanelParams } from "@/features/dockview/MagicPanel";
 import { CrossSectionSelectionProvider } from "@/features/3d/contexts/visualization/CrossSectionSelectionContext";
 import { getCurrentWorkspaceStateSnapshot, type WorkspaceState } from "@/features/3d/lib/statePersistence";

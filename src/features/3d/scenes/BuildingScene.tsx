@@ -1,4 +1,4 @@
-import { usePlayback } from "@/features/playback/PlaybackContext";
+import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { FloorTickMarks } from "@/features/3d/components/FloorTickMarks";
 import { getNodeColor as getNodePanelColor } from "@/features/view-3d/components/NodePanel";
 import {

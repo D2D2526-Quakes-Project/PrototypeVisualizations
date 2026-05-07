@@ -1,27 +1,14 @@
 import { useAnimationData } from "@/lib/useAnimationData";
+import { useProfileStore } from "@/state";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-interface FloorVisibilityContextType {
-  visibleFloors: Set<string>;
-  toggleFloor: (storyId: string) => void;
-  setFloorVisible: (storyId: string, visible: boolean) => void;
-  showAllDefaultFloors: () => void;
-  showAllFloors: () => void;
-  hideAllFloors: () => void;
-  isFloorVisible: (storyId: string) => boolean;
-}
-
-export function FloorVisibilityProvider({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
-
-export function useFloorVisibility(): FloorVisibilityContextType {
+export function useFloorVisibility() {
   const { animationData } = useAnimationData();
-  const visibleFloorsArray = useViewStore((s) => s.visibleFloors);
-  const toggleFloorStore = useViewStore((s) => s.toggleFloor);
-  const showAllFloorsStore = useViewStore((s) => s.showAllFloors);
-  const hideAllFloorsStore = useViewStore((s) => s.hideAllFloors);
+  const visibleFloorsArray = useProfileStore((s) => s.visibleFloors);
+  const toggleFloorStore = useProfileStore((s) => s.toggleFloor);
+  const showAllFloorsStore = useProfileStore((s) => s.showAllFloors);
+  const hideAllFloorsStore = useProfileStore((s) => s.hideAllFloors);
   const initializedStoryOrderKeyRef = useRef<string | null>(null);
 
   useEffect(() => {

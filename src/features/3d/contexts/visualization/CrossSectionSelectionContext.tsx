@@ -1,186 +1,172 @@
-import { useViewStore, useViewStoreRaw, type CrossSectionSelectionState } from "@/state";
-import type { DockviewApi } from "dockview";
-import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
+// import { useViewStore, useViewStoreRaw, type CrossSectionSelectionState } from "@/state";
+// import type { DockviewApi } from "dockview";
+// import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 
-export type CrossSectionType = "X" | "Y" | "Z";
+// export type CrossSectionType = "X" | "Y" | "Z";
 
-export interface CrossSection extends CrossSectionSelectionState {
-  type: CrossSectionType;
-}
+// export interface CrossSection extends CrossSectionSelectionState {
+//   type: CrossSectionType;
+// }
 
-interface CrossSectionDockContextType {
-  openCrossSectionPanel: (crossSection: CrossSection) => void;
-}
+// interface CrossSectionSelectionContextType {
+//   selectedCrossSection: CrossSection | null;
+//   hoveredCrossSection: CrossSection | null;
+//   selectCrossSection: (crossSection: CrossSection) => void;
+//   deselectCrossSection: () => void;
+//   setHovered: (crossSection: CrossSection | null) => void;
+//   setDockviewApi: (api: DockviewApi) => void;
+//   openCrossSectionPanel: (crossSection: CrossSection) => void;
+// }
 
-export const CrossSectionDockContext = createContext<CrossSectionDockContextType | undefined>(undefined);
+// const CrossSectionSelectionContext = createContext<CrossSectionSelectionContextType | undefined>(undefined);
 
-export function useCrossSectionDock() {
-  const context = useContext(CrossSectionDockContext);
-  if (!context) {
-    throw new Error("useCrossSectionDock must be used within CrossSectionDockProvider");
-  }
-  return context;
-}
+// let dockviewApiRef: DockviewApi | null = null;
+// let disposePanelSubscription: (() => void) | null = null;
 
-interface CrossSectionSelectionContextType {
-  selectedCrossSection: CrossSection | null;
-  hoveredCrossSection: CrossSection | null;
-  selectCrossSection: (crossSection: CrossSection) => void;
-  deselectCrossSection: () => void;
-  setHovered: (crossSection: CrossSection | null) => void;
-  setDockviewApi: (api: DockviewApi) => void;
-  openCrossSectionPanel: (crossSection: CrossSection) => void;
-}
+// export function useCrossSectionSelection() {
+//   const context = useContext(CrossSectionSelectionContext);
+//   if (!context) {
+//     throw new Error("useCrossSectionSelection must be used within CrossSectionSelectionProvider");
+//   }
+//   return context;
+// }
 
-const CrossSectionSelectionContext = createContext<CrossSectionSelectionContextType | undefined>(undefined);
+// export function CrossSectionSelectionProvider({ children }: { children: ReactNode }) {
+//   // const { animationData } = useAnimationData();
+//   const store = useViewStoreRaw();
 
-let dockviewApiRef: DockviewApi | null = null;
-let disposePanelSubscription: (() => void) | null = null;
+//   const selectedCrossSection = useViewStore((s) => s.selectedCrossSection);
+//   const hoveredCrossSection = useViewStore((s) => s.hoveredCrossSection);
+//   const selectCrossSectionStore = useViewStore((s) => s.selectCrossSection);
+//   const deselectCrossSectionStore = useViewStore((s) => s.deselectCrossSection);
+//   const setHoveredCrossSectionStore = useViewStore((s) => s.setHoveredCrossSection);
 
-export function useCrossSectionSelection() {
-  const context = useContext(CrossSectionSelectionContext);
-  if (!context) {
-    throw new Error("useCrossSectionSelection must be used within CrossSectionSelectionProvider");
-  }
-  return context;
-}
+//   const setDockviewApi = useCallback(
+//     (api: DockviewApi) => {
+//       dockviewApiRef = api;
 
-export function CrossSectionSelectionProvider({ children }: { children: ReactNode }) {
-  // const { animationData } = useAnimationData();
-  const store = useViewStoreRaw();
+//       if (disposePanelSubscription) {
+//         disposePanelSubscription();
+//       }
 
-  const selectedCrossSection = useViewStore((s) => s.selectedCrossSection);
-  const hoveredCrossSection = useViewStore((s) => s.hoveredCrossSection);
-  const selectCrossSectionStore = useViewStore((s) => s.selectCrossSection);
-  const deselectCrossSectionStore = useViewStore((s) => s.deselectCrossSection);
-  const setHoveredCrossSectionStore = useViewStore((s) => s.setHoveredCrossSection);
+//       const disposable = api.onDidRemovePanel((panel) => {
+//         if (panel.id.startsWith("crossSection-panel-")) {
+//           store.getState().deselectCrossSection();
+//         }
+//       });
 
-  const setDockviewApi = useCallback(
-    (api: DockviewApi) => {
-      dockviewApiRef = api;
+//       disposePanelSubscription = () => disposable.dispose();
+//     },
+//     [store]
+//   );
 
-      if (disposePanelSubscription) {
-        disposePanelSubscription();
-      }
+//   const openCrossSectionPanel = useCallback((crossSection: CrossSection) => {
+//     if (!dockviewApiRef) return;
 
-      const disposable = api.onDidRemovePanel((panel) => {
-        if (panel.id.startsWith("crossSection-panel-")) {
-          store.getState().deselectCrossSection();
-        }
-      });
+//     const isFloor = crossSection.type === "Z";
+//     const isXSection = crossSection.type === "X";
+//     const isYSection = crossSection.type === "Y";
 
-      disposePanelSubscription = () => disposable.dispose();
-    },
-    [store]
-  );
+//     if (!isFloor && !isXSection && !isYSection) return;
 
-  const openCrossSectionPanel = useCallback((crossSection: CrossSection) => {
-    if (!dockviewApiRef) return;
+//     let panelId: string;
+//     let panelTitle: string;
+//     let component: string;
+//     let tabComponent: string;
+//     let params: { storyId?: string; crossSectionType?: "X" | "Y"; position?: number; nodeIds?: number[] };
 
-    const isFloor = crossSection.type === "Z";
-    const isXSection = crossSection.type === "X";
-    const isYSection = crossSection.type === "Y";
+//     if (isFloor) {
+//       panelId = `crossSection-panel-${crossSection.storyId}`;
+//       panelTitle = `Floor ${crossSection.storyId}`;
+//       component = "floorPanel";
+//       tabComponent = "floorTab";
+//       params = { storyId: crossSection.storyId };
+//     } else {
+//       const pos = Number(crossSection.value);
+//       panelId = `crossSection-panel-${crossSection.type}-${pos}`;
+//       panelTitle = `${crossSection.type} Section ${pos}`;
+//       component = "crossSectionPanel";
+//       tabComponent = "crossSectionTab";
+//       params = {
+//         crossSectionType: crossSection.type as "X" | "Y",
+//         position: pos,
+//         nodeIds: crossSection.nodeIds,
+//       };
+//     }
 
-    if (!isFloor && !isXSection && !isYSection) return;
+//     const existingPanel = dockviewApiRef.getPanel(panelId);
 
-    let panelId: string;
-    let panelTitle: string;
-    let component: string;
-    let tabComponent: string;
-    let params: { storyId?: string; crossSectionType?: "X" | "Y"; position?: number; nodeIds?: number[] };
+//     if (existingPanel) {
+//       existingPanel.focus();
+//       return;
+//     }
 
-    if (isFloor) {
-      panelId = `crossSection-panel-${crossSection.storyId}`;
-      panelTitle = `Floor ${crossSection.storyId}`;
-      component = "floorPanel";
-      tabComponent = "floorTab";
-      params = { storyId: crossSection.storyId };
-    } else {
-      const pos = Number(crossSection.value);
-      panelId = `crossSection-panel-${crossSection.type}-${pos}`;
-      panelTitle = `${crossSection.type} Section ${pos}`;
-      component = "crossSectionPanel";
-      tabComponent = "crossSectionTab";
-      params = {
-        crossSectionType: crossSection.type as "X" | "Y",
-        position: pos,
-        nodeIds: crossSection.nodeIds,
-      };
-    }
+//     dockviewApiRef.addPanel({
+//       id: panelId,
+//       component,
+//       tabComponent,
+//       title: panelTitle,
+//       params,
+//       maximumWidth: 300,
+//       position: { direction: "right" },
+//     });
+//   }, []);
 
-    const existingPanel = dockviewApiRef.getPanel(panelId);
+//   const selectCrossSection = useCallback(
+//     (crossSection: CrossSection) => {
+//       selectCrossSectionStore(crossSection);
+//       if (
+//         (crossSection.type === "Z" && crossSection.storyId) ||
+//         crossSection.type === "X" ||
+//         crossSection.type === "Y"
+//       ) {
+//         openCrossSectionPanel(crossSection);
+//       }
+//     },
+//     [openCrossSectionPanel, selectCrossSectionStore]
+//   );
 
-    if (existingPanel) {
-      existingPanel.focus();
-      return;
-    }
+//   const deselectCrossSection = useCallback(() => {
+//     deselectCrossSectionStore();
+//   }, [deselectCrossSectionStore]);
 
-    dockviewApiRef.addPanel({
-      id: panelId,
-      component,
-      tabComponent,
-      title: panelTitle,
-      params,
-      maximumWidth: 300,
-      position: { direction: "right" },
-    });
-  }, []);
+//   const setHovered = useCallback(
+//     (crossSection: CrossSection | null) => {
+//       setHoveredCrossSectionStore(crossSection);
+//     },
+//     [setHoveredCrossSectionStore]
+//   );
 
-  const selectCrossSection = useCallback(
-    (crossSection: CrossSection) => {
-      selectCrossSectionStore(crossSection);
-      if (
-        (crossSection.type === "Z" && crossSection.storyId) ||
-        crossSection.type === "X" ||
-        crossSection.type === "Y"
-      ) {
-        openCrossSectionPanel(crossSection);
-      }
-    },
-    [openCrossSectionPanel, selectCrossSectionStore]
-  );
+//   const value = useMemo<CrossSectionSelectionContextType>(
+//     () => ({
+//       selectedCrossSection: selectedCrossSection as CrossSection | null,
+//       hoveredCrossSection: hoveredCrossSection as CrossSection | null,
+//       selectCrossSection,
+//       deselectCrossSection,
+//       setHovered,
+//       setDockviewApi,
+//       openCrossSectionPanel,
+//     }),
+//     [
+//       selectedCrossSection,
+//       hoveredCrossSection,
+//       selectCrossSection,
+//       deselectCrossSection,
+//       setHovered,
+//       setDockviewApi,
+//       openCrossSectionPanel,
+//     ]
+//   );
 
-  const deselectCrossSection = useCallback(() => {
-    deselectCrossSectionStore();
-  }, [deselectCrossSectionStore]);
+//   useEffect(() => {
+//     return () => {
+//       if (disposePanelSubscription) {
+//         disposePanelSubscription();
+//         disposePanelSubscription = null;
+//       }
+//       dockviewApiRef = null;
+//     };
+//   }, []);
 
-  const setHovered = useCallback(
-    (crossSection: CrossSection | null) => {
-      setHoveredCrossSectionStore(crossSection);
-    },
-    [setHoveredCrossSectionStore]
-  );
-
-  const value = useMemo<CrossSectionSelectionContextType>(
-    () => ({
-      selectedCrossSection: selectedCrossSection as CrossSection | null,
-      hoveredCrossSection: hoveredCrossSection as CrossSection | null,
-      selectCrossSection,
-      deselectCrossSection,
-      setHovered,
-      setDockviewApi,
-      openCrossSectionPanel,
-    }),
-    [
-      selectedCrossSection,
-      hoveredCrossSection,
-      selectCrossSection,
-      deselectCrossSection,
-      setHovered,
-      setDockviewApi,
-      openCrossSectionPanel,
-    ]
-  );
-
-  useEffect(() => {
-    return () => {
-      if (disposePanelSubscription) {
-        disposePanelSubscription();
-        disposePanelSubscription = null;
-      }
-      dockviewApiRef = null;
-    };
-  }, []);
-
-  return <CrossSectionSelectionContext.Provider value={value}>{children}</CrossSectionSelectionContext.Provider>;
-}
+//   return <CrossSectionSelectionContext.Provider value={value}>{children}</CrossSectionSelectionContext.Provider>;
+// }

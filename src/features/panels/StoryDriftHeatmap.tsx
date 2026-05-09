@@ -33,7 +33,7 @@
  */
 
 import type { IDockviewPanelProps } from "dockview";
-import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
+import { usePlayback } from "@/features/playback/usePlayback";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFloorVisibility } from "@/features/3d/contexts/visualization";

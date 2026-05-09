@@ -1,6 +1,6 @@
 // import { useEffect, useRef, useState } from "react";
 // import { useAnimationData } from "@/lib/useAnimationData";
-// import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
+// import { usePlayback } from "@/features/playback/usePlayback";
 
 // import { isStaticMetric } from "@/lib/metrics";
 

@@ -14,6 +14,7 @@ import {
 } from "@/lib/metrics";
 import { interpolate } from "culori";
 import type { FindColorByMode } from "node_modules/@types/culori/src/common";
+import { useGlobalStore, useProfileStore } from "@/state";
 
 const grayColor = new THREE.Color(0.5, 0.5, 0.5);
 
@@ -38,13 +39,13 @@ const ERROR_MAGENTA = interpolate(["magenta"], "oklab");
 export function useColor(): ColorContextType {
   const { animationData } = useAnimationData();
   const { thresholds } = useThresholds();
-  const currentMetric = useViewStore((s) => s.currentMetric);
-  const setColorMetric = useViewStore((s) => s.setColorMetric);
-  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-  const setMetricPalette = useViewStore((s) => s.setMetricPalette);
-  const thresholdHighlighting = useViewStore((s) => s.thresholdHighlighting);
-  const setThresholdHighlighting = useViewStore((s) => s.setThresholdHighlighting);
-  const showHiddenMetrics = useViewStore((s) => s.showHiddenMetrics);
+  const currentMetric = useProfileStore((s) => s.currentMetric);
+  const setColorMetric = useProfileStore((s) => s.setColorMetric);
+  const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
+  const setMetricPalette = useGlobalStore((s) => s.setMetricPalette);
+  const thresholdHighlighting = useProfileStore((s) => s.thresholdHighlighting);
+  const setThresholdHighlighting = useProfileStore((s) => s.setThresholdHighlighting);
+  const showHiddenMetrics = useGlobalStore((s) => s.showHiddenMetrics);
 
   const metricConfig = useMemo(() => getMetricConfig(currentMetric), [currentMetric]);
   const metricColorScale = useMemo(

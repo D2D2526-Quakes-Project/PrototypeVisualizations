@@ -1,4 +1,3 @@
-import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
 import { useColor, useExpandedScale, useFloorVisibility } from "@/features/3d/contexts/visualization";
 import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 import { getMetricConfig } from "@/lib/metrics";
@@ -8,6 +7,7 @@ import Delaunay from "delaunator";
 import { useMemo } from "react";
 import * as THREE from "three";
 import { useCrossSectionSelection } from "../../contexts/visualization/CrossSectionSelectionContext";
+import { usePlayback } from "@/features/playback/usePlayback";
 
 interface FloorSlabsRendererProps {
   nodeIds: number[];

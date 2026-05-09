@@ -134,3 +134,20 @@ export const throttle = <T extends unknown[]>(callback: (...args: T) => void, de
     }, delay);
   };
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Procedure = (...args: any[]) => void;
+
+export function debounce<T extends Procedure>(callback: T, delay: number): (...args: Parameters<T>) => void {
+  let timerId: ReturnType<typeof setTimeout> | undefined;
+
+  return (...args: Parameters<T>) => {
+    if (timerId) {
+      clearTimeout(timerId);
+    }
+
+    timerId = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  };
+}

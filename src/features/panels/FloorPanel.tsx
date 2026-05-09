@@ -1,4 +1,4 @@
-import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
+import { usePlayback } from "@/features/playback/usePlayback";
 import { useAnimationData } from "@/lib/useAnimationData";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { useEffect, useMemo, useRef, useState } from "react";

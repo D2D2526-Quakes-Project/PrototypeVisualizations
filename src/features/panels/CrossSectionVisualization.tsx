@@ -1,4 +1,4 @@
-import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
+import { usePlayback } from "@/features/playback/usePlayback";
 import { useColor, useExpandedScale, useThresholds } from "@/features/3d/contexts/visualization";
 import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 import { getMetricConfig, isHingeMetric } from "@/lib/metrics";

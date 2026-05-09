@@ -1,4 +1,4 @@
-import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
+import { usePlayback } from "@/features/playback/usePlayback";
 import { useColor, useExpandedScale } from "@/features/3d/contexts/visualization";
 import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 import { useAnimationData } from "@/lib/useAnimationData";

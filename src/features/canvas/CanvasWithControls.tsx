@@ -15,12 +15,12 @@ import { useAnimationData } from "@/lib/useAnimationData";
 
 import { AlertTriangle } from "lucide-react";
 
-import { BoxSelectionOverlay } from "./CanvasWithControls/BoxSelectionOverlay";
-import { CameraManager } from "./CanvasWithControls/CameraManager";
-import { OrientationCube } from "./CanvasWithControls/OrientationCube";
-import { ViewControls } from "./CanvasWithControls/ViewControls";
+// import { BoxSelectionOverlay } from "./CanvasWithControls/BoxSelectionOverlay";
+// import { CameraManager } from "./CanvasWithControls/CameraManager";
+// import { OrientationCube } from "./CanvasWithControls/OrientationCube";
+// import { ViewControls } from "./CanvasWithControls/ViewControls";
 
-import { useFloorVisibility } from "../3d/contexts/visualization";
+// import { useFloorVisibility } from "../3d/contexts/visualization";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
@@ -48,9 +48,9 @@ export function CanvasWithControls({
   const [isControlsDocked, setIsControlsDocked] = useState(false);
   const { animationData } = useAnimationData();
   const exportRenderMode = useExportRenderMode();
-  const colorTheme = useViewStore((s) => s.colorTheme);
-  const visibleFloorCount = useViewStore((s) => s.visibleFloors.length);
-  const { showAllDefaultFloors } = useFloorVisibility();
+  // const colorTheme = useViewStore((s) => s.colorTheme);
+  // const visibleFloorCount = useViewStore((s) => s.visibleFloors.length);
+  // const { showAllDefaultFloors } = useFloorVisibility();
 
   const getDockedState = useCallback((nextContainerWidth: number, nextControlsWidth: number, expanded: boolean) => {
     setIsControlsDocked((current) => {
@@ -120,18 +120,18 @@ export function CanvasWithControls({
             scene.fog = null;
           }}>
           <LayoutSizeSync />
-          <color attach="background" args={[colorTheme.background]} />
+          {/* <color attach="background" args={[colorTheme.background]} /> */}
           {children}
-          <CameraManager />
-          <OrientationCube />
+          {/* <CameraManager /> */}
+          {/* <OrientationCube /> */}
         </Canvas>
-        <BoxSelectionOverlay panelId={panelId} />
+        {/* <BoxSelectionOverlay panelId={panelId} /> */}
 
         {showPlaybackControls && exportRenderMode.showTransientUi && (
           <div className="absolute bottom-2 left-2 z-50">
             <div className="flex items-start gap-1">
               <SmallPlaybackControls />
-              {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
+              {/* {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
                 <button
                   type="button"
                   onClick={() => showAllDefaultFloors()}
@@ -140,18 +140,18 @@ export function CanvasWithControls({
                   <AlertTriangle size={10} />
                   No floors
                 </button>
-              )}
+              )} */}
             </div>
           </div>
         )}
       </div>
       {exportRenderMode.showTransientUi && (
         <div ref={sideControlsRef}>
-          <ViewControls
+          {/* <ViewControls
             docked={isControlsDocked}
             isExpanded={isViewControlsExpanded}
             setIsExpanded={handleSetIsViewControlsExpanded}
-          />
+          /> */}
         </div>
       )}
     </div>
@@ -182,5 +182,3 @@ function LayoutSizeSync() {
 
   return null;
 }
-
-export { ViewControls } from "./CanvasWithControls/ViewControls";

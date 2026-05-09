@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatValue, getConversions, CONVERSION_UNITS as UNITS } from "@/lib/metrics";
-import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
+import { usePlayback } from "@/features/playback/usePlayback";
 
 interface UnitTooltipProps {
   value: number;

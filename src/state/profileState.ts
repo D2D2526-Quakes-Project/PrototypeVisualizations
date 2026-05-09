@@ -6,6 +6,8 @@ import type { AppState } from ".";
 export type ThresholdState = Record<ThresholdKey, number>;
 
 export interface ProfileData {
+  profileId: string;
+
   // Playback
   frameIndex: number;
 

@@ -28,7 +28,7 @@
  * =============================================================================
  */
 
-import { usePlayback } from "@/features/playback/PlaybackKeyboardEvents";
+import { usePlayback } from "@/features/playback/usePlayback";
 import ReactECharts from "echarts-for-react";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useAnimationData } from "@/lib/useAnimationData";

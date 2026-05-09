@@ -5,20 +5,18 @@ import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 import * as THREE from "three";
 import { ErrorPage } from "./components/ErrorPage";
 import { NavigationBar } from "./components/NavigationBar";
-
 import { TooltipProvider } from "./components/ui/tooltip";
-import { PlaybackProvider } from "./features/playback/PlaybackKeyboardEvents";
-import { View3d } from "./features/3d/page";
+import { App } from "./pages/App";
 import "./index.css";
 import { AnimationDataProvider } from "./lib/useAnimationData";
-import { StateProvider } from "./state/StateProvider";
+import { PlaybackKeyboardEvents } from "./features/playback/PlaybackKeyboardEvents";
 
 const routes = [
   {
     path: "/",
     label: "3D View",
     icon: Box,
-    element: <View3d />,
+    element: <App />,
   },
 ];
 
@@ -28,20 +26,17 @@ const router = createBrowserRouter([
       <>
         <TooltipProvider>
           <AnimationDataProvider>
-            <StateProvider>
-              {/* <ExportProvider>
+            {/* <ExportProvider>
                 <ExportRenderModeProvider
                   value={{
                     showPanelHeaders: true,
                     showTransientUi: true,
                   }}> */}
-              <NavigationBar />
-              <PlaybackProvider>
-                <Outlet />
-              </PlaybackProvider>
-              {/* </ExportRenderModeProvider>
+            <NavigationBar />
+            <PlaybackKeyboardEvents />
+            <Outlet />
+            {/* </ExportRenderModeProvider>
               </ExportProvider> */}
-            </StateProvider>
           </AnimationDataProvider>
         </TooltipProvider>
       </>
@@ -51,7 +46,7 @@ const router = createBrowserRouter([
       ...routes,
       {
         path: "/s/:shareId",
-        element: <View3d />,
+        element: <App />,
       },
     ],
   },

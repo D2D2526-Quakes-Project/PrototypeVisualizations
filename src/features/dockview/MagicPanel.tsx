@@ -1,17 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AccelerationDistributionPanel } from "@/features/panels/AccelerationDistributionPanel";
-import { CornerMetricChart } from "@/features/panels/CornerMetricChart";
-import { DataExplorerPanel } from "@/features/panels/DataExplorerPanel";
-import { EndCapPanel } from "@/features/panels/EndCapPanel";
-import { FloorAverageMetricChart } from "@/features/panels/FloorAverageMetricChart";
-import { FloorTorsionMapPanel } from "@/features/panels/FloorTorsionMapPanel";
-import { HingeDistributionPanel } from "@/features/panels/HingeDistributionPanel";
-import { HistogramChart } from "@/features/panels/HistogramChart";
-import { ISDThresholdPanel } from "@/features/panels/ISDThresholdPanel";
+// import { AccelerationDistributionPanel } from "@/features/panels/AccelerationDistributionPanel";
+// import { CornerMetricChart } from "@/features/panels/CornerMetricChart";
+// import { DataExplorerPanel } from "@/features/panels/DataExplorerPanel";
+// import { EndCapPanel } from "@/features/panels/EndCapPanel";
+// import { FloorAverageMetricChart } from "@/features/panels/FloorAverageMetricChart";
+// import { FloorTorsionMapPanel } from "@/features/panels/FloorTorsionMapPanel";
+// import { HingeDistributionPanel } from "@/features/panels/HingeDistributionPanel";
+// import { HistogramChart } from "@/features/panels/HistogramChart";
+// import { ISDThresholdPanel } from "@/features/panels/ISDThresholdPanel";
 import { MainCanvasPanel } from "@/features/panels/MainCanvasPanel";
-import { VelocityDistributionPanel } from "@/features/panels/VelocityDistributionPanel";
+// import { VelocityDistributionPanel } from "@/features/panels/VelocityDistributionPanel";
 import type { DatasetLoadState } from "@/lib/loadingTypes";
 import type { Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
@@ -37,7 +37,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { StatisticsPanel } from "../panels/StatisticsPanel";
+// import { StatisticsPanel } from "../panels/StatisticsPanel";
 import { Timeline } from "../timeline/Timeline";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
@@ -77,14 +77,14 @@ const PANEL_DEFINITIONS = check({
     requiredOptionalData: [],
     optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot"],
   },
-  "Corner Metric Chart": {
-    component: CornerMetricChart,
-    category: "Core Analysis",
-    icon: LineChart,
-    description: "Per-story corner values for a selected metric",
-    requiredOptionalData: [],
-    optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot", "velocityRot", "accelerationRot"],
-  },
+  // "Corner Metric Chart": {
+  //   component: CornerMetricChart,
+  //   category: "Core Analysis",
+  //   icon: LineChart,
+  //   description: "Per-story corner values for a selected metric",
+  //   requiredOptionalData: [],
+  //   optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot", "velocityRot", "accelerationRot"],
+  // },
   "Main Canvas": {
     component: MainCanvasPanel,
     category: "Canvas",
@@ -93,86 +93,86 @@ const PANEL_DEFINITIONS = check({
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },
-  "Histogram Chart": {
-    component: HistogramChart,
-    category: "Supporting Analysis",
-    icon: BarChart3,
-    description: "Threshold exceedance by position",
-    requiredOptionalData: [],
-    optionalEnhancementData: ["velocityLin", "accelerationLin"],
-  },
-  "Data Explorer": {
-    component: DataExplorerPanel,
-    category: "Tables / Data",
-    icon: Activity,
-    description: "Current values, peaks, and sortable node explorer",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "Floor Average Metric": {
-    component: FloorAverageMetricChart,
-    category: "Core Analysis",
-    icon: LineChart,
-    description: "Average Metrics for a Floor",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "Velocity Distribution": {
-    component: VelocityDistributionPanel,
-    category: "Distributions",
-    icon: BarChart3,
-    description: "Velocity histogram distribution",
-    requiredOptionalData: ["velocityLin"],
-    optionalEnhancementData: [],
-  },
-  "Acceleration Distribution": {
-    component: AccelerationDistributionPanel,
-    category: "Distributions",
-    icon: BarChart3,
-    description: "Acceleration histogram distribution",
-    requiredOptionalData: ["accelerationLin"],
-    optionalEnhancementData: [],
-  },
-  "Hinge Distribution": {
-    component: HingeDistributionPanel,
-    category: "Distributions",
-    icon: BarChart3,
-    description: "Global static hinge rotation histogram",
-    requiredOptionalData: ["hingeData", "beamData"],
-    optionalEnhancementData: [],
-  },
-  "Floor Torsion Map": {
-    component: FloorTorsionMapPanel,
-    category: "Supporting Analysis",
-    icon: RotateCw,
-    description: "Top-down rotation preview per floor",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "End Cap": {
-    component: EndCapPanel,
-    category: "Supporting Analysis",
-    icon: Maximize2,
-    description: "View of end-cap nodes (max X) with vertical connections",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  "ISD Threshold": {
-    component: ISDThresholdPanel,
-    category: "Core Analysis",
-    icon: ShieldAlert,
-    description: "Threshold evaluation summary",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
-  Statistics: {
-    component: StatisticsPanel,
-    category: "Core Analysis",
-    icon: Grid2X2Icon,
-    description: "Simulation overview",
-    requiredOptionalData: [],
-    optionalEnhancementData: [],
-  },
+  // "Histogram Chart": {
+  //   component: HistogramChart,
+  //   category: "Supporting Analysis",
+  //   icon: BarChart3,
+  //   description: "Threshold exceedance by position",
+  //   requiredOptionalData: [],
+  //   optionalEnhancementData: ["velocityLin", "accelerationLin"],
+  // },
+  // "Data Explorer": {
+  //   component: DataExplorerPanel,
+  //   category: "Tables / Data",
+  //   icon: Activity,
+  //   description: "Current values, peaks, and sortable node explorer",
+  //   requiredOptionalData: [],
+  //   optionalEnhancementData: [],
+  // },
+  // "Floor Average Metric": {
+  //   component: FloorAverageMetricChart,
+  //   category: "Core Analysis",
+  //   icon: LineChart,
+  //   description: "Average Metrics for a Floor",
+  //   requiredOptionalData: [],
+  //   optionalEnhancementData: [],
+  // },
+  // "Velocity Distribution": {
+  //   component: VelocityDistributionPanel,
+  //   category: "Distributions",
+  //   icon: BarChart3,
+  //   description: "Velocity histogram distribution",
+  //   requiredOptionalData: ["velocityLin"],
+  //   optionalEnhancementData: [],
+  // },
+  // "Acceleration Distribution": {
+  //   component: AccelerationDistributionPanel,
+  //   category: "Distributions",
+  //   icon: BarChart3,
+  //   description: "Acceleration histogram distribution",
+  //   requiredOptionalData: ["accelerationLin"],
+  //   optionalEnhancementData: [],
+  // },
+  // "Hinge Distribution": {
+  //   component: HingeDistributionPanel,
+  //   category: "Distributions",
+  //   icon: BarChart3,
+  //   description: "Global static hinge rotation histogram",
+  //   requiredOptionalData: ["hingeData", "beamData"],
+  //   optionalEnhancementData: [],
+  // },
+  // "Floor Torsion Map": {
+  //   component: FloorTorsionMapPanel,
+  //   category: "Supporting Analysis",
+  //   icon: RotateCw,
+  //   description: "Top-down rotation preview per floor",
+  //   requiredOptionalData: [],
+  //   optionalEnhancementData: [],
+  // },
+  // "End Cap": {
+  //   component: EndCapPanel,
+  //   category: "Supporting Analysis",
+  //   icon: Maximize2,
+  //   description: "View of end-cap nodes (max X) with vertical connections",
+  //   requiredOptionalData: [],
+  //   optionalEnhancementData: [],
+  // },
+  // "ISD Threshold": {
+  //   component: ISDThresholdPanel,
+  //   category: "Core Analysis",
+  //   icon: ShieldAlert,
+  //   description: "Threshold evaluation summary",
+  //   requiredOptionalData: [],
+  //   optionalEnhancementData: [],
+  // },
+  // Statistics: {
+  //   component: StatisticsPanel,
+  //   category: "Core Analysis",
+  //   icon: Grid2X2Icon,
+  //   description: "Simulation overview",
+  //   requiredOptionalData: [],
+  //   optionalEnhancementData: [],
+  // },
 });
 
 const PANEL_DATA_LABELS: Record<PanelDataKey, string> = {

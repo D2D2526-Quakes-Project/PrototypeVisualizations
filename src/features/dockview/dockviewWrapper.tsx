@@ -2,13 +2,13 @@ import type { DockviewApi, DockviewReadyEvent, IDockviewReactProps, SerializedDo
 import { DockviewReact, themeLight } from "dockview";
 import "dockview/dist/styles/dockview.css";
 
-export type DockviewWrapperProps = {
+export interface DockviewWrapperProps extends Omit<IDockviewReactProps, "onReady"> {
   className?: string;
   onReady?: (event: DockviewReadyEvent) => void;
   initialLayout?: SerializedDockview;
   onLayoutChange?: (layout: SerializedDockview) => void;
   createDefaultLayout?: (api: DockviewApi) => void;
-} & IDockviewReactProps;
+}
 
 export function DockviewWrapper({
   className,

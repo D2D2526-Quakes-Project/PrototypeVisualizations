@@ -1,6 +1,6 @@
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatValue, getMetricConfig } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import * as React from "react";
 import { useColor } from "../contexts/visualization/ColorContext";

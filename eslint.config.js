@@ -56,13 +56,13 @@ export default defineConfig([
     },
     rules: {
       "react-refresh/only-export-components": [
-        "off",
+        "error",
         {
           allowConstantExport: true,
         },
       ],
       "@typescript-eslint/no-unused-vars": [
-        "error", // or "warn"
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",

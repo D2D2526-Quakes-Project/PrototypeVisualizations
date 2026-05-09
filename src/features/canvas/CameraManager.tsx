@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 
 import type { OrthographicCamera as OrthographicCameraImpl, PerspectiveCamera as PerspectiveCameraImpl } from "three";

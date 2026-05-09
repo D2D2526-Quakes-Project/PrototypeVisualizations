@@ -16,7 +16,7 @@ import { AnimatePresence, motion, stagger } from "motion/react";
 
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 
 import { DEFAULT_COLOR_THEMES } from "@/state/profileState";

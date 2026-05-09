@@ -1,4 +1,4 @@
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { interpolateColor } from "@/lib/colors";
 
 import { useCallback, useMemo } from "react";

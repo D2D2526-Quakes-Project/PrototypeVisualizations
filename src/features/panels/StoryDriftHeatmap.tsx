@@ -38,7 +38,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFloorVisibility } from "@/features/3d/contexts/visualization";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import {
   amber50,
   amber600,

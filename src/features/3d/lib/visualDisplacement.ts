@@ -1,5 +1,5 @@
 import type { IndexAccessor, TimeIndexAccessor } from "@/lib/types";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import { useCallback, useMemo } from "react";
 import * as THREE from "three";

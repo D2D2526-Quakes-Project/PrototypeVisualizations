@@ -33,7 +33,7 @@
  */
 
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { useMemo } from "react";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { getGlobalHingeSummary } from "@/lib/hingeMetrics";

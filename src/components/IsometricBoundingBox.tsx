@@ -1,4 +1,4 @@
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 interface IsometricBoundingBoxProps {
   dimX: number;

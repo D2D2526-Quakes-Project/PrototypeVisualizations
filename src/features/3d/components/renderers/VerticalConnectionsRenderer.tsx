@@ -1,7 +1,7 @@
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useColor, useExpandedScale } from "@/features/3d/contexts/visualization";
 import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { useMemo } from "react";
 import * as THREE from "three";
 

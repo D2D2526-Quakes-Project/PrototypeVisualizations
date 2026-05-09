@@ -2,7 +2,7 @@ import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { interpolateColor } from "@/lib/colors";
 import { getMetricColorScale, getMetricConfig, getMetricKeyColor, isHingeMetric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import { interpolate } from "culori";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";

@@ -31,7 +31,7 @@
 import { usePlayback } from "@/features/playback/usePlayback";
 import ReactECharts from "echarts-for-react";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { useThresholds } from "@/features/3d/contexts/visualization";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { Button } from "@/components/ui/button";

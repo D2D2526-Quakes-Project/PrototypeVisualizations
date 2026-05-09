@@ -2,7 +2,7 @@ import { usePlayback } from "@/features/playback/usePlayback";
 import { useColor, useExpandedScale, useThresholds } from "@/features/3d/contexts/visualization";
 import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";

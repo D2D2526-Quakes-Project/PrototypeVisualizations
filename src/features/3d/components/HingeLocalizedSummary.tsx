@@ -1,7 +1,7 @@
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { StaticHingeHistogram } from "@/features/panels/StaticHingeHistogram";
 import { summarizeHingeNodes } from "@/lib/hingeMetrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { useMemo } from "react";
 
 interface HingeLocalizedSummaryProps {

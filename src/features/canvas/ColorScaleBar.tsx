@@ -9,7 +9,7 @@ import {
   type MetricPaletteKey,
   type MetricPaletteOverrides,
 } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { formatCompactNumber } from "@/lib/utils";
 import { useColor, useThresholds } from "../../contexts/visualization";
 

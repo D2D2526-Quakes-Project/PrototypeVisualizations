@@ -36,7 +36,7 @@ import DataSources from "@/data/index";
 // } from "@/features/3d/lib/statePersistence";
 import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
 import { getMetricConfig } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { formatFixed3 } from "@/lib/utils";
 import { Sheet, SheetContent } from "./ui/sheet";
 

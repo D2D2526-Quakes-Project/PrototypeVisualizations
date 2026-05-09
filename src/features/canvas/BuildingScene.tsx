@@ -12,7 +12,7 @@
 // import { useNodeInteractionMode, useSlabInteractionMode } from "@/features/3d/lib/interactionPolicy";
 // import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 // import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 // import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";

@@ -1,7 +1,7 @@
 import { useColor, useExpandedScale, useFloorVisibility } from "@/features/3d/contexts/visualization";
 import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 import { getMetricConfig } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import Delaunay from "delaunator";
 import { useMemo } from "react";

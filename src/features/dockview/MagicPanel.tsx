@@ -15,7 +15,7 @@ import { MainCanvasPanel } from "@/features/panels/MainCanvasPanel";
 import type { DatasetLoadState } from "@/lib/loadingTypes";
 import type { Metric } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import type { LucideIcon } from "lucide-react";

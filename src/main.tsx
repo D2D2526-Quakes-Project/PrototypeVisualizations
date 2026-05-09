@@ -8,7 +8,7 @@ import { NavigationBar } from "./components/NavigationBar";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { App } from "./pages/App";
 import "./index.css";
-import { AnimationDataProvider } from "./lib/useAnimationData";
+import { AnimationDataProvider } from "./lib/animation-data/useAnimationData";
 import { PlaybackKeyboardEvents } from "./features/playback/PlaybackKeyboardEvents";
 
 const routes = [

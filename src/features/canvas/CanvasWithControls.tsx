@@ -11,7 +11,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import { AlertTriangle } from "lucide-react";
 

@@ -1,5 +1,5 @@
 import { isStaticMetric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { useLiveStore, useProfileStore } from "@/state";
 import { useEffect, useRef } from "react";
 import { usePlayback } from "./usePlayback";

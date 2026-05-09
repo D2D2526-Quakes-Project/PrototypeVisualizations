@@ -1,5 +1,5 @@
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
-import { useAnimationData } from "@/lib/useAnimationData";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import type { IDockviewPanelProps } from "dockview";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";

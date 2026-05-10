@@ -1,5 +1,6 @@
 import { Home } from "lucide-react";
 import { VIEW_PRESET_OPTIONS, type ViewPresetMode } from "../viewPresets";
+import { Button } from "@/components/ui/button";
 
 interface ViewsPanelProps {
   resetView: (view: ViewPresetMode) => void;
@@ -8,21 +9,16 @@ interface ViewsPanelProps {
 
 export function ViewsPanel({ resetView, resetHomeView }: ViewsPanelProps) {
   return (
-    <div className="mb-2 grid w-full grid-cols-4 gap-1">
+    <div className="grid w-full grid-cols-4 gap-1">
       {VIEW_PRESET_OPTIONS.map(({ view, label }) => (
-        <button
-          key={view}
-          onClick={() => resetView(view)}
-          className="w-full rounded border border-neutral-300 bg-neutral-100 px-2 py-0.5 text-xs transition-colors hover:bg-neutral-200">
+        <Button key={view} size="xs" variant={"outline"} onClick={() => resetView(view)}>
           {label}
-        </button>
+        </Button>
       ))}
-      <button
-        onClick={resetHomeView}
-        className="col-span-2 inline-flex w-full items-center justify-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-2 py-0.5 text-xs transition-colors hover:bg-neutral-200">
+      <Button size="xs" variant={"outline"} className="col-span-2" onClick={resetHomeView}>
         <Home size={12} />
         Home View
-      </button>
+      </Button>
     </div>
   );
 }

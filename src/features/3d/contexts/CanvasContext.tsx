@@ -1,9 +1,12 @@
 // @refresh reset
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useRef, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { usePanelState, type UsePanelStateReturn } from "../hooks/usePanelState";
+import type { ViewPresetMode } from "@/features/canvas/viewPresets";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { UNIT_SCALE } from "@/lib/utils";
 
 export interface CanvasPanelState {
   orthographic: boolean;
@@ -49,6 +52,8 @@ export interface CameraContextType extends UsePanelStateReturn<CanvasPanelState>
   setSliceRanges: (x: [number, number], y: [number, number], z: [number, number]) => void;
   resetExpandedScale: () => void;
   resetDisplacementScale: () => void;
+  resetView: (viewType: ViewPresetMode) => void;
+  resetHomeView: () => void;
 }
 
 const CameraContext = createContext<CameraContextType | undefined>(undefined);
@@ -56,7 +61,7 @@ const CameraContext = createContext<CameraContextType | undefined>(undefined);
 export function useCamera() {
   const context = useContext(CameraContext);
   if (!context) {
-    throw new Error("useCamera must be within CameraProvider");
+    throw new Error("useCamera must be within CanvasProvider");
   }
   return context;
 }
@@ -67,6 +72,7 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
     panelType: "canvas",
     defaultState: DEFAULT_CANVAS_PANEL_STATE,
   });
+  const { animationData } = useAnimationData();
 
   const orbitControlsRef = useRef<OrbitControlsImpl>(null);
 
@@ -116,6 +122,42 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
     controls.enablePan = enabled;
   }, []);
 
+  // Camera controls
+
+  const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
+  const buildingVerticalCenter =
+    (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
+
+  const viewPositions = useMemo(
+    () => ({
+      top: [0, 0, cameraDistance],
+      bottom: [0, 0, -cameraDistance],
+      left: [-cameraDistance, 0, 0],
+      right: [cameraDistance, 0, 0],
+      front: [0, cameraDistance, 0],
+      back: [0, -cameraDistance, 0],
+      frontRight: [cameraDistance, cameraDistance, 0],
+      frontLeft: [-cameraDistance, cameraDistance, 0],
+      backRight: [cameraDistance, -cameraDistance, 0],
+      backLeft: [-cameraDistance, -cameraDistance, 0],
+    }),
+    [cameraDistance]
+  );
+
+  const resetView = useCallback(
+    (viewType: ViewPresetMode) => {
+      const position = viewPositions[viewType];
+      const target = panelState.cameraTarget;
+      panelState.setCameraPosition([position[0] + target[0], position[1] + target[1], position[2] + target[2]]);
+    },
+    [panelState, viewPositions]
+  );
+
+  const resetHomeView = useCallback(() => {
+    panelState.setCameraTarget([0, 0, buildingVerticalCenter]);
+    panelState.setCameraPosition([-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance]);
+  }, [buildingVerticalCenter, cameraDistance, panelState]);
+
   return (
     <CameraContext.Provider
       value={{
@@ -125,6 +167,8 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
         setSliceRanges,
         resetExpandedScale,
         resetDisplacementScale,
+        resetView,
+        resetHomeView,
         ...panelState,
       }}>
       {children}

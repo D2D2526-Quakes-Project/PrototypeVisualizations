@@ -18,6 +18,15 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
+import { COLLAPSED_VIEW_PRESET_OPTIONS } from "./viewPresets";
+import { useCamera } from "../3d/contexts/CanvasContext";
+import { useLiveStore } from "@/state";
+import { ViewsPanel } from "./control-panels/ViewsPanel";
+
+const childVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+};
 
 export function ViewControls({
   isExpanded,
@@ -28,9 +37,9 @@ export function ViewControls({
   setIsExpanded: (expanded: boolean) => void;
   docked: boolean;
 }) {
-  // const { orbitControlsRef, orthographic, setOrthographic } = useCamera();
-  // const autoRotate = useViewStore((s) => s.autoRotate);
-  // const setAutoRotate = useViewStore((s) => s.setAutoRotate);
+  const { resetView, resetHomeView, orthographic, setOrthographic } = useCamera();
+  const autoRotate = useLiveStore((s) => s.autoRotate);
+  const setAutoRotate = useLiveStore((s) => s.setAutoRotate);
 
   const { animationData } = useAnimationData();
 
@@ -46,49 +55,7 @@ export function ViewControls({
   // const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
   // const buildingVerticalCenter =
   //   (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
-  // const expandedLayoutRef = useRef<HTMLDivElement>(null);
-
-  // const resetView = (viewType: ViewPresetMode) => {
-  //   if (orbitControlsRef?.current) {
-  //     const controls = orbitControlsRef.current;
-  //     const camera = controls.object;
-  //     const target = controls.target;
-
-  //     if (camera && target) {
-  //       const viewPositions = {
-  //         top: [target.x, target.y, target.z + cameraDistance],
-  //         bottom: [target.x, target.y, target.z - cameraDistance],
-  //         left: [target.x - cameraDistance, target.y, target.z],
-  //         right: [target.x + cameraDistance, target.y, target.z],
-  //         front: [target.x, target.y + cameraDistance, target.z],
-  //         back: [target.x, target.y - cameraDistance, target.z],
-  //         frontRight: [target.x + cameraDistance, target.y + cameraDistance, target.z],
-  //         frontLeft: [target.x - cameraDistance, target.y + cameraDistance, target.z],
-  //         backRight: [target.x + cameraDistance, target.y - cameraDistance, target.z],
-  //         backLeft: [target.x - cameraDistance, target.y - cameraDistance, target.z],
-  //       };
-
-  //       const position = viewPositions[viewType];
-  //       camera.position.set(position[0], position[1], position[2]);
-  //     }
-
-  //     controls.update();
-  //   }
-  // };
-
-  // const resetHomeView = () => {
-  //   if (!orbitControlsRef?.current) return;
-  //   const controls = orbitControlsRef.current;
-  //   const camera = controls.object;
-  //   controls.target.set(0, 0, buildingVerticalCenter);
-  //   camera.position.set(-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance);
-  //   controls.update();
-  // };
-
-  // const childVariants = {
-  //   initial: { opacity: 0 },
-  //   animate: { opacity: 1 },
-  // };
+  const expandedLayoutRef = useRef<HTMLDivElement>(null);
 
   // const selectedIds = selectedNodeIds;
   // const selectedCount = selectedIds.length;
@@ -164,7 +131,7 @@ export function ViewControls({
   return (
     <div className={`pointer-events-none z-60 w-fit ${docked ? "h-full" : "absolute top-2 right-2 bottom-2"}`}>
       <div className="flex h-full max-h-full min-h-0 items-start gap-2">
-        {/* {!isExpanded && (
+        {!isExpanded && (
           <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>
             <motion.div
               key="collapsed"
@@ -251,7 +218,7 @@ export function ViewControls({
               </Tooltip>
             </motion.div>
 
-            {showNodeVisibilityMenu && (
+            {/* {showNodeVisibilityMenu && (
               <motion.div
                 key="node-visibility-menu"
                 initial={{ opacity: 0, y: 4 }}
@@ -333,7 +300,7 @@ export function ViewControls({
                   </TooltipContent>
                 </Tooltip>
               </motion.div>
-            )}
+            )} */}
           </div>
         )}
 
@@ -351,13 +318,13 @@ export function ViewControls({
               animate="animate"
               exit="exit"
               transition={{ duration: 0.15, delayChildren: stagger(0.05) }}
-              className={`pointer-events-auto flex max-h-full min-h-0 min-w-40 flex-col overflow-hidden p-2 pr-0 pb-0 ${
+              className={`border-sidebar-border pointer-events-auto flex max-h-full min-h-0 min-w-40 flex-col gap-2 overflow-hidden pt-2 pl-2 ${
                 docked
-                  ? "h-full origin-top-right border-l border-neutral-200 bg-white"
-                  : "origin-top-right rounded-lg border border-neutral-200 bg-white/90 shadow-lg backdrop-blur-sm"
+                  ? "bg-sidebar h-full origin-top-right border-l"
+                  : "bg-sidebar/80 origin-top-right rounded-md border shadow-lg backdrop-blur-sm"
               }`}>
-              <div className="mb-2 flex items-center justify-between pr-2">
-                <div className="text-xs font-semibold text-neutral-700">Views</div>
+              <div className="flex items-center justify-between pr-2">
+                <div className="font-semibold">View Settings</div>
                 <button
                   onClick={() => setIsExpanded(false)}
                   className="rounded p-1 text-neutral-500 transition-colors hover:bg-neutral-200"
@@ -365,11 +332,50 @@ export function ViewControls({
                   <ChevronDown size={14} className="rotate-180" />
                 </button>
               </div>
-              <div className="min-h-0 overflow-y-auto pr-1">
-                <motion.div className="mb-2 w-full" variants={childVariants}>
+              <div className="flex min-h-0 flex-col gap-2 overflow-y-auto pr-2 pb-2">
+                <motion.div className="" variants={childVariants}>
                   <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
                 </motion.div>
-                {showNodeVisibilityMenu && (
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
+                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
+                </motion.div>
+                {/* {showNodeVisibilityMenu && (
                   <div className="border-t border-neutral-200 pt-1">
                     <div className="mb-1 text-xs font-medium text-neutral-700">Selection</div>
                     <div className="grid grid-cols-2 gap-1">
@@ -396,8 +402,8 @@ export function ViewControls({
                       Clear Selection ({selectedCount})
                     </button>
                   </div>
-                )}
-                <motion.div
+                )} */}
+                {/* <motion.div
                   className="flex items-center justify-between border-t border-neutral-200 pt-1"
                   variants={childVariants}>
                   <div className="flex items-center gap-2">
@@ -407,30 +413,30 @@ export function ViewControls({
                     <span className="text-xs font-medium text-neutral-700">Spin</span>
                     <Switch size="sm" checked={autoRotate} onCheckedChange={setAutoRotate} />
                   </div>
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                </motion.div> */}
+                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
                     <Grid3X3 size={12} className="text-neutral-500" />
                     <span className="text-xs font-medium text-neutral-700">Visibility</span>
                   </div>
                   <ViewModeSelect />
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                </motion.div> */}
+                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ColorPanel />
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                </motion.div> */}
+                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ThresholdPanel />
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                </motion.div> */}
+                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <SliceViewPanel />
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                </motion.div> */}
+                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ExpandedScalePanel />
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                </motion.div> */}
+                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <NodeDisplayPanel />
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 px-0 pt-2" variants={childVariants}>
+                </motion.div> */}
+                {/* <motion.div className="mt-2 border-t border-neutral-200 px-0 pt-2" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
                     <span className="text-xs font-medium text-neutral-700">Background</span>
                   </div>
@@ -449,14 +455,14 @@ export function ViewControls({
                       />
                     ))}
                   </div>
-                </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                </motion.div> */}
+                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <FloorsPanel />
-                </motion.div>
+                </motion.div> */}
               </div>
             </motion.div>
           )}
-        </AnimatePresence> */}
+        </AnimatePresence>
       </div>
     </div>
   );

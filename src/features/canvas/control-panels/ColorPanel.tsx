@@ -1,6 +1,6 @@
 import { Switch } from "@/components/ui/switch";
 import { Palette } from "lucide-react";
-import { ColorScaleBar } from "../ColorScaleBar";
+import { ColorScaleBar } from "../components/ColorScaleBar";
 
 import { useColor } from "@/features/3d/contexts/visualization";
 import { METRIC_CONFIGS, type Metric } from "@/lib/metrics";

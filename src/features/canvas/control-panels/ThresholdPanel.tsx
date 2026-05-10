@@ -12,7 +12,7 @@ import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { AlertTriangle, Layers, RotateCcw, Sliders } from "lucide-react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { ThresholdSlider } from "../ThresholdSlider";
+import { ThresholdSlider } from "./ThresholdSlider";
 
 function isThresholdUsed(thresholdKey: ThresholdKey, currentMetric: Metric): boolean {
   return getThresholdKey(currentMetric) === thresholdKey;

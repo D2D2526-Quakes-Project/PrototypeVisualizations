@@ -1,40 +1,14 @@
-import {
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-} from "react";
-
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-
 import { useExportRenderMode } from "@/features/export/renderMode";
-import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
-
 import { useGlobalStore } from "@/state";
-import { BoxSelectionOverlay } from "./BoxSelectionOverlay";
-import { CameraManager } from "./CameraManager";
-import { OrientationCube } from "./OrientationCube";
 import { ViewControls } from "./ViewControls";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
-  showPlaybackControls?: boolean;
-  onMouseDown?: (e: ReactMouseEvent) => void;
-  onMouseMove?: (e: ReactMouseEvent) => void;
-  onMouseUp?: (e: ReactMouseEvent) => void;
-  panelId: string;
 }
 
-export function CanvasWithControls({
-  children,
-  showPlaybackControls,
-  onMouseDown,
-  onMouseMove,
-  onMouseUp,
-  panelId,
-}: CanvasWithControlsProps) {
+export function CanvasWithControls({ children }: CanvasWithControlsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sideControlsRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -97,12 +71,7 @@ export function CanvasWithControls({
   );
 
   return (
-    <div
-      ref={containerRef}
-      className="relative flex h-full min-h-0 w-full"
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}>
+    <div ref={containerRef} className="relative flex h-full min-h-0 w-full">
       <div className="min-h-0 max-w-full flex-1">
         <Canvas
           frameloop="demand"
@@ -114,18 +83,7 @@ export function CanvasWithControls({
           <LayoutSizeSync />
           <color attach="background" args={[colorTheme.background]} />
           {children}
-          <CameraManager />
-          <OrientationCube />
         </Canvas>
-        <BoxSelectionOverlay panelId={panelId} />
-
-        {showPlaybackControls && exportRenderMode.showTransientUi && (
-          <div className="absolute bottom-2 left-2 z-50">
-            <div className="flex items-start gap-1">
-              <SmallPlaybackControls />
-            </div>
-          </div>
-        )}
       </div>
       {exportRenderMode.showTransientUi && (
         <div ref={sideControlsRef}>

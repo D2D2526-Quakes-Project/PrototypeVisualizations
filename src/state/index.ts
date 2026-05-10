@@ -12,6 +12,8 @@ import {
   type ProfileStateAPI,
   type ProfileStateSetters,
 } from "./profileState";
+import { createDefaultProfiles, DEFAULT_PROFILE } from "./default";
+import { createDebouncedJSONStorage } from "zustand-debounce";
 
 export type AppState = ProfileStateSetters & LiveState & GlobalState;
 
@@ -25,7 +27,15 @@ const useAppStore = create<AppState>()(
     {
       name: "app-storage",
       partialize: (state) =>
-        Object.fromEntries(Object.entries(state).filter(([key]) => !LIVE_STATE_KEYS.includes(key as keyof LiveState))),
+        Object.fromEntries(
+          Object.entries(state).filter(([key]) => {
+            if (key === "profileActions") return false;
+            return !LIVE_STATE_KEYS.includes(key as keyof LiveState);
+          })
+        ),
+      storage: createDebouncedJSONStorage("localStorage", {
+        debounceTime: 1000,
+      }),
     }
   )
 );
@@ -69,13 +79,24 @@ export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
   }, [currentBuildingId, loading]);
 
   return useAppStore((state) => {
-    const buildingProfiles = currentBuildingId ? state.profiles[currentBuildingId] : undefined;
-    const activeProfId = currentBuildingId ? state.activeProfileIds[currentBuildingId] : undefined;
+    if (!currentBuildingId) {
+      return selector({} as ProfileStateAPI);
+    }
 
-    const activeProfile =
-      buildingProfiles && activeProfId && buildingProfiles[activeProfId]
-        ? buildingProfiles[activeProfId]
-        : ({} as ProfileData);
+    let buildingProfiles = state.profiles[currentBuildingId];
+    let activeProfId = state.activeProfileIds[currentBuildingId];
+
+    if (!buildingProfiles || Object.keys(buildingProfiles).length == 0) {
+      // Default profiles for new building
+      const defaultProfiles = createDefaultProfiles();
+      state.profiles[currentBuildingId] = defaultProfiles;
+      state.activeProfileIds[currentBuildingId] = DEFAULT_PROFILE;
+      buildingProfiles = defaultProfiles;
+      activeProfId = DEFAULT_PROFILE;
+    }
+    if (!activeProfId) activeProfId = DEFAULT_PROFILE;
+
+    const activeProfile = buildingProfiles[activeProfId] ? buildingProfiles[activeProfId] : ({} as ProfileData);
 
     const projectedState = Object.assign({}, activeProfile, boundActions) as ProfileStateAPI;
 

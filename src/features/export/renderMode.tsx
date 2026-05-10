@@ -1,21 +1,16 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext } from "react";
 
 export interface ExportRenderModeValue {
   showTransientUi: boolean;
   showPanelHeaders: boolean;
 }
 
-const DEFAULT_EXPORT_RENDER_MODE: ExportRenderModeValue = {
-  showTransientUi: false,
-  showPanelHeaders: false,
-};
-
-const ExportRenderModeContext = createContext<ExportRenderModeValue>(DEFAULT_EXPORT_RENDER_MODE);
-
-export function ExportRenderModeProvider({ children, value }: { children: ReactNode; value: ExportRenderModeValue }) {
-  return <ExportRenderModeContext.Provider value={value}>{children}</ExportRenderModeContext.Provider>;
-}
+export const ExportRenderModeContext = createContext<ExportRenderModeValue | undefined>(undefined);
 
 export function useExportRenderMode() {
-  return useContext(ExportRenderModeContext);
+  const context = useContext(ExportRenderModeContext);
+  if (!context) {
+    throw new Error("useExportRenderMode must be used within ExportRenderModeProvider");
+  }
+  return context;
 }

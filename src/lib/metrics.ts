@@ -112,7 +112,7 @@ export type Unit =
   | "meters/second²"
   | "radians/second"
   | "radians/second²"
-  | "kip";
+  | "kips";
 
 export interface UnitConfig {
   label: Unit;
@@ -196,10 +196,10 @@ export const UNITS: Record<Unit, UnitConfig> = {
     singular: "gravity (g)",
     abbr: "g",
   },
-  kip: {
-    label: "kip",
-    singular: "kip",
-    abbr: "kip",
+  kips: {
+    label: "kips",
+    singular: "kips",
+    abbr: "kips",
   },
 };
 
@@ -742,7 +742,7 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
   shear: {
     key: "shear",
     label: "Shear",
-    unit: UNITS["kip"],
+    unit: UNITS["kips"],
     getPrecomputedMax: (animationData) =>
       Math.max(animationData.precomputed.maxShearXAbs ?? 0, animationData.precomputed.maxShearYAbs ?? 0),
     isAvailable: (animationData) => !!animationData.shearData,
@@ -1267,7 +1267,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     thresholdKey: "shear",
     label: "Shear X Max",
     shortLabel: "X Shear Max",
-    unit: UNITS["kip"],
+    unit: UNITS["kips"],
     defaultPalette: "blue",
     hasPositive: true,
     hasNegative: false,
@@ -1282,7 +1282,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     thresholdKey: "shear",
     label: "Shear X Min",
     shortLabel: "X Shear Min",
-    unit: UNITS["kip"],
+    unit: UNITS["kips"],
     defaultPalette: "teal",
     hasPositive: false,
     hasNegative: true,
@@ -1297,7 +1297,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     thresholdKey: "shear",
     label: "Shear X Max (Abs)",
     shortLabel: "X Shear Abs",
-    unit: UNITS["kip"],
+    unit: UNITS["kips"],
     defaultPalette: "blue",
     hasPositive: true,
     hasNegative: false,
@@ -1312,7 +1312,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     thresholdKey: "shear",
     label: "Shear Y Max",
     shortLabel: "Y Shear Max",
-    unit: UNITS["kip"],
+    unit: UNITS["kips"],
     defaultPalette: "green",
     hasPositive: true,
     hasNegative: false,
@@ -1327,7 +1327,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     thresholdKey: "shear",
     label: "Shear Y Min",
     shortLabel: "Y Shear Min",
-    unit: UNITS["kip"],
+    unit: UNITS["kips"],
     defaultPalette: "teal",
     hasPositive: false,
     hasNegative: true,
@@ -1342,7 +1342,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     thresholdKey: "shear",
     label: "Shear Y Max (Abs)",
     shortLabel: "Y Shear Abs",
-    unit: UNITS["kip"],
+    unit: UNITS["kips"],
     defaultPalette: "green",
     hasPositive: true,
     hasNegative: false,

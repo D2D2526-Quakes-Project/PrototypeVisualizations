@@ -24,12 +24,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "baseUrl": "./",
-
     /* Paths */
     "paths": {
-      "@public/*": ["public/*"],
-      "@/*": ["src/*"]
+      "@public/*": ["./public/*"],
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "public/data"]

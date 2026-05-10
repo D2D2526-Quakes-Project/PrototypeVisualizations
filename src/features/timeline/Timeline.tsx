@@ -1,230 +1,165 @@
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { usePanelState } from "@/features/3d/hooks/usePanelState";
+import { useExportRenderMode } from "@/features/export/renderMode";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { formatCompactNumber, formatFixed3 } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview";
-import ReactECharts from "echarts-for-react";
 import { type EChartsOption } from "echarts";
+import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useExportRenderMode } from "@/features/export/renderMode";
-import { usePlayback } from "@/features/playback/usePlayback";
-import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { formatFixed3 } from "@/lib/utils";
-import { formatCompactNumber } from "@/lib/utils";
-import { usePanelState } from "@/features/3d/hooks/usePanelState";
 
-import { getMetricKeyColor, isStaticMetric, UNITS, type UnitConfig } from "@/lib/metrics";
-
-const GROUND_CHANNEL_CONFIG = {
-  x: {
-    id: "x",
-    label: "X Ground Motion",
-    shortName: "X",
-    color: "#f87171",
-    unit: UNITS.g,
-    group: "Ground Motion",
-  },
-  y: {
-    id: "y",
-    label: "Y Ground Motion",
-    shortName: "Y",
-    color: "#fb7185",
-    unit: UNITS.g,
-    group: "Ground Motion",
-  },
-  z: {
-    id: "z",
-    label: "Z Ground Motion",
-    shortName: "Z",
-    color: "#60a5fa",
-    unit: UNITS.g,
-    group: "Ground Motion",
-  },
-  magnitude: {
-    id: "magnitude",
-    label: "Ground Motion",
-    shortName: "Mag",
-    color: "#fbbf24",
-    unit: UNITS.g,
-    group: "Ground Motion",
-  },
-} as const;
-
-const NODE_AVERAGE_CHANNEL_CONFIG = {
-  avgDisplacementX: {
-    id: "avgDisplacementX",
-    label: "Avg Displacement X",
-    shortName: "Disp X",
-    metric: "displacementX",
-    unit: UNITS.inches,
-    group: "Node Averages",
-  },
-  avgDisplacementY: {
-    id: "avgDisplacementY",
-    label: "Avg Displacement Y",
-    shortName: "Disp Y",
-    metric: "displacementY",
-    unit: UNITS.inches,
-    group: "Node Averages",
-  },
-  avgDisplacementZ: {
-    id: "avgDisplacementZ",
-    label: "Avg Displacement Z",
-    shortName: "Disp Z",
-    metric: "displacementZ",
-    unit: UNITS.inches,
-    group: "Node Averages",
-  },
-  avgDisplacementMag: {
-    id: "avgDisplacementMag",
-    label: "Avg Displacement",
-    shortName: "Disp Mag",
-    metric: "displacementMag",
-    unit: UNITS.inches,
-    group: "Node Averages",
-  },
-  avgVelocityX: {
-    id: "avgVelocityX",
-    label: "Avg Velocity X",
-    shortName: "Vel X",
-    metric: "velocityX",
-    unit: UNITS["inches/second"],
-    group: "Node Averages",
-  },
-  avgVelocityY: {
-    id: "avgVelocityY",
-    label: "Avg Velocity Y",
-    shortName: "Vel Y",
-    metric: "velocityY",
-    unit: UNITS["inches/second"],
-    group: "Node Averages",
-  },
-  avgVelocityZ: {
-    id: "avgVelocityZ",
-    label: "Avg Velocity Z",
-    shortName: "Vel Z",
-    metric: "velocityZ",
-    unit: UNITS["inches/second"],
-    group: "Node Averages",
-  },
-  avgVelocityMag: {
-    id: "avgVelocityMag",
-    label: "Avg Velocity",
-    shortName: "Vel Mag",
-    metric: "velocityMag",
-    unit: UNITS["inches/second"],
-    group: "Node Averages",
-  },
-  avgAccelerationX: {
-    id: "avgAccelerationX",
-    label: "Avg Acceleration X",
-    shortName: "Acc X",
-    metric: "accelerationX",
-    unit: UNITS["inches/second²"],
-    group: "Node Averages",
-  },
-  avgAccelerationY: {
-    id: "avgAccelerationY",
-    label: "Avg Acceleration Y",
-    shortName: "Acc Y",
-    metric: "accelerationY",
-    unit: UNITS["inches/second²"],
-    group: "Node Averages",
-  },
-  avgAccelerationZ: {
-    id: "avgAccelerationZ",
-    label: "Avg Acceleration Z",
-    shortName: "Acc Z",
-    metric: "accelerationZ",
-    unit: UNITS["inches/second²"],
-    group: "Node Averages",
-  },
-  avgAccelerationMag: {
-    id: "avgAccelerationMag",
-    label: "Avg Acceleration",
-    shortName: "Acc Mag",
-    metric: "accelerationMag",
-    unit: UNITS["inches/second²"],
-    group: "Node Averages",
-  },
-  avgRotationX: {
-    id: "avgRotationX",
-    label: "Avg Rotation X",
-    shortName: "Rot X",
-    metric: "rotationX",
-    unit: UNITS.radians,
-    group: "Node Averages",
-  },
-  avgRotationY: {
-    id: "avgRotationY",
-    label: "Avg Rotation Y",
-    shortName: "Rot Y",
-    metric: "rotationY",
-    unit: UNITS.radians,
-    group: "Node Averages",
-  },
-  avgRotationZ: {
-    id: "avgRotationZ",
-    label: "Avg Rotation Z",
-    shortName: "Rot Z",
-    metric: "rotationZ",
-    unit: UNITS.radians,
-    group: "Node Averages",
-  },
-  avgRotationMag: {
-    id: "avgRotationMag",
-    label: "Avg Rotation",
-    shortName: "Rot Mag",
-    metric: "rotationMag",
-    unit: UNITS.radians,
-    group: "Node Averages",
-  },
-} as const;
-
-type ChannelKey = keyof typeof GROUND_CHANNEL_CONFIG | keyof typeof NODE_AVERAGE_CHANNEL_CONFIG;
+import { getMetricKeyColor, isStaticMetric, UNITS, type Metric, type UnitConfig } from "@/lib/metrics";
+import type { BuildingAnimationData } from "@/lib/types";
+import { useGlobalStore, useProfileStore } from "@/state";
 
 type ChannelOption = {
-  id: ChannelKey;
   label: string;
   shortName: string;
-  color: string;
+  metric?: Metric;
   unit: UnitConfig;
-  group: "Ground Motion" | "Node Averages";
+  enabled: (animationData: BuildingAnimationData) => boolean;
+  accessor: (idx: number, animationData: BuildingAnimationData) => number;
 };
 
-export type TimelinePanelState = {
-  selectedKeys: ChannelKey[];
+const GROUND_CHANNEL_CONFIG: Record<string, ChannelOption> = {
+  groundMotionX: {
+    label: "X Ground Motion",
+    shortName: "X",
+    unit: UNITS.g,
+    enabled: (animationData) => animationData.groundMotion.data.length > 0,
+    accessor: (idx, animationData) => animationData.groundMotion.xAt(idx),
+  },
+  groundMotionY: {
+    label: "Y Ground Motion",
+    shortName: "Y",
+    unit: UNITS.g,
+    enabled: (animationData) => animationData.groundMotion.data.length > 0,
+    accessor: (idx, animationData) => animationData.groundMotion.yAt(idx),
+  },
+  // groundMotionZ: {
+  //   label: "Z Ground Motion",
+  //   shortName: "Z",
+  //   unit: UNITS.g,
+  //   enabled: (animationData) => animationData.groundMotion.data.length > 0,
+  //   accessor: (idx, animationData) => animationData.groundMotion.zAt(idx),
+  // },
+  groundMotionMagnitude: {
+    label: "Ground Motion",
+    shortName: "Mag",
+    unit: UNITS.g,
+    enabled: (animationData) => animationData.precomputed.groundMotion.magnitude.length > 0,
+    accessor: (idx, animationData) => animationData.precomputed.groundMotion.magnitude[idx],
+  },
+  avgDisplacementMag: {
+    label: "Avg Displacement Mag",
+    shortName: "Disp. Mag",
+    metric: "displacementMag",
+    unit: UNITS.inches,
+    enabled: (animationData) => animationData.precomputed.avgDisplacementPerFrame.mag.length > 0,
+    accessor: (idx, animationData) => animationData.precomputed.avgDisplacementPerFrame.mag[idx],
+  },
+  avgDisplacementX: {
+    label: "Avg Displacement X",
+    shortName: "Disp. X",
+    metric: "displacementX",
+    unit: UNITS.inches,
+    enabled: (animationData) => animationData.precomputed.avgDisplacementPerFrame.x.length > 0,
+    accessor: (idx, animationData) => animationData.precomputed.avgDisplacementPerFrame.x[idx],
+  },
+  avgDisplacementY: {
+    label: "Avg Displacement Y",
+    shortName: "Disp. Y",
+    metric: "displacementY",
+    unit: UNITS.inches,
+    enabled: (animationData) => animationData.precomputed.avgDisplacementPerFrame.y.length > 0,
+    accessor: (idx, animationData) => animationData.precomputed.avgDisplacementPerFrame.y[idx],
+  },
+  // avgDisplacementZ: {
+  //   label: "Avg Displacement Z",
+  //   shortName: "Disp. Z",
+  //   metic: "displacementZ",
+  //   unit: UNITS.inches,
+  //   accessor: (idx, animationData) => animationData.precomputed.avgDisplacementPerFrame.z[idx],
+  // },
+  avgVelocityMag: {
+    label: "Avg Velocity Mag",
+    shortName: "Vel. Mag",
+    metric: "velocityMag",
+    unit: UNITS.inches,
+    enabled: (animationData) => !!animationData.precomputed.avgVelocityPerFrame,
+    accessor: (idx, animationData) => animationData.precomputed.avgVelocityPerFrame!.mag[idx],
+  },
+  avgVelocityX: {
+    label: "Avg Velocity X",
+    shortName: "Vel. X",
+    metric: "velocityX",
+    unit: UNITS.inches,
+    enabled: (animationData) => !!animationData.precomputed.avgVelocityPerFrame,
+    accessor: (idx, animationData) => animationData.precomputed.avgVelocityPerFrame!.x[idx],
+  },
+  avgVelocityY: {
+    label: "Avg Velocity Y",
+    shortName: "Vel. Y",
+    metric: "velocityY",
+    unit: UNITS.inches,
+    enabled: (animationData) => !!animationData.precomputed.avgVelocityPerFrame,
+    accessor: (idx, animationData) => animationData.precomputed.avgVelocityPerFrame!.y[idx],
+  },
+  // avgVelocityZ: {
+  //   label: "Avg Velocity Z",
+  //   shortName: "Vel. Z",
+  //   metic: "velocityZ",
+  //   unit: UNITS.inches,
+  //   enabled: (animationData) => animationData.precomputed.avgVelocityPerFrame?.z.length > 0,
+  //   accessor: (idx, animationData) => animationData.precomputed.avgVelocityPerFrame?.z[idx],
+  // },
+  avgAccelerationMag: {
+    label: "Avg Acceleration Mag",
+    shortName: "Acc. Mag",
+    metric: "accelerationMag",
+    unit: UNITS.inches,
+    enabled: (animationData) => !!animationData.precomputed.avgAccelerationPerFrame,
+    accessor: (idx, animationData) => animationData.precomputed.avgAccelerationPerFrame!.mag[idx],
+  },
+  avgAccelerationX: {
+    label: "Avg Acceleration X",
+    shortName: "Acc. X",
+    metric: "accelerationX",
+    unit: UNITS.inches,
+    enabled: (animationData) => !!animationData.precomputed.avgAccelerationPerFrame,
+    accessor: (idx, animationData) => animationData.precomputed.avgAccelerationPerFrame!.x[idx],
+  },
+  avgAccelerationY: {
+    label: "Avg Acceleration Y",
+    shortName: "Acc. Y",
+    metric: "accelerationY",
+    unit: UNITS.inches,
+    enabled: (animationData) => !!animationData.precomputed.avgAccelerationPerFrame,
+    accessor: (idx, animationData) => animationData.precomputed.avgAccelerationPerFrame!.y[idx],
+  },
+  // avgAccelerationZ: {
+  //   label: "Avg Acceleration Z",
+  //   shortName: "Acc. Z",
+  //   metic: "accelerationZ",
+  //   unit: UNITS.inches,
+  //   enabled: (animationData) => animationData.precomputed.avgAccelerationPerFrame?.z.length > 0,
+  //   accessor: (idx, animationData) => animationData.precomputed.avgAccelerationPerFrame?.z[idx],
+  // },
+} as const;
+
+type TimelinePanelState = {
+  selectedKeys: string[];
 };
 
-export const DEFAULT_TIMELINE_PANEL_STATE: TimelinePanelState = {
-  selectedKeys: ["x", "y"],
+const DEFAULT_TIMELINE_PANEL_STATE: TimelinePanelState = {
+  selectedKeys: ["groundMotionX", "groundMotionY"],
 };
-
-const CHANNEL_ORDER: ChannelKey[] = [
-  "x",
-  "y",
-  "z",
-  "magnitude",
-  "avgDisplacementX",
-  "avgDisplacementY",
-  "avgDisplacementZ",
-  "avgDisplacementMag",
-  "avgVelocityX",
-  "avgVelocityY",
-  "avgVelocityZ",
-  "avgVelocityMag",
-  "avgAccelerationX",
-  "avgAccelerationY",
-  "avgAccelerationZ",
-  "avgAccelerationMag",
-  "avgRotationX",
-  "avgRotationY",
-  "avgRotationZ",
-  "avgRotationMag",
-];
 
 function TooltipContent({
   frame,
@@ -291,16 +226,17 @@ function CheckSelect({
   selected,
   onChange,
 }: {
-  options: ChannelOption[];
-  selected: ChannelKey[];
-  onChange: (keys: ChannelKey[]) => void;
+  options: [string, ChannelOption][];
+  selected: string[];
+  onChange: (keys: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
 
-  const toggleOption = (key: ChannelKey) => {
+  const toggleOption = (key: string) => {
     if (selected.includes(key)) {
       if (selected.length > 1) {
-        onChange(selected.filter((k) => k !== key));
+        onChange(selected.filter((k) => k !== key && k in GROUND_CHANNEL_CONFIG));
       }
     } else {
       onChange([...selected, key]);
@@ -309,31 +245,9 @@ function CheckSelect({
 
   // Generate button label text
   const labelText = useMemo(() => {
-    // Sort selected keys by fixed order for the label
-    const sortedActive = CHANNEL_ORDER.filter((k) => selected.includes(k));
-    if (sortedActive.length === 0) return "Select Channels";
-    const shortNameById = new Map(options.map((option) => [option.id, option.shortName]));
-    return sortedActive.map((key) => shortNameById.get(key) ?? key).join(", ");
-  }, [selected, options]);
-
-  const groupedOptions = useMemo(() => {
-    const groups: Array<{
-      title: "Ground Motion" | "Node Averages";
-      options: ChannelOption[];
-    }> = [
-      { title: "Ground Motion", options: [] },
-      { title: "Node Averages", options: [] },
-    ];
-
-    options.forEach((option) => {
-      const group = groups.find((g) => g.title === option.group);
-      if (group) {
-        group.options.push(option);
-      }
-    });
-
-    return groups.filter((group) => group.options.length > 0);
-  }, [options]);
+    if (selected.length === 0) return "Select Channels";
+    return selected.map((key) => GROUND_CHANNEL_CONFIG[key]?.shortName).join(", ");
+  }, [selected]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -347,34 +261,26 @@ function CheckSelect({
       </PopoverTrigger>
       <PopoverContent align="end" className="w-56 p-1">
         <div className="flex flex-col gap-0.5">
-          {groupedOptions.map((group) => (
-            <div key={group.title} className="flex flex-col gap-0.5">
-              <div className="px-2 py-1 text-[10px] font-semibold tracking-wide text-neutral-500 uppercase">
-                {group.title}
-              </div>
-              {group.options.map((option) => {
-                const isChecked = selected.includes(option.id);
-                return (
-                  <Label
-                    key={option.id}
-                    htmlFor={`channel-${option.id}`}
-                    className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
-                    <Checkbox
-                      id={`channel-${option.id}`}
-                      checked={isChecked}
-                      onCheckedChange={() => toggleOption(option.id)}
-                      className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
-                    />
-                    <span className="flex-1">{option.label}</span>
-                    <span
-                      className="h-3 w-3 rounded-full border border-black/10"
-                      style={{ backgroundColor: option.color }}
-                    />
-                  </Label>
-                );
-              })}
-            </div>
-          ))}
+          {options.map(([id, option]) => {
+            const isChecked = selected.includes(id);
+            const config = GROUND_CHANNEL_CONFIG[id];
+            const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+            return (
+              <Label
+                key={id}
+                htmlFor={`channel-${id}`}
+                className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
+                <Checkbox
+                  id={`channel-${id}`}
+                  checked={isChecked}
+                  onCheckedChange={() => toggleOption(id)}
+                  className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
+                />
+                <span className="flex-1">{option.label}</span>
+                <span className="h-3 w-3 rounded-full border border-black/10" style={{ backgroundColor: color }} />
+              </Label>
+            );
+          })}
         </div>
       </PopoverContent>
     </Popover>
@@ -389,211 +295,21 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
   const isDraggingRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
-  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-  const { state: savedState, setState: setSavedState } = usePanelState<TimelinePanelState>({
-    panelId: api?.id,
-    fallbackPanelId: "timeline",
+  const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
+  const { selectedKeys, setSelectedKeys } = usePanelState({
+    panelId: api.id,
     panelType: "timeline",
     defaultState: DEFAULT_TIMELINE_PANEL_STATE,
   });
-  const currentMetric = useViewStore((s) => s.currentMetric);
+  const currentMetric = useProfileStore((s) => s.currentMetric);
   const staticMetricMode = isStaticMetric(currentMetric);
-
-  const [selectedKeys, setSelectedKeys] = useState<ChannelKey[]>(savedState.selectedKeys);
 
   const maxFrame = animationData.metadata.frameCount - 1;
   const dt = animationData.metadata.dt;
 
-  const dtRef = useRef(dt);
-  const maxFrameRef = useRef(maxFrame);
-  const selectedKeysRef = useRef(selectedKeys);
-  const averageRotationByFrame = useMemo(() => {
-    const result = {
-      x: new Array<number>(animationData.metadata.frameCount).fill(0),
-      y: new Array<number>(animationData.metadata.frameCount).fill(0),
-      z: new Array<number>(animationData.metadata.frameCount).fill(0),
-      mag: new Array<number>(animationData.metadata.frameCount).fill(0),
-    };
-    if (!animationData.displacementRot) {
-      return result;
-    }
-
-    const nodeCount = animationData.metadata.nodeCount;
-    for (let frame = 0; frame < animationData.metadata.frameCount; frame++) {
-      const frameData = animationData.displacementRot.atFrame(frame);
-      let sumX = 0;
-      let sumY = 0;
-      let sumZ = 0;
-      for (let nodeId = 0; nodeId < nodeCount; nodeId++) {
-        const rotation = frameData.at(nodeId);
-        sumX += rotation[0];
-        sumY += rotation[1];
-        sumZ += rotation[2];
-      }
-
-      result.x[frame] = sumX / nodeCount;
-      result.y[frame] = sumY / nodeCount;
-      result.z[frame] = sumZ / nodeCount;
-      result.mag[frame] = Math.hypot(result.x[frame], result.y[frame], result.z[frame]);
-    }
-
-    return result;
-  }, [animationData]);
-
-  const nodeAverageChannelConfig = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(NODE_AVERAGE_CHANNEL_CONFIG).map(([key, config]) => [
-          key,
-          { ...config, color: getMetricKeyColor(config.metric, metricPaletteOverrides) },
-        ])
-      ) as {
-        [K in keyof typeof NODE_AVERAGE_CHANNEL_CONFIG]: (typeof NODE_AVERAGE_CHANNEL_CONFIG)[K] & { color: string };
-      },
-    [metricPaletteOverrides]
-  );
-
-  const channelAccessors = useMemo(() => {
-    return {
-      x: {
-        accessor: animationData.groundMotion.xAt,
-        config: GROUND_CHANNEL_CONFIG.x,
-      },
-      y: {
-        accessor: animationData.groundMotion.yAt,
-        config: GROUND_CHANNEL_CONFIG.y,
-      },
-      z: {
-        accessor: animationData.groundMotion.zAt,
-        config: GROUND_CHANNEL_CONFIG.z,
-      },
-      magnitude: {
-        accessor: (idx: number) => animationData.precomputed.groundMotion.magnitude.at(idx) ?? 0,
-        config: GROUND_CHANNEL_CONFIG.magnitude,
-      },
-      avgDisplacementMag: {
-        accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.mag[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgDisplacementMag,
-      },
-      avgDisplacementX: {
-        accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.x[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgDisplacementX,
-      },
-      avgDisplacementY: {
-        accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.y[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgDisplacementY,
-      },
-      avgDisplacementZ: {
-        accessor: (idx: number) => animationData.precomputed.avgDisplacementPerFrame.z[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgDisplacementZ,
-      },
-      avgVelocityMag: {
-        accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.mag[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgVelocityMag,
-      },
-      avgVelocityX: {
-        accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.x[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgVelocityX,
-      },
-      avgVelocityY: {
-        accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.y[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgVelocityY,
-      },
-      avgVelocityZ: {
-        accessor: (idx: number) => animationData.precomputed.avgVelocityPerFrame?.z[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgVelocityZ,
-      },
-      avgAccelerationMag: {
-        accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.mag[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgAccelerationMag,
-      },
-      avgAccelerationX: {
-        accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.x[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgAccelerationX,
-      },
-      avgAccelerationY: {
-        accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.y[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgAccelerationY,
-      },
-      avgAccelerationZ: {
-        accessor: (idx: number) => animationData.precomputed.avgAccelerationPerFrame?.z[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgAccelerationZ,
-      },
-      avgRotationMag: {
-        accessor: (idx: number) => averageRotationByFrame.mag[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgRotationMag,
-      },
-      avgRotationX: {
-        accessor: (idx: number) => averageRotationByFrame.x[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgRotationX,
-      },
-      avgRotationY: {
-        accessor: (idx: number) => averageRotationByFrame.y[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgRotationY,
-      },
-      avgRotationZ: {
-        accessor: (idx: number) => averageRotationByFrame.z[idx] ?? 0,
-        config: nodeAverageChannelConfig.avgRotationZ,
-      },
-    } as const;
-  }, [animationData, averageRotationByFrame, nodeAverageChannelConfig]);
-
   const availableChannelOptions = useMemo(() => {
-    const options: ChannelOption[] = [
-      channelAccessors.x.config,
-      channelAccessors.y.config,
-      channelAccessors.z.config,
-      channelAccessors.magnitude.config,
-      channelAccessors.avgDisplacementX.config,
-      channelAccessors.avgDisplacementY.config,
-      channelAccessors.avgDisplacementZ.config,
-      channelAccessors.avgDisplacementMag.config,
-    ];
-
-    if (animationData.precomputed.avgVelocityPerFrame) {
-      options.push(channelAccessors.avgVelocityX.config);
-      options.push(channelAccessors.avgVelocityY.config);
-      options.push(channelAccessors.avgVelocityZ.config);
-      options.push(channelAccessors.avgVelocityMag.config);
-    }
-
-    if (animationData.precomputed.avgAccelerationPerFrame) {
-      options.push(channelAccessors.avgAccelerationX.config);
-      options.push(channelAccessors.avgAccelerationY.config);
-      options.push(channelAccessors.avgAccelerationZ.config);
-      options.push(channelAccessors.avgAccelerationMag.config);
-    }
-
-    if (animationData.displacementRot) {
-      options.push(channelAccessors.avgRotationX.config);
-      options.push(channelAccessors.avgRotationY.config);
-      options.push(channelAccessors.avgRotationZ.config);
-      options.push(channelAccessors.avgRotationMag.config);
-    }
-
-    return options;
-  }, [animationData, channelAccessors]);
-
-  const effectiveSelectedKeys = useMemo(() => {
-    const availableIds = new Set(availableChannelOptions.map((option) => option.id));
-    const filtered = selectedKeys.filter((key) => availableIds.has(key));
-    if (filtered.length > 0) {
-      return filtered;
-    }
-    return [availableChannelOptions[0]?.id ?? "x"];
-  }, [availableChannelOptions, selectedKeys]);
-
-  useEffect(() => {
-    dtRef.current = dt;
-    maxFrameRef.current = maxFrame;
-    selectedKeysRef.current = effectiveSelectedKeys;
-  }, [dt, maxFrame, effectiveSelectedKeys]);
-
-  useEffect(() => {
-    setSavedState({
-      selectedKeys: effectiveSelectedKeys,
-    });
-  }, [effectiveSelectedKeys, setSavedState]);
+    return Object.entries(GROUND_CHANNEL_CONFIG).filter(([, option]) => option.enabled(animationData));
+  }, [animationData]);
 
   const times = useMemo(() => {
     const times: number[] = [];
@@ -603,24 +319,24 @@ export function Timeline({ api }: IDockviewPanelProps) {
     return times;
   }, [animationData, maxFrame]);
 
-  const chartData = useMemo(() => {
-    const activeKeys = CHANNEL_ORDER.filter((k) => effectiveSelectedKeys.includes(k));
+  const seriesData = useMemo(() => {
+    const seriesData = selectedKeys.flatMap((key) => {
+      if (!GROUND_CHANNEL_CONFIG[key]) return [];
+      const { accessor, enabled } = GROUND_CHANNEL_CONFIG[key];
+      if (!enabled(animationData)) return [];
 
-    const seriesData = activeKeys.map((key) => {
-      const { accessor, config } = channelAccessors[key];
       const data: [number, number][] = [];
       for (let i = 0; i <= maxFrame; i++) {
-        data.push([times[i], accessor(i)]);
+        data.push([times[i], accessor(i, animationData)]);
       }
-      return { key, data, config, accessor };
+      return [{ key, data }];
     });
 
-    return { seriesData };
-  }, [channelAccessors, effectiveSelectedKeys, maxFrame, times]);
+    return seriesData;
+  }, [animationData, selectedKeys, maxFrame, times]);
 
   // 2. Build ECharts Option
   const option: EChartsOption = useMemo((): EChartsOption => {
-    const { seriesData } = chartData;
     const count = seriesData.length;
 
     const grids: EChartsOption["grid"] = [];
@@ -652,15 +368,18 @@ export function Timeline({ api }: IDockviewPanelProps) {
         containLabel: false, // Keep false to ensure fixed alignment
       });
 
+      const config = GROUND_CHANNEL_CONFIG[item.key];
+      const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+
       // Titles (instead of Y-axis names)
       titles.push({
-        text: item.config.label,
+        text: config.label,
         left: LEFT_MARGIN + 5, // Align with the grid
         top: `${topPct}%`, // Top of the grid area
         textStyle: {
           fontSize: 11,
           fontWeight: "bold",
-          color: item.config.color,
+          color,
           textShadowColor: "#fff",
           textShadowBlur: 2,
           textShadowOffsetX: 0,
@@ -691,17 +410,17 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
       // Main Line Series
       series.push({
-        name: item.config.label,
+        name: config.label,
         type: "line",
         xAxisIndex: index,
         yAxisIndex: index,
         data: item.data,
         symbol: "none",
-        lineStyle: { color: item.config.color, width: 2 },
+        lineStyle: { color, width: 2 },
         // Prevent color change on hover
         emphasis: {
           disabled: true,
-          lineStyle: { color: item.config.color, width: 2 },
+          lineStyle: { color, width: 2 },
         },
         areaStyle: {
           color: {
@@ -711,8 +430,8 @@ export function Timeline({ api }: IDockviewPanelProps) {
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: item.config.color + "40" },
-              { offset: 1, color: item.config.color + "10" },
+              { offset: 0, color: color + "40" },
+              { offset: 1, color: color + "10" },
             ],
           },
         },
@@ -732,7 +451,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
           label: { show: false },
           symbolSize: 8,
           itemStyle: {
-            color: item.config.color,
+            color,
             borderColor: "#fff",
             borderWidth: 2,
           },
@@ -784,15 +503,25 @@ export function Timeline({ api }: IDockviewPanelProps) {
             if (!p || !p.seriesName || !p.data) return;
             if (p.seriesName.includes("Marker") || p.seriesName === "Playhead") return;
 
-            const seriesMatch = chartData.seriesData.find((seriesItem) => seriesItem.config.label === p.seriesName);
-            const color = seriesMatch ? seriesMatch.config.color : (p.color as string);
+            const seriesMatch = seriesData.find(
+              (seriesItem) => GROUND_CHANNEL_CONFIG[seriesItem.key].label === p.seriesName
+            );
+
+            let color;
+            let config: ChannelOption | undefined = undefined;
+            if (seriesMatch) {
+              config = GROUND_CHANNEL_CONFIG[seriesMatch.key];
+              color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+            } else {
+              color = p.color as string;
+            }
             const value = (p.data as number[])[1];
 
             values.push({
               name: p.seriesName,
               color,
               value,
-              unit: seriesMatch?.config.unit ?? UNITS.inches,
+              unit: config?.unit ?? UNITS.inches,
             });
           });
 
@@ -801,7 +530,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       },
       animation: false,
     };
-  }, [chartData, maxFrame, animationData.metadata.dt]);
+  }, [seriesData, maxFrame, animationData.metadata.dt, metricPaletteOverrides]);
 
   // Scrubbing logic - uses refs to access current values and tracks chart instance changes
   useEffect(() => {
@@ -815,7 +544,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
     let currentChart: any = null;
 
     const convertToFrame = (pixelX: number, chart: NonNullable<typeof currentChart>) => {
-      if (selectedKeysRef.current.length === 0) return null;
+      // if (selectedKeysRef.current.length === 0) return null;
       const chartDom = chart.getDom();
       if (!chartDom) return null;
       const rect = chartDom.getBoundingClientRect();
@@ -824,9 +553,9 @@ export function Timeline({ api }: IDockviewPanelProps) {
       if (!pointInGrid) return null;
 
       const time = pointInGrid[0];
-      const frame = Math.round(time / dtRef.current);
+      const frame = Math.round(time / dt);
 
-      return Math.max(0, Math.min(maxFrameRef.current, frame));
+      return Math.max(0, Math.min(maxFrame, frame));
     };
 
     const handleMouseDown = (e: { event?: MouseEvent }) => {
@@ -891,7 +620,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       window.removeEventListener("mouseup", handleMouseUp);
       currentChart = null;
     };
-  }, [staticMetricMode, setFrameIndex]);
+  }, [staticMetricMode, setFrameIndex, dt, maxFrame]);
 
   // Update for MarkLine and MarkPoint
   useEffect(() => {
@@ -901,8 +630,9 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
       const currentTime = frameIndex * animationData.metadata.dt;
 
-      const updatedSeries = chartData.seriesData.map((item) => {
-        const currentValue = item.accessor(frameIndex);
+      const updatedSeries = seriesData.map((item) => {
+        const accessor = GROUND_CHANNEL_CONFIG[item.key].accessor;
+        const currentValue = accessor(frameIndex, animationData);
 
         return {
           markLine: {
@@ -929,7 +659,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       applyFrameToChart();
     });
     return () => cancelAnimationFrame(rafId);
-  }, [frameIndex, chartData, animationData.metadata.dt, chartReadyVersion]);
+  }, [frameIndex, seriesData, animationData.metadata.dt, chartReadyVersion, animationData]);
 
   return (
     <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
@@ -937,51 +667,45 @@ export function Timeline({ api }: IDockviewPanelProps) {
       <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
         {exportRenderMode.showTransientUi && (
           <div className="float-right mt-0.5 ml-2">
-            <CheckSelect
-              options={availableChannelOptions}
-              selected={effectiveSelectedKeys}
-              onChange={setSelectedKeys}
-            />
+            <CheckSelect options={availableChannelOptions} selected={selectedKeys} onChange={setSelectedKeys} />
           </div>
         )}
         <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700">
-          {exportRenderMode.showTransientUi && (
-            <>
-              <SmallPlaybackControls inline />
-              <span className="text-neutral-300">|</span>
-            </>
-          )}
           <span className="font-medium">Frame:</span>
           <span className="font-mono">{frameIndex + 1}</span>
           <span className="text-neutral-300">|</span>
           <span className="font-medium">Time:</span>
           <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
           <div className="flex flex-wrap items-center gap-2">
-            {chartData.seriesData.map((item) => (
-              <div
-                key={item.key}
-                className="flex items-center gap-1 border-l-2 pl-1.5 text-xs"
-                style={{ borderLeftColor: item.config.color }}>
-                <span className="font-medium text-neutral-500">{item.config.shortName}:</span>
-                <span className="font-mono">
-                  {formatFixed3(item.accessor(frameIndex) ?? 0)} {item.config.unit.abbr}
-                </span>
-              </div>
-            ))}
+            {seriesData.map((item) => {
+              const config = GROUND_CHANNEL_CONFIG[item.key];
+              const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+              return (
+                <div
+                  key={item.key}
+                  className="flex items-center gap-1 border-l-2 pl-1.5 text-xs"
+                  style={{ borderLeftColor: color }}>
+                  <span className="font-medium text-neutral-500">{config.shortName}:</span>
+                  <span className="font-mono">
+                    {formatFixed3(config.accessor(frameIndex, animationData) ?? 0)} {config.unit.abbr}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Chart Area */}
       <div className="relative min-h-0 w-full flex-1" style={{ cursor: isDragging ? "grabbing" : "default" }}>
-        {effectiveSelectedKeys.length > 0 ? (
+        {selectedKeys.length > 0 ? (
           <>
             <ReactECharts
               ref={chartRef}
               option={option}
               style={{ height: "100%", width: "100%", opacity: staticMetricMode ? 0.65 : 1 }}
               opts={{ renderer: "canvas" }}
-              notMerge={true}
+              replaceMerge={["series"]}
               onChartReady={() => setChartReadyVersion((v) => v + 1)}
             />
             {staticMetricMode && (

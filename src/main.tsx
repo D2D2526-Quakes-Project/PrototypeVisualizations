@@ -6,10 +6,11 @@ import * as THREE from "three";
 import { ErrorPage } from "./components/ErrorPage";
 import { NavigationBar } from "./components/NavigationBar";
 import { TooltipProvider } from "./components/ui/tooltip";
-import { App } from "./pages/App";
-import "./index.css";
-import { AnimationDataProvider } from "./lib/animation-data/useAnimationData";
 import { PlaybackKeyboardEvents } from "./features/playback/PlaybackKeyboardEvents";
+import "./index.css";
+import { AnimationDataProvider } from "./lib/animation-data/AnimationDataProvider";
+import { App } from "./pages/App";
+import { ExportRenderModeContext } from "./features/export/renderMode";
 
 const routes = [
   {
@@ -26,17 +27,17 @@ const router = createBrowserRouter([
       <>
         <TooltipProvider>
           <AnimationDataProvider>
-            {/* <ExportProvider>
-                <ExportRenderModeProvider
-                  value={{
-                    showPanelHeaders: true,
-                    showTransientUi: true,
-                  }}> */}
-            <NavigationBar />
-            <PlaybackKeyboardEvents />
-            <Outlet />
-            {/* </ExportRenderModeProvider>
-              </ExportProvider> */}
+            {/* <ExportProvider> */}
+            <ExportRenderModeContext.Provider
+              value={{
+                showPanelHeaders: true,
+                showTransientUi: true,
+              }}>
+              <NavigationBar />
+              <PlaybackKeyboardEvents />
+              <Outlet />
+            </ExportRenderModeContext.Provider>
+            {/*  </ExportProvider> */}
           </AnimationDataProvider>
         </TooltipProvider>
       </>

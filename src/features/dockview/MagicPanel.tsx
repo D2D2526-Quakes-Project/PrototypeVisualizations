@@ -39,6 +39,7 @@ import {
 import { useEffect, useId, useState } from "react";
 // import { StatisticsPanel } from "../panels/StatisticsPanel";
 import { Timeline } from "../timeline/Timeline";
+import { useProfileStore } from "@/state";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -209,7 +210,7 @@ function isPanelType(value: unknown): value is PanelType {
 
 function joinHumanList(items: string[]): string {
   if (items.length === 0) return "";
-  if (items.length === 1) return items[0];
+  if (items.length === 1) return items[0]!;
   if (items.length === 2) return `${items[0]} and ${items[1]}`;
   return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
@@ -489,7 +490,7 @@ function PanelTypePickerMenu({
 
 export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const currentMetric = useViewStore((state) => state.currentMetric);
+  const currentMetric = useProfileStore((state) => state.currentMetric);
   const activePanel = props.activePanel;
   const activePanelType = isPanelType(activePanel?.params?.panelType) ? activePanel.params.panelType : null;
   const isTabGroup = props.panels.length > 1;

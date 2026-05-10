@@ -29,7 +29,7 @@ export interface ProfileData {
   thresholdHighlighting: boolean;
 
   // Floor Visibility
-  visibleFloors: string[];
+  hiddenFloors: string[];
 
   // Node Visibility
   hiddenNodeIds: number[];
@@ -87,10 +87,10 @@ export interface ProfileState {
     setThresholdHighlighting: (enabled: boolean) => void;
 
     // Floor Visibility
-    setVisibleFloors: (floors: string[]) => void;
+    setHiddenFloors: (floors: string[]) => void;
     toggleFloor: (storyId: string) => void;
-    showAllFloors: (storyOrder: string[]) => void;
-    hideAllFloors: () => void;
+    showFloors: (storyOrder: string[]) => void;
+    hideFloors: (storyOrder: string[]) => void;
 
     // Node Visibility
     hideNodes: (nodes: number[]) => void;
@@ -142,11 +142,11 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
     return (buildingId: string, ...args: Args) =>
       set((state) => {
         const profId = state.activeProfileIds[buildingId];
+        if (!profId) return;
         const profile = state.profiles[buildingId]?.[profId];
+        if (!profile) return;
 
-        if (profile) {
-          recipe(profile, ...args);
-        }
+        recipe(profile, ...args);
       });
   };
 
@@ -216,23 +216,23 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
       }),
 
       // Floor Visibility
-      setVisibleFloors: mutateProfile((profile, visibleFloors) => {
-        profile.visibleFloors = visibleFloors;
+      setHiddenFloors: mutateProfile((profile, hiddenFloors) => {
+        profile.hiddenFloors = hiddenFloors;
       }),
       toggleFloor: mutateProfile((profile, storyId) => {
-        const floors = new Set(profile.visibleFloors);
+        const floors = new Set(profile.hiddenFloors);
         if (floors.has(storyId)) {
           floors.delete(storyId);
         } else {
           floors.add(storyId);
         }
-        profile.visibleFloors = Array.from(floors);
+        profile.hiddenFloors = Array.from(floors);
       }),
-      showAllFloors: mutateProfile((profile, storyOrder) => {
-        profile.visibleFloors = storyOrder;
+      showFloors: mutateProfile((profile, storyOrder) => {
+        profile.hiddenFloors = profile.hiddenFloors.filter((id) => !storyOrder.includes(id));
       }),
-      hideAllFloors: mutateProfile((profile) => {
-        profile.visibleFloors = [];
+      hideFloors: mutateProfile((profile, storyOrder) => {
+        profile.hiddenFloors = [...new Set([...profile.hiddenFloors, ...storyOrder])];
       }),
 
       // Node Visibility / Selection
@@ -280,7 +280,6 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
         profile.panelStates = panelStates;
       }),
 
-      nodePanelGraphVisibility: { dispX: true, dispY: true, drift: true },
       toggleNodePanelGraph: mutateProfile((profile, graphKey) => {
         profile.nodePanelGraphVisibility = {
           ...profile.nodePanelGraphVisibility,

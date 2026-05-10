@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 
 export function useFloorVisibility() {
   const { animationData } = useAnimationData();
-  const visibleFloorsArray = useProfileStore((s) => s.visibleFloors);
+  const visibleFloorsArray = useProfileStore((s) => s.hiddenFloors);
   const toggleFloorStore = useProfileStore((s) => s.toggleFloor);
   const showAllFloorsStore = useProfileStore((s) => s.showAllFloors);
   const hideAllFloorsStore = useProfileStore((s) => s.hideAllFloors);

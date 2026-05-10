@@ -11,21 +11,12 @@ import { Canvas, useThree } from "@react-three/fiber";
 
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
-import { AlertTriangle } from "lucide-react";
 import { useGlobalStore } from "@/state";
-import { OrientationCube } from "./OrientationCube";
-import { CameraManager } from "./CameraManager";
 import { BoxSelectionOverlay } from "./BoxSelectionOverlay";
+import { CameraManager } from "./CameraManager";
+import { OrientationCube } from "./OrientationCube";
 import { ViewControls } from "./ViewControls";
-
-// import { BoxSelectionOverlay } from "./CanvasWithControls/BoxSelectionOverlay";
-// import { CameraManager } from "./CanvasWithControls/CameraManager";
-// import { OrientationCube } from "./CanvasWithControls/OrientationCube";
-// import { ViewControls } from "./CanvasWithControls/ViewControls";
-
-// import { useFloorVisibility } from "../3d/contexts/visualization";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
@@ -50,11 +41,8 @@ export function CanvasWithControls({
   const [controlsWidth, setControlsWidth] = useState(0);
   const [isViewControlsExpanded, setIsViewControlsExpanded] = useState(false);
   const [isControlsDocked, setIsControlsDocked] = useState(false);
-  const { animationData } = useAnimationData();
   const exportRenderMode = useExportRenderMode();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
-  // const visibleFloorCount = useViewStore((s) => s.visibleFloors.length);
-  // const { showAllDefaultFloors } = useFloorVisibility();
 
   const getDockedState = useCallback((nextContainerWidth: number, nextControlsWidth: number, expanded: boolean) => {
     setIsControlsDocked((current) => {
@@ -129,22 +117,12 @@ export function CanvasWithControls({
           <CameraManager />
           <OrientationCube />
         </Canvas>
-        {/* <BoxSelectionOverlay panelId={panelId} /> */}
+        <BoxSelectionOverlay panelId={panelId} />
 
         {showPlaybackControls && exportRenderMode.showTransientUi && (
           <div className="absolute bottom-2 left-2 z-50">
             <div className="flex items-start gap-1">
               <SmallPlaybackControls />
-              {/* {animationData.metadata.storyOrder.length > 0 && visibleFloorCount === 0 && (
-                <button
-                  type="button"
-                  onClick={() => showAllDefaultFloors()}
-                  className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1.5 py-1 text-[10px] font-medium text-amber-800 shadow-sm hover:bg-amber-100"
-                  title="All floors are hidden. Show all floors.">
-                  <AlertTriangle size={10} />
-                  No floors
-                </button>
-              )} */}
             </div>
           </div>
         )}

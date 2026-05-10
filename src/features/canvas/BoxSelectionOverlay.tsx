@@ -1,3 +1,4 @@
+import { useLiveStore } from "@/state";
 import { useMemo } from "react";
 
 interface BoxSelectionOverlayProps {
@@ -5,9 +6,9 @@ interface BoxSelectionOverlayProps {
 }
 
 export function BoxSelectionOverlay({ panelId }: BoxSelectionOverlayProps) {
-  const boxSelection = useViewStore((s) => s.boxSelection);
-  const boxSelectionPanelId = useViewStore((s) => s.boxSelectionPanelId);
-  const isBoxSelecting = useViewStore((s) => s.isBoxSelecting);
+  const boxSelection = useLiveStore((s) => s.boxSelection);
+  const boxSelectionPanelId = useLiveStore((s) => s.boxSelectionPanelId);
+  const isBoxSelecting = useLiveStore((s) => s.isBoxSelecting);
 
   const showBoxSelectionOverlay = isBoxSelecting && boxSelectionPanelId === panelId;
 

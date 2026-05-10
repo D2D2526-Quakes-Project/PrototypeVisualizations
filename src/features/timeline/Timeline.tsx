@@ -410,6 +410,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
       // Main Line Series
       series.push({
+        id: `main-line-${item.key}`,
         name: config.label,
         type: "line",
         xAxisIndex: index,
@@ -435,6 +436,16 @@ export function Timeline({ api }: IDockviewPanelProps) {
             ],
           },
         },
+      });
+
+      // MarkLine
+      series.push({
+        id: `mark-line-${item.key}`,
+        name: `${config.label} Marker`,
+        type: "scatter",
+        xAxisIndex: index,
+        yAxisIndex: index,
+        data: [],
         markLine: {
           symbol: "none",
           data: [{ xAxis: 0 }],
@@ -457,6 +468,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
           },
           data: [{ coord: [0, 0], name: "Playhead" }],
         },
+        animation: false,
       });
     });
 
@@ -635,6 +647,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
         const currentValue = accessor(frameIndex, animationData);
 
         return {
+          id: `mark-line-${item.key}`,
           markLine: {
             data: [{ xAxis: currentTime }],
           },

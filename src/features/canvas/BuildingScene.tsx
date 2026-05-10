@@ -14,6 +14,7 @@
 // import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
+import { useGlobalStore } from "@/state";
 // import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 // import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -71,7 +72,7 @@ export function BuildingScene({ panelId }: { panelId: string }) {
   // const belowThresholdHingeScale = useViewStore((s) => s.belowThresholdHingeScale);
   // const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
   // const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
-  // const colorTheme = useViewStore((s) => s.colorTheme);
+  const colorTheme = useGlobalStore((s) => s.colorTheme);
   // const selectedNodeIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
   // const hiddenNodeIdSet = useMemo(() => new Set(hiddenNodeIds), [hiddenNodeIds]);
 
@@ -712,7 +713,7 @@ export function BuildingScene({ panelId }: { panelId: string }) {
         {/* </group> */}
       </group>
 
-      {/* <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 1, colorTheme.grid, colorTheme.grid]} /> */}
+      <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 1, colorTheme.grid, colorTheme.grid]} />
 
       {/* <FloorTickMarks /> */}
 

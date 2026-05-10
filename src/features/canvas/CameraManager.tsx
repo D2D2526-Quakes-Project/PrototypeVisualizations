@@ -7,7 +7,8 @@ import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 
 import type { OrthographicCamera as OrthographicCameraImpl, PerspectiveCamera as PerspectiveCameraImpl } from "three";
-import { useCamera } from "../../contexts/CameraContext";
+import { useCamera } from "../3d/contexts/CanvasContext";
+import { useLiveStore } from "@/state";
 
 export function CameraManager() {
   return (
@@ -19,7 +20,7 @@ export function CameraManager() {
 }
 
 function Cams() {
-  const { orbitControlsRef, orthographic, cameraState } = useCamera();
+  const { orbitControlsRef, orthographic, cameraPosition, cameraTarget, cameraZoom } = useCamera();
   const fov = 50;
 
   const persRef = useRef<PerspectiveCameraImpl>(null);
@@ -65,16 +66,16 @@ function Cams() {
     if (!controls || !perspectiveCamera || !orthographicCamera) return;
 
     const activeCamera = orthographic ? orthographicCamera : perspectiveCamera;
-    activeCamera.position.set(cameraState.position[0], cameraState.position[1], cameraState.position[2]);
-    controls.target.set(cameraState.target[0], cameraState.target[1], cameraState.target[2]);
+    activeCamera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+    controls.target.set(cameraTarget[0], cameraTarget[1], cameraTarget[2]);
 
-    if (orthographic && typeof cameraState.zoom === "number") {
-      orthographicCamera.zoom = cameraState.zoom;
+    if (orthographic && cameraZoom !== undefined) {
+      orthographicCamera.zoom = cameraZoom;
       orthographicCamera.updateProjectionMatrix();
     }
 
     controls.update();
-  }, [cameraState, orthographic, orbitControlsRef]);
+  }, [cameraPosition, cameraTarget, cameraZoom, orthographic, orbitControlsRef]);
 
   return (
     <>
@@ -85,8 +86,8 @@ function Cams() {
 }
 
 function CameraControls() {
-  const { orbitControlsRef, setCameraState } = useCamera();
-  const autoRotate = useViewStore((s) => s.autoRotate);
+  const { orbitControlsRef, setCameraPosition, setCameraTarget, setCameraZoom } = useCamera();
+  const autoRotate = useLiveStore((s) => s.autoRotate);
 
   const { animationData } = useAnimationData();
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
@@ -108,11 +109,9 @@ function CameraControls() {
 
     const syncCameraState = () => {
       const camera = controls.object;
-      setCameraState({
-        position: [camera.position.x, camera.position.y, camera.position.z],
-        target: [controls.target.x, controls.target.y, controls.target.z],
-        zoom: "zoom" in camera && typeof camera.zoom === "number" ? camera.zoom : undefined,
-      });
+      setCameraPosition([camera.position.x, camera.position.y, camera.position.z]);
+      setCameraTarget([controls.target.x, controls.target.y, controls.target.z]);
+      setCameraZoom("zoom" in camera && typeof camera.zoom === "number" ? camera.zoom : undefined);
     };
 
     syncCameraState();
@@ -123,7 +122,7 @@ function CameraControls() {
       // controls.removeEventListener("change", syncCameraState);
       controls.removeEventListener("end", syncCameraState);
     };
-  }, [orbitControlsRef, setCameraState]);
+  }, [orbitControlsRef, setCameraPosition, setCameraTarget, setCameraZoom]);
 
   return <OrbitControls ref={orbitControlsRef} enableDamping={false} autoRotate={autoRotate} />;
 }

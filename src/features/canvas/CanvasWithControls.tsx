@@ -14,6 +14,11 @@ import { SmallPlaybackControls } from "@/features/playback/PlaybackControls";
 import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import { AlertTriangle } from "lucide-react";
+import { useGlobalStore } from "@/state";
+import { OrientationCube } from "./OrientationCube";
+import { CameraManager } from "./CameraManager";
+import { BoxSelectionOverlay } from "./BoxSelectionOverlay";
+import { ViewControls } from "./ViewControls";
 
 // import { BoxSelectionOverlay } from "./CanvasWithControls/BoxSelectionOverlay";
 // import { CameraManager } from "./CanvasWithControls/CameraManager";
@@ -28,7 +33,7 @@ interface CanvasWithControlsProps {
   onMouseDown?: (e: ReactMouseEvent) => void;
   onMouseMove?: (e: ReactMouseEvent) => void;
   onMouseUp?: (e: ReactMouseEvent) => void;
-  panelId?: string;
+  panelId: string;
 }
 
 export function CanvasWithControls({
@@ -37,18 +42,17 @@ export function CanvasWithControls({
   onMouseDown,
   onMouseMove,
   onMouseUp,
-  panelId: initialPanelId,
+  panelId,
 }: CanvasWithControlsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sideControlsRef = useRef<HTMLDivElement>(null);
-  const panelId = initialPanelId ?? "main-canvas";
   const [containerWidth, setContainerWidth] = useState(0);
   const [controlsWidth, setControlsWidth] = useState(0);
   const [isViewControlsExpanded, setIsViewControlsExpanded] = useState(false);
   const [isControlsDocked, setIsControlsDocked] = useState(false);
   const { animationData } = useAnimationData();
   const exportRenderMode = useExportRenderMode();
-  // const colorTheme = useViewStore((s) => s.colorTheme);
+  const colorTheme = useGlobalStore((s) => s.colorTheme);
   // const visibleFloorCount = useViewStore((s) => s.visibleFloors.length);
   // const { showAllDefaultFloors } = useFloorVisibility();
 
@@ -120,10 +124,10 @@ export function CanvasWithControls({
             scene.fog = null;
           }}>
           <LayoutSizeSync />
-          {/* <color attach="background" args={[colorTheme.background]} /> */}
+          <color attach="background" args={[colorTheme.background]} />
           {children}
-          {/* <CameraManager /> */}
-          {/* <OrientationCube /> */}
+          <CameraManager />
+          <OrientationCube />
         </Canvas>
         {/* <BoxSelectionOverlay panelId={panelId} /> */}
 
@@ -147,11 +151,11 @@ export function CanvasWithControls({
       </div>
       {exportRenderMode.showTransientUi && (
         <div ref={sideControlsRef}>
-          {/* <ViewControls
+          <ViewControls
             docked={isControlsDocked}
             isExpanded={isViewControlsExpanded}
             setIsExpanded={handleSetIsViewControlsExpanded}
-          /> */}
+          />
         </div>
       )}
     </div>

@@ -4,7 +4,7 @@ import { ScanEye } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { useAnimationData } from "@/lib/animation-data/useAnimationData";
-import { useCamera } from "@/features/3d/contexts/CameraContext";
+import { useCamera } from "@/features/3d/contexts/CanvasContext";
 
 export function SliceViewPanel() {
   const { sliceEnabled, setSliceEnabled, xRange, yRange, zRange, setXRange, setYRange, setZRange } = useCamera();

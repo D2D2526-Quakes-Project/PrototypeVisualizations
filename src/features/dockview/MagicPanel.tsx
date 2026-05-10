@@ -402,16 +402,16 @@ function PanelTypePickerMenu({
   const titleId = useId();
 
   return (
-    <div className="max-h-[70vh] overflow-y-auto p-2" aria-labelledby={titleId}>
-      <div className="grid grid-cols-1 gap-2 pr-1">
+    <div className="max-h-[70vh] overflow-y-auto" aria-labelledby={titleId}>
+      <div className="flex flex-col gap-1 pr-1">
         {groupedPanels.map((group) => (
-          <div key={group.category} className="rounded-md border border-neutral-200/80 bg-white p-1.5">
+          <div key={group.category} className="">
             {group.items.length > 1 && (
               <div className="px-1 py-0.5 text-[10px] font-semibold tracking-wide text-neutral-500 uppercase">
                 {group.category}
               </div>
             )}
-            <div className="mt-1 space-y-0.5">
+            <div className="">
               {group.items.map((panelType) => {
                 const meta = PANEL_DEFINITIONS[panelType];
                 const Icon = meta.icon;
@@ -431,33 +431,24 @@ function PanelTypePickerMenu({
                   : "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white";
 
                 const button = (
-                  <button
+                  <Button
                     key={panelType}
-                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className={`flex w-full justify-start ${isActive ? "bg-linear-90 from-amber-100 via-amber-50" : availabilityClasses}`}
                     onClick={() => {
                       if (!availability.isAvailable) return;
                       onChange(panelType);
                       onRequestClose?.();
                     }}
                     disabled={!availability.isAvailable}
-                    title={availability.isAvailable ? buttonTitle : undefined}
-                    className={`w-full rounded-md border px-2 py-1.5 text-left transition-colors ${
-                      isActive ? "border-amber-300 bg-white shadow-sm" : availabilityClasses
-                    } ${availability.isAvailable ? "opacity-100" : "pointer-events-none cursor-not-allowed"}`}>
-                    <div className="flex items-start gap-2">
-                      <Icon
-                        className={`mt-0.5 size-3.5 shrink-0 ${isActive ? "text-amber-600" : "text-neutral-500"}`}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className={`text-xs font-medium ${isActive ? "text-neutral-900" : "text-neutral-700"}`}>
-                          {panelType}
-                        </div>
-                      </div>
-                      {hasMissingOptionalEnhancements ? (
-                        <CircleDotDashed className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
-                      ) : null}
-                    </div>
-                  </button>
+                    title={availability.isAvailable ? buttonTitle : undefined}>
+                    <Icon className={isActive ? "text-amber-600" : "text-neutral-500"} />
+                    <div className={"min-w-0 flex-1 text-left"}>{panelType}</div>
+                    {hasMissingOptionalEnhancements ? (
+                      <CircleDotDashed className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                    ) : null}
+                  </Button>
                 );
 
                 if (availability.isAvailable && !availability.optionalNotice) {
@@ -583,7 +574,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
               <MoreHorizontal />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className={showPanelPicker ? "w-[min(30rem,92vw)] p-1" : "w-48 p-1"} align="end">
+          <PopoverContent className={"w-48 p-1"} align="end">
             <div className="flex flex-col gap-0.5">
               {!isTabGroup && (
                 <Button

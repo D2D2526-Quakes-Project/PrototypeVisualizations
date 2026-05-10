@@ -20,7 +20,7 @@ function isUpdater<V>(value: V | ((prev: V) => V)): value is (prev: V) => V {
   return typeof value === "function";
 }
 
-export function usePanelState<T extends Record<string, unknown>>(params: {
+export function usePanelState<T extends Record<keyof T, unknown>>(params: {
   panelId: string;
   panelType: string;
   defaultState: T;

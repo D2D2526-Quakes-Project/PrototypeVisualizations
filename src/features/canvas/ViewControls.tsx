@@ -19,17 +19,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 
-import { DEFAULT_COLOR_THEMES } from "@/state/profileState";
-import { useCamera } from "../../contexts/CameraContext";
-import { ColorPanel } from "./control-panels/ColorPanel";
-import { ExpandedScalePanel } from "./control-panels/ExpandedScalePanel";
-import { NodeDisplayPanel } from "./control-panels/NodeDisplayPanel";
-import { SliceViewPanel } from "./control-panels/SliceViewPanel";
-import { FloorsPanel, ThresholdPanel } from "./control-panels/ThresholdPanel";
-import { ViewModeSelect } from "./control-panels/ViewModeSelect";
-import { ViewsPanel } from "./control-panels/ViewsPanel";
-import { COLLAPSED_VIEW_PRESET_OPTIONS, type ViewPresetMode } from "./viewPresets";
-
 export function ViewControls({
   isExpanded,
   setIsExpanded,
@@ -39,146 +28,143 @@ export function ViewControls({
   setIsExpanded: (expanded: boolean) => void;
   docked: boolean;
 }) {
-  const { orbitControlsRef, orthographic, setOrthographic } = useCamera();
-  const autoRotate = useViewStore((s) => s.autoRotate);
-  const setAutoRotate = useViewStore((s) => s.setAutoRotate);
+  // const { orbitControlsRef, orthographic, setOrthographic } = useCamera();
+  // const autoRotate = useViewStore((s) => s.autoRotate);
+  // const setAutoRotate = useViewStore((s) => s.setAutoRotate);
 
   const { animationData } = useAnimationData();
 
-  // const [isExpanded, setIsExpanded] = useState(true);
-  // const [docked, setDocked] = useState(true);
+  // const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
+  // const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
+  // const clearSelection = useViewStore((s) => s.clearSelection);
+  // const hideNodes = useViewStore((s) => s.hideNodes);
+  // const showNodes = useViewStore((s) => s.showNodes);
+  // const showAllNodes = useViewStore((s) => s.showAllNodes);
+  // const colorTheme = useViewStore((s) => s.colorTheme);
+  // const setColorTheme = useViewStore((s) => s.setColorTheme);
 
-  const selectedNodeIds = useViewStore((s) => s.selectedNodeIds);
-  const hiddenNodeIds = useViewStore((s) => s.hiddenNodeIds);
-  const clearSelection = useViewStore((s) => s.clearSelection);
-  const hideNodes = useViewStore((s) => s.hideNodes);
-  const showNodes = useViewStore((s) => s.showNodes);
-  const showAllNodes = useViewStore((s) => s.showAllNodes);
-  const colorTheme = useViewStore((s) => s.colorTheme);
-  const setColorTheme = useViewStore((s) => s.setColorTheme);
+  // const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
+  // const buildingVerticalCenter =
+  //   (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
+  // const expandedLayoutRef = useRef<HTMLDivElement>(null);
 
-  const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
-  const buildingVerticalCenter =
-    (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
-  const expandedLayoutRef = useRef<HTMLDivElement>(null);
+  // const resetView = (viewType: ViewPresetMode) => {
+  //   if (orbitControlsRef?.current) {
+  //     const controls = orbitControlsRef.current;
+  //     const camera = controls.object;
+  //     const target = controls.target;
 
-  const resetView = (viewType: ViewPresetMode) => {
-    if (orbitControlsRef?.current) {
-      const controls = orbitControlsRef.current;
-      const camera = controls.object;
-      const target = controls.target;
+  //     if (camera && target) {
+  //       const viewPositions = {
+  //         top: [target.x, target.y, target.z + cameraDistance],
+  //         bottom: [target.x, target.y, target.z - cameraDistance],
+  //         left: [target.x - cameraDistance, target.y, target.z],
+  //         right: [target.x + cameraDistance, target.y, target.z],
+  //         front: [target.x, target.y + cameraDistance, target.z],
+  //         back: [target.x, target.y - cameraDistance, target.z],
+  //         frontRight: [target.x + cameraDistance, target.y + cameraDistance, target.z],
+  //         frontLeft: [target.x - cameraDistance, target.y + cameraDistance, target.z],
+  //         backRight: [target.x + cameraDistance, target.y - cameraDistance, target.z],
+  //         backLeft: [target.x - cameraDistance, target.y - cameraDistance, target.z],
+  //       };
 
-      if (camera && target) {
-        const viewPositions = {
-          top: [target.x, target.y, target.z + cameraDistance],
-          bottom: [target.x, target.y, target.z - cameraDistance],
-          left: [target.x - cameraDistance, target.y, target.z],
-          right: [target.x + cameraDistance, target.y, target.z],
-          front: [target.x, target.y + cameraDistance, target.z],
-          back: [target.x, target.y - cameraDistance, target.z],
-          frontRight: [target.x + cameraDistance, target.y + cameraDistance, target.z],
-          frontLeft: [target.x - cameraDistance, target.y + cameraDistance, target.z],
-          backRight: [target.x + cameraDistance, target.y - cameraDistance, target.z],
-          backLeft: [target.x - cameraDistance, target.y - cameraDistance, target.z],
-        };
+  //       const position = viewPositions[viewType];
+  //       camera.position.set(position[0], position[1], position[2]);
+  //     }
 
-        const position = viewPositions[viewType];
-        camera.position.set(position[0], position[1], position[2]);
-      }
+  //     controls.update();
+  //   }
+  // };
 
-      controls.update();
-    }
-  };
+  // const resetHomeView = () => {
+  //   if (!orbitControlsRef?.current) return;
+  //   const controls = orbitControlsRef.current;
+  //   const camera = controls.object;
+  //   controls.target.set(0, 0, buildingVerticalCenter);
+  //   camera.position.set(-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance);
+  //   controls.update();
+  // };
 
-  const resetHomeView = () => {
-    if (!orbitControlsRef?.current) return;
-    const controls = orbitControlsRef.current;
-    const camera = controls.object;
-    controls.target.set(0, 0, buildingVerticalCenter);
-    camera.position.set(-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance);
-    controls.update();
-  };
+  // const childVariants = {
+  //   initial: { opacity: 0 },
+  //   animate: { opacity: 1 },
+  // };
 
-  const childVariants = {
-    initial: { opacity: 0 },
-    animate: { opacity: 1 },
-  };
+  // const selectedIds = selectedNodeIds;
+  // const selectedCount = selectedIds.length;
+  // const hiddenCount = hiddenNodeIds.length;
+  // const hiddenNodeIdSet = useMemo(() => new Set(hiddenNodeIds), [hiddenNodeIds]);
+  // const hiddenSelectedCount = useMemo(
+  //   () => selectedIds.filter((nodeId) => hiddenNodeIdSet.has(nodeId)).length,
+  //   [hiddenNodeIdSet, selectedIds]
+  // );
+  // const visibleSelectedCount = selectedCount - hiddenSelectedCount;
+  // const showNodeVisibilityMenu = selectedCount > 0 || hiddenCount > 0;
 
-  const selectedIds = selectedNodeIds;
-  const selectedCount = selectedIds.length;
-  const hiddenCount = hiddenNodeIds.length;
-  const hiddenNodeIdSet = useMemo(() => new Set(hiddenNodeIds), [hiddenNodeIds]);
-  const hiddenSelectedCount = useMemo(
-    () => selectedIds.filter((nodeId) => hiddenNodeIdSet.has(nodeId)).length,
-    [hiddenNodeIdSet, selectedIds]
-  );
-  const visibleSelectedCount = selectedCount - hiddenSelectedCount;
-  const showNodeVisibilityMenu = selectedCount > 0 || hiddenCount > 0;
+  // useEffect(() => {
+  //   const isEditableTarget = (target: EventTarget | null): boolean => {
+  //     if (!(target instanceof HTMLElement)) return false;
+  //     const tagName = target.tagName;
+  //     return (
+  //       target.isContentEditable ||
+  //       tagName === "INPUT" ||
+  //       tagName === "TEXTAREA" ||
+  //       tagName === "SELECT" ||
+  //       target.getAttribute("role") === "textbox"
+  //     );
+  //   };
 
-  useEffect(() => {
-    const isEditableTarget = (target: EventTarget | null): boolean => {
-      if (!(target instanceof HTMLElement)) return false;
-      const tagName = target.tagName;
-      return (
-        target.isContentEditable ||
-        tagName === "INPUT" ||
-        tagName === "TEXTAREA" ||
-        tagName === "SELECT" ||
-        target.getAttribute("role") === "textbox"
-      );
-    };
+  //   const onKeyDown = (e: KeyboardEvent) => {
+  //     if (isEditableTarget(e.target)) return;
+  //     if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (isEditableTarget(e.target)) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+  //     const key = e.key.toLowerCase();
+  //     if (key === "m") {
+  //       e.preventDefault();
+  //       setIsExpanded(!isExpanded);
+  //       return;
+  //     }
+  //     if (key === "o") {
+  //       e.preventDefault();
+  //       setOrthographic(!orthographic);
+  //       return;
+  //     }
+  //     if (key === "h" && visibleSelectedCount > 0) {
+  //       e.preventDefault();
+  //       hideNodes(selectedIds);
+  //       return;
+  //     }
+  //     if (key === "u" && hiddenCount > 0) {
+  //       e.preventDefault();
+  //       showAllNodes();
+  //       return;
+  //     }
+  //     if (key === "x" && selectedCount > 0) {
+  //       e.preventDefault();
+  //       clearSelection();
+  //     }
+  //   };
 
-      const key = e.key.toLowerCase();
-      if (key === "m") {
-        e.preventDefault();
-        setIsExpanded(!isExpanded);
-        return;
-      }
-      if (key === "o") {
-        e.preventDefault();
-        setOrthographic(!orthographic);
-        return;
-      }
-      if (key === "h" && visibleSelectedCount > 0) {
-        e.preventDefault();
-        hideNodes(selectedIds);
-        return;
-      }
-      if (key === "u" && hiddenCount > 0) {
-        e.preventDefault();
-        showAllNodes();
-        return;
-      }
-      if (key === "x" && selectedCount > 0) {
-        e.preventDefault();
-        clearSelection();
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [
-    clearSelection,
-    hiddenCount,
-    hideNodes,
-    isExpanded,
-    selectedCount,
-    selectedIds,
-    setIsExpanded,
-    showAllNodes,
-    visibleSelectedCount,
-    setOrthographic,
-    orthographic,
-  ]);
+  //   window.addEventListener("keydown", onKeyDown);
+  //   return () => window.removeEventListener("keydown", onKeyDown);
+  // }, [
+  //   clearSelection,
+  //   hiddenCount,
+  //   hideNodes,
+  //   isExpanded,
+  //   selectedCount,
+  //   selectedIds,
+  //   setIsExpanded,
+  //   showAllNodes,
+  //   visibleSelectedCount,
+  //   setOrthographic,
+  //   orthographic,
+  // ]);
 
   return (
     <div className={`pointer-events-none z-60 w-fit ${docked ? "h-full" : "absolute top-2 right-2 bottom-2"}`}>
       <div className="flex h-full max-h-full min-h-0 items-start gap-2">
-        {!isExpanded && (
+        {/* {!isExpanded && (
           <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>
             <motion.div
               key="collapsed"
@@ -470,7 +456,7 @@ export function ViewControls({
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
+        </AnimatePresence> */}
       </div>
     </div>
   );

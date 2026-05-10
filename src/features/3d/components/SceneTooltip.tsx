@@ -47,20 +47,19 @@ export function SceneTooltip({ children }: { children: React.ReactNode }) {
 
   // const position = hoveredNodeScreenPos ?? hoveredCrossSection?.screenPos ?? null;
 
-  // return (
-  //   <div className="relative h-full w-full">
-  //     {children}
-  //     {isOpen && position && (
-  //       <div
-  //         className="bg-popover text-popover-foreground pointer-events-none absolute z-50 rounded-md border px-3 py-1.5 text-xs shadow-md"
-  //         style={{
-  //           left: position.x + 16,
-  //           top: position.y + 16,
-  //         }}>
-  //         {content}
-  //       </div>
-  //     )}
-  //   </div>
-  // );
-  return null;
+  return (
+    <div className="relative h-full w-full">
+      {children}
+      {/* {isOpen && position && (
+        <div
+          className="bg-popover text-popover-foreground pointer-events-none absolute z-50 rounded-md border px-3 py-1.5 text-xs shadow-md"
+          style={{
+            left: position.x + 16,
+            top: position.y + 16,
+          }}>
+          {content}
+        </div>
+      )} */}
+    </div>
+  );
 }

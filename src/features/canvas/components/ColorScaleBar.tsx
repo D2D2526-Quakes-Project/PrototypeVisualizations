@@ -8,6 +8,7 @@ import {
 } from "@/features/metrics/metrics";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { formatNumber } from "@/lib/utils";
+import { useState } from "react";
 
 interface ColorScaleBarProps {
   noLabel?: boolean;
@@ -139,7 +140,7 @@ export function ColorScaleBar({ noLabel, insideLabel }: ColorScaleBarProps) {
   return (
     <ColorScaleBarPopover>
       <div
-        className="relative min-h-3 w-full flex-1 rounded-sm pt-1.5"
+        className="border-border relative min-h-5 w-full flex-1 rounded-md border pt-1.5"
         style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}>
         {insideLabel && (
           <div className="flex items-start gap-1 overflow-hidden">
@@ -244,12 +245,14 @@ function ColorScaleBarPopover({ children }: { children: React.ReactNode }) {
   const activePalette = getMetricColorScale(currentMetric, metricPaletteOverrides);
   const metricConfig = METRIC_CONFIGS[currentMetric];
 
+  const [open, setOpen] = useState(false);
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="w-full rounded border border-transparent text-left transition-colors hover:border-neutral-200"
+          className={`w-full rounded-md border text-left ${open ? "border-ring ring-ring/50 ring-3" : "hover:border-input border-transparent"}`}
           title={`Choose ${metricConfig.label.toLowerCase()} palette`}>
           {children}
         </button>

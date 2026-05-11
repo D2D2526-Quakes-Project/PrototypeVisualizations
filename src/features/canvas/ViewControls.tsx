@@ -232,18 +232,18 @@ export function ViewControls({
               animate="animate"
               exit="exit"
               transition={{ duration: 0.15, delayChildren: stagger(0.05) }}
-              className={`border-sidebar-border pointer-events-auto flex max-h-full min-h-0 min-w-40 flex-col gap-2 overflow-hidden pt-2 pl-2 ${
+              className={`border-sidebar-border pointer-events-auto flex max-h-full min-h-0 min-w-40 flex-col gap-2 pt-2 ${
                 docked
                   ? "bg-sidebar h-full origin-top-right border-l"
                   : "bg-sidebar/90 origin-top-right rounded-md border shadow-lg backdrop-blur-sm"
               }`}>
-              <div className="flex items-center justify-between pr-2">
+              <div className="flex items-center justify-between px-2">
                 <div className="font-semibold">View Settings</div>
                 <Button variant="ghost" onClick={() => setIsExpanded(false)} title="Collapse" size="icon-sm">
                   <ChevronRightIcon />
                 </Button>
               </div>
-              <div className="flex min-h-0 flex-col gap-1 overflow-x-hidden overflow-y-auto pr-2 pb-2 *:shrink-0">
+              <div className="flex min-h-0 flex-col gap-1 overflow-x-hidden overflow-y-auto px-2 pb-2 *:shrink-0">
                 <motion.div className="" variants={childVariants}>
                   <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
                 </motion.div>

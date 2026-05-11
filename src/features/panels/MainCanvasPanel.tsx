@@ -2,7 +2,7 @@ import { CanvasWithControls } from "@/features/canvas/CanvasWithControls";
 import { BuildingScene } from "@/features/3d/BuildingScene";
 import type { IDockviewPanelProps } from "dockview";
 import { CameraProvider } from "../3d/contexts/CanvasContext";
-import { SceneTooltip } from "../3d/components/SceneTooltip";
+import { SceneTooltip } from "../3d/SceneTooltip";
 import { OrientationCube } from "../canvas/components/OrientationCube";
 import { CameraManager } from "../canvas/CameraManager";
 import { BoxSelectionOverlay } from "../canvas/components/BoxSelectionOverlay";

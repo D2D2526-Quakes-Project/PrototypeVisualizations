@@ -1,4 +1,4 @@
-import { usePanelState } from "@/features/3d/hooks/usePanelState";
+import { usePanelState } from "@/features/dockview/usePanelState";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import type { IDockviewPanelProps } from "dockview";
 import type { EChartsOption } from "echarts";

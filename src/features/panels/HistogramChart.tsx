@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/3d/contexts/visualization";
-import { usePanelState } from "@/features/3d/hooks/usePanelState";
+import { usePanelState } from "@/features/dockview/usePanelState";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { isHingeMetric, METRIC_CONFIGS, type Metric } from "@/lib/metrics";
 import type { EChartsOption } from "echarts";

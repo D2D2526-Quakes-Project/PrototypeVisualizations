@@ -3,7 +3,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/3d/contexts/visualization";
-import { usePanelState } from "@/features/3d/hooks/usePanelState";
+import { usePanelState } from "@/features/dockview/usePanelState";
 import { formatStoryLabel } from "@/lib/utils";
 import { formatValue, getMetricConfig, isHingeMetric, type Metric } from "@/lib/metrics";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";

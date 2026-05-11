@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { usePanelState, type UsePanelStateReturn } from "../hooks/usePanelState";
+import { usePanelState, type UsePanelStateReturn } from "../../dockview/usePanelState";
 import type { ViewPresetMode } from "@/features/canvas/viewPresets";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";

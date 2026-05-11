@@ -33,7 +33,7 @@
  */
 
 import { usePlayback } from "@/features/playback/usePlayback";
-import { usePanelState } from "@/features/3d/hooks/usePanelState";
+import { usePanelState } from "@/features/dockview/usePanelState";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";

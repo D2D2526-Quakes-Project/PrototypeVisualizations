@@ -1,6 +1,6 @@
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useThresholds } from "@/features/3d/contexts/visualization";
-import { usePanelState } from "@/features/3d/hooks/usePanelState";
+import { usePanelState } from "@/features/dockview/usePanelState";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { formatFixed3 } from "@/lib/utils";
 import { formatNumber } from "@/lib/utils";

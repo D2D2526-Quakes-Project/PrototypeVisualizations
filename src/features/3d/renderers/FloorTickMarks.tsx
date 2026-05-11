@@ -3,7 +3,8 @@ import { UNIT_SCALE } from "@/lib/utils";
 import { useFrame, useThree } from "@react-three/fiber";
 import React, { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useFloorVisibility } from "../contexts/visualization";
+import { useFloorVisibility } from "../contexts/useFloorVisibility";
+import { useGlobalStore } from "@/state";
 
 const TICK_LENGTH = 4;
 const TICK_THICKNESS = 0.4;
@@ -14,7 +15,7 @@ export function FloorTickMarks() {
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const { visibleFloors } = useFloorVisibility();
-  const tickMarksColor = useViewStore((s) => s.colorTheme.tickMarks);
+  const tickMarksColor = useGlobalStore((s) => s.colorTheme.tickMarks);
 
   const { offset, xPositions, yPositions, zPositions } = useMemo(() => {
     const metadata = animationData.metadata;
@@ -36,7 +37,7 @@ export function FloorTickMarks() {
     }
 
     for (const [key, value] of Object.entries(storyElevations)) {
-      if (visibleFloors.has(key)) zPosSet.add(value * UNIT_SCALE);
+      if (visibleFloors.includes(key)) zPosSet.add(value * UNIT_SCALE);
     }
 
     const offset: [number, number] = [

@@ -104,19 +104,19 @@ function DockviewContainer() {
   );
 
   const createDefaultLayout = useCallback((api: DockviewApi) => {
-    // const mainCanvas = api.addPanel<MagicPanelParams>({
-    //   id: "main-canvas",
-    //   component: "magicPanel",
-    //   tabComponent: "magicPanelTab",
-    //   params: { panelType: "Main Canvas" },
-    //   initialHeight: 760,
-    // });
+    const mainCanvas = api.addPanel<MagicPanelParams>({
+      id: "main-canvas",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      params: { panelType: "Main Canvas" },
+      initialHeight: 760,
+    });
 
     api.addPanel<MagicPanelParams>({
       id: "timeline",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
-      // position: { referencePanel: mainCanvas, direction: "below" },
+      position: { referencePanel: mainCanvas, direction: "below" },
       params: { panelType: "Timeline" },
       initialHeight: 200,
     });

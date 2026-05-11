@@ -1,4 +1,4 @@
-import { ShortcutsBar } from "@/features/3d/components/ShortcutsBar";
+import { ShortcutsBar } from "@/components/ShortcutsBar";
 
 interface SelectionShortcutsProps {
   showPlayback: boolean;

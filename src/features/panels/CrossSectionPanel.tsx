@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CrossSectionVisualization } from "../../cross-section-panel/CrossSectionVisualization";
 import { MiniTimeSeries } from "./MiniTimeSeries";
 import { IsometricBuilding } from "@/components/IsometricBoundingBox";
-import { HingeLocalizedSummary } from "@/features/3d/components/HingeLocalizedSummary";
+import { HingeLocalizedSummary } from "@/components/HingeLocalizedSummary";
 
 interface CrossSectionParams {
   crossSectionType: "X" | "Y";

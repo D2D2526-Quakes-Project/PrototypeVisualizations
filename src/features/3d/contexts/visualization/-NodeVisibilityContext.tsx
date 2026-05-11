@@ -152,39 +152,39 @@ import * as THREE from "three";
 //   };
 // }
 
-export function performBoxSelection(
-  camera: THREE.Camera,
-  meshRef: RefObject<THREE.InstancedMesh | null>,
-  box: BoxSelection,
-  visibleNodes: number[]
-): number[] {
-  const minX = Math.min(box.start.x, box.end.x);
-  const maxX = Math.max(box.start.x, box.end.x);
-  const minY = Math.min(box.start.y, box.end.y);
-  const maxY = Math.max(box.start.y, box.end.y);
+// export function performBoxSelection(
+//   camera: THREE.Camera,
+//   meshRef: RefObject<THREE.InstancedMesh | null>,
+//   box: BoxSelection,
+//   visibleNodes: number[]
+// ): number[] {
+//   const minX = Math.min(box.start.x, box.end.x);
+//   const maxX = Math.max(box.start.x, box.end.x);
+//   const minY = Math.min(box.start.y, box.end.y);
+//   const maxY = Math.max(box.start.y, box.end.y);
 
-  const selectedNodes: number[] = [];
-  const mesh = meshRef.current;
-  if (!mesh) return selectedNodes;
+//   const selectedNodes: number[] = [];
+//   const mesh = meshRef.current;
+//   if (!mesh) return selectedNodes;
 
-  for (let i = 0; i < visibleNodes.length; i++) {
-    const nodeId = visibleNodes[i];
-    if (nodeId === undefined) continue;
+//   for (let i = 0; i < visibleNodes.length; i++) {
+//     const nodeId = visibleNodes[i];
+//     if (nodeId === undefined) continue;
 
-    const matrix = new THREE.Matrix4();
-    mesh.getMatrixAt(i, matrix);
+//     const matrix = new THREE.Matrix4();
+//     mesh.getMatrixAt(i, matrix);
 
-    const worldPos = new THREE.Vector3().setFromMatrixPosition(matrix);
-    worldPos.applyMatrix4(mesh.matrixWorld);
-    worldPos.project(camera);
+//     const worldPos = new THREE.Vector3().setFromMatrixPosition(matrix);
+//     worldPos.applyMatrix4(mesh.matrixWorld);
+//     worldPos.project(camera);
 
-    const screenX = (worldPos.x + 1) / 2;
-    const screenY = 1 - (worldPos.y + 1) / 2;
+//     const screenX = (worldPos.x + 1) / 2;
+//     const screenY = 1 - (worldPos.y + 1) / 2;
 
-    if (screenX >= minX && screenX <= maxX && screenY >= minY && screenY <= maxY) {
-      selectedNodes.push(nodeId);
-    }
-  }
+//     if (screenX >= minX && screenX <= maxX && screenY >= minY && screenY <= maxY) {
+//       selectedNodes.push(nodeId);
+//     }
+//   }
 
-  return selectedNodes;
-}
+//   return selectedNodes;
+// }

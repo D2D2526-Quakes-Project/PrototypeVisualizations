@@ -6,7 +6,7 @@ import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import Delaunay from "delaunator";
 import { useMemo } from "react";
 import * as THREE from "three";
-import { useCrossSectionSelection } from "../../contexts/visualization/CrossSectionSelectionContext";
+import { useCrossSectionSelection } from "../contexts/visualization/-CrossSectionSelectionContext";
 import { usePlayback } from "@/features/playback/usePlayback";
 
 interface FloorSlabsRendererProps {

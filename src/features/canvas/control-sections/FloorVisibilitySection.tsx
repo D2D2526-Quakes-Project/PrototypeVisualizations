@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useFloorVisibility } from "@/features/3d/contexts/visualization/FloorVisibilityContext";
+import { useFloorVisibility } from "@/features/3d/contexts/useFloorVisibility";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { slidingWindow3 } from "@/lib/utils";
 import { AlertTriangleIcon, LayersIcon } from "lucide-react";

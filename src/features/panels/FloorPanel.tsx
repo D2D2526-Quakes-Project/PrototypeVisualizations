@@ -10,7 +10,7 @@ import { getMetricKeyColor } from "@/lib/metrics";
 import { ChartNoAxesCombinedIcon, XIcon } from "lucide-react";
 import { stringToNumber } from "@/lib/utils";
 import { IsometricBuilding } from "@/components/IsometricBoundingBox";
-import { HingeLocalizedSummary } from "@/features/3d/components/HingeLocalizedSummary";
+import { HingeLocalizedSummary } from "@/components/HingeLocalizedSummary";
 import type { ShearRow } from "@/lib/types";
 
 // Generate a unique vibrant color based on node ID

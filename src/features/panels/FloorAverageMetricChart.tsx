@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/3d/contexts/visualization";
-import { usePanelState } from "@/features/3d/hooks/usePanelState";
+import { usePanelState } from "@/features/dockview/usePanelState";
 import { formatValue, getMetricConfig, getMetricKeyColor, type Metric } from "@/lib/metrics";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { formatStoryLabel } from "@/lib/utils";

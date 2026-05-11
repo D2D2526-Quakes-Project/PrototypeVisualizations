@@ -13,7 +13,7 @@
  *   />
  */
 
-import type { ViewMode } from "@/features/3d/contexts/visualization/ViewModeContext";
+import type { ViewMode } from "@/features/3d/contexts/visualization/-ViewModeContext";
 import {
   ArrowDownUp,
   ArrowLeftRight,

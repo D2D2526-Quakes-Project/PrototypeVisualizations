@@ -1,13 +1,13 @@
 import { useRef } from "react";
 
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, SwatchBookIcon } from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useLiveStore } from "@/state";
+import { useGlobalStore, useLiveStore } from "@/state";
 import { useCanvasState } from "../3d/contexts/CanvasContext";
 import { QuickControls } from "./components/QuickControls";
 import { MetricSelectSection } from "./control-sections/MetricSelectSection";
@@ -17,6 +17,7 @@ import { ViewToggleSection } from "./control-sections/ViewToggleSection";
 import { SlicesSection } from "./control-sections/SlicesSection";
 import { ScaleSection } from "./control-sections/ScaleSection";
 import { NodeDisplaySection } from "./control-sections/NodeDisplaySection";
+import { DEFAULT_COLOR_THEMES } from "@/state/globalState";
 
 const childVariants = {
   initial: { opacity: 0 },
@@ -44,8 +45,8 @@ export function ViewControls({
   // const hideNodes = useViewStore((s) => s.hideNodes);
   // const showNodes = useViewStore((s) => s.showNodes);
   // const showAllNodes = useViewStore((s) => s.showAllNodes);
-  // const colorTheme = useViewStore((s) => s.colorTheme);
-  // const setColorTheme = useViewStore((s) => s.setColorTheme);
+  const colorTheme = useGlobalStore((s) => s.colorTheme);
+  const setColorTheme = useGlobalStore((s) => s.setColorTheme);
 
   // const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
   // const buildingVerticalCenter =
@@ -309,18 +310,19 @@ export function ViewControls({
                 <motion.div className="" variants={childVariants}>
                   <NodeDisplaySection />
                 </motion.div>
-                {/* <motion.div className="mt-2 border-t border-neutral-200 px-0 pt-2" variants={childVariants}>
+                <motion.div className="mt-2 border-t border-neutral-200 px-0 pt-2" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
-                    <span className="text-xs font-medium text-neutral-700">Background</span>
+                    <SwatchBookIcon size={12} className="text-neutral-400" />
+                    <span className="text-xs font-medium text-neutral-700">Theme</span>
                   </div>
                   <div className="flex gap-1 px-1">
                     {DEFAULT_COLOR_THEMES.map((preset) => (
                       <button
                         key={preset.label}
                         onClick={() => setColorTheme(preset)}
-                        className={`h-6 w-6 rounded border-2 transition-all ${
+                        className={`h-6 w-full rounded border-2 transition-all ${
                           colorTheme.background === preset.background
-                            ? "scale-110 border-blue-500"
+                            ? "scale-110 border-black"
                             : "border-neutral-300 hover:border-neutral-400"
                         }`}
                         style={{ backgroundColor: preset.background }}
@@ -328,7 +330,7 @@ export function ViewControls({
                       />
                     ))}
                   </div>
-                </motion.div> */}
+                </motion.div>
                 {/* <motion.div className="" variants={childVariants}>
                   <FloorsPanel />
                 </motion.div> */}

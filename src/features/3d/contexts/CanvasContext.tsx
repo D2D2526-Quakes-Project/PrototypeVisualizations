@@ -14,11 +14,11 @@ export interface CanvasPanelState {
   cameraTarget: [number, number, number];
   cameraZoom: number | undefined;
   expansionEnabled: boolean;
-  displacementEnabled: boolean;
   xExpansion: number;
   yExpansion: number;
   zExpansion: number;
-  xzDisplacementScale: number;
+  displacementEnabled: boolean;
+  xyDisplacementScale: number;
   zDisplacementScale: number;
   sliceEnabled: boolean;
   sliceXRange: [number, number];
@@ -32,11 +32,11 @@ const DEFAULT_CANVAS_PANEL_STATE: CanvasPanelState = {
   cameraTarget: [0, 0, 0],
   cameraZoom: 50,
   expansionEnabled: false,
-  displacementEnabled: false,
   xExpansion: 0,
   yExpansion: 0,
   zExpansion: 1,
-  xzDisplacementScale: 1,
+  displacementEnabled: false,
+  xyDisplacementScale: 1,
   zDisplacementScale: 1,
   sliceEnabled: false,
   sliceXRange: [-100, 100],
@@ -58,10 +58,10 @@ export interface CameraContextType extends UsePanelStateReturn<CanvasPanelState>
 
 const CameraContext = createContext<CameraContextType | undefined>(undefined);
 
-export function useCamera() {
+export function useCanvasState() {
   const context = useContext(CameraContext);
   if (!context) {
-    throw new Error("useCamera must be within CanvasProvider");
+    throw new Error("useCanvasState must be within CanvasProvider");
   }
   return context;
 }
@@ -94,7 +94,7 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
 
   const resetDisplacementScale = useCallback(() => {
     panelState.setDisplacementEnabled(DEFAULT_CANVAS_PANEL_STATE.displacementEnabled);
-    panelState.setXzDisplacementScale(DEFAULT_CANVAS_PANEL_STATE.xzDisplacementScale);
+    panelState.setXyDisplacementScale(DEFAULT_CANVAS_PANEL_STATE.xyDisplacementScale);
     panelState.setZDisplacementScale(DEFAULT_CANVAS_PANEL_STATE.zDisplacementScale);
   }, [panelState]);
 

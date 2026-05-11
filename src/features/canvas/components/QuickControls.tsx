@@ -2,7 +2,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { BoxSelect, ScanEye, Home, RotateCw, ChevronLeftIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { COLLAPSED_VIEW_PRESET_OPTIONS } from "../viewPresets";
-import { useCamera } from "@/features/3d/contexts/CanvasContext";
+import { useCanvasState } from "@/features/3d/contexts/CanvasContext";
 import { useLiveStore } from "@/state";
 
 export function QuickControls({
@@ -12,7 +12,7 @@ export function QuickControls({
   isExpanded: boolean;
   setIsExpanded: (expanded: boolean) => void;
 }) {
-  const { resetView, resetHomeView, orthographic, setOrthographic } = useCamera();
+  const { resetView, resetHomeView, orthographic, setOrthographic } = useCanvasState();
   const autoRotate = useLiveStore((s) => s.autoRotate);
   const setAutoRotate = useLiveStore((s) => s.setAutoRotate);
 

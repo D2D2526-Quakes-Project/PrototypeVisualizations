@@ -4,7 +4,7 @@ import { SquareSplitHorizontalIcon } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useCamera } from "@/features/3d/contexts/CanvasContext";
+import { useCanvasState } from "@/features/3d/contexts/CanvasContext";
 
 export function SlicesSection() {
   const {
@@ -16,7 +16,7 @@ export function SlicesSection() {
     setSliceXRange,
     setSliceYRange,
     setSliceZRange,
-  } = useCamera();
+  } = useCanvasState();
   const { animationData } = useAnimationData();
 
   const maxBounds = animationData.precomputed.boundingBox.max;
@@ -24,7 +24,7 @@ export function SlicesSection() {
 
   return (
     <>
-      <Label className="mb-1 flex items-center gap-1">
+      <Label className="flex items-center gap-1">
         <SquareSplitHorizontalIcon size={12} className="text-neutral-500" />
         <span className="flex-1 text-xs font-medium text-neutral-700">Slice View</span>
         <Switch size="sm" checked={sliceEnabled} onCheckedChange={setSliceEnabled} />

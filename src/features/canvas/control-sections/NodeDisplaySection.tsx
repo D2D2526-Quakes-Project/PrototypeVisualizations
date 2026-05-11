@@ -1,194 +1,194 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useColor } from "@/features/3d/contexts/visualization";
-import { isHingeMetric } from "@/lib/metrics";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { useProfileStore } from "@/state";
 
 import {
   BlendIcon,
   ChevronsLeftRightEllipsisIcon,
-  Circle,
-  Layers,
-  MoveHorizontal,
+  CircleIcon,
+  LayersIcon,
+  MoveHorizontalIcon,
   Sliders,
   SquaresIntersectIcon,
   WorkflowIcon,
+  type LucideIcon,
 } from "lucide-react";
-import { useMemo } from "react";
+export function NodeDisplaySection() {
+  const { isCurrentMetricHinge } = useMetrics();
 
-export function NodeDisplayPanel() {
-  const { currentMetric } = useColor();
-  const renderHingeNodes = useMemo(() => isHingeMetric(currentMetric), [currentMetric]);
-
-  const nodeScale = useViewStore((s) => s.nodeScale);
-  const nodeOpacity = useViewStore((s) => s.nodeOpacity);
-  const floorOpacity = useViewStore((s) => s.floorOpacity);
-  const belowThresholdNodeScale = useViewStore((s) => s.belowThresholdNodeScale);
-  const connectionLineWidth = useViewStore((s) => s.connectionLineWidth);
-  const connectionLineOpacity = useViewStore((s) => s.connectionLineOpacity);
-  const hingeNodeScale = useViewStore((s) => s.hingeNodeScale);
-  const belowThresholdHingeScale = useViewStore((s) => s.belowThresholdHingeScale);
-  const visualInterpolationEnabled = useViewStore((s) => s.visualInterpolationEnabled);
-  const setHingeNodeScale = useViewStore((s) => s.setHingeNodeScale);
-  const setBelowThresholdHingeScale = useViewStore((s) => s.setBelowThresholdHingeScale);
-  const setVisualInterpolationEnabled = useViewStore((s) => s.setVisualInterpolationEnabled);
-  const setNodeScale = useViewStore((s) => s.setNodeScale);
-  const setNodeOpacity = useViewStore((s) => s.setNodeOpacity);
-  const setBelowThresholdNodeScale = useViewStore((s) => s.setBelowThresholdNodeScale);
-  const setFloorOpacity = useViewStore((s) => s.setFloorOpacity);
-  const setConnectionLineWidth = useViewStore((s) => s.setConnectionLineWidth);
-  const setConnectionLineOpacity = useViewStore((s) => s.setConnectionLineOpacity);
+  const nodeScale = useProfileStore((s) => s.nodeScale);
+  const nodeOpacity = useProfileStore((s) => s.nodeOpacity);
+  const floorOpacity = useProfileStore((s) => s.floorOpacity);
+  const belowThresholdNodeScale = useProfileStore((s) => s.belowThresholdNodeScale);
+  const connectionLineWidth = useProfileStore((s) => s.connectionLineWidth);
+  const connectionLineOpacity = useProfileStore((s) => s.connectionLineOpacity);
+  const hingeNodeScale = useProfileStore((s) => s.hingeNodeScale);
+  const belowThresholdHingeScale = useProfileStore((s) => s.belowThresholdHingeScale);
+  const visualInterpolationEnabled = useProfileStore((s) => s.visualInterpolationEnabled);
+  const setHingeNodeScale = useProfileStore((s) => s.setHingeNodeScale);
+  const setBelowThresholdHingeScale = useProfileStore((s) => s.setBelowThresholdHingeScale);
+  const setVisualInterpolationEnabled = useProfileStore((s) => s.setVisualInterpolationEnabled);
+  const setNodeScale = useProfileStore((s) => s.setNodeScale);
+  const setNodeOpacity = useProfileStore((s) => s.setNodeOpacity);
+  const setBelowThresholdNodeScale = useProfileStore((s) => s.setBelowThresholdNodeScale);
+  const setFloorOpacity = useProfileStore((s) => s.setFloorOpacity);
+  const setConnectionLineWidth = useProfileStore((s) => s.setConnectionLineWidth);
+  const setConnectionLineOpacity = useProfileStore((s) => s.setConnectionLineOpacity);
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1">
+    <>
+      <div className="mb-1 flex items-center gap-1">
         <Sliders size={12} className="text-neutral-500" />
         <span className="text-xs font-medium text-neutral-700">Node Display</span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Circle size={12} className="shrink-0 text-neutral-400" />
-        <span className="w-16 shrink-0 text-[10px] text-neutral-500">Scale</span>
-        <Slider
-          value={[nodeScale]}
-          onValueChange={(val) => setNodeScale(val[0])}
+      <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-1">
+        <AdjustmentSlider
+          label="Scale"
+          value={nodeScale}
+          onChange={setNodeScale}
           min={0.1}
           max={3}
           step={0.1}
-          className="flex-1"
+          suffix="x"
+          Icon={CircleIcon}
         />
-        <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{nodeScale.toFixed(1)}x</span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <BlendIcon size={12} className="shrink-0 text-neutral-400" />
-        <span className="w-16 shrink-0 text-[10px] text-neutral-500">Opacity</span>
-        <Slider
-          value={[nodeOpacity]}
-          onValueChange={(val) => setNodeOpacity(val[0])}
+        <AdjustmentSlider
+          label="Opacity"
+          value={nodeOpacity}
+          onChange={setNodeOpacity}
           min={0}
           max={1}
           step={0.05}
-          className="flex-1"
+          suffix="%"
+          Icon={BlendIcon}
         />
-        <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{(nodeOpacity * 100).toFixed(0)}%</span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Layers size={12} className="shrink-0 text-neutral-400" />
-        <span className="w-16 shrink-0 text-[10px] text-neutral-500">Floor</span>
-        <Slider
-          value={[floorOpacity]}
-          onValueChange={(val) => setFloorOpacity(val[0])}
+        <AdjustmentSlider
+          label="Floor"
+          value={floorOpacity}
+          onChange={setFloorOpacity}
           min={0}
           max={1}
           step={0.05}
-          className="flex-1"
+          suffix="%"
+          Icon={LayersIcon}
         />
-        <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">
-          {(floorOpacity * 100).toFixed(0)}%
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <MoveHorizontal size={12} className="shrink-0 text-neutral-400" />
-        <span className="w-16 shrink-0 text-[10px] text-neutral-500">Conn Width</span>
-        <Slider
-          value={[connectionLineWidth]}
-          onValueChange={(val) => setConnectionLineWidth(val[0])}
+        <AdjustmentSlider
+          label="Conn Width"
+          value={connectionLineWidth}
+          onChange={setConnectionLineWidth}
           min={1}
           max={10}
           step={0.5}
-          className="flex-1"
+          suffix="px"
+          Icon={MoveHorizontalIcon}
         />
-        <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{connectionLineWidth.toFixed(1)}</span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <ChevronsLeftRightEllipsisIcon size={12} className="shrink-0 text-neutral-400" />
-        <span className="w-16 shrink-0 text-[10px] text-neutral-500">Conn Opacity</span>
-        <Slider
-          value={[connectionLineOpacity]}
-          onValueChange={(val) => setConnectionLineOpacity(val[0])}
+        <AdjustmentSlider
+          label="Conn Opacity"
+          value={connectionLineOpacity}
+          onChange={setConnectionLineOpacity}
           min={0}
           max={1}
           step={0.05}
-          className="flex-1"
+          suffix="%"
+          Icon={ChevronsLeftRightEllipsisIcon}
         />
-        <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">
-          {(connectionLineOpacity * 100).toFixed(0)}%
-        </span>
-      </div>
 
-      {renderHingeNodes && (
-        <div className="flex items-center gap-2">
-          <WorkflowIcon size={12} className="shrink-0 text-neutral-400" />
-          <span className="w-16 shrink-0 text-[10px] text-neutral-500">Hinge Scale</span>
-          <Slider
-            value={[hingeNodeScale]}
-            onValueChange={(val) => setHingeNodeScale(val[0])}
+        {isCurrentMetricHinge && (
+          <AdjustmentSlider
+            label="Hinge Scale"
+            value={hingeNodeScale}
+            onChange={setHingeNodeScale}
             min={0}
             max={3}
             step={0.05}
-            className="flex-1"
+            suffix="x"
+            Icon={WorkflowIcon}
           />
-          <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">{hingeNodeScale.toFixed(1)}x</span>
-        </div>
-      )}
+        )}
 
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <SquaresIntersectIcon size={12} className="shrink-0 text-neutral-400" />
-          <div className="min-w-0">
-            <Label htmlFor="visual-interpolation" className="text-[10px] font-medium text-neutral-700">
-              Visual Fill
-            </Label>
+        <Label className="col-span-4 grid grid-cols-subgrid items-center gap-2 font-normal">
+          <SquaresIntersectIcon size={12} className="text-neutral-400" />
+          <span className="text-xs text-neutral-500">Visual Fill</span>
+          <div className="border-border flex min-w-32 items-center border-x px-2">
+            <Checkbox
+              checked={visualInterpolationEnabled}
+              onCheckedChange={(checked) => setVisualInterpolationEnabled(checked === true)}
+            />
           </div>
+        </Label>
+
+        <div className="col-span-4">
+          <span className="text-xs font-medium text-neutral-700">Below Threshold</span>
         </div>
-        <Checkbox
-          id="visual-interpolation"
-          checked={visualInterpolationEnabled}
-          onCheckedChange={(checked) => setVisualInterpolationEnabled(checked === true)}
-        />
-      </div>
 
-      <div className="border-neutral-200">
-        <span className="text-[10px] font-medium text-neutral-600">Below Threshold</span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Circle size={12} className="shrink-0 text-neutral-400" />
-        <span className="w-16 shrink-0 text-[10px] text-neutral-500">Node Scale</span>
-        <Slider
-          value={[belowThresholdNodeScale]}
-          onValueChange={(val) => setBelowThresholdNodeScale(val[0])}
+        <AdjustmentSlider
+          label="Node Scale"
+          value={belowThresholdNodeScale}
+          onChange={setBelowThresholdNodeScale}
           min={0}
           max={1}
           step={0.05}
-          className="flex-1"
+          suffix="x"
+          Icon={CircleIcon}
         />
-        <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">
-          {belowThresholdNodeScale.toFixed(1)}x
-        </span>
-      </div>
 
-      {renderHingeNodes && (
-        <div className="flex items-center gap-2">
-          <WorkflowIcon size={12} className="shrink-0 text-neutral-400" />
-          <span className="w-16 shrink-0 text-[10px] text-neutral-500">Hinge Scale</span>
-          <Slider
-            value={[belowThresholdHingeScale]}
-            onValueChange={(val) => setBelowThresholdHingeScale(val[0])}
+        {isCurrentMetricHinge && (
+          <AdjustmentSlider
+            label="Hinge Scale"
+            value={belowThresholdHingeScale}
+            onChange={setBelowThresholdHingeScale}
             min={0}
             max={1}
             step={0.05}
-            className="flex-1"
+            suffix="x"
+            Icon={WorkflowIcon}
           />
-          <span className="w-10 shrink-0 text-right text-[10px] text-neutral-500">
-            {belowThresholdHingeScale.toFixed(1)}x
-          </span>
-        </div>
-      )}
+        )}
+      </div>
+    </>
+  );
+}
+
+function AdjustmentSlider({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  suffix,
+  Icon,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min: number;
+  max: number;
+  step: number;
+  suffix: string;
+  Icon: LucideIcon;
+}) {
+  return (
+    <div className="col-span-4 grid grid-cols-subgrid items-center gap-2">
+      <Icon size={12} className="text-neutral-400" />
+      <span className="text-xs text-neutral-500">{label}</span>
+      <div className="border-border flex min-w-32 items-center border-x px-2 py-1">
+        <Slider
+          value={[value]}
+          onValueChange={(val) => onChange(val[0])}
+          min={min}
+          max={max}
+          step={step}
+          className="flex-1"
+        />
+      </div>
+      <span className="min-w-10 text-right text-xs text-neutral-500">
+        {suffix == "%" ? (value * 100).toFixed(0) : value.toFixed(1)}
+        {suffix}
+      </span>
     </div>
   );
 }

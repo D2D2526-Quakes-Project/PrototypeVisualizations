@@ -7,7 +7,7 @@ import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 
 import type { OrthographicCamera as OrthographicCameraImpl, PerspectiveCamera as PerspectiveCameraImpl } from "three";
-import { useCamera } from "../3d/contexts/CanvasContext";
+import { useCanvasState } from "../3d/contexts/CanvasContext";
 import { useLiveStore } from "@/state";
 
 export function CameraManager() {
@@ -20,7 +20,7 @@ export function CameraManager() {
 }
 
 function Cams() {
-  const { orbitControlsRef, orthographic, cameraPosition, cameraTarget, cameraZoom } = useCamera();
+  const { orbitControlsRef, orthographic, cameraPosition, cameraTarget, cameraZoom } = useCanvasState();
   const fov = 50;
 
   const persRef = useRef<PerspectiveCameraImpl>(null);
@@ -86,7 +86,7 @@ function Cams() {
 }
 
 function CameraControls() {
-  const { orbitControlsRef, setCameraPosition, setCameraTarget, setCameraZoom } = useCamera();
+  const { orbitControlsRef, setCameraPosition, setCameraTarget, setCameraZoom } = useCanvasState();
   const autoRotate = useLiveStore((s) => s.autoRotate);
 
   const { animationData } = useAnimationData();

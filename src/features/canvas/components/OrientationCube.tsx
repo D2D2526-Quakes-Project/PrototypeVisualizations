@@ -3,13 +3,13 @@ import * as React from "react";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { useGizmoContext } from "@react-three/drei";
 import { CanvasTexture, Vector3 } from "three";
-import { useCamera } from "@/features/3d/contexts/CanvasContext";
+import { useCanvasState } from "@/features/3d/contexts/CanvasContext";
 
 const ORIENTATION_CUBE_FACES = ["+X", "-X", "+Y", "-Y", "+Z", "-Z"];
 const DEFAULT_CAMERA_TARGET = new Vector3(0, 0, 0);
 
 export function OrientationCube() {
-  const { orbitControlsRef } = useCamera();
+  const { orbitControlsRef } = useCanvasState();
 
   return (
     <GizmoHelper

@@ -8,13 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useLiveStore } from "@/state";
-import { useCamera } from "../3d/contexts/CanvasContext";
+import { useCanvasState } from "../3d/contexts/CanvasContext";
 import { QuickControls } from "./components/QuickControls";
 import { MetricSelectSection } from "./control-sections/MetricSelectSection";
 import { ThresholdSection } from "./control-sections/ThresholdSection";
 import { ViewsPanel } from "./control-sections/ViewsPanel";
 import { ViewToggleSection } from "./control-sections/ViewToggleSection";
 import { SlicesSection } from "./control-sections/SlicesSection";
+import { ScaleSection } from "./control-sections/ScaleSection";
+import { NodeDisplaySection } from "./control-sections/NodeDisplaySection";
 
 const childVariants = {
   initial: { opacity: 0 },
@@ -30,7 +32,7 @@ export function ViewControls({
   setIsExpanded: (expanded: boolean) => void;
   docked: boolean;
 }) {
-  const { resetView, resetHomeView, orthographic, setOrthographic } = useCamera();
+  const { resetView, resetHomeView, orthographic, setOrthographic } = useCanvasState();
   const autoRotate = useLiveStore((s) => s.autoRotate);
   const setAutoRotate = useLiveStore((s) => s.setAutoRotate);
 
@@ -239,7 +241,7 @@ export function ViewControls({
                   <ChevronRightIcon />
                 </Button>
               </div>
-              <div className="items-st flex min-h-0 flex-col gap-1 overflow-x-hidden overflow-y-auto pr-2 pb-2">
+              <div className="flex min-h-0 flex-col gap-1 overflow-x-hidden overflow-y-auto pr-2 pb-2 *:shrink-0">
                 <motion.div className="" variants={childVariants}>
                   <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
                 </motion.div>
@@ -291,18 +293,22 @@ export function ViewControls({
                 <motion.div className="" variants={childVariants}>
                   <MetricSelectSection />
                 </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                <div className="my-1 h-px w-full bg-neutral-200" />
+                <motion.div className="" variants={childVariants}>
                   <ThresholdSection />
                 </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                <div className="my-1 h-px w-full bg-neutral-200" />
+                <motion.div className="" variants={childVariants}>
                   <SlicesSection />
                 </motion.div>
-                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <ExpandedScalePanel />
-                </motion.div> */}
-                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <NodeDisplayPanel />
-                </motion.div> */}
+                <div className="my-1 h-px w-full bg-neutral-200" />
+                <motion.div className="" variants={childVariants}>
+                  <ScaleSection />
+                </motion.div>
+                <div className="my-1 h-px w-full bg-neutral-200" />
+                <motion.div className="" variants={childVariants}>
+                  <NodeDisplaySection />
+                </motion.div>
                 {/* <motion.div className="mt-2 border-t border-neutral-200 px-0 pt-2" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
                     <span className="text-xs font-medium text-neutral-700">Background</span>
@@ -323,7 +329,7 @@ export function ViewControls({
                     ))}
                   </div>
                 </motion.div> */}
-                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                {/* <motion.div className="" variants={childVariants}>
                   <FloorsPanel />
                 </motion.div> */}
               </div>

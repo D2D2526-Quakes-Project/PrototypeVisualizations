@@ -9,7 +9,7 @@ interface ViewsPanelProps {
 
 export function ViewsPanel({ resetView, resetHomeView }: ViewsPanelProps) {
   return (
-    <div className="grid w-full grid-cols-4 gap-1">
+    <div className="grid w-full grid-cols-4 gap-px">
       {VIEW_PRESET_OPTIONS.map(({ view, label }) => (
         <Button key={view} size="xs" variant={"outline"} onClick={() => resetView(view)}>
           {label}

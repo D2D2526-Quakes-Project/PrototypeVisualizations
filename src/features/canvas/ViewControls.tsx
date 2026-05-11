@@ -4,6 +4,7 @@ import {
   BoxSelect,
   ChevronDown,
   ChevronLeftIcon,
+  ChevronRightIcon,
   Eye,
   EyeOff,
   Grid3X3,
@@ -22,6 +23,10 @@ import { COLLAPSED_VIEW_PRESET_OPTIONS } from "./viewPresets";
 import { useCamera } from "../3d/contexts/CanvasContext";
 import { useLiveStore } from "@/state";
 import { ViewsPanel } from "./control-panels/ViewsPanel";
+import { QuickControls } from "./components/QuickControls";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { ViewModeSelect } from "./control-panels/ViewModeSelect";
 
 const childVariants = {
   initial: { opacity: 0 },
@@ -133,90 +138,7 @@ export function ViewControls({
       <div className="flex h-full max-h-full min-h-0 items-start gap-2">
         {!isExpanded && (
           <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>
-            <motion.div
-              key="collapsed"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.15 }}
-              className="flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
-              {COLLAPSED_VIEW_PRESET_OPTIONS.map(({ view, label }) => (
-                <Tooltip key={view} disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => resetView(view)}
-                      className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none hover:bg-neutral-200">
-                      {label}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8}>
-                    {label} View
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-              <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-              <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => setOrthographic(!orthographic)}
-                    className={`rounded p-1 transition-colors ${
-                      orthographic ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
-                    }`}>
-                    {orthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}>
-                  {orthographic ? "Orthographic" : "Perspective"}
-                </TooltipContent>
-              </Tooltip>
-              <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-              <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={resetHomeView}
-                    className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200"
-                    title="Home View">
-                    <Home size={14} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}>
-                  Home View
-                </TooltipContent>
-              </Tooltip>
-              <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-              <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => setAutoRotate(!autoRotate)}
-                    className={`rounded p-1 transition-colors ${
-                      autoRotate ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
-                    }`}
-                    title="Auto Rotate">
-                    <RotateCw size={14} className={autoRotate ? "animate-spin" : undefined} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}>
-                  Auto Rotate
-                </TooltipContent>
-              </Tooltip>
-              <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-              <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200">
-                    <ChevronLeftIcon size={14} className={isExpanded ? "rotate-180" : undefined} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}>
-                  {isExpanded ? "Hide sidebar" : "More options"}
-                </TooltipContent>
-              </Tooltip>
-            </motion.div>
+            <QuickControls isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
 
             {/* {showNodeVisibilityMenu && (
               <motion.div
@@ -321,57 +243,15 @@ export function ViewControls({
               className={`border-sidebar-border pointer-events-auto flex max-h-full min-h-0 min-w-40 flex-col gap-2 overflow-hidden pt-2 pl-2 ${
                 docked
                   ? "bg-sidebar h-full origin-top-right border-l"
-                  : "bg-sidebar/80 origin-top-right rounded-md border shadow-lg backdrop-blur-sm"
+                  : "bg-sidebar/90 origin-top-right rounded-md border shadow-lg backdrop-blur-sm"
               }`}>
               <div className="flex items-center justify-between pr-2">
                 <div className="font-semibold">View Settings</div>
-                <button
-                  onClick={() => setIsExpanded(false)}
-                  className="rounded p-1 text-neutral-500 transition-colors hover:bg-neutral-200"
-                  title="Collapse">
-                  <ChevronDown size={14} className="rotate-180" />
-                </button>
+                <Button variant="ghost" onClick={() => setIsExpanded(false)} title="Collapse" size="icon-sm">
+                  <ChevronRightIcon />
+                </Button>
               </div>
-              <div className="flex min-h-0 flex-col gap-2 overflow-y-auto pr-2 pb-2">
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
-                <motion.div className="" variants={childVariants}>
-                  <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
-                </motion.div>
+              <div className="items-st flex min-h-0 flex-col gap-2 overflow-x-hidden overflow-y-auto pr-2 pb-2">
                 <motion.div className="" variants={childVariants}>
                   <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
                 </motion.div>
@@ -403,24 +283,20 @@ export function ViewControls({
                     </button>
                   </div>
                 )} */}
-                {/* <motion.div
-                  className="flex items-center justify-between border-t border-neutral-200 pt-1"
-                  variants={childVariants}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-neutral-700">Ortho</span>
+                <motion.div className="flex items-center gap-2" variants={childVariants}>
+                  <Label className="flex-1 text-xs font-medium text-neutral-700">
+                    Orthographic
                     <Switch size="sm" checked={orthographic} onCheckedChange={setOrthographic} />
-                    <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-                    <span className="text-xs font-medium text-neutral-700">Spin</span>
+                  </Label>
+                  <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+                  <Label className="flex-1 text-xs font-medium text-neutral-700">
+                    Spin
                     <Switch size="sm" checked={autoRotate} onCheckedChange={setAutoRotate} />
-                  </div>
-                </motion.div> */}
-                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <div className="mb-1 flex items-center gap-1">
-                    <Grid3X3 size={12} className="text-neutral-500" />
-                    <span className="text-xs font-medium text-neutral-700">Visibility</span>
-                  </div>
+                  </Label>
+                </motion.div>
+                <motion.div className="" variants={childVariants}>
                   <ViewModeSelect />
-                </motion.div> */}
+                </motion.div>
                 {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ColorPanel />
                 </motion.div> */}

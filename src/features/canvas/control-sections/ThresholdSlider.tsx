@@ -40,7 +40,7 @@ export function ThresholdSlider({
         <Slider value={[value, max]} onValueChange={(val) => onChange(val[0])} max={max} step={0.01} />
       </div>
       <span className="min-w-10 text-right text-xs text-neutral-500">
-        <UnitTooltip value={value} unit={unit} decimals={2} />
+        <UnitTooltip value={value} unit={unit.label} decimals={2} />
       </span>
     </div>
   );

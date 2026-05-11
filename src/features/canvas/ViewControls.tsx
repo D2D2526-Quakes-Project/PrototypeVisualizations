@@ -14,6 +14,7 @@ import { MetricSelectSection } from "./control-sections/MetricSelectSection";
 import { ThresholdSection } from "./control-sections/ThresholdSection";
 import { ViewsPanel } from "./control-sections/ViewsPanel";
 import { ViewToggleSection } from "./control-sections/ViewToggleSection";
+import { SlicesSection } from "./control-sections/SlicesSection";
 
 const childVariants = {
   initial: { opacity: 0 },
@@ -293,9 +294,9 @@ export function ViewControls({
                 <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ThresholdSection />
                 </motion.div>
-                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <SliceViewPanel />
-                </motion.div> */}
+                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                  <SlicesSection />
+                </motion.div>
                 {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ExpandedScalePanel />
                 </motion.div> */}

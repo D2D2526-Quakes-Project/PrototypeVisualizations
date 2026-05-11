@@ -96,7 +96,7 @@ export interface MetricPaletteDefinition {
 
 export type MetricPaletteOverrides = Partial<Record<Metric, MetricPaletteKey>>;
 
-type Unit =
+export type Unit =
   | "inches"
   | "feet"
   | "meters"

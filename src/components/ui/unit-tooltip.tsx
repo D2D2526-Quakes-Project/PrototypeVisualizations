@@ -1,12 +1,12 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { convertUnits, getConversions, UNITS, type UnitConfig } from "@/features/metrics/metrics";
+import { convertUnits, getConversions, UNITS, type Unit } from "@/features/metrics/metrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber } from "@/lib/utils";
 import { memo, useMemo } from "react";
 
 interface UnitTooltipProps {
   value: number;
-  unit: UnitConfig;
+  unit: Unit;
   decimals?: number;
   showConversions?: boolean;
   side?: "top" | "right" | "bottom" | "left";
@@ -15,14 +15,15 @@ interface UnitTooltipProps {
 
 interface TooltipBodyProps {
   value: number;
-  unit: UnitConfig;
+  unit: Unit;
   decimals: number;
   showConversions: boolean;
 }
 
-const TooltipBody = memo(function TooltipBody({ value, unit, decimals, showConversions }: TooltipBodyProps) {
+const TooltipBody = memo(function TooltipBody({ value, unit: unitKey, decimals, showConversions }: TooltipBodyProps) {
+  const unit = UNITS[unitKey];
   const fullName = unit.label;
-  const conversions = useMemo(() => (showConversions ? getConversions(unit.label) : []), [showConversions, unit]);
+  const conversions = useMemo(() => (showConversions ? getConversions(unitKey) : []), [showConversions, unitKey]);
 
   return (
     <div className="flex min-w-25 flex-col gap-1">
@@ -57,7 +58,7 @@ const TooltipBody = memo(function TooltipBody({ value, unit, decimals, showConve
 
 function UnitTooltipComponent({
   value,
-  unit,
+  unit: unitKey,
   decimals = 2,
   showConversions = true,
   side = "top",
@@ -66,6 +67,7 @@ function UnitTooltipComponent({
   const formattedValue = useMemo(() => formatNumber(value, decimals), [value, decimals]);
   const { playing } = usePlayback();
   const interactive = !playing;
+  const unit = UNITS[unitKey];
 
   const displayValue = (
     <span className={interactive ? "cursor-help" : undefined}>
@@ -85,7 +87,7 @@ function UnitTooltipComponent({
     <Tooltip>
       <TooltipTrigger asChild>{displayValue}</TooltipTrigger>
       <TooltipContent side={side} className="max-w-xs">
-        <TooltipBody value={value} unit={unit} decimals={decimals} showConversions={showConversions} />
+        <TooltipBody value={value} unit={unitKey} decimals={decimals} showConversions={showConversions} />
       </TooltipContent>
     </Tooltip>
   );

@@ -115,8 +115,8 @@ export function ViewToggleSection() {
                       <Icon className="size-4.5" />
                       {setter != null && (
                         <span
-                          className={`bg-background absolute -right-2.5 -bottom-2.5 flex size-5 items-center justify-center rounded border transition-colors ${checked ? "border-primary-foreground bg-primary" : "bg-input"} `}>
-                          {checked && <CheckIcon className="size-4 text-white" />}
+                          className={`bg-background absolute flex items-center justify-center rounded border transition-colors ${checked ? "border-primary-foreground bg-primary -right-2.5 -bottom-2.5 size-5" : "bg-input -right-2 -bottom-2 size-4"} `}>
+                          {checked && <CheckIcon className="size-3.5 text-white" />}
                         </span>
                       )}
                     </div>

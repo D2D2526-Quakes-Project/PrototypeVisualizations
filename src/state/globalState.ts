@@ -1,6 +1,6 @@
-import type { Metric, MetricPaletteKey, MetricPaletteOverrides } from "@/lib/metrics";
 import { type StateCreator } from "zustand";
 import type { AppState } from ".";
+import type { Metric, MetricPaletteKey, MetricPaletteOverrides } from "@/features/metrics/metrics";
 
 export interface GlobalState {
   metricPaletteOverrides: MetricPaletteOverrides;

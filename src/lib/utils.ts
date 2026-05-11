@@ -161,3 +161,15 @@ export function slidingWindow3<T>(arr: T[]): [T | undefined, T, T | undefined][]
   }
   return result;
 }
+
+export const isEditableTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false;
+  const tagName = target.tagName;
+  return (
+    target.isContentEditable ||
+    tagName === "INPUT" ||
+    tagName === "TEXTAREA" ||
+    tagName === "SELECT" ||
+    target.getAttribute("role") === "textbox"
+  );
+};

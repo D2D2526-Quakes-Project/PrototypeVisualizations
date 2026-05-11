@@ -5,6 +5,7 @@ import { useProfileStore } from "@/state";
 import {
   CheckIcon,
   Columns2Icon,
+  GridIcon,
   LayersIcon,
   MaximizeIcon,
   MoveHorizontalIcon,
@@ -14,7 +15,7 @@ import {
   WorkflowIcon,
 } from "lucide-react";
 
-export function ViewModeSelect() {
+export function ViewToggleSection() {
   const { animationData } = useAnimationData();
   const renderNodes = useProfileStore((s) => s.renderNodes);
   const setRenderNodes = useProfileStore((s) => s.setRenderNodes);
@@ -90,41 +91,47 @@ export function ViewModeSelect() {
   ];
 
   return (
-    <div className="gap-y- grid grid-cols-4 justify-items-center gap-x-2">
-      {options.map(
-        ({ label, checked, setter, icon: Icon, disabled, hidden }) =>
-          !hidden && (
-            <Tooltip key={label} disableHoverableContent>
-              <TooltipTrigger asChild>
-                <button
-                  className={disabled ? "cursor-not-allowed opacity-50" : "group"}
-                  key={label}
-                  onClick={() => {
-                    if (disabled) return;
-                    setter?.(!checked);
-                  }}
-                  disabled={disabled}>
-                  <div
-                    className={`relative flex w-fit flex-col items-center justify-center gap-2 rounded-sm border p-2 px-2.5 text-center transition-colors ${checked ? "border-primary-foreground bg-primary text-primary-foreground" : "border-border bg-background group-hover:bg-muted group-hover:text-foreground dark:border-input dark:bg-input/30 dark:group-hover:bg-input/50"}`}>
-                    <Icon className="size-4" />
-                    {setter != null && (
-                      <span
-                        className={`bg-background absolute -right-1.75 -bottom-1.75 flex h-4 w-4 items-center justify-center rounded border transition-colors ${checked ? "border-primary-foreground bg-primary" : "bg-input"} `}>
-                        {checked && <CheckIcon className="size-3.5 text-white" />}
-                      </span>
-                    )}
-                  </div>
-                  <span className={"text-xs leading-tight"}>{label}</span>
-                </button>
-              </TooltipTrigger>
-              {disabled && (
-                <TooltipContent side="bottom" sideOffset={8}>
-                  You need to load beam data to use this view mode.
-                </TooltipContent>
-              )}
-            </Tooltip>
-          )
-      )}
-    </div>
+    <>
+      <div className="mb-1 flex items-center gap-1">
+        <GridIcon size={12} className="text-neutral-500" />
+        <span className="text-xs font-medium text-neutral-700">Viewable Parts</span>
+      </div>
+      <div className="gap-y- grid grid-cols-4 justify-items-center gap-x-2">
+        {options.map(
+          ({ label, checked, setter, icon: Icon, disabled, hidden }) =>
+            !hidden && (
+              <Tooltip key={label} disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <button
+                    className={disabled ? "cursor-not-allowed opacity-50" : "group"}
+                    key={label}
+                    onClick={() => {
+                      if (disabled) return;
+                      setter?.(!checked);
+                    }}
+                    disabled={disabled}>
+                    <div
+                      className={`relative flex w-fit flex-col items-center justify-center gap-2 rounded-sm border p-2.5 px-3 text-center transition-colors ${checked ? "border-primary-foreground bg-primary text-primary-foreground" : "border-border bg-background group-hover:bg-muted group-hover:text-foreground dark:border-input dark:bg-input/30 dark:group-hover:bg-input/50"}`}>
+                      <Icon className="size-4.5" />
+                      {setter != null && (
+                        <span
+                          className={`bg-background absolute -right-2.5 -bottom-2.5 flex size-5 items-center justify-center rounded border transition-colors ${checked ? "border-primary-foreground bg-primary" : "bg-input"} `}>
+                          {checked && <CheckIcon className="size-4 text-white" />}
+                        </span>
+                      )}
+                    </div>
+                    <span className={"text-xs leading-tight"}>{label}</span>
+                  </button>
+                </TooltipTrigger>
+                {disabled && (
+                  <TooltipContent side="bottom" sideOffset={8}>
+                    You need to load beam data to use this view mode.
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            )
+        )}
+      </div>
+    </>
   );
 }

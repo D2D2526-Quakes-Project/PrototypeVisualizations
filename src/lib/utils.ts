@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCompactNumber(value: number, maxDecimals = 1): string {
+export function formatNumber(value: number, maxDecimals = 1): string {
   if (!Number.isFinite(value)) return String(value);
   if (value === 0) return "0";
 
@@ -27,7 +27,7 @@ export function formatCompactNumber(value: number, maxDecimals = 1): string {
   return fixed.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");
 }
 
-export const formatFixed3 = (n: number) => `${n >= 0 ? "+" : ""}${formatCompactNumber(Math.abs(n), 2)}`;
+export const formatFixed3 = (n: number) => `${n >= 0 ? "+" : ""}${formatNumber(Math.abs(n), 2)}`;
 
 function lexicographicOrder(a: number[], b: number[]) {
   return a[0] - b[0] || a[1] - b[1];

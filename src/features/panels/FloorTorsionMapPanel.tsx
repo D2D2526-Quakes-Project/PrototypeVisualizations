@@ -2,7 +2,7 @@ import { FloorTorsionPlanPreview } from "@/features/3d/components/FloorTorsionPl
 import { usePlayback } from "@/features/playback/usePlayback";
 import { buildFloorTorsionSnapshot } from "@/features/3d/lib/floorTorsion";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { formatCompactNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 import { formatHex, interpolate } from "culori";
 import { useMemo } from "react";
 import { useFloorVisibility } from "../3d/contexts/visualization";
@@ -10,7 +10,7 @@ import { useFloorVisibility } from "../3d/contexts/visualization";
 const torsionColorScale = interpolate(["#2563eb", "#f8fafc", "#dc2626"], "oklab");
 
 function formatSigned(value: number, digits = 1) {
-  return `${value >= 0 ? "+" : ""}${formatCompactNumber(Math.abs(value), digits)}`;
+  return `${value >= 0 ? "+" : ""}${formatNumber(Math.abs(value), digits)}`;
 }
 
 export function FloorTorsionMapPanel() {

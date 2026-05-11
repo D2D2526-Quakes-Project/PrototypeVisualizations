@@ -96,7 +96,7 @@ export interface MetricPaletteDefinition {
 
 export type MetricPaletteOverrides = Partial<Record<Metric, MetricPaletteKey>>;
 
-export type Unit =
+type Unit =
   | "inches"
   | "feet"
   | "meters"
@@ -112,101 +112,17 @@ export type Unit =
   | "meters/second²"
   | "radians/second"
   | "radians/second²"
-  | "kips";
+  | "kips"
+  | "newton";
 
 export interface UnitConfig {
   label: Unit;
   singular: string;
   abbr: string;
+  category: UnitCategory;
+  toBase: (value: number) => number;
+  fromBase: (value: number) => number;
 }
-
-export const UNITS: Record<Unit, UnitConfig> = {
-  inches: {
-    label: "inches",
-    singular: "inch",
-    abbr: "in",
-  },
-  "inches/second": {
-    label: "inches/second",
-    singular: "inch/second",
-    abbr: "in/s",
-  },
-  "inches/second²": {
-    label: "inches/second²",
-    singular: "inch/second²",
-    abbr: "in/s²",
-  },
-  feet: {
-    label: "feet",
-    singular: "foot",
-    abbr: "ft",
-  },
-  "feet/second": {
-    label: "feet/second",
-    singular: "foot/second",
-    abbr: "ft/s",
-  },
-  "feet/second²": {
-    label: "feet/second²",
-    singular: "foot/second²",
-    abbr: "ft/s²",
-  },
-  meters: {
-    label: "meters",
-    singular: "meter",
-    abbr: "m",
-  },
-  "meters/second": {
-    label: "meters/second",
-    singular: "meter/second",
-    abbr: "m/s",
-  },
-  "meters/second²": {
-    label: "meters/second²",
-    singular: "meter/second²",
-    abbr: "m/s²",
-  },
-  seconds: {
-    label: "seconds",
-    singular: "second",
-    abbr: "s",
-  },
-  radians: {
-    label: "radians",
-    singular: "radian",
-    abbr: "rad",
-  },
-  "radians/second": {
-    label: "radians/second",
-    singular: "radian/second",
-    abbr: "rad/s",
-  },
-  "radians/second²": {
-    label: "radians/second²",
-    singular: "radian/second²",
-    abbr: "rad/s²",
-  },
-  percent: {
-    label: "percent",
-    singular: "percent",
-    abbr: "%",
-  },
-  g: {
-    label: "g",
-    singular: "gravity (g)",
-    abbr: "g",
-  },
-  kips: {
-    label: "kips",
-    singular: "kips",
-    abbr: "kips",
-  },
-};
-
-const INCH_TO_METER = 0.0254;
-const FEET_TO_METER = 0.3048;
-const G_TO_M_S2 = 9.80665;
-const RAD_TO_DEG = 57.29577951308232;
 
 export type UnitCategory =
   | "length"
@@ -216,216 +132,177 @@ export type UnitCategory =
   | "rotationVelocity"
   | "rotationAcceleration"
   | "percent"
-  | "time";
+  | "time"
+  | "dimensionless"
+  | "force";
 
-export interface UnitConversionInfo {
-  abbr: string;
-  fullName: string;
-  category: UnitCategory;
-  toBase: (value: number) => number;
-  fromBase: (value: number) => number;
-}
-
-export const CONVERSION_UNITS: Record<string, UnitConversionInfo> = {
-  in: {
+export const UNITS: Record<Unit, UnitConfig> = {
+  inches: {
+    label: "inches",
+    singular: "inch",
     abbr: "in",
-    fullName: "inches",
-    category: "length",
     toBase: (v) => v * INCH_TO_METER,
     fromBase: (v) => v / INCH_TO_METER,
-  },
-  ft: {
-    abbr: "ft",
-    fullName: "feet",
     category: "length",
-    toBase: (v) => v * FEET_TO_METER,
-    fromBase: (v) => v / FEET_TO_METER,
   },
-  m: {
-    abbr: "m",
-    fullName: "meters",
-    category: "length",
-    toBase: (v) => v,
-    fromBase: (v) => v,
-  },
-  "in/s": {
+  "inches/second": {
+    label: "inches/second",
+    singular: "inch/second",
     abbr: "in/s",
-    fullName: "inches/second",
-    category: "velocity",
     toBase: (v) => v * INCH_TO_METER,
     fromBase: (v) => v / INCH_TO_METER,
-  },
-  "ft/s": {
-    abbr: "ft/s",
-    fullName: "feet/second",
     category: "velocity",
-    toBase: (v) => v * FEET_TO_METER,
-    fromBase: (v) => v / FEET_TO_METER,
   },
-  "m/s": {
-    abbr: "m/s",
-    fullName: "meters/second",
-    category: "velocity",
-    toBase: (v) => v,
-    fromBase: (v) => v,
-  },
-  "in/s²": {
+  "inches/second²": {
+    label: "inches/second²",
+    singular: "inch/second²",
     abbr: "in/s²",
-    fullName: "inches/second²",
-    category: "acceleration",
     toBase: (v) => v * INCH_TO_METER,
     fromBase: (v) => v / INCH_TO_METER,
-  },
-  "ft/s²": {
-    abbr: "ft/s²",
-    fullName: "feet/second²",
     category: "acceleration",
+  },
+  feet: {
+    label: "feet",
+    singular: "foot",
+    abbr: "ft",
     toBase: (v) => v * FEET_TO_METER,
     fromBase: (v) => v / FEET_TO_METER,
+    category: "length",
   },
-  "m/s²": {
-    abbr: "m/s²",
-    fullName: "meters/second²",
+  "feet/second": {
+    label: "feet/second",
+    singular: "foot/second",
+    abbr: "ft/s",
+    toBase: (v) => v * FEET_TO_METER,
+    fromBase: (v) => v / FEET_TO_METER,
+    category: "velocity",
+  },
+  "feet/second²": {
+    label: "feet/second²",
+    singular: "foot/second²",
+    abbr: "ft/s²",
+    toBase: (v) => v * FEET_TO_METER,
+    fromBase: (v) => v / FEET_TO_METER,
     category: "acceleration",
+  },
+  meters: {
+    label: "meters",
+    singular: "meter",
+    abbr: "m",
     toBase: (v) => v,
     fromBase: (v) => v,
+    category: "length",
+  },
+  "meters/second": {
+    label: "meters/second",
+    singular: "meter/second",
+    abbr: "m/s",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+    category: "velocity",
+  },
+  "meters/second²": {
+    label: "meters/second²",
+    singular: "meter/second²",
+    abbr: "m/s²",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+    category: "acceleration",
+  },
+  seconds: {
+    label: "seconds",
+    singular: "second",
+    abbr: "s",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+    category: "time",
+  },
+  radians: {
+    label: "radians",
+    singular: "radian",
+    abbr: "rad",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+    category: "rotation",
+  },
+  "radians/second": {
+    label: "radians/second",
+    singular: "radian/second",
+    abbr: "rad/s",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+    category: "rotationVelocity",
+  },
+  "radians/second²": {
+    label: "radians/second²",
+    singular: "radian/second²",
+    abbr: "rad/s²",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+    category: "rotationAcceleration",
+  },
+  percent: {
+    label: "percent",
+    singular: "percent",
+    abbr: "%",
+    toBase: (v) => v,
+    fromBase: (v) => v,
+    category: "dimensionless",
   },
   g: {
+    label: "g",
+    singular: "gravity (g)",
     abbr: "g",
-    fullName: "gravity (g)",
-    category: "acceleration",
     toBase: (v) => v * G_TO_M_S2,
     fromBase: (v) => v / G_TO_M_S2,
+    category: "acceleration",
   },
-  rad: {
-    abbr: "rad",
-    fullName: "radians",
-    category: "rotation",
+  kips: {
+    label: "kips",
+    singular: "kips",
+    abbr: "kips",
+    toBase: (v) => v * KIPS_TO_NEWTON,
+    fromBase: (v) => v / KIPS_TO_NEWTON,
+    category: "force",
+  },
+  newton: {
+    label: "newton",
+    singular: "newton",
+    abbr: "N",
     toBase: (v) => v,
     fromBase: (v) => v,
-  },
-  deg: {
-    abbr: "°",
-    fullName: "degrees",
-    category: "rotation",
-    toBase: (v) => v / RAD_TO_DEG,
-    fromBase: (v) => v * RAD_TO_DEG,
-  },
-  "rad/s": {
-    abbr: "rad/s",
-    fullName: "radians/second",
-    category: "rotationVelocity",
-    toBase: (v) => v,
-    fromBase: (v) => v,
-  },
-  "°/s": {
-    abbr: "°/s",
-    fullName: "degrees/second",
-    category: "rotationVelocity",
-    toBase: (v) => v / RAD_TO_DEG,
-    fromBase: (v) => v * RAD_TO_DEG,
-  },
-  "rad/s²": {
-    abbr: "rad/s²",
-    fullName: "radians/second²",
-    category: "rotationAcceleration",
-    toBase: (v) => v,
-    fromBase: (v) => v,
-  },
-  "°/s²": {
-    abbr: "°/s²",
-    fullName: "degrees/second²",
-    category: "rotationAcceleration",
-    toBase: (v) => v / RAD_TO_DEG,
-    fromBase: (v) => v * RAD_TO_DEG,
-  },
-  "%": {
-    abbr: "%",
-    fullName: "percent",
-    category: "percent",
-    toBase: (v) => v,
-    fromBase: (v) => v,
-  },
-  s: {
-    abbr: "s",
-    fullName: "seconds",
-    category: "time",
-    toBase: (v) => v,
-    fromBase: (v) => v,
+    category: "force",
   },
 };
 
-export interface ConversionResult {
-  value: number;
-  unit: string;
-  fullName: string;
-}
+const INCH_TO_METER = 0.0254;
+const FEET_TO_METER = 0.3048;
+const G_TO_M_S2 = 9.80665;
+const KIPS_TO_NEWTON = 4_448.222;
 
-export function convertUnits(value: number, fromUnit: string, targetUnits: string[]): ConversionResult[] {
-  const fromInfo = CONVERSION_UNITS[fromUnit];
-  if (!fromInfo) {
-    return targetUnits.map((u) => ({
-      value,
-      unit: u,
-      fullName: u,
-    }));
-  }
+const UNIT_CONVERSIONS: Record<UnitCategory, Unit[]> = Object.entries(UNITS).reduce(
+  (acc, [unit, { category }]) => {
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(unit as Unit);
+    return acc;
+  },
+  {} as Record<UnitCategory, Unit[]>
+);
+
+export function convertUnits(value: number, fromUnit: Unit, targetUnits: Unit) {
+  const fromInfo = UNITS[fromUnit];
+  const info = UNITS[targetUnits];
+  if (info.category !== fromInfo.category) return null;
 
   const baseValue = fromInfo.toBase(value);
-
-  return targetUnits
-    .map((unit) => {
-      const info = CONVERSION_UNITS[unit];
-      if (!info || info.category !== fromInfo.category) {
-        return null;
-      }
-      return {
-        value: info.fromBase(baseValue),
-        unit: info.abbr,
-        fullName: info.fullName,
-      };
-    })
-    .filter((r): r is ConversionResult => r !== null);
+  return info.fromBase(baseValue);
 }
 
-export function getConversions(value: number, unit: string): ConversionResult[] {
-  const info = CONVERSION_UNITS[unit];
-  if (!info) return [];
-
-  switch (info.category) {
-    case "length":
-      return convertUnits(value, unit, ["in", "ft", "m"]);
-    case "velocity":
-      return convertUnits(value, unit, ["in/s", "ft/s", "m/s"]);
-    case "acceleration":
-      return convertUnits(value, unit, ["in/s²", "ft/s²", "m/s²", "g"]);
-    case "rotation":
-      return convertUnits(value, unit, ["rad", "deg"]);
-    case "rotationVelocity":
-      return convertUnits(value, unit, ["rad/s", "°/s"]);
-    case "rotationAcceleration":
-      return convertUnits(value, unit, ["rad/s²", "°/s²"]);
-    default:
-      return [];
-  }
-}
-
-export function formatValue(value: number, decimals: number = 3): string {
-  const normalizeFixed = (fixedValue: string) => fixedValue.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");
-
-  if (value === 0) return "0";
-  const absValue = Math.abs(value);
-  const normalizedDecimals = Math.max(0, decimals);
-  if (absValue < 0.001 && absValue !== 0) {
-    return `<0.001`;
-    return value.toExponential(Math.min(normalizedDecimals, 1));
-  }
-
-  return normalizeFixed(value.toFixed(normalizedDecimals));
-}
-
-export function getUnitFullName(unit: string): string {
-  return CONVERSION_UNITS[unit]?.fullName || unit;
+export function getConversions(unit: Unit): Unit[] {
+  const conversions = UNIT_CONVERSIONS[UNITS[unit].category];
+  return conversions.filter((u) => u !== unit);
 }
 
 export type MetricConfig = {

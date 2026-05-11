@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { formatCompactNumber, formatFixed3 } from "@/lib/utils";
+import { formatNumber, formatFixed3 } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview";
 import { type EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
@@ -186,7 +186,7 @@ function TooltipContent({
           paddingBottom: "4px",
           fontSize: "13px",
         }}>
-        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span> {formatCompactNumber(time)} s
+        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span> {formatNumber(time)} s
       </div>
       {values.map((item) => (
         <div
@@ -212,7 +212,7 @@ function TooltipContent({
               marginLeft: "auto",
               fontFamily: "monospace",
             }}>
-            {formatCompactNumber(item.value)}
+            {formatNumber(item.value)}
             {item.unit ? ` ${item.unit.abbr}` : ""}
           </span>
         </div>

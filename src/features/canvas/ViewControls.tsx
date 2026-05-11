@@ -1,32 +1,19 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 
-import {
-  BoxSelect,
-  ChevronDown,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  Eye,
-  EyeOff,
-  Grid3X3,
-  GridIcon,
-  Home,
-  PaletteIcon,
-  RotateCw,
-  ScanEye,
-  XCircle,
-} from "lucide-react";
+import { ChevronRightIcon } from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
 
-import { Switch } from "@/components/ui/switch";
-import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useCamera } from "../3d/contexts/CanvasContext";
-import { useLiveStore } from "@/state";
-import { ViewsPanel } from "./control-sections/ViewsPanel";
-import { QuickControls } from "./components/QuickControls";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ViewModeSelect } from "./control-sections/ViewToggleSection";
+import { Switch } from "@/components/ui/switch";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { useLiveStore } from "@/state";
+import { useCamera } from "../3d/contexts/CanvasContext";
+import { QuickControls } from "./components/QuickControls";
 import { MetricSelectSection } from "./control-sections/MetricSelectSection";
+import { ThresholdSection } from "./control-sections/ThresholdSection";
+import { ViewsPanel } from "./control-sections/ViewsPanel";
+import { ViewToggleSection } from "./control-sections/ViewToggleSection";
 
 const childVariants = {
   initial: { opacity: 0 },
@@ -287,29 +274,25 @@ export function ViewControls({
                 <motion.div className="flex items-center gap-2" variants={childVariants}>
                   <Label className="flex-1 text-xs font-medium text-neutral-700">
                     Orthographic
-                    <Switch size="sm" checked={orthographic} onCheckedChange={setOrthographic} />
+                    <Switch checked={orthographic} onCheckedChange={setOrthographic} />
                   </Label>
                   <div className="mx-0.5 h-4 w-px bg-neutral-300" />
                   <Label className="flex-1 text-xs font-medium text-neutral-700">
                     Spin
-                    <Switch size="sm" checked={autoRotate} onCheckedChange={setAutoRotate} />
+                    <Switch checked={autoRotate} onCheckedChange={setAutoRotate} />
                   </Label>
                 </motion.div>
                 <div className="my-1 h-px w-full bg-neutral-200" />
                 <motion.div className="" variants={childVariants}>
-                  <div className="mb-1 flex items-center gap-1">
-                    <GridIcon size={12} className="text-neutral-500" />
-                    <span className="text-xs font-medium text-neutral-700">Viewable Parts</span>
-                  </div>
-                  <ViewModeSelect />
+                  <ViewToggleSection />
                 </motion.div>
                 <div className="my-1 h-px w-full bg-neutral-200" />
                 <motion.div className="" variants={childVariants}>
                   <MetricSelectSection />
                 </motion.div>
-                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <ThresholdPanel />
-                </motion.div> */}
+                <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
+                  <ThresholdSection />
+                </motion.div>
                 {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <SliceViewPanel />
                 </motion.div> */}

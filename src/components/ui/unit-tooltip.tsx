@@ -1,11 +1,12 @@
-import { memo, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatValue, getConversions, CONVERSION_UNITS as UNITS } from "@/lib/metrics";
+import { convertUnits, getConversions, UNITS, type UnitConfig } from "@/features/metrics/metrics";
 import { usePlayback } from "@/features/playback/usePlayback";
+import { formatNumber } from "@/lib/utils";
+import { memo, useMemo } from "react";
 
 interface UnitTooltipProps {
   value: number;
-  unit: string;
+  unit: UnitConfig;
   decimals?: number;
   showConversions?: boolean;
   side?: "top" | "right" | "bottom" | "left";
@@ -14,37 +15,40 @@ interface UnitTooltipProps {
 
 interface TooltipBodyProps {
   value: number;
-  unit: string;
+  unit: UnitConfig;
   decimals: number;
   showConversions: boolean;
 }
 
 const TooltipBody = memo(function TooltipBody({ value, unit, decimals, showConversions }: TooltipBodyProps) {
-  const unitInfo = UNITS[unit];
-  const fullName = unitInfo?.fullName || unit;
-  const conversions = useMemo(
-    () => (showConversions ? getConversions(value, unit) : []),
-    [showConversions, value, unit]
-  );
+  const fullName = unit.label;
+  const conversions = useMemo(() => (showConversions ? getConversions(unit.label) : []), [showConversions, unit]);
 
   return (
     <div className="flex min-w-25 flex-col gap-1">
       <div
         className={`flex items-center justify-between gap-4 border-white/20 pb-1 ${conversions.length > 0 ? "border-b" : ""}`}>
-        <span className="font-medium">{formatValue(value, decimals)}</span>
+        <span className="font-medium">{formatNumber(value, decimals)}</span>
         <span className="text-white/70">{fullName}</span>
       </div>
       {conversions.length > 0 && (
         <div className="flex flex-col gap-0.5 py-1">
-          {conversions.map((conv) => (
-            <div key={conv.unit} className="flex items-center justify-between gap-1 text-white/80">
-              <span>{formatValue(conv.value, decimals)}</span>
-              <span className="flex flex-1 justify-between gap-2 text-xs text-white/60">
-                <span>{conv.unit}</span>
-                <span>({conv.fullName})</span>
-              </span>
-            </div>
-          ))}
+          {conversions.map((conv) => {
+            const conversion = UNITS[conv];
+            const convertedValue = convertUnits(value, unit.label, conv);
+
+            if (!convertedValue) return null;
+
+            return (
+              <div key={conv} className="flex items-center justify-between gap-1 text-white/80">
+                <span>{formatNumber(convertedValue, decimals)}</span>
+                <span className="flex flex-1 justify-between gap-2 text-xs text-white/60">
+                  <span>{conversion.abbr}</span>
+                  <span>({conversion.label})</span>
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -59,7 +63,7 @@ function UnitTooltipComponent({
   side = "top",
   children,
 }: UnitTooltipProps) {
-  const formattedValue = useMemo(() => formatValue(value, decimals), [value, decimals]);
+  const formattedValue = useMemo(() => formatNumber(value, decimals), [value, decimals]);
   const { playing } = usePlayback();
   const interactive = !playing;
 
@@ -67,7 +71,7 @@ function UnitTooltipComponent({
     <span className={interactive ? "cursor-help" : undefined}>
       {children || (
         <span>
-          {formattedValue} {unit}
+          {formattedValue} {unit.abbr}
         </span>
       )}
     </span>

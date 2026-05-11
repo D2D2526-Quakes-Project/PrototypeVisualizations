@@ -7,7 +7,7 @@ import {
   type MetricPaletteKey,
 } from "@/features/metrics/metrics";
 import { useMetrics } from "@/features/metrics/useMetrics";
-import { formatCompactNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 
 interface ColorScaleBarProps {
   noLabel?: boolean;
@@ -129,10 +129,10 @@ export function ColorScaleBar({ noLabel, insideLabel }: ColorScaleBarProps) {
     thresholdHighlighting,
     currentMetricThreshold
   );
-  const minLabel = formatCompactNumber(config.hasNegative ? -maxValue : 0) + " " + config.unit.abbr;
-  const centerLabel = formatCompactNumber(0) + " " + config.unit.abbr;
-  const maxLabel = formatCompactNumber(config.hasPositive ? maxValue : 0) + " " + config.unit.abbr;
-  const thresholdLabel = formatCompactNumber(currentMetricThreshold) + " " + config.unit.abbr;
+  const minLabel = formatNumber(config.hasNegative ? -maxValue : 0) + " " + config.unit.abbr;
+  const centerLabel = formatNumber(0) + " " + config.unit.abbr;
+  const maxLabel = formatNumber(config.hasPositive ? maxValue : 0) + " " + config.unit.abbr;
+  const thresholdLabel = formatNumber(currentMetricThreshold) + " " + config.unit.abbr;
 
   const onlyNegative = config.hasNegative && !config.hasPositive;
 

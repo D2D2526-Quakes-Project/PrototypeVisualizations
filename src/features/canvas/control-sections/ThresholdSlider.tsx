@@ -1,7 +1,8 @@
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { UnitConfig } from "@/lib/metrics";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import type { UnitConfig } from "@/features/metrics/metrics";
+import { formatNumber } from "@/lib/utils";
 
 interface ThresholdSliderProps {
   label: string;
@@ -23,21 +24,23 @@ export function ThresholdSlider({
   currentlyUsed = false,
 }: ThresholdSliderProps) {
   return (
-    <div className={`flex items-center gap-1 ${currentlyUsed ? "" : "opacity-50"}`}>
+    <div className={`col-span-3 grid grid-cols-subgrid items-center gap-2 ${currentlyUsed ? "" : "opacity-50"}`}>
       <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
-          <span className="w-24 shrink-0 text-[10px] text-neutral-500">{label}</span>
+          <span className="text-xs text-neutral-500">{label}</span>
         </TooltipTrigger>
         <TooltipContent side="left" className="max-w-xs">
           {tooltip}
           <br />
-          Currently: <UnitTooltip value={value} unit={unit.abbr} decimals={2} />
+          Currently: {formatNumber(value, 2)} {unit.abbr}
         </TooltipContent>
       </Tooltip>
 
-      <Slider value={[value]} onValueChange={(val) => onChange(val[0])} max={max} step={0.01} className="flex-1" />
-      <span className="w-12 shrink-0 text-right text-[10px] text-neutral-500">
-        <UnitTooltip value={value} unit={unit.abbr} decimals={2} />
+      <div className="border-border flex min-w-32 items-center border-x px-2 py-1">
+        <Slider value={[value, max]} onValueChange={(val) => onChange(val[0])} max={max} step={0.01} />
+      </div>
+      <span className="min-w-10 text-right text-xs text-neutral-500">
+        <UnitTooltip value={value} unit={unit} decimals={2} />
       </span>
     </div>
   );

@@ -1,14 +1,13 @@
 import { usePlayback } from "@/features/playback/usePlayback";
-import { formatValue, getMetricConfig } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import * as React from "react";
-import { useColor } from "../contexts/visualization/ColorContext";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { useMetrics } from "@/features/metrics/useMetrics";
 
 export function SceneTooltip({ children }: { children: React.ReactNode }) {
   const { frameIndex } = usePlayback();
   const { animationData } = useAnimationData();
-  const { currentMetric } = useColor();
+  const { currentMetric } = useMetrics();
   // const { hoveredCrossSection } = useCrossSectionSelection();
   // const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
   // const hoveredNodeScreenPos = useViewStore((s) => s.hoveredNodeScreenPos);

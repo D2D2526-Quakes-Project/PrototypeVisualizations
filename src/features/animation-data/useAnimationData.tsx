@@ -3,7 +3,7 @@ import {
   type DatasetLoadState,
   type OptionalDataLoadOptions,
   type OptionalDatasetKey,
-} from "@/lib/loadingTypes";
+} from "@/features/animation-data/data-loading/loadingTypes";
 import { createContext, useContext } from "react";
 import type { BinaryBuilding, BinarySimulation, BuildingAnimationData } from "../types";
 

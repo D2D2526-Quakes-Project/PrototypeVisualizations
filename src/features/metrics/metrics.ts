@@ -1,4 +1,4 @@
-import { type HingeNodeMetricKey } from "@/lib/hingeMetrics";
+import { type HingeNodeMetricKey } from "@/features/metrics/hingeMetrics";
 import type { BuildingAnimationData, ComputedStats } from "@/lib/types";
 import { MATPLOTLIB_PALETTES, type MatplotlibPaletteKey } from "./colors/matplotlibColors";
 import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
@@ -37,11 +37,11 @@ export type Metric =
   | "shearYMax"
   | "shearYMin"
   | "shearYAbs"
-  | "interstoryDrift"
-  | "floorIndex"
-  | "nodeZ"
-  | "crossSectionX"
-  | "crossSectionY";
+  | "interstoryDrift";
+// | "floorIndex"
+// | "nodeZ"
+// | "crossSectionX"
+// | "crossSectionY";
 
 export function isHingeMetric(metric: Metric): metric is HingeNodeMetricKey {
   return metric === "hingeRotationMax" || metric === "hingeRotationMin" || metric === "hingeRotationAbs";
@@ -82,7 +82,7 @@ export interface ColorScale {
   unit: string;
 }
 
-export type MetricPaletteKey = TailwindPaletteKey | "spectrum" | MatplotlibPaletteKey;
+export type MetricPaletteKey = TailwindPaletteKey | MatplotlibPaletteKey;
 
 export interface MetricPaletteDefinition {
   label: string;
@@ -579,61 +579,61 @@ export const METRIC_PALETTES: Record<MetricPaletteKey, MetricPaletteDefinition> 
     negativeThresholdColorStops: [MATPLOTLIB_PALETTES.cividis[3], MATPLOTLIB_PALETTES.cividis[4]],
     keyColor: MATPLOTLIB_PALETTES.cividis[2],
   },
-  spectrum: {
-    label: "Spectrum",
-    paletteKey: "spectrum",
-    positiveColorStops: [
-      "#fdfdfd",
-      "#1d1d1d",
-      "#ebce2b",
-      "#702c8c",
-      "#db6917",
-      "#96cde6",
-      "#ba1c30",
-      "#c0bd7f",
-      "#7f7e80",
-      "#5fa641",
-      "#d485b2",
-      "#4277b6",
-      "#df8461",
-      "#463397",
-      "#e1a11a",
-      "#91218c",
-      "#e8e948",
-      "#7e1510",
-      "#92ae31",
-      "#6f340d",
-      "#d32b1e",
-      "#2b3514",
-    ],
-    positiveThresholdColorStops: ["#fff", "#fff"],
-    negativeColorStops: [
-      "#fdfdfd",
-      "#1d1d1d",
-      "#ebce2b",
-      "#702c8c",
-      "#db6917",
-      "#96cde6",
-      "#ba1c30",
-      "#c0bd7f",
-      "#7f7e80",
-      "#5fa641",
-      "#d485b2",
-      "#4277b6",
-      "#df8461",
-      "#463397",
-      "#e1a11a",
-      "#91218c",
-      "#e8e948",
-      "#7e1510",
-      "#92ae31",
-      "#6f340d",
-      "#d32b1e",
-      "#2b3514",
-    ],
-    negativeThresholdColorStops: ["#fff", "#fff"],
-    keyColor: "#3f3ffa",
-  },
+  // spectrum: {
+  //   label: "Spectrum",
+  //   paletteKey: "spectrum",
+  //   positiveColorStops: [
+  //     "#fdfdfd",
+  //     "#1d1d1d",
+  //     "#ebce2b",
+  //     "#702c8c",
+  //     "#db6917",
+  //     "#96cde6",
+  //     "#ba1c30",
+  //     "#c0bd7f",
+  //     "#7f7e80",
+  //     "#5fa641",
+  //     "#d485b2",
+  //     "#4277b6",
+  //     "#df8461",
+  //     "#463397",
+  //     "#e1a11a",
+  //     "#91218c",
+  //     "#e8e948",
+  //     "#7e1510",
+  //     "#92ae31",
+  //     "#6f340d",
+  //     "#d32b1e",
+  //     "#2b3514",
+  //   ],
+  //   positiveThresholdColorStops: ["#fff", "#fff"],
+  //   negativeColorStops: [
+  //     "#fdfdfd",
+  //     "#1d1d1d",
+  //     "#ebce2b",
+  //     "#702c8c",
+  //     "#db6917",
+  //     "#96cde6",
+  //     "#ba1c30",
+  //     "#c0bd7f",
+  //     "#7f7e80",
+  //     "#5fa641",
+  //     "#d485b2",
+  //     "#4277b6",
+  //     "#df8461",
+  //     "#463397",
+  //     "#e1a11a",
+  //     "#91218c",
+  //     "#e8e948",
+  //     "#7e1510",
+  //     "#92ae31",
+  //     "#6f340d",
+  //     "#d32b1e",
+  //     "#2b3514",
+  //   ],
+  //   negativeThresholdColorStops: ["#fff", "#fff"],
+  //   keyColor: "#3f3ffa",
+  // },
 };
 
 type NumericKeys<T> = {
@@ -1353,114 +1353,114 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       getShearValue(animationData, nodeId, "yAbs"),
   },
   // Debug metrics
-  floorIndex: {
-    metric: "floorIndex",
-    thresholdKey: "inf",
-    label: "Floor Index",
-    shortLabel: "Floor Index",
-    unit: UNITS["percent"],
-    defaultPalette: "spectrum",
-    hasPositive: true,
-    hasNegative: false,
-    hiddenByDefault: true,
-    getPrecomputedMax: (animationData) => {
-      // Return number of stories as max
-      return Object.keys(animationData.precomputed.storyElevations).length;
-    },
-    isAvailable: (animationData) => !!animationData.metadata.stories,
-    getValue: (animationData, _frameIndex, nodeId) => {
-      const { storyOrder, stories } = animationData.metadata;
-      for (let i = 0; i < storyOrder.length; i++) {
-        const storyNodes = stories[storyOrder[i]];
-        if (storyNodes && storyNodes.includes(nodeId)) {
-          return i + 1; // 1-based floor index
-        }
-      }
-      return undefined;
-    },
-  },
-  nodeZ: {
-    metric: "nodeZ",
-    thresholdKey: "inf",
-    label: "Node Z Position",
-    shortLabel: "Node Z",
-    unit: UNITS["inches"],
-    defaultPalette: "spectrum",
-    hasPositive: true,
-    hasNegative: false,
-    hiddenByDefault: true,
-    getPrecomputedMax: (animationData) => {
-      // Convert max Z from inches to feet
-      return animationData.precomputed.boundingBox.max[2];
-    },
-    isAvailable: (animationData) => !!animationData.initialPositions,
-    getValue: (animationData, _frameIndex, nodeId) => {
-      const pos = animationData.initialPositions.at(nodeId);
-      // Z is in inches, convert to feet
-      return pos[2];
-    },
-  },
-  crossSectionX: {
-    metric: "crossSectionX",
-    thresholdKey: "inf",
-    label: "Cross-Section X Index",
-    shortLabel: "Cross-Section X",
-    unit: UNITS["percent"],
-    defaultPalette: "spectrum",
-    hasPositive: true,
-    hasNegative: false,
-    hiddenByDefault: true,
-    getPrecomputedMax: (animationData) => {
-      // Return number of X cross-sections as max
-      return animationData.precomputed.numCrossSectionsX;
-    },
-    isAvailable: (animationData) => {
-      // Available if there are cross-section definitions
-      return Object.keys(animationData.metadata.crossSectionsX).length > 0;
-    },
-    getValue: (animationData, _frameIndex, nodeId) => {
-      const { crossSectionsX } = animationData.metadata;
-      if (!crossSectionsX) return undefined;
+  // floorIndex: {
+  //   metric: "floorIndex",
+  //   thresholdKey: "inf",
+  //   label: "Floor Index",
+  //   shortLabel: "Floor Index",
+  //   unit: UNITS["percent"],
+  //   defaultPalette: "spectrum",
+  //   hasPositive: true,
+  //   hasNegative: false,
+  //   hiddenByDefault: true,
+  //   getPrecomputedMax: (animationData) => {
+  //     // Return number of stories as max
+  //     return Object.keys(animationData.precomputed.storyElevations).length;
+  //   },
+  //   isAvailable: (animationData) => !!animationData.metadata.stories,
+  //   getValue: (animationData, _frameIndex, nodeId) => {
+  //     const { storyOrder, stories } = animationData.metadata;
+  //     for (let i = 0; i < storyOrder.length; i++) {
+  //       const storyNodes = stories[storyOrder[i]];
+  //       if (storyNodes && storyNodes.includes(nodeId)) {
+  //         return i + 1; // 1-based floor index
+  //       }
+  //     }
+  //     return undefined;
+  //   },
+  // },
+  // nodeZ: {
+  //   metric: "nodeZ",
+  //   thresholdKey: "inf",
+  //   label: "Node Z Position",
+  //   shortLabel: "Node Z",
+  //   unit: UNITS["inches"],
+  //   defaultPalette: "spectrum",
+  //   hasPositive: true,
+  //   hasNegative: false,
+  //   hiddenByDefault: true,
+  //   getPrecomputedMax: (animationData) => {
+  //     // Convert max Z from inches to feet
+  //     return animationData.precomputed.boundingBox.max[2];
+  //   },
+  //   isAvailable: (animationData) => !!animationData.initialPositions,
+  //   getValue: (animationData, _frameIndex, nodeId) => {
+  //     const pos = animationData.initialPositions.at(nodeId);
+  //     // Z is in inches, convert to feet
+  //     return pos[2];
+  //   },
+  // },
+  // crossSectionX: {
+  //   metric: "crossSectionX",
+  //   thresholdKey: "inf",
+  //   label: "Cross-Section X Index",
+  //   shortLabel: "Cross-Section X",
+  //   unit: UNITS["percent"],
+  //   defaultPalette: "spectrum",
+  //   hasPositive: true,
+  //   hasNegative: false,
+  //   hiddenByDefault: true,
+  //   getPrecomputedMax: (animationData) => {
+  //     // Return number of X cross-sections as max
+  //     return animationData.precomputed.numCrossSectionsX;
+  //   },
+  //   isAvailable: (animationData) => {
+  //     // Available if there are cross-section definitions
+  //     return Object.keys(animationData.metadata.crossSectionsX).length > 0;
+  //   },
+  //   getValue: (animationData, _frameIndex, nodeId) => {
+  //     const { crossSectionsX } = animationData.metadata;
+  //     if (!crossSectionsX) return undefined;
 
-      // Find which cross-section X slice this node belongs to
-      let i = 0;
-      for (const nodes of Object.values(crossSectionsX)) {
-        i++;
-        if (nodes.includes(nodeId)) return i;
-      }
-      return undefined;
-    },
-  },
-  crossSectionY: {
-    metric: "crossSectionY",
-    thresholdKey: "inf",
-    label: "Cross-Section Y Index",
-    shortLabel: "Cross-Section Y",
-    unit: UNITS["percent"],
-    defaultPalette: "spectrum",
-    hasPositive: true,
-    hasNegative: false,
-    hiddenByDefault: true,
-    getPrecomputedMax: (animationData) => {
-      // Return number of Y cross-sections as max
-      return animationData.precomputed.numCrossSectionsY;
-    },
-    isAvailable: (animationData) => {
-      // Available if there are cross-section definitions
-      return Object.keys(animationData.metadata.crossSectionsY).length > 0;
-    },
-    getValue: (animationData, _frameIndex, nodeId) => {
-      const { crossSectionsY } = animationData.metadata;
-      if (!crossSectionsY) return undefined;
+  //     // Find which cross-section X slice this node belongs to
+  //     let i = 0;
+  //     for (const nodes of Object.values(crossSectionsX)) {
+  //       i++;
+  //       if (nodes.includes(nodeId)) return i;
+  //     }
+  //     return undefined;
+  //   },
+  // },
+  // crossSectionY: {
+  //   metric: "crossSectionY",
+  //   thresholdKey: "inf",
+  //   label: "Cross-Section Y Index",
+  //   shortLabel: "Cross-Section Y",
+  //   unit: UNITS["percent"],
+  //   defaultPalette: "spectrum",
+  //   hasPositive: true,
+  //   hasNegative: false,
+  //   hiddenByDefault: true,
+  //   getPrecomputedMax: (animationData) => {
+  //     // Return number of Y cross-sections as max
+  //     return animationData.precomputed.numCrossSectionsY;
+  //   },
+  //   isAvailable: (animationData) => {
+  //     // Available if there are cross-section definitions
+  //     return Object.keys(animationData.metadata.crossSectionsY).length > 0;
+  //   },
+  //   getValue: (animationData, _frameIndex, nodeId) => {
+  //     const { crossSectionsY } = animationData.metadata;
+  //     if (!crossSectionsY) return undefined;
 
-      let i = 0;
-      for (const nodes of Object.values(crossSectionsY)) {
-        i++;
-        if (nodes.includes(nodeId)) return i;
-      }
-      return undefined;
-    },
-  },
+  //     let i = 0;
+  //     for (const nodes of Object.values(crossSectionsY)) {
+  //       i++;
+  //       if (nodes.includes(nodeId)) return i;
+  //     }
+  //     return undefined;
+  //   },
+  // },
 };
 
 export const THRESHOLD_KEY_ORDER: ThresholdKey[] = [

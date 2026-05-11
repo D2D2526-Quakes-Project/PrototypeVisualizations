@@ -8,7 +8,9 @@ import {
   Eye,
   EyeOff,
   Grid3X3,
+  GridIcon,
   Home,
+  PaletteIcon,
   RotateCw,
   ScanEye,
   XCircle,
@@ -16,17 +18,15 @@ import {
 import { AnimatePresence, motion, stagger } from "motion/react";
 
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
-import { UNIT_SCALE } from "@/lib/utils";
-import { COLLAPSED_VIEW_PRESET_OPTIONS } from "./viewPresets";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useCamera } from "../3d/contexts/CanvasContext";
 import { useLiveStore } from "@/state";
-import { ViewsPanel } from "./control-panels/ViewsPanel";
+import { ViewsPanel } from "./control-sections/ViewsPanel";
 import { QuickControls } from "./components/QuickControls";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ViewModeSelect } from "./control-panels/ViewModeSelect";
+import { ViewModeSelect } from "./control-sections/ViewToggleSection";
+import { MetricSelectSection } from "./control-sections/MetricSelectSection";
 
 const childVariants = {
   initial: { opacity: 0 },
@@ -251,7 +251,7 @@ export function ViewControls({
                   <ChevronRightIcon />
                 </Button>
               </div>
-              <div className="items-st flex min-h-0 flex-col gap-2 overflow-x-hidden overflow-y-auto pr-2 pb-2">
+              <div className="items-st flex min-h-0 flex-col gap-1 overflow-x-hidden overflow-y-auto pr-2 pb-2">
                 <motion.div className="" variants={childVariants}>
                   <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
                 </motion.div>
@@ -283,6 +283,7 @@ export function ViewControls({
                     </button>
                   </div>
                 )} */}
+                <div className="my-1 h-px w-full bg-neutral-200" />
                 <motion.div className="flex items-center gap-2" variants={childVariants}>
                   <Label className="flex-1 text-xs font-medium text-neutral-700">
                     Orthographic
@@ -294,12 +295,18 @@ export function ViewControls({
                     <Switch size="sm" checked={autoRotate} onCheckedChange={setAutoRotate} />
                   </Label>
                 </motion.div>
+                <div className="my-1 h-px w-full bg-neutral-200" />
                 <motion.div className="" variants={childVariants}>
+                  <div className="mb-1 flex items-center gap-1">
+                    <GridIcon size={12} className="text-neutral-500" />
+                    <span className="text-xs font-medium text-neutral-700">Viewable Parts</span>
+                  </div>
                   <ViewModeSelect />
                 </motion.div>
-                {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
-                  <ColorPanel />
-                </motion.div> */}
+                <div className="my-1 h-px w-full bg-neutral-200" />
+                <motion.div className="" variants={childVariants}>
+                  <MetricSelectSection />
+                </motion.div>
                 {/* <motion.div className="mt-2 border-t border-neutral-200 pt-2" variants={childVariants}>
                   <ThresholdPanel />
                 </motion.div> */}

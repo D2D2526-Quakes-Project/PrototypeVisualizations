@@ -12,13 +12,13 @@
 // import { useNodeInteractionMode, useSlabInteractionMode } from "@/features/3d/lib/interactionPolicy";
 // import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 // import { getMetricConfig, isHingeMetric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useGlobalStore } from "@/state";
 // import { Point, PointMaterial, Points, Text } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 // import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useAnimationData } from "../animation-data/useAnimationData";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();

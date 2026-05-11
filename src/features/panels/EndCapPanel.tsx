@@ -23,12 +23,12 @@
  * =============================================================================
  */
 
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IDockviewPanelProps } from "dockview";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useColor } from "@/features/3d/contexts/visualization/ColorContext";
+import { useColor } from "@/features/metrics/useMetrics";
 import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 
 interface EndCapNode {

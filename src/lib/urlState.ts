@@ -1,4 +1,7 @@
-import { OPTIONAL_DATASET_KEYS, type OptionalDataLoadOptions } from "./loadingTypes";
+import {
+  OPTIONAL_DATASET_KEYS,
+  type OptionalDataLoadOptions,
+} from "../features/animation-data/data-loading/loadingTypes";
 
 export interface DataSelection {
   building: string;

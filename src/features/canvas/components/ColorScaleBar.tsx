@@ -2,21 +2,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   getMetricColorScale,
-  getMetricConfig,
   METRIC_CONFIGS,
   METRIC_PALETTES,
-  type Metric,
   type MetricPaletteKey,
-  type MetricPaletteOverrides,
-} from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+} from "@/features/metrics/metrics";
+import { useMetrics } from "@/features/metrics/useMetrics";
 import { formatCompactNumber } from "@/lib/utils";
-import { useColor, useThresholds } from "../../contexts/visualization";
 
 interface ColorScaleBarProps {
-  currentMetric: Metric;
-  thresholdHighlighting: boolean;
-  metricPaletteOverrides?: MetricPaletteOverrides;
   noLabel?: boolean;
   insideLabel?: boolean;
 }
@@ -119,32 +112,27 @@ function getScaleStopsAndLabels(
   return { stops, thresholdRatio };
 }
 
-export function ColorScaleBar({
-  currentMetric,
-  thresholdHighlighting,
-  metricPaletteOverrides,
-  noLabel,
-  insideLabel,
-}: ColorScaleBarProps) {
-  const { animationData } = useAnimationData();
-  const { thresholds } = useThresholds();
-  const config = getMetricConfig(currentMetric);
-  const colorScale = getMetricColorScale(currentMetric, metricPaletteOverrides);
-  const maxValue = config.getPrecomputedMax(animationData);
-  const thresholdValue = thresholds[config.thresholdKey] ?? 0;
+export function ColorScaleBar({ noLabel, insideLabel }: ColorScaleBarProps) {
+  const {
+    currentMetricColorScale,
+    currentMetricPrecomputedMax: maxValue,
+    currentMetricConfig: config,
+    currentMetricThreshold,
+    thresholdHighlighting,
+  } = useMetrics();
 
   const { stops, thresholdRatio } = getScaleStopsAndLabels(
-    colorScale,
+    currentMetricColorScale,
     maxValue,
     config.hasPositive,
     config.hasNegative,
     thresholdHighlighting,
-    thresholdValue
+    currentMetricThreshold
   );
   const minLabel = formatCompactNumber(config.hasNegative ? -maxValue : 0) + " " + config.unit.abbr;
   const centerLabel = formatCompactNumber(0) + " " + config.unit.abbr;
   const maxLabel = formatCompactNumber(config.hasPositive ? maxValue : 0) + " " + config.unit.abbr;
-  const thresholdLabel = formatCompactNumber(thresholdValue) + " " + config.unit.abbr;
+  const thresholdLabel = formatCompactNumber(currentMetricThreshold) + " " + config.unit.abbr;
 
   const onlyNegative = config.hasNegative && !config.hasPositive;
 
@@ -208,18 +196,13 @@ export function ColorScaleBar({
   );
 }
 
-export function ColorScaleBarTooltip({
-  currentMetric,
-  metricPaletteOverrides,
-  thresholdHighlighting,
-  noLabel,
-  insideLabel,
-}: ColorScaleBarProps) {
-  const { animationData } = useAnimationData();
-  const { thresholds } = useThresholds();
-  const config = getMetricConfig(currentMetric);
-  const maxValue = config.getPrecomputedMax(animationData);
-  const thresholdValue = thresholds[config.thresholdKey] ?? 0;
+export function ColorScaleBarTooltip({ noLabel, insideLabel }: ColorScaleBarProps) {
+  const {
+    currentMetricPrecomputedMax: maxValue,
+    currentMetricConfig: config,
+    currentMetricThreshold,
+    thresholdHighlighting,
+  } = useMetrics();
 
   const unit = config.unit;
 
@@ -227,13 +210,7 @@ export function ColorScaleBarTooltip({
     <Tooltip>
       <TooltipTrigger asChild>
         <div key="colorbar">
-          <ColorScaleBar
-            currentMetric={currentMetric}
-            metricPaletteOverrides={metricPaletteOverrides}
-            thresholdHighlighting={thresholdHighlighting}
-            noLabel={noLabel}
-            insideLabel={insideLabel}
-          />
+          <ColorScaleBar noLabel={noLabel} insideLabel={insideLabel} />
         </div>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={8}>
@@ -248,11 +225,11 @@ export function ColorScaleBarTooltip({
           <span>
             {config.hasNegative ? `-${maxValue.toFixed(2)}` : "0"} {unit.abbr}
           </span>
-          {thresholdHighlighting && thresholdValue > 0 && (
+          {thresholdHighlighting && currentMetricThreshold > 0 && (
             <>
               <span className="text-neutral-400">Threshold:</span>
               <span>
-                {thresholdValue.toFixed(2)} {unit.abbr}
+                {currentMetricThreshold.toFixed(2)} {unit.abbr}
               </span>
             </>
           )}
@@ -263,7 +240,7 @@ export function ColorScaleBarTooltip({
 }
 
 function ColorScaleBarPopover({ children }: { children: React.ReactNode }) {
-  const { currentMetric, metricPaletteOverrides, setMetricPalette } = useColor();
+  const { currentMetric, metricPaletteOverrides, setMetricPalette } = useMetrics();
   const activePalette = getMetricColorScale(currentMetric, metricPaletteOverrides);
   const metricConfig = METRIC_CONFIGS[currentMetric];
 
@@ -278,7 +255,7 @@ function ColorScaleBarPopover({ children }: { children: React.ReactNode }) {
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-2">
-        <div className="grid grid-cols-1 gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
           {(
             Object.entries(METRIC_PALETTES) as Array<[MetricPaletteKey, (typeof METRIC_PALETTES)[MetricPaletteKey]]>
           ).map(([paletteKey, palette]) => {

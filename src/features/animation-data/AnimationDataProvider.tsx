@@ -1,5 +1,9 @@
 import DataSources from "@/data/index";
-import { fetchWithProgressAndCache, getProcessedFromCache, saveProcessedToCache } from "@/lib/dataLoader";
+import {
+  fetchWithProgressAndCache,
+  getProcessedFromCache,
+  saveProcessedToCache,
+} from "@/features/animation-data/data-loading/dataLoader";
 import {
   buildRequiredSerializedAnimationDataFromRaw,
   createCoreProcessedCacheKey,
@@ -11,7 +15,7 @@ import {
   type ProcessedCacheRecord,
   type SerializedOptionalDatasetResult,
   type SerializedRequiredAnimationData,
-} from "@/lib/incrementalData";
+} from "@/features/animation-data/data-loading/incrementalData";
 import {
   DATASET_KEYS,
   DATASET_LABELS,
@@ -23,11 +27,11 @@ import {
   type DatasetLoadState,
   type OptionalDataLoadOptions,
   type OptionalDatasetKey,
-} from "@/lib/loadingTypes";
+} from "@/features/animation-data/data-loading/loadingTypes";
 import type { BinaryBuilding, BinarySimulation, BuildingAnimationData, Simulation } from "@/lib/types";
 import { AnimatePresence } from "motion/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { getSelectionFromCurrentUrl } from "../urlState";
+import { getSelectionFromCurrentUrl } from "@/lib/urlState";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { SimulationPickerOverlay } from "./SimulationPickerOverlay";
 import { AnimationDataContext } from "./useAnimationData";
@@ -35,7 +39,7 @@ import {
   DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS,
   getEffectiveOptionalDataLoadOptions,
   normalizeOptionalDataLoadOptions,
-} from "./util";
+} from "./data-loading/util";
 
 function resolveDataUrl(pathOrUrl: string, folder: string): string {
   if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
@@ -91,7 +95,9 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const abortControllersRef = useRef<Partial<Record<DatasetKey, AbortController>>>({});
 
   useEffect(() => {
-    workerRef.current = new Worker(new URL("./optionalDataWorker.ts", import.meta.url), { type: "module" });
+    workerRef.current = new Worker(new URL("./data-loading/optionalDataWorker.ts", import.meta.url), {
+      type: "module",
+    });
     return () => {
       workerRef.current?.terminate();
       workerRef.current = null;

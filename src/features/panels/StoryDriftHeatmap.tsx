@@ -38,7 +38,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFloorVisibility } from "@/features/3d/contexts/visualization";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import {
   amber50,
   amber600,
@@ -50,7 +50,7 @@ import {
   purple600,
   red50,
   red600,
-} from "@/lib/colors/tailwindColors";
+} from "@/features/metrics/colors/tailwindColors";
 import { formatHex, interpolate } from "culori";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";

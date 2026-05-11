@@ -8,9 +8,9 @@ import { NavigationBar } from "./components/NavigationBar";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { PlaybackKeyboardEvents } from "./features/playback/PlaybackKeyboardEvents";
 import "./index.css";
-import { AnimationDataProvider } from "./lib/animation-data/AnimationDataProvider";
 import { App } from "./pages/App";
 import { ExportRenderModeContext } from "./features/export/renderMode";
+import { AnimationDataProvider } from "./features/animation-data/AnimationDataProvider";
 
 const routes = [
   {

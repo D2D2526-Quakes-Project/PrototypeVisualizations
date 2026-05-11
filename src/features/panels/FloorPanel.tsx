@@ -1,5 +1,5 @@
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FloorVisualization } from "./FloorVisualization";

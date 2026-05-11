@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { usePanelState, type UsePanelStateReturn } from "../hooks/usePanelState";
 import type { ViewPresetMode } from "@/features/canvas/viewPresets";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 
 export interface CanvasPanelState {

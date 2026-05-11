@@ -1,7 +1,7 @@
 import { FloorTorsionPlanPreview } from "@/features/3d/components/FloorTorsionPlanPreview";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { buildFloorTorsionSnapshot } from "@/features/3d/lib/floorTorsion";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { formatCompactNumber } from "@/lib/utils";
 import { formatHex, interpolate } from "culori";
 import { useMemo } from "react";

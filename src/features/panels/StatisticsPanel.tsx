@@ -33,10 +33,10 @@
  */
 
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useMemo } from "react";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { getGlobalHingeSummary } from "@/lib/hingeMetrics";
+import { getGlobalHingeSummary } from "@/features/metrics/hingeMetrics";
 
 type StatScope = "current" | "static";
 

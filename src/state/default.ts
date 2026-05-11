@@ -13,9 +13,9 @@ function getDefaultProfileData(
     visualInterpolationEnabled: true,
     renderVerticalConnections: false,
     renderHorizontalConnections: false,
-    thresholds: { ...DEFAULT_THRESHOLDS },
-    currentMetric: "interstoryDrift",
-    thresholdHighlighting: true,
+    _thresholds: { ...DEFAULT_THRESHOLDS },
+    _currentMetric: "interstoryDrift",
+    _thresholdHighlighting: true,
     hiddenFloors: [],
     hiddenNodeIds: [],
 

@@ -6,7 +6,7 @@ import { useColor, useFloorVisibility, useThresholds } from "@/features/3d/conte
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { formatStoryLabel } from "@/lib/utils";
 import { formatValue, getMetricConfig, isHingeMetric, type Metric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import type { DockviewPanelApi } from "dockview";

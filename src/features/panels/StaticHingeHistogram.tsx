@@ -1,4 +1,4 @@
-import type { HingeHistogramResult } from "@/lib/hingeMetrics";
+import type { HingeHistogramResult } from "@/features/metrics/hingeMetrics";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useMemo } from "react";
@@ -14,12 +14,7 @@ function getCenter(bin: { x0: number; x1: number }) {
   return (bin.x0 + bin.x1) / 2;
 }
 
-export function StaticHingeHistogram({
-  title,
-  maxHistogram,
-  minHistogram,
-  height = 180,
-}: StaticHingeHistogramProps) {
+export function StaticHingeHistogram({ title, maxHistogram, minHistogram, height = 180 }: StaticHingeHistogramProps) {
   const option = useMemo((): EChartsOption => {
     const xValues = Array.from(
       new Set(

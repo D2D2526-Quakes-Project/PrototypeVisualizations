@@ -5,7 +5,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { formatCompactNumber, formatFixed3 } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview";
 import { type EChartsOption } from "echarts";
@@ -14,9 +13,11 @@ import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 
-import { getMetricKeyColor, isStaticMetric, UNITS, type Metric, type UnitConfig } from "@/lib/metrics";
 import type { BuildingAnimationData } from "@/lib/types";
-import { useGlobalStore, useProfileStore } from "@/state";
+import { useGlobalStore } from "@/state";
+import { useAnimationData } from "../animation-data/useAnimationData";
+import { getMetricKeyColor, UNITS, type Metric, type UnitConfig } from "../metrics/metrics";
+import { useMetrics } from "../metrics/useMetrics";
 
 type ChannelOption = {
   label: string;
@@ -301,8 +302,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
     panelType: "timeline",
     defaultState: DEFAULT_TIMELINE_PANEL_STATE,
   });
-  const currentMetric = useProfileStore((s) => s.currentMetric);
-  const staticMetricMode = isStaticMetric(currentMetric);
+  const { isCurrentMetricStatic } = useMetrics();
 
   const maxFrame = animationData.metadata.frameCount - 1;
   const dt = animationData.metadata.dt;
@@ -546,7 +546,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
   // Scrubbing logic - uses refs to access current values and tracks chart instance changes
   useEffect(() => {
-    if (staticMetricMode) {
+    if (isCurrentMetricStatic) {
       return;
     }
 
@@ -632,7 +632,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       window.removeEventListener("mouseup", handleMouseUp);
       currentChart = null;
     };
-  }, [staticMetricMode, setFrameIndex, dt, maxFrame]);
+  }, [isCurrentMetricStatic, setFrameIndex, dt, maxFrame]);
 
   // Update for MarkLine and MarkPoint
   useEffect(() => {
@@ -716,12 +716,12 @@ export function Timeline({ api }: IDockviewPanelProps) {
             <ReactECharts
               ref={chartRef}
               option={option}
-              style={{ height: "100%", width: "100%", opacity: staticMetricMode ? 0.65 : 1 }}
+              style={{ height: "100%", width: "100%", opacity: isCurrentMetricStatic ? 0.65 : 1 }}
               opts={{ renderer: "canvas" }}
               replaceMerge={["series"]}
               onChartReady={() => setChartReadyVersion((v) => v + 1)}
             />
-            {staticMetricMode && (
+            {isCurrentMetricStatic && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="rounded border border-neutral-200 bg-white/95 px-3 py-2 text-center text-xs text-neutral-600 shadow-sm">
                   This metric is static.

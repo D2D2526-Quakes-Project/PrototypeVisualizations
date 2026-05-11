@@ -1,14 +1,14 @@
 import DataSources from "@/data/index";
 import { useState } from "react";
-import type { OptionalDataLoadOptions } from "../loadingTypes";
-import type { BinaryBuilding, BinarySimulation } from "../types";
+import type { OptionalDataLoadOptions } from "./data-loading/loadingTypes";
 import { AnimatePresence, motion } from "motion/react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ChevronRightIcon, CheckIcon } from "lucide-react";
-import { clearCache, clearProcessedCache } from "../dataLoader";
-import { getAvailableOptionalDataLoadOptions, normalizeOptionalDataLoadOptions } from "./util";
+import { clearCache, clearProcessedCache } from "./data-loading/dataLoader";
+import { getAvailableOptionalDataLoadOptions, normalizeOptionalDataLoadOptions } from "./data-loading/util";
+import type { BinaryBuilding, BinarySimulation } from "@/lib/types";
 
 export function SimulationPickerOverlay({
   onSelect,

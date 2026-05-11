@@ -6,7 +6,7 @@ import { usePlayback } from "@/features/playback/usePlayback";
 import { useColor, useFloorVisibility, useThresholds } from "@/features/3d/contexts/visualization";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { formatValue, getMetricConfig, getMetricKeyColor, type Metric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { formatStoryLabel } from "@/lib/utils";
 
 import type { IDockviewPanelProps } from "dockview";

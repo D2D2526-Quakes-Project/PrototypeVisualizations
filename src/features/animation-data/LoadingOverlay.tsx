@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { TriangleAlertIcon, LoaderCircleIcon } from "lucide-react";
 import { motion } from "motion/react";
-import { type DatasetKey, type DatasetLoadState, REQUIRED_DATASET_KEYS, OPTIONAL_DATASET_KEYS } from "../loadingTypes";
+import {
+  OPTIONAL_DATASET_KEYS,
+  REQUIRED_DATASET_KEYS,
+  type DatasetKey,
+  type DatasetLoadState,
+} from "./data-loading/loadingTypes";
 
 export function LoadingOverlay({
   datasetStates,

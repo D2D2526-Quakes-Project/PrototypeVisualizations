@@ -1,8 +1,8 @@
-import { isStaticMetric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
-import { useLiveStore, useProfileStore } from "@/state";
+import { useLiveStore } from "@/state";
 import { useEffect, useRef } from "react";
+import { useMetrics } from "../metrics/useMetrics";
 import { usePlayback } from "./usePlayback";
+import { useAnimationData } from "../animation-data/useAnimationData";
 
 export function PlaybackKeyboardEvents() {
   const { animationData } = useAnimationData();
@@ -20,8 +20,7 @@ export function PlaybackKeyboardEvents() {
   const lastFpsUpdateRef = useRef(0);
   const requestedAnimationFrameRef = useRef<number | null>(null);
 
-  const currentMetric = useProfileStore((s) => s.currentMetric);
-  const staticMetricMode = isStaticMetric(currentMetric);
+  const { isCurrentMetricStatic } = useMetrics();
 
   const frameRate = animationData.metadata.dt > 0 ? 1 / animationData.metadata.dt : 30;
 
@@ -45,7 +44,7 @@ export function PlaybackKeyboardEvents() {
   }, [frameIndex, playing, setSkippedPerFrame]);
 
   useEffect(() => {
-    if (staticMetricMode) {
+    if (isCurrentMetricStatic) {
       if (requestedAnimationFrameRef.current !== null) {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
@@ -121,7 +120,7 @@ export function PlaybackKeyboardEvents() {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
     };
-  }, [frameRate, staticMetricMode, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame, totalFrames]);
+  }, [frameRate, isCurrentMetricStatic, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame, totalFrames]);
 
   useEffect(() => {
     const changeFrame = (delta: number) => {
@@ -137,7 +136,7 @@ export function PlaybackKeyboardEvents() {
         return;
       }
 
-      if (staticMetricMode) {
+      if (isCurrentMetricStatic) {
         if ([" ", "ArrowLeft", "ArrowRight"].includes(e.key)) {
           e.preventDefault();
           setPlaying(false);
@@ -181,7 +180,7 @@ export function PlaybackKeyboardEvents() {
 
     window.addEventListener("keydown", windowKeydown);
     return () => window.removeEventListener("keydown", windowKeydown);
-  }, [frameIndex, staticMetricMode, playing, setFrameIndex, setPlaying, totalFrames]);
+  }, [frameIndex, isCurrentMetricStatic, playing, setFrameIndex, setPlaying, totalFrames]);
 
   return null;
 }

@@ -1,4 +1,7 @@
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { useProfileStore } from "@/state";
 import {
   CheckIcon,
   Columns2Icon,
@@ -10,9 +13,6 @@ import {
   Share2Icon,
   WorkflowIcon,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { isHingeMetric } from "@/lib/metrics";
-import { useProfileStore } from "@/state";
 
 export function ViewModeSelect() {
   const { animationData } = useAnimationData();
@@ -31,8 +31,7 @@ export function ViewModeSelect() {
   const renderHorizontalConnections = useProfileStore((s) => s.renderHorizontalConnections);
   const setRenderHorizontalConnections = useProfileStore((s) => s.setRenderHorizontalConnections);
 
-  const currentMetric = useProfileStore((s) => s.currentMetric);
-  const renderHingeNodes = isHingeMetric(currentMetric);
+  const { isCurrentMetricHinge } = useMetrics();
 
   const hasBeamData = Boolean(animationData?.beamData);
 
@@ -86,7 +85,7 @@ export function ViewModeSelect() {
       checked: true,
       setter: null,
       icon: WorkflowIcon,
-      hidden: !renderHingeNodes,
+      hidden: !isCurrentMetricHinge,
     },
   ];
 
@@ -106,7 +105,7 @@ export function ViewModeSelect() {
                   }}
                   disabled={disabled}>
                   <div
-                    className={`relative flex w-fit flex-col items-center justify-center gap-2 rounded-sm border p-2 px-2.5 text-center transition-colors ${checked ? "border-primary-foreground bg-primary text-primary-foreground" : "border-input group-hover:bg-input/80 text-muted-foreground"}`}>
+                    className={`relative flex w-fit flex-col items-center justify-center gap-2 rounded-sm border p-2 px-2.5 text-center transition-colors ${checked ? "border-primary-foreground bg-primary text-primary-foreground" : "border-border bg-background group-hover:bg-muted group-hover:text-foreground dark:border-input dark:bg-input/30 dark:group-hover:bg-input/50"}`}>
                     <Icon className="size-4" />
                     {setter != null && (
                       <span

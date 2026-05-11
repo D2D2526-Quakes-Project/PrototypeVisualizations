@@ -1,4 +1,4 @@
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useProfileStore } from "@/state";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";

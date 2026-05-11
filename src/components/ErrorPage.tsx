@@ -1,5 +1,4 @@
-import { clearCache, clearProcessedCache } from "@/lib/dataLoader";
-import { clearLayoutFromLocalStorage } from "@/features/3d/lib/layoutPersistence";
+import { clearCache, clearProcessedCache } from "@/features/animation-data/data-loading/dataLoader";
 import { Link, useRouteError } from "react-router";
 
 export function ErrorPage() {
@@ -24,6 +23,12 @@ export function ErrorPage() {
       message: "An unexpected error occurred",
     };
   };
+
+  function clearLocalStorage() {
+    for (let i = 0; i < localStorage.length; i++) {
+      localStorage.removeItem(localStorage.key(0)!);
+    }
+  }
 
   const { code, message } = getErrorInfo();
 
@@ -63,8 +68,8 @@ export function ErrorPage() {
         </button>
         <button
           className="focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-9 cursor-pointer items-center justify-center rounded-md border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-          onClick={() => clearLayoutFromLocalStorage()}>
-          Clear Saved Layout
+          onClick={() => clearLocalStorage()}>
+          Clear Local Storage
         </button>
       </div>
     </div>

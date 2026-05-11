@@ -1,16 +1,12 @@
-import { AlertTriangle, Check, Film, Keyboard, LogOutIcon, Share2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Check, Keyboard, LogOutIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import {
   Menubar,
-  MenubarCheckboxItem,
   MenubarContent,
   MenubarItem,
-  MenubarLabel,
   MenubarMenu,
-  MenubarRadioGroup,
-  MenubarRadioItem,
   MenubarSeparator,
   MenubarSub,
   MenubarSubContent,
@@ -18,7 +14,6 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import DataSources from "@/data/index";
 // import { useExportVideo } from "@/features/export/ExportProvider";
 // import {
 //   applyWorkspaceState,
@@ -34,11 +29,9 @@ import DataSources from "@/data/index";
 //   resetProfileToDefault,
 //   setActiveProfile,
 // } from "@/features/3d/lib/statePersistence";
-import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/lib/loadingTypes";
-import { getMetricConfig } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
-import { formatFixed3 } from "@/lib/utils";
+import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
 import { Sheet, SheetContent } from "./ui/sheet";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 
 export function NavigationBar() {
   const location = useLocation();

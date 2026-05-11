@@ -1,21 +1,19 @@
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
 import { useExportRenderMode } from "@/features/export/renderMode";
 
-import { isStaticMetric } from "@/lib/metrics";
 import { usePlayback } from "./usePlayback";
-import { useProfileStore } from "@/state";
+import { useMetrics } from "../metrics/useMetrics";
 
 export function PlaybackControls() {
   const { playing, togglePlaying, skipToStart, skipToEnd } = usePlayback();
-  const currentMetric = useProfileStore((s) => s.currentMetric);
-  const staticMetricMode = isStaticMetric(currentMetric);
+  const { isCurrentMetricStatic } = useMetrics();
 
   return (
     <div className="flex items-center gap-2">
       <button
         className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
         onClick={skipToStart}
-        disabled={staticMetricMode}
+        disabled={isCurrentMetricStatic}
         title="Skip to Start">
         <SkipBackIcon />
       </button>
@@ -25,8 +23,8 @@ export function PlaybackControls() {
       <button
         className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
         onClick={togglePlaying}
-        disabled={staticMetricMode}
-        title={staticMetricMode ? "Static metrics do not support playback" : playing ? "Pause" : "Play"}>
+        disabled={isCurrentMetricStatic}
+        title={isCurrentMetricStatic ? "Static metrics do not support playback" : playing ? "Pause" : "Play"}>
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
 
@@ -35,11 +33,11 @@ export function PlaybackControls() {
       <button
         className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
         onClick={skipToEnd}
-        disabled={staticMetricMode}
+        disabled={isCurrentMetricStatic}
         title="Skip to End">
         <SkipForwardIcon />
       </button>
-      {staticMetricMode && <span className="text-xs text-neutral-500">Static</span>}
+      {isCurrentMetricStatic && <span className="text-xs text-neutral-500">Static</span>}
     </div>
   );
 }
@@ -47,8 +45,7 @@ export function PlaybackControls() {
 export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) {
   const { playing, togglePlaying, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
   const exportRenderMode = useExportRenderMode();
-  const currentMetric = useProfileStore((s) => s.currentMetric);
-  const staticMetricMode = isStaticMetric(currentMetric);
+  const { isCurrentMetricStatic } = useMetrics();
 
   if (!exportRenderMode.showTransientUi) return null;
 
@@ -61,26 +58,26 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
       }>
       <button
         onClick={skipToStart}
-        disabled={staticMetricMode}
+        disabled={isCurrentMetricStatic}
         className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         title="Skip to Start">
         <SkipBackIcon />
       </button>
       <button
         onClick={togglePlaying}
-        disabled={staticMetricMode}
+        disabled={isCurrentMetricStatic}
         className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
-        title={staticMetricMode ? "Static metrics do not support playback" : playing ? "Pause" : "Play"}>
+        title={isCurrentMetricStatic ? "Static metrics do not support playback" : playing ? "Pause" : "Play"}>
         {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
       <button
         onClick={skipToEnd}
-        disabled={staticMetricMode}
+        disabled={isCurrentMetricStatic}
         className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         title="Skip to End">
         <SkipForwardIcon />
       </button>
-      {staticMetricMode && (
+      {isCurrentMetricStatic && (
         <span className="border-l border-neutral-300 pl-1 text-[10px] text-neutral-500">Static</span>
       )}
       {playing && (

@@ -1,7 +1,7 @@
-import { isStaticMetric } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { useLiveStore, useProfileStore } from "@/state";
 import { useCallback } from "react";
+import { useAnimationData } from "../animation-data/useAnimationData";
+import { isStaticMetric } from "../metrics/metrics";
 
 export type PlaybackControlParams = {
   totalFrames: number;
@@ -33,7 +33,7 @@ export const usePlayback = (): PlaybackControlParams => {
   const fps = useLiveStore((s) => s._fps);
   const skippedPerFrame = useLiveStore((s) => s._skippedPerFrame);
 
-  const currentMetric = useProfileStore((s) => s.currentMetric);
+  const currentMetric = useProfileStore((s) => s._currentMetric);
   const staticMetricMode = isStaticMetric(currentMetric);
 
   const setFrameIndex = useCallback(

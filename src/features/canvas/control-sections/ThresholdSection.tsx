@@ -8,7 +8,7 @@ import {
   type Metric,
   type ThresholdKey,
 } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { AlertTriangle, Layers, RotateCcw, Sliders } from "lucide-react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";

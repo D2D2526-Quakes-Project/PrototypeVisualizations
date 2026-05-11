@@ -12,39 +12,33 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 // import { ISDThresholdPanel } from "@/features/panels/ISDThresholdPanel";
 import { MainCanvasPanel } from "@/features/panels/MainCanvasPanel";
 // import { VelocityDistributionPanel } from "@/features/panels/VelocityDistributionPanel";
-import type { DatasetLoadState } from "@/lib/loadingTypes";
-import type { Metric } from "@/lib/metrics";
+import type { DatasetLoadState } from "@/features/animation-data/data-loading/loadingTypes";
 import type { BuildingAnimationData } from "@/lib/types";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity,
-  BarChart3,
   CircleDotDashed,
   Columns,
-  Grid2X2Icon,
   LineChart,
   Maximize2,
   Minimize2,
   MoreHorizontal,
   PanelTop,
   Plus,
-  RotateCw,
-  ShieldAlert,
   X,
   XIcon,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 // import { StatisticsPanel } from "../panels/StatisticsPanel";
+
+import { useAnimationData } from "../animation-data/useAnimationData";
 import { Timeline } from "../timeline/Timeline";
-import { useProfileStore } from "@/state";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
 export type PanelType = keyof typeof PANEL_DEFINITIONS;
-export type MagicPanelParams = { panelType: PanelType; initialMetric?: Metric };
+export type MagicPanelParams = { panelType: PanelType };
 
 type PanelDefinition = {
   component: React.ComponentType<IDockviewPanelProps>;
@@ -324,10 +318,6 @@ export const MagicPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   );
 };
 
-function getPanelParams(panelType: PanelType, currentMetric: Metric): MagicPanelParams {
-  return panelType === "Histogram Chart" ? { panelType, initialMetric: currentMetric } : { panelType };
-}
-
 export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
   const isActive = props.api.isActive;
@@ -426,16 +416,13 @@ function PanelTypePickerMenu({
                 const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
                   .filter(Boolean)
                   .join("\n");
-                const availabilityClasses = !availability.isAvailable
-                  ? "border-transparent bg-white/80 text-neutral-500 opacity-45"
-                  : "border-transparent bg-white/80 hover:border-neutral-200 hover:bg-white";
 
                 const button = (
                   <Button
                     key={panelType}
                     variant="ghost"
                     size="sm"
-                    className={`flex w-full justify-start ${isActive ? "bg-linear-90 from-amber-100 via-amber-50" : availabilityClasses}`}
+                    className={`flex w-full justify-start ${isActive ? "bg-linear-90 from-amber-100 via-amber-50" : !availability.isAvailable && "opacity-45"}`}
                     onClick={() => {
                       if (!availability.isAvailable) return;
                       onChange(panelType);
@@ -481,7 +468,6 @@ function PanelTypePickerMenu({
 
 export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const currentMetric = useProfileStore((state) => state.currentMetric);
   const activePanel = props.activePanel;
   const activePanelType = isPanelType(activePanel?.params?.panelType) ? activePanel.params.panelType : null;
   const isTabGroup = props.panels.length > 1;
@@ -497,7 +483,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
       tabComponent: activePanel.api.tabComponent,
       title: activePanel.title ?? "Panel",
       position: { referencePanel: activePanel.id },
-      params: getPanelParams(activePanelType, currentMetric),
+      params: { panelType: activePanelType },
     });
   };
 
@@ -508,7 +494,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
       tabComponent: "magicPanelTab",
       title: "Panel",
       position: { referencePanel: activePanel.id, direction: "right" },
-      params: getPanelParams(activePanelType, currentMetric),
+      params: { panelType: activePanelType },
     });
   };
 
@@ -519,7 +505,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
       tabComponent: "magicPanelTab",
       title: "Panel",
       position: { referencePanel: activePanel.id, direction: "below" },
-      params: getPanelParams(activePanelType, currentMetric),
+      params: { panelType: activePanelType },
     });
   };
 
@@ -628,7 +614,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
                   <PanelTypePickerMenu
                     value={activePanelType}
                     onChange={(newPanelType) => {
-                      activePanel.api.updateParameters(getPanelParams(newPanelType, currentMetric));
+                      activePanel.api.updateParameters({ panelType: newPanelType });
                     }}
                     onRequestClose={() => setIsMoreOpen(false)}
                   />

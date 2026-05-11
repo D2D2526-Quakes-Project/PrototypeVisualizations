@@ -1,5 +1,8 @@
-import { parseOptionalDatasetFromRawBuffer } from "@/lib/incrementalData";
-import type { OptionalWorkerRequest, OptionalWorkerResponse } from "@/lib/incrementalData";
+import { parseOptionalDatasetFromRawBuffer } from "@/features/animation-data/data-loading/incrementalData";
+import type {
+  OptionalWorkerRequest,
+  OptionalWorkerResponse,
+} from "@/features/animation-data/data-loading/incrementalData";
 
 self.onmessage = async (event: MessageEvent<OptionalWorkerRequest>) => {
   try {

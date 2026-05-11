@@ -3,7 +3,7 @@ import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { usePanelState } from "@/features/3d/hooks/usePanelState";
 import { getMetricKeyColor } from "@/lib/metrics";
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { formatFixed3 } from "@/lib/utils";
 
 import type { IDockviewPanelProps } from "dockview";

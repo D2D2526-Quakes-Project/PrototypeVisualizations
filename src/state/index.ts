@@ -1,4 +1,3 @@
-import { useAnimationData } from "@/lib/animation-data/useAnimationData";
 import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -14,6 +13,7 @@ import {
 } from "./profileState";
 import { createDefaultProfiles, DEFAULT_PROFILE } from "./default";
 import { createDebouncedJSONStorage } from "zustand-debounce";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 
 export type AppState = ProfileStateSetters & LiveState & GlobalState;
 

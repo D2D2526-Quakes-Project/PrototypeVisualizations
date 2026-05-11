@@ -1,7 +1,7 @@
-import type { Metric, ThresholdKey } from "@/lib/metrics";
 import type { SerializedDockview } from "dockview";
 import { type StateCreator } from "zustand";
 import type { AppState } from ".";
+import type { Metric, ThresholdKey } from "@/features/metrics/metrics";
 
 export type ThresholdState = Record<ThresholdKey, number>;
 
@@ -22,11 +22,11 @@ export interface ProfileData {
   renderHorizontalConnections: boolean;
 
   // Thresholds
-  thresholds: ThresholdState;
+  _thresholds: ThresholdState;
 
   // Color
-  currentMetric: Metric;
-  thresholdHighlighting: boolean;
+  _currentMetric: Metric;
+  _thresholdHighlighting: boolean;
 
   // Floor Visibility
   hiddenFloors: string[];
@@ -83,8 +83,8 @@ export interface ProfileState {
     resetThresholds: () => void;
 
     // Color
-    setColorMetric: (metric: Metric) => void;
-    setThresholdHighlighting: (enabled: boolean) => void;
+    _setCurrentMetric: (metric: Metric) => void;
+    _setThresholdHighlighting: (enabled: boolean) => void;
 
     // Floor Visibility
     setHiddenFloors: (floors: string[]) => void;
@@ -194,25 +194,25 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
 
       // Thresholds
       setThreshold: mutateProfile((profile, type, value) => {
-        profile.thresholds = {
-          ...profile.thresholds,
+        profile._thresholds = {
+          ...profile._thresholds,
           [type]: value,
         };
       }),
       resetThresholds: mutateProfile(
         (profile) =>
-          (profile.thresholds = {
+          (profile._thresholds = {
             ...DEFAULT_THRESHOLDS,
           })
       ),
 
       // Color
-      setColorMetric: mutateProfile((profile, currentMetric) => {
-        profile.currentMetric = currentMetric;
+      _setCurrentMetric: mutateProfile((profile, currentMetric) => {
+        profile._currentMetric = currentMetric;
       }),
 
-      setThresholdHighlighting: mutateProfile((profile, thresholdHighlighting) => {
-        profile.thresholdHighlighting = thresholdHighlighting;
+      _setThresholdHighlighting: mutateProfile((profile, thresholdHighlighting) => {
+        profile._thresholdHighlighting = thresholdHighlighting;
       }),
 
       // Floor Visibility

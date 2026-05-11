@@ -151,3 +151,13 @@ export function debounce<T extends Procedure>(callback: T, delay: number): (...a
     }, delay);
   };
 }
+
+export function slidingWindow3<T>(arr: T[]): [T | undefined, T, T | undefined][] {
+  const result: [T | undefined, T, T | undefined][] = [];
+  result.push([undefined, arr[0], arr[1]]);
+  for (let i = 0; i < arr.length - 1; i++) {
+    const window = arr.slice(i, i + 3);
+    result.push(window as [T | undefined, T, T | undefined]);
+  }
+  return result;
+}

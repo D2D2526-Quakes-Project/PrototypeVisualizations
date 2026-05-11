@@ -1,86 +1,49 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useProfileStore } from "@/state";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 
 export function useFloorVisibility() {
   const { animationData } = useAnimationData();
-  const visibleFloorsArray = useProfileStore((s) => s.hiddenFloors);
-  const toggleFloorStore = useProfileStore((s) => s.toggleFloor);
-  const showAllFloorsStore = useProfileStore((s) => s.showAllFloors);
-  const hideAllFloorsStore = useProfileStore((s) => s.hideAllFloors);
-  const initializedStoryOrderKeyRef = useRef<string | null>(null);
+  const hiddenFloors = useProfileStore((s) => s._hiddenFloors);
+  const setHiddenFloors = useProfileStore((s) => s._setHiddenFloors);
+  const toggleFloor = useProfileStore((s) => s._toggleFloor);
+  const showFloors = useProfileStore((s) => s._showFloors);
+  const hideFloors = useProfileStore((s) => s._hideFloors);
 
-  useEffect(() => {
-    const storyOrder = animationData.metadata.storyOrder;
-    if (storyOrder.length === 0) return;
+  const storyOrder = animationData.metadata.storyOrder;
+  const defaultHiddenFloors = animationData.metadata.hiddenFloors;
 
-    const storyOrderKey = storyOrder.join("|");
-    if (initializedStoryOrderKeyRef.current === storyOrderKey) return;
+  const visibleFloors = useMemo(() => {
+    if (hiddenFloors.length === 0) return storyOrder;
+    return storyOrder.filter((storyId) => !hiddenFloors.includes(storyId));
+  }, [hiddenFloors, storyOrder]);
 
-    // if (visibleFloorsArray.length === 0) {
-    //   const hiddenFloorsSet = new Set(animationData.metadata.hiddenFloors ?? []);
-    //   const visible = storyOrder.filter((story) => !hiddenFloorsSet.has(story));
-    //   showAllFloorsStore(visible);
-    // }
-    initializedStoryOrderKeyRef.current = storyOrderKey;
-  }, [
-    animationData.metadata.storyOrder,
-    animationData.metadata.hiddenFloors,
-    visibleFloorsArray.length,
-    showAllFloorsStore,
-  ]);
-
-  const actualVisibleFloors = useMemo(() => {
-    return new Set(visibleFloorsArray);
-  }, [visibleFloorsArray]);
-
-  const toggleFloor = useCallback(
-    (storyId: string) => {
-      toggleFloorStore(storyId);
-    },
-    [toggleFloorStore]
-  );
-
-  const setFloorVisible = useCallback(
-    (storyId: string, visible: boolean) => {
-      const currentlyVisible = actualVisibleFloors.has(storyId);
-      if (currentlyVisible !== visible) {
-        toggleFloorStore(storyId);
-      }
-    },
-    [actualVisibleFloors, toggleFloorStore]
-  );
-
-  const showAllDefaultFloors = useCallback(() => {
-    const hiddenFloorsSet = new Set(animationData.metadata.hiddenFloors ?? []);
-    const storyOrder = animationData.metadata.storyOrder;
-    const visible = storyOrder.filter((story) => !hiddenFloorsSet.has(story));
-    showAllFloorsStore(visible);
-  }, [animationData.metadata.storyOrder, showAllFloorsStore, animationData.metadata.hiddenFloors]);
+  const showDefaultFloors = useCallback(() => {
+    setHiddenFloors(defaultHiddenFloors);
+  }, [setHiddenFloors, defaultHiddenFloors]);
 
   const showAllFloors = useCallback(() => {
-    showAllFloorsStore(animationData.metadata.storyOrder);
-  }, [animationData.metadata.storyOrder, showAllFloorsStore]);
+    setHiddenFloors([]);
+  }, [setHiddenFloors]);
 
   const hideAllFloors = useCallback(() => {
-    hideAllFloorsStore();
-  }, [hideAllFloorsStore]);
+    setHiddenFloors(storyOrder);
+  }, [setHiddenFloors, storyOrder]);
 
-  const isFloorVisible = useCallback(
-    (storyId: string) => {
-      return actualVisibleFloors.has(storyId);
-    },
-    [actualVisibleFloors]
-  );
+  const isFloorVisible = useCallback((storyId: string) => !hiddenFloors.includes(storyId), [hiddenFloors]);
+  const noFloorsVisible = useMemo(() => visibleFloors.length === 0, [visibleFloors]);
 
   return {
-    visibleFloors: actualVisibleFloors,
+    noFloorsVisible,
+    visibleFloors,
+    hiddenFloors,
     toggleFloor,
-    setFloorVisible,
-    showAllDefaultFloors,
+    showFloors,
+    hideFloors,
     showAllFloors,
     hideAllFloors,
+    showDefaultFloors,
     isFloorVisible,
   };
 }

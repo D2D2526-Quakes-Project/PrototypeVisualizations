@@ -29,7 +29,7 @@ export interface ProfileData {
   _thresholdHighlighting: boolean;
 
   // Floor Visibility
-  hiddenFloors: string[];
+  _hiddenFloors: string[];
 
   // Node Visibility
   hiddenNodeIds: number[];
@@ -87,10 +87,10 @@ export interface ProfileState {
     _setThresholdHighlighting: (enabled: boolean) => void;
 
     // Floor Visibility
-    setHiddenFloors: (floors: string[]) => void;
-    toggleFloor: (storyId: string) => void;
-    showFloors: (storyOrder: string[]) => void;
-    hideFloors: (storyOrder: string[]) => void;
+    _setHiddenFloors: (floors: string[]) => void;
+    _toggleFloor: (storyId: string) => void;
+    _showFloors: (storyOrder: string[]) => void;
+    _hideFloors: (storyOrder: string[]) => void;
 
     // Node Visibility
     hideNodes: (nodes: number[]) => void;
@@ -216,23 +216,23 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
       }),
 
       // Floor Visibility
-      setHiddenFloors: mutateProfile((profile, hiddenFloors) => {
-        profile.hiddenFloors = hiddenFloors;
+      _setHiddenFloors: mutateProfile((profile, hiddenFloors) => {
+        profile._hiddenFloors = hiddenFloors;
       }),
-      toggleFloor: mutateProfile((profile, storyId) => {
-        const floors = new Set(profile.hiddenFloors);
+      _toggleFloor: mutateProfile((profile, storyId) => {
+        const floors = new Set(profile._hiddenFloors);
         if (floors.has(storyId)) {
           floors.delete(storyId);
         } else {
           floors.add(storyId);
         }
-        profile.hiddenFloors = Array.from(floors);
+        profile._hiddenFloors = Array.from(floors);
       }),
-      showFloors: mutateProfile((profile, storyOrder) => {
-        profile.hiddenFloors = profile.hiddenFloors.filter((id) => !storyOrder.includes(id));
+      _showFloors: mutateProfile((profile, storyOrder) => {
+        profile._hiddenFloors = profile._hiddenFloors.filter((id) => !storyOrder.includes(id));
       }),
-      hideFloors: mutateProfile((profile, storyOrder) => {
-        profile.hiddenFloors = [...new Set([...profile.hiddenFloors, ...storyOrder])];
+      _hideFloors: mutateProfile((profile, storyOrder) => {
+        profile._hiddenFloors = [...new Set([...profile._hiddenFloors, ...storyOrder])];
       }),
 
       // Node Visibility / Selection

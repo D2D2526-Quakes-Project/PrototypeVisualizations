@@ -1,12 +1,27 @@
+import { Button } from "@/components/ui/button";
+import { useFloorVisibility } from "@/features/3d/contexts/visualization/FloorVisibilityContext";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { slidingWindow3 } from "@/lib/utils";
+import { AlertTriangleIcon, LayersIcon } from "lucide-react";
+import { useEffect, useState, type KeyboardEvent, type MouseEvent } from "react";
+
 export function FloorVisibilitySection() {
   const { animationData } = useAnimationData();
 
   const storyOrder = animationData.metadata.storyOrder;
   const storyHeights = animationData.metadata.storyHeights;
 
-  const { visibleFloors, setFloorVisible, showAllDefaultFloors, showAllFloors, hideAllFloors } = useFloorVisibility();
+  const {
+    hiddenFloors,
+    noFloorsVisible,
+    showFloors,
+    hideFloors,
+    showDefaultFloors,
+    showAllFloors,
+    hideAllFloors,
+    isFloorVisible,
+  } = useFloorVisibility();
   const [dragVisibility, setDragVisibility] = useState<boolean | null>(null);
-  const noFloorsVisible = storyOrder.length > 0 && visibleFloors.size === 0;
 
   useEffect(() => {
     if (dragVisibility === null) return;
@@ -17,20 +32,23 @@ export function FloorVisibilitySection() {
 
   const handleFloorMouseDown = (event: MouseEvent<HTMLButtonElement>, storyId: string) => {
     event.preventDefault();
-    const nextVisible = !visibleFloors.has(storyId);
+    const nextVisible = hiddenFloors.includes(storyId);
     setDragVisibility(nextVisible);
-    setFloorVisible(storyId, nextVisible);
+    if (nextVisible) showFloors([storyId]);
+    else hideFloors([storyId]);
   };
 
   const handleFloorMouseEnter = (storyId: string) => {
     if (dragVisibility === null) return;
-    setFloorVisible(storyId, dragVisibility);
+    if (dragVisibility) showFloors([storyId]);
+    else hideFloors([storyId]);
   };
 
   const handleFloorKeyDown = (event: KeyboardEvent<HTMLButtonElement>, storyId: string) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
-    setFloorVisible(storyId, !visibleFloors.has(storyId));
+    if (hiddenFloors.includes(storyId)) showFloors([storyId]);
+    else hideFloors([storyId]);
   };
 
   const orderedStories = [...storyOrder].reverse();
@@ -44,69 +62,52 @@ export function FloorVisibilitySection() {
     <>
       <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-1">
-          <Layers size={12} className="text-neutral-500" />
+          <LayersIcon size={12} className="text-neutral-500" />
           <span className="text-xs font-medium text-neutral-700">Floors</span>
         </div>
         <div className="flex items-center gap-1">
           {noFloorsVisible && (
-            <button
-              type="button"
-              onClick={showAllDefaultFloors}
-              className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-1 py-0.5 text-[9px] font-medium text-amber-800 hover:bg-amber-100"
+            <Button
+              onClick={showDefaultFloors}
+              variant={"outline"}
+              size="xs"
+              className="border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
               title="All floors are hidden. Show all floors.">
-              <AlertTriangle size={9} />
+              <AlertTriangleIcon size={9} />
               None visible
-            </button>
+            </Button>
           )}
-          <button
-            onClick={showAllFloors}
-            className="rounded border border-neutral-300 bg-neutral-100 px-1 py-0.5 text-[10px] hover:bg-neutral-200">
+          <Button onClick={showAllFloors} variant={"outline"} size="xs">
             All
-          </button>
-          <button
-            onClick={hideAllFloors}
-            className="rounded border border-neutral-300 bg-neutral-100 px-1 py-0.5 text-[10px] hover:bg-neutral-200">
+          </Button>
+          <Button onClick={hideAllFloors} variant={"outline"} size="xs">
             None
-          </button>
+          </Button>
         </div>
       </div>
-      <div className="pr-1">
-        {orderedStories.map((storyId) => {
-          const isVisible = visibleFloors.has(storyId);
+      <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 gap-y-px overflow-hidden rounded">
+        {slidingWindow3(orderedStories).map(([pStoryId, storyId, nStoryId]) => {
+          const isVisible = isFloorVisible(storyId);
+          const prevIsVisible = !(pStoryId && isFloorVisible(pStoryId));
+          const nextIsVisible = !(nStoryId && isFloorVisible(nStoryId));
           return (
-            <div
+            <button
               key={storyId}
-              className="mb-1 grid items-center gap-x-2"
-              style={{ gridTemplateColumns: "minmax(0, 1fr) auto auto auto" }}>
-              <div
-                className={`truncate text-[10px] font-medium ${isVisible ? "text-neutral-800" : "text-neutral-500"}`}>
-                {storyId}
-              </div>
-
-              <div className={`text-[9px] whitespace-nowrap ${isVisible ? "text-neutral-600" : "text-neutral-400"}`}>
-                {formatHeight(storyHeights[storyId] ?? 0)}
-              </div>
-
-              <div
-                className={`w-7 text-[9px] whitespace-nowrap ${isVisible ? "text-neutral-600" : "text-neutral-400"}`}>
-                {isVisible ? "Visible" : "Hidden"}
-              </div>
-
-              <button
-                type="button"
-                aria-pressed={isVisible}
-                aria-label={`${isVisible ? "Hide" : "Show"} floor ${storyId}`}
-                onMouseDown={(event) => handleFloorMouseDown(event, storyId)}
-                onMouseEnter={() => handleFloorMouseEnter(storyId)}
-                onKeyDown={(event) => handleFloorKeyDown(event, storyId)}
-                className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-medium transition-colors select-none ${
-                  isVisible
-                    ? "border-blue-300 bg-blue-100 text-blue-700"
-                    : "border-neutral-300 bg-neutral-100 text-neutral-500"
-                }`}>
-                {isVisible ? "On" : "Off"}
-              </button>
-            </div>
+              type="button"
+              aria-pressed={isVisible}
+              aria-label={`${isVisible ? "Hide" : "Show"} floor ${storyId}`}
+              onMouseDown={(event) => handleFloorMouseDown(event, storyId)}
+              onMouseEnter={() => handleFloorMouseEnter(storyId)}
+              onKeyDown={(event) => handleFloorKeyDown(event, storyId)}
+              className={`col-span-3 grid grid-cols-subgrid border border-transparent px-2 text-right font-medium select-none ${
+                isVisible
+                  ? `border-border bg-primary text-primary-foreground border-x ${prevIsVisible && "rounded-t border-t"} ${nextIsVisible && "rounded-b border-b"}`
+                  : `bg-background hover:bg-muted ${!prevIsVisible && "rounded-t"} ${!nextIsVisible && "rounded-b"}`
+              }`}>
+              <div className="truncate text-left text-xs font-medium">{storyId}</div>
+              <div className="text-[11px] whitespace-nowrap">{formatHeight(storyHeights[storyId] ?? 0)}</div>
+              <div className="text-[11px] whitespace-nowrap">{isVisible ? "Visible" : "Hidden"}</div>
+            </button>
           );
         })}
       </div>

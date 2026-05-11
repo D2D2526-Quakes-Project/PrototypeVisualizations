@@ -131,7 +131,7 @@ export interface AnimationMetadata {
   /** Cross-section along Y axis */
   crossSectionsY: Record<string, number[]>;
   /** Floors that should be hidden by default */
-  hiddenFloors?: string[];
+  hiddenFloors: string[];
   /** Node indices with no translational displacement source coverage in any axis. */
   displacementMissingNodeIndices?: number[];
   /** Dense node-index lookup to story id; null for unmapped nodes. */

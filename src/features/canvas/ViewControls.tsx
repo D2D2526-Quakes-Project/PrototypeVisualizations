@@ -18,6 +18,7 @@ import { SlicesSection } from "./control-sections/SlicesSection";
 import { ScaleSection } from "./control-sections/ScaleSection";
 import { NodeDisplaySection } from "./control-sections/NodeDisplaySection";
 import { DEFAULT_COLOR_THEMES } from "@/state/globalState";
+import { FloorVisibilitySection } from "./control-sections/FloorVisibilitySection";
 
 const childVariants = {
   initial: { opacity: 0 },
@@ -310,7 +311,8 @@ export function ViewControls({
                 <motion.div className="" variants={childVariants}>
                   <NodeDisplaySection />
                 </motion.div>
-                <motion.div className="mt-2 border-t border-neutral-200 px-0 pt-2" variants={childVariants}>
+                <div className="my-1 h-px w-full bg-neutral-200" />
+                <motion.div className="" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
                     <SwatchBookIcon size={12} className="text-neutral-400" />
                     <span className="text-xs font-medium text-neutral-700">Theme</span>
@@ -331,9 +333,10 @@ export function ViewControls({
                     ))}
                   </div>
                 </motion.div>
-                {/* <motion.div className="" variants={childVariants}>
-                  <FloorsPanel />
-                </motion.div> */}
+                <div className="my-1 h-px w-full bg-neutral-200" />
+                <motion.div className="" variants={childVariants}>
+                  <FloorVisibilitySection />
+                </motion.div>
               </div>
             </motion.div>
           )}

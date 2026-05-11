@@ -36,7 +36,7 @@ type EdgeCubeProps = { dimensions: XYZ; position: Vector3 } & Omit<GenericProps,
 // ShadCN-inspired palette
 const colors = {
   bg: "#ffffff",
-  hover: "#f4f4f5",
+  hover: "#dddddd",
   text: "#18181b",
   stroke: "#e4e4e7",
   accent: "#3f3f46",
@@ -124,7 +124,7 @@ const FaceMaterial = ({
 
     // Card fill — white or hover tint
     roundedRect(pad, pad, size - pad * 2, size - pad * 2, radius);
-    ctx.fillStyle = colors.hover;
+    ctx.fillStyle = hover ? colors.hover : colors.bg;
     ctx.fill();
 
     // Subtle border
@@ -133,18 +133,17 @@ const FaceMaterial = ({
     // ctx.lineWidth = hover ? 2.5 : 1.5;
     // ctx.stroke();
 
-    // Inner accent line at bottom for depth (ShadCN card footer vibe)
-    if (hover) {
-      const lineY = size - pad - 10;
-      ctx.beginPath();
-      ctx.moveTo(pad + radius, lineY);
-      ctx.lineTo(size - pad - radius, lineY);
-      ctx.strokeStyle = colors.accent;
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.15;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
+    // if (hover) {
+    //   const lineY = size - pad - 10;
+    //   ctx.beginPath();
+    //   ctx.moveTo(pad + radius, lineY);
+    //   ctx.lineTo(size - pad - radius, lineY);
+    //   ctx.strokeStyle = colors.text;
+    //   ctx.lineWidth = 1;
+    //   ctx.globalAlpha = 0.15;
+    //   ctx.stroke();
+    //   ctx.globalAlpha = 1;
+    // }
 
     // Apply rotation for faces that need it
     const rotations = [-Math.PI / 2, Math.PI / 2, Math.PI, 0, -Math.PI / 2, -Math.PI / 2];

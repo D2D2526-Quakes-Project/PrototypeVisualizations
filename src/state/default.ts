@@ -16,7 +16,7 @@ function getDefaultProfileData(
     _thresholds: { ...DEFAULT_THRESHOLDS },
     _currentMetric: "interstoryDrift",
     _thresholdHighlighting: true,
-    hiddenFloors: [],
+    _hiddenFloors: [],
     hiddenNodeIds: [],
 
     openedNodePanelIds: [],

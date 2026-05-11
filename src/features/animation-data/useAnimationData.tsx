@@ -4,8 +4,8 @@ import {
   type OptionalDataLoadOptions,
   type OptionalDatasetKey,
 } from "@/features/animation-data/data-loading/loadingTypes";
+import type { BinaryBuilding, BinarySimulation, BuildingAnimationData } from "@/lib/types";
 import { createContext, useContext } from "react";
-import type { BinaryBuilding, BinarySimulation, BuildingAnimationData } from "../types";
 
 export type AnimationDataContextType = {
   animationData: BuildingAnimationData;

@@ -106,7 +106,6 @@ export function PlaybackKeyboardEvents() {
         const skipped = Math.max(0, targetFrame - previousFrame - 1);
         setSkippedPerFrameRef.current(skipped);
         displayedFrameRef.current = targetFrame;
-        console.log("[Playback] Setting frame:", targetFrame, "(skipped:", skipped, ")");
         if (frameIndexRef.current !== targetFrame) {
           setFrameIndexRef.current(targetFrame);
         }

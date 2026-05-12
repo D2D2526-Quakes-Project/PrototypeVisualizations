@@ -5,9 +5,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { usePanelState } from "@/features/dockview/usePanelState";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { formatNumber, formatFixed3 } from "@/lib/utils";
+import { formatFixed3, formatNumber } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview";
-import { type EChartsOption } from "echarts";
+import { type ECharts, type EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -221,7 +221,6 @@ function TooltipContent({
   );
 }
 
-// Custom Multi-Select Dropdown Component using shadcn Popover and Checkbox
 function CheckSelect({
   options,
   selected,
@@ -244,7 +243,6 @@ function CheckSelect({
     }
   };
 
-  // Generate button label text
   const labelText = useMemo(() => {
     if (selected.length === 0) return "Select Channels";
     return selected.map((key) => GROUND_CHANNEL_CONFIG[key]?.shortName).join(", ");
@@ -293,6 +291,8 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const chartRef = useRef<ReactECharts>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
+  const dotsRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
   const isDraggingRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -320,7 +320,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
   }, [animationData, maxFrame]);
 
   const seriesData = useMemo(() => {
-    const seriesData = selectedKeys.flatMap((key) => {
+    return selectedKeys.flatMap((key) => {
       if (!GROUND_CHANNEL_CONFIG[key]) return [];
       const { accessor, enabled } = GROUND_CHANNEL_CONFIG[key];
       if (!enabled(animationData)) return [];
@@ -331,8 +331,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
       }
       return [{ key, data }];
     });
-
-    return seriesData;
   }, [animationData, selectedKeys, maxFrame, times]);
 
   // 2. Build ECharts Option
@@ -345,37 +343,32 @@ export function Timeline({ api }: IDockviewPanelProps) {
     const series: EChartsOption["series"] = [];
     const titles: EChartsOption["title"] = [];
 
-    // Layout Constants
     const LEFT_MARGIN = 45;
     const RIGHT_MARGIN = 20;
-
-    // Calculate total available height percent (leaving room for dataZoom at bottom)
     const AVAILABLE_HEIGHT_PCT = 92;
 
     seriesData.forEach((item, index) => {
       const isLast = index === count - 1;
 
-      // Vertical calculation
       const rowHeight = AVAILABLE_HEIGHT_PCT / count;
-      const topPct = 2 + index * rowHeight; // start slightly down
-      const heightPct = rowHeight - 6; // gap between charts
+      const topPct = 2 + index * rowHeight;
+      const heightPct = rowHeight - 6;
 
       grids.push({
         left: LEFT_MARGIN,
         right: RIGHT_MARGIN,
         top: `${topPct}%`,
         height: `${heightPct}%`,
-        containLabel: false, // Keep false to ensure fixed alignment
+        containLabel: false,
       });
 
       const config = GROUND_CHANNEL_CONFIG[item.key];
       const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
 
-      // Titles (instead of Y-axis names)
       titles.push({
         text: config.label,
-        left: LEFT_MARGIN + 5, // Align with the grid
-        top: `${topPct}%`, // Top of the grid area
+        left: LEFT_MARGIN + 5,
+        top: `${topPct}%`,
         textStyle: {
           fontSize: 11,
           fontWeight: "bold",
@@ -387,7 +380,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
         },
       });
 
-      // X Axis
       xAxes.push({
         gridIndex: index,
         type: "value",
@@ -399,7 +391,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
         splitLine: { show: true, lineStyle: { color: "#f3f4f6" } },
       });
 
-      // Y Axis (Name hidden, moved to title)
       yAxes.push({
         gridIndex: index,
         type: "value",
@@ -408,7 +399,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
         splitLine: { lineStyle: { color: "#f3f4f6" } },
       });
 
-      // Main Line Series
       series.push({
         id: `main-line-${item.key}`,
         name: config.label,
@@ -418,7 +408,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
         data: item.data,
         symbol: "none",
         lineStyle: { color, width: 2 },
-        // Prevent color change on hover
         emphasis: {
           disabled: true,
           lineStyle: { color, width: 2 },
@@ -437,39 +426,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
           },
         },
       });
-
-      // MarkLine
-      series.push({
-        id: `mark-line-${item.key}`,
-        name: `${config.label} Marker`,
-        type: "scatter",
-        xAxisIndex: index,
-        yAxisIndex: index,
-        data: [],
-        markLine: {
-          symbol: "none",
-          data: [{ xAxis: 0 }],
-          lineStyle: { color: "#9ca3af", width: 1, type: "solid" },
-          label: { show: false },
-          silent: true,
-          animation: false,
-        },
-        markPoint: {
-          silent: true,
-          animation: false,
-          name: "Playhead",
-          symbol: "circle",
-          label: { show: false },
-          symbolSize: 8,
-          itemStyle: {
-            color,
-            borderColor: "#fff",
-            borderWidth: 2,
-          },
-          data: [{ coord: [0, 0], name: "Playhead" }],
-        },
-        animation: false,
-      });
     });
 
     return {
@@ -478,7 +434,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
       xAxis: xAxes,
       yAxis: yAxes,
       series,
-      // Axis Pointer synchronizes hover across all charts
       axisPointer: {
         label: { backgroundColor: "#777" },
       },
@@ -494,7 +449,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
           type: "line",
           lineStyle: { color: "#9ca3af", width: 1, type: "dashed" },
         },
-        // Custom formatter to show ALL series regardless of which graph is hovered
         formatter: (params) => {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
 
@@ -513,7 +467,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
           params.forEach((p) => {
             if (!p || !p.seriesName || !p.data) return;
-            if (p.seriesName.includes("Marker") || p.seriesName === "Playhead") return;
 
             const seriesMatch = seriesData.find(
               (seriesItem) => GROUND_CHANNEL_CONFIG[seriesItem.key].label === p.seriesName
@@ -544,19 +497,13 @@ export function Timeline({ api }: IDockviewPanelProps) {
     };
   }, [seriesData, maxFrame, animationData.metadata.dt, metricPaletteOverrides]);
 
-  // Scrubbing logic - uses refs to access current values and tracks chart instance changes
   useEffect(() => {
-    if (isCurrentMetricStatic) {
-      return;
-    }
+    if (isCurrentMetricStatic) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let zr: any = null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let currentChart: any = null;
+    let zr: ReturnType<ECharts["getZr"]> | null = null;
+    let currentChart: ECharts | null = null;
 
     const convertToFrame = (pixelX: number, chart: NonNullable<typeof currentChart>) => {
-      // if (selectedKeysRef.current.length === 0) return null;
       const chartDom = chart.getDom();
       if (!chartDom) return null;
       const rect = chartDom.getBoundingClientRect();
@@ -608,8 +555,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       }
 
       currentChart = chart;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      zr = chart.getZr() as any;
+      zr = chart.getZr();
       if (!zr) return;
 
       zr.on("mousedown", handleMouseDown);
@@ -619,7 +565,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
     };
 
     attachListeners();
-
     const intervalId = setInterval(attachListeners, 100);
 
     return () => {
@@ -634,45 +579,57 @@ export function Timeline({ api }: IDockviewPanelProps) {
     };
   }, [isCurrentMetricStatic, setFrameIndex, dt, maxFrame]);
 
-  // Update for MarkLine and MarkPoint
   useEffect(() => {
+    if (isCurrentMetricStatic || selectedKeys.length === 0) return;
+
     const applyFrameToChart = () => {
       const chart = chartRef.current?.getEchartsInstance();
-      if (!chart || !chart.getOption()) return false;
+      if (!chart || !playheadRef.current) return false;
+
+      const currentOption = chart.getOption();
+      if (
+        !currentOption ||
+        !currentOption.series ||
+        (Array.isArray(currentOption.series) && currentOption.series.length === 0)
+      ) {
+        return false;
+      }
 
       const currentTime = frameIndex * animationData.metadata.dt;
+      const xPixel = chart.convertToPixel({ xAxisIndex: 0 }, currentTime);
 
-      const updatedSeries = seriesData.map((item) => {
-        const accessor = GROUND_CHANNEL_CONFIG[item.key].accessor;
-        const currentValue = accessor(frameIndex, animationData);
+      if (xPixel != null && !isNaN(xPixel as number)) {
+        playheadRef.current.style.transform = `translateX(${xPixel}px)`;
+        playheadRef.current.style.display = "block";
 
-        return {
-          id: `mark-line-${item.key}`,
-          markLine: {
-            data: [{ xAxis: currentTime }],
-          },
-          markPoint: {
-            data: [
-              {
-                coord: [currentTime, currentValue],
-              },
-            ],
-          },
-        };
-      });
+        seriesData.forEach((item, index) => {
+          const dot = dotsRefs.current[index];
+          if (!dot) return;
 
-      chart.setOption({
-        series: updatedSeries,
-      });
-      return true;
+          const accessor = GROUND_CHANNEL_CONFIG[item.key].accessor;
+          const currentValue = accessor(frameIndex, animationData);
+
+          const coords = chart.convertToPixel({ xAxisIndex: index, yAxisIndex: index }, [currentTime, currentValue]);
+
+          if (coords && coords.length === 2 && !isNaN(coords[1])) {
+            dot.style.transform = `translate(-50%, calc(${coords[1]}px - 50%))`;
+            dot.style.display = "block";
+          } else {
+            dot.style.display = "none";
+          }
+        });
+        return true;
+      }
+
+      playheadRef.current.style.display = "none";
+      return false;
     };
 
     if (applyFrameToChart()) return;
-    const rafId = requestAnimationFrame(() => {
-      applyFrameToChart();
-    });
+
+    const rafId = requestAnimationFrame(() => applyFrameToChart());
     return () => cancelAnimationFrame(rafId);
-  }, [frameIndex, seriesData, animationData.metadata.dt, chartReadyVersion, animationData]);
+  }, [frameIndex, seriesData, animationData, isCurrentMetricStatic, chartReadyVersion, selectedKeys]);
 
   return (
     <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
@@ -718,11 +675,35 @@ export function Timeline({ api }: IDockviewPanelProps) {
               option={option}
               style={{ height: "100%", width: "100%", opacity: isCurrentMetricStatic ? 0.65 : 1 }}
               opts={{ renderer: "canvas" }}
-              replaceMerge={["series"]}
               onChartReady={() => setChartReadyVersion((v) => v + 1)}
             />
+
+            {/* HTML Overlay Playhead */}
+            <div
+              ref={playheadRef}
+              className="pointer-events-none absolute top-0 bottom-4 left-0 z-10 w-px bg-neutral-400"
+              style={{ display: "none" }}>
+              {seriesData.map((item, index) => {
+                const config = GROUND_CHANNEL_CONFIG[item.key];
+                const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+                return (
+                  <div
+                    key={`dot-${item.key}`}
+                    ref={(el) => {
+                      dotsRefs.current[index] = el;
+                    }}
+                    className="absolute top-0 left-0 h-2 w-2 rounded-full border-[1.5px] border-white shadow-sm"
+                    style={{
+                      backgroundColor: color,
+                      display: "none",
+                    }}
+                  />
+                );
+              })}
+            </div>
+
             {isCurrentMetricStatic && (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
                 <div className="rounded border border-neutral-200 bg-white/95 px-3 py-2 text-center text-xs text-neutral-600 shadow-sm">
                   This metric is static.
                   <div className="mt-1 text-[10px] text-neutral-500">

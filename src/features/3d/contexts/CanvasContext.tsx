@@ -75,7 +75,7 @@ const CameraContext = createContext<CameraContextType | undefined>(undefined);
 export function useCanvasState(dummy: boolean = false) {
   const context = useContext(CameraContext);
   if (!context) {
-    if (dummy) return DEFAULT_CANVAS_PANEL_STATE;
+    if (dummy) return { ...DEFAULT_CANVAS_PANEL_STATE, panelId: "", nodeInteractionEnabled: true } as CameraContextType;
     throw new Error("useCanvasState must be within CanvasProvider");
   }
   return context;

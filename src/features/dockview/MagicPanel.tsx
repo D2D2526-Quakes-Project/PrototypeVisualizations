@@ -449,11 +449,10 @@ function PanelTypePickerMenu({
                         {button}
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
+                    <TooltipContent side="right" className="max-w-xs flex-col">
                       <div className="font-medium">{panelType}</div>
                       {availability.disabledReason ? <div className="mt-0.5">{availability.disabledReason}</div> : null}
-                      {availability.optionalNotice ? <div className="mt-0.5">{availability.optionalNotice}</div> : null}
-                      <div className="mt-1 text-[11px] opacity-90">{availability.descriptorText}</div>
+                      <div className="text-[11px] opacity-90">{availability.descriptorText}</div>
                     </TooltipContent>
                   </Tooltip>
                 );

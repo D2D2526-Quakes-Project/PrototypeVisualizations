@@ -214,8 +214,8 @@ export function ColorScaleBarTooltip({ noLabel, insideLabel }: ColorScaleBarProp
           <ColorScaleBar noLabel={noLabel} insideLabel={insideLabel} />
         </div>
       </TooltipTrigger>
-      <TooltipContent side="bottom" sideOffset={8}>
-        <div className="mb-1 font-semibold">{config.label}</div>
+      <TooltipContent side="bottom" sideOffset={8} className="flex-col">
+        <div className="font-semibold">{config.label}</div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
           <span className="text-neutral-400">Max:</span>
           <span>

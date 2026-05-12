@@ -7,6 +7,7 @@ import { HingeNodesRenderer } from "./renderers/HingeNodeRenderer";
 import { NodesRenderer } from "./renderers/NodesRenderer";
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
+import { FloorSlabsRenderer } from "./renderers/FloorSlabsRenderer";
 
 export function BuildingScene() {
   const { invalidate } = useThree();
@@ -41,7 +42,7 @@ export function BuildingScene() {
       <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
 
       <group scale={UNIT_SCALE}>
-        {/* {renderFloorSlabs && <FloorSlabsRenderer />} */}
+        {renderFloorSlabs && <FloorSlabsRenderer />}
         {/* {renderXCrossSectionSlabs && <XCrossSectionSlabsRenderer />} */}
         {/* {renderYCrossSectionSlabs && <YCrossSectionSlabsRenderer />} */}
         {/* {renderVerticalConnections && <VerticalConnectionsRenderer />} */}

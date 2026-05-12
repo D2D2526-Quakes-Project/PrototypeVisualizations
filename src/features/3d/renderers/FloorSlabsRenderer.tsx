@@ -1,130 +1,58 @@
-import { useColor, useExpandedScale, useFloorVisibility } from "@/features/3d/contexts/visualization";
-import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
-import { getMetricConfig } from "@/lib/metrics";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { assert } from "@/lib/utils";
 import Delaunay from "delaunator";
 import { useMemo } from "react";
 import * as THREE from "three";
-import { useCrossSectionSelection } from "../contexts/visualization/-CrossSectionSelectionContext";
-import { usePlayback } from "@/features/playback/usePlayback";
+import { useFloorVisibility } from "../contexts/useFloorVisibility";
+import { useNodePositions } from "../contexts/useNodePositions";
+import { useNodeRendering } from "../contexts/useNodeRendering";
+import { useRenderModes } from "../lib/useRenderModes";
 
-interface FloorSlabsRendererProps {
-  nodeIds: number[];
-  cornersOnly?: boolean;
-  floorOpacity?: number;
-}
-
-export function FloorSlabsRenderer({ nodeIds, cornersOnly = false, floorOpacity = 0.2 }: FloorSlabsRendererProps) {
-  const { animationData } = useAnimationData();
-  const { frameIndex } = usePlayback();
-  const { getExpandedPosition } = useExpandedScale();
+export function FloorSlabsRenderer() {
   const { visibleFloors } = useFloorVisibility();
-
-  const offset = useMemo(
-    (): [number, number, number] => [
-      -animationData.precomputed.boundingBox.center[0],
-      -animationData.precomputed.boundingBox.center[1],
-      -animationData.precomputed.boundingBox.min[2],
-    ],
-    [animationData.precomputed.boundingBox]
-  );
-
-  const stories: [string, number[]][] = useMemo(() => {
-    const visibles = Object.entries(animationData.metadata.stories).filter(([storyId]) => visibleFloors.has(storyId));
-    const allNodes = new Set(nodeIds);
-    return visibles.map(([storyId, nodes]) => {
-      const thisFloor = new Set(nodes);
-      const intersection = thisFloor.intersection(allNodes);
-      return [storyId, Array.from(intersection)];
-    });
-  }, [animationData.metadata, visibleFloors, nodeIds]);
 
   return (
     <group>
-      {stories.map(([storyId, nodes]) => (
-        <FloorSlab
-          key={storyId}
-          storyId={storyId}
-          nodeIds={nodes}
-          frameIndex={frameIndex}
-          getExpandedPosition={getExpandedPosition}
-          offset={offset}
-          cornersOnly={cornersOnly}
-          floorOpacity={floorOpacity}
-        />
+      {visibleFloors.map((storyId) => (
+        <FloorSlab key={storyId} storyId={storyId} />
       ))}
     </group>
   );
 }
 
-interface FloorSlabProps {
-  storyId: string;
-  nodeIds: number[];
-  frameIndex: number;
-  getExpandedPosition: ReturnType<typeof useExpandedScale>["getExpandedPosition"];
-  offset: [number, number, number];
-  cornersOnly?: boolean;
-  floorOpacity?: number;
-}
-
-function FloorSlab({
-  storyId,
-  nodeIds,
-  frameIndex,
-  getExpandedPosition,
-  offset,
-  cornersOnly = false,
-  floorOpacity = 0.2,
-}: FloorSlabProps) {
+function FloorSlab({ storyId }: { storyId: string }) {
   const { animationData } = useAnimationData();
-  const { getNodeColor: getRawNodeColor } = useColor();
-  const { getColorFromValue } = useColor();
-  const { hoveredCrossSection, selectCrossSection, setHovered } = useCrossSectionSelection();
-  const {
-    displacement: visualDisplacement,
-    isNodeInterpolated,
-    getNodeColor: getVisualNodeColor,
-  } = useVisualDisplacement();
+  const { frameIndex } = usePlayback();
+  const { storyOrder, stories } = animationData.metadata;
+  const { avgDisplacementPerStory } = animationData.precomputed;
+  const { getValueColorForCurrentMetric, getNodeColorForCurrentMetric } = useMetrics();
+  const { showCornersOnly } = useRenderModes();
+  const { getNodeVisualPosition } = useNodePositions();
+  const { floorOpacity } = useNodeRendering();
 
-  const currentMetric_ = useViewStore((s) => s.currentMetric);
-  const metricConfig = useMemo(() => getMetricConfig(currentMetric_), [currentMetric_]);
-  const maxValue = useMemo(() => metricConfig.getPrecomputedMax(animationData), [animationData, metricConfig]);
+  const storyCount = storyOrder.length;
+  const nodeIds = useMemo(() => stories[storyId], [storyId, stories]);
 
   const avgFloorColor = useMemo((): THREE.Color => {
-    if (nodeIds.length === 0 || maxValue === 0) return new THREE.Color(0.5, 0.5, 0.5);
+    const storyIndex = storyOrder.indexOf(storyId);
+    assert(storyIndex >= 0, "Story index not found");
+    const avg = avgDisplacementPerStory[frameIndex * storyCount + storyIndex];
+    return getValueColorForCurrentMetric(avg === 0 ? undefined : avg).color;
+  }, [frameIndex, getValueColorForCurrentMetric, avgDisplacementPerStory, storyCount, storyOrder, storyId]);
 
-    let sum = 0;
-    let count = 0;
-
-    for (const nodeId of nodeIds) {
-      const isNodeMissing = isNodeInterpolated(nodeId);
-      if (isNodeMissing) continue;
-      const value = metricConfig.getValue(animationData, frameIndex, nodeId)!;
-      sum += value;
-      count += 1;
-    }
-
-    if (count === 0) return new THREE.Color(0.5, 0.5, 0.5);
-
-    const avgValue = sum / count;
-    return getColorFromValue(avgValue);
-  }, [animationData, frameIndex, maxValue, metricConfig, nodeIds, getColorFromValue, isNodeInterpolated]);
-
-  const isHovered = hoveredCrossSection?.storyId === storyId;
+  // const isHovered = hoveredCrossSection?.storyId === storyId; //TODO: Hovering
 
   const geometry = useMemo(() => {
-    if (nodeIds.length < 3) {
-      return null;
-    }
+    if (nodeIds.length < 3) return null;
 
     let floorNodes;
 
-    if (cornersOnly) {
+    if (showCornersOnly) {
       const corners = animationData.metadata.cornerNodes[storyId];
-      if (!corners) {
-        return null;
-      }
+      if (!corners) return null;
 
       floorNodes = [corners.NE, corners.NW, corners.SE, corners.SW];
     } else {
@@ -132,18 +60,11 @@ function FloorSlab({
     }
 
     const nodePositions = floorNodes.map((nodeId) => {
-      const pos = animationData.initialPositions.at(nodeId);
-      const disp = visualDisplacement.atFrame(frameIndex).at(nodeId);
-      const expandedPosition = getExpandedPosition(
-        [pos[0], pos[1], pos[2]],
-        [disp[0], disp[1], disp[2]],
-        offset,
-        animationData.metadata
-      );
-      return { nodeId, position: new THREE.Vector3(expandedPosition[0], expandedPosition[1], expandedPosition[2]) };
+      const pos = getNodeVisualPosition(nodeId, frameIndex);
+      return { nodeId, pos };
     });
 
-    const points2D = nodePositions.map((p) => [p.position.x, p.position.y] as [number, number]);
+    const points2D = nodePositions.map((p) => [p.pos[0], p.pos[1]] as [number, number]);
     const delaunay = Delaunay.from(points2D);
     const triangles = delaunay.triangles;
 
@@ -153,15 +74,14 @@ function FloorSlab({
     for (let i = 0; i < triangles.length; i++) {
       const nodeIdx = triangles[i];
       const nodeId = nodePositions[nodeIdx].nodeId;
-      const nodePos = nodePositions[nodeIdx].position;
+      const nodePos = nodePositions[nodeIdx].pos;
 
-      positions[i * 3] = nodePos.x;
-      positions[i * 3 + 1] = nodePos.y;
-      positions[i * 3 + 2] = nodePos.z;
+      positions[i * 3] = nodePos[0];
+      positions[i * 3 + 1] = nodePos[1];
+      positions[i * 3 + 2] = nodePos[2];
 
-      const nodeColor = isNodeInterpolated(nodeId)
-        ? avgFloorColor
-        : getVisualNodeColor(nodeId, frameIndex, getRawNodeColor);
+      const { noValue, color } = getNodeColorForCurrentMetric(frameIndex, nodeId);
+      const nodeColor = noValue ? avgFloorColor : color;
 
       colors[i * 3] = nodeColor.r;
       colors[i * 3 + 1] = nodeColor.g;
@@ -172,65 +92,52 @@ function FloorSlab({
     geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
-    return new THREE.Mesh(
-      geom,
-      new THREE.MeshBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: floorOpacity,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      })
-    );
+    return new THREE.Mesh(geom);
   }, [
     nodeIds,
     frameIndex,
     animationData,
-    getRawNodeColor,
-    getVisualNodeColor,
-    getExpandedPosition,
-    offset,
-    cornersOnly,
+    showCornersOnly,
     storyId,
-    floorOpacity,
-    visualDisplacement,
+    getNodeColorForCurrentMetric,
+    getNodeVisualPosition,
     avgFloorColor,
-    isNodeInterpolated,
   ]);
 
   const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();
-    setHovered({
-      id: `floor-${storyId}`,
-      type: "Z",
-      value: storyId,
-      nodeIds,
-      label: `Floor ${storyId}`,
-      storyId,
-      screenPos: { x: e.offsetX, y: e.offsetY },
-    });
+    // setHovered({
+    //   id: `floor-${storyId}`,
+    //   type: "Z",
+    //   value: storyId,
+    //   nodeIds,
+    //   label: `Floor ${storyId}`,
+    //   storyId,
+    //   screenPos: { x: e.offsetX, y: e.offsetY },
+    // });
   };
 
   const handlePointerOut = (e: PointerEvent) => {
     e.stopPropagation();
-    setHovered(null);
+    // setHovered(null);
   };
 
   const handleClick = (e: PointerEvent) => {
     e.stopPropagation();
-    selectCrossSection({
-      id: `floor-${storyId}`,
-      type: "Z",
-      value: storyId,
-      nodeIds,
-      label: `Floor ${storyId}`,
-      storyId,
-    });
+    // selectCrossSection({
+    //   id: `floor-${storyId}`,
+    //   type: "Z",
+    //   value: storyId,
+    //   nodeIds,
+    //   label: `Floor ${storyId}`,
+    //   storyId,
+    // });
   };
 
   if (!geometry) return null;
 
-  const opacity = isHovered ? 0.9 : floorOpacity;
+  // const opacity = isHovered ? 0.9 : floorOpacity;
+  const opacity = floorOpacity;
 
   const meshes = geometry instanceof THREE.Group ? geometry.children : [geometry];
 
@@ -245,7 +152,7 @@ function FloorSlab({
               vertexColors
               transparent
               opacity={opacity}
-              depthWrite={false}
+              depthWrite={true}
               side={THREE.DoubleSide}
             />
           </mesh>

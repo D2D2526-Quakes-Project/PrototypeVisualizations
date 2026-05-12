@@ -9,21 +9,8 @@ import { interpolateColor } from "./colors";
 const grayColor = new THREE.Color(0.5, 0.5, 0.5);
 const ERROR_MAGENTA = interpolate(["magenta"], "oklab");
 
-// interface ColorContextType {
-//   currentMetric: Metric;
-//   setColorMetric: (metric: Metric) => void;
-//   metricPaletteOverrides: MetricPaletteOverrides;
-//   setMetricPalette: (metric: Metric, palette: MetricPaletteKey | null) => void;
-//   getNodeColor: (nodeId: number, frameIndex: number) => THREE.Color;
-//   getColorFromValue: (value: number) => THREE.Color;
-//   availableMetrics: Metric[];
-//   thresholdHighlighting: boolean;
-//   setThresholdHighlighting: (enabled: boolean) => void;
-// }
-
 export function useMetrics() {
   const { animationData } = useAnimationData();
-  // const { thresholds } = useThresholds();
   const currentMetric = useProfileStore((s) => s._currentMetric);
   const setCurrentMetric = useProfileStore((s) => s._setCurrentMetric);
   const showHiddenMetrics = useGlobalStore((s) => s.showHiddenMetrics);
@@ -50,6 +37,10 @@ export function useMetrics() {
     () => thresholds[currentMetricConfig.thresholdKey],
     [thresholds, currentMetricConfig]
   );
+  const missingNodeSet = useMemo(
+    () => new Set(animationData.metadata.displacementMissingNodeIndices),
+    [animationData.metadata.displacementMissingNodeIndices]
+  );
 
   const availableMetrics = useMemo((): Metric[] => {
     return (Object.keys(METRIC_CONFIGS) as Metric[]).filter((metric) => {
@@ -59,12 +50,6 @@ export function useMetrics() {
       return true;
     });
   }, [animationData, showHiddenMetrics]);
-
-  // const metricConfig = useMemo(() => getMetricConfig(currentMetric), [currentMetric]);
-  // const metricColorScale = useMemo(
-  //   () => getMetricColorScale(currentMetric, metricPaletteOverrides),
-  //   [currentMetric, metricPaletteOverrides]
-  // );
 
   const {
     positiveInterpolator,
@@ -102,18 +87,12 @@ export function useMetrics() {
     };
   }, [currentMetricConfig, currentMetricColorScale]);
 
-  const getNodeColorForCurrentMetric = useCallback(
-    (frameIndex: number, nodeId: number) => {
-      if (currentMetricPrecomputedMax === 0)
-        return {
-          passesThreshold: false,
-          color: grayColor,
-        };
-
-      const value = currentMetricConfig.getValue(animationData, frameIndex, nodeId);
+  const getValueColorForCurrentMetric = useCallback(
+    (value: number | undefined) => {
       if (value === undefined || !Number.isFinite(value))
         return {
           passesThreshold: false,
+          noValue: true,
           color: grayColor,
         };
 
@@ -145,11 +124,11 @@ export function useMetrics() {
       const rgbColor: [number, number, number] = interpolateColor(interpolator, t);
       return {
         passesThreshold,
+        noValue: false,
         color: new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]),
       };
     },
     [
-      animationData,
       positiveInterpolator,
       negativeInterpolator,
       thresholdHighlighting,
@@ -157,56 +136,33 @@ export function useMetrics() {
       positiveThresholdInterpolator,
       fullPositiveInterpolator,
       fullNegativeInterpolator,
-      currentMetricConfig,
       currentMetricPrecomputedMax,
       currentMetricThreshold,
     ]
   );
 
-  // const getColorFromValue = useCallback(
-  //   (value: number): THREE.Color => {
-  //     if (maxValue === 0) return grayColor;
+  const getNodeColorForCurrentMetric = useCallback(
+    (frameIndex: number, nodeId: number) => {
+      if (currentMetricPrecomputedMax === 0)
+        return {
+          passesThreshold: false,
+          noValue: true,
+          color: grayColor,
+        };
 
-  //     if (!Number.isFinite(value)) return grayColor;
+      if (missingNodeSet.has(nodeId)) {
+        return {
+          passesThreshold: false,
+          noValue: true,
+          color: grayColor,
+        };
+      }
+      const value = currentMetricConfig.getValue(animationData, frameIndex, nodeId);
 
-  //     const negative = value < 0;
-  //     const normalizedValue = Math.min(1, Math.max(0, Math.abs(value / maxValue)));
-  //     const normalizedThreshold = Math.min(1, Math.max(0, thresholdValue / maxValue));
-
-  //     let t: number = normalizedValue;
-  //     let interpolator: (t: number) => FindColorByMode<"oklab">;
-
-  //     if (negative) interpolator = fullNegativeInterpolator;
-  //     else interpolator = fullPositiveInterpolator;
-
-  //     if (thresholdHighlighting) {
-  //       if (normalizedValue < normalizedThreshold) {
-  //         t = normalizedValue / normalizedThreshold;
-  //         if (negative) interpolator = negativeInterpolator;
-  //         else interpolator = positiveInterpolator;
-  //       } else {
-  //         t = (normalizedValue - normalizedThreshold) / (1 - normalizedThreshold);
-  //         if (negative) interpolator = negativeThresholdInterpolator;
-  //         else interpolator = positiveThresholdInterpolator;
-  //       }
-  //     }
-
-  //     const rgbColor: [number, number, number] = interpolateColor(interpolator, t);
-
-  //     return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);
-  //   },
-  //   [
-  //     maxValue,
-  //     positiveInterpolator,
-  //     negativeInterpolator,
-  //     thresholdValue,
-  //     thresholdHighlighting,
-  //     negativeThresholdInterpolator,
-  //     positiveThresholdInterpolator,
-  //     fullPositiveInterpolator,
-  //     fullNegativeInterpolator,
-  //   ]
-  // );
+      return getValueColorForCurrentMetric(value);
+    },
+    [animationData, currentMetricConfig, currentMetricPrecomputedMax, getValueColorForCurrentMetric, missingNodeSet]
+  );
 
   return {
     currentMetric,
@@ -222,6 +178,7 @@ export function useMetrics() {
     currentMetricThreshold,
     thresholdHighlighting,
     setThresholdHighlighting,
+    getValueColorForCurrentMetric,
     getNodeColorForCurrentMetric,
   };
 }

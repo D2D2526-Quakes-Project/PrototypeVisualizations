@@ -173,3 +173,17 @@ export const isEditableTarget = (target: EventTarget | null): boolean => {
     target.getAttribute("role") === "textbox"
   );
 };
+
+export function numberToColor(nodeId: number): string {
+  const hue = (nodeId * 137.508) % 360;
+  return `hsl(${hue}, 70%, 45%)`;
+}
+
+export function numberToColorLight(nodeId: number): string {
+  const hue = (nodeId * 137.508) % 360;
+  return `hsl(${hue}, 70%, 90%)`;
+}
+
+export function assert(condition: boolean, message?: string) {
+  if (!condition) throw new Error(message);
+}

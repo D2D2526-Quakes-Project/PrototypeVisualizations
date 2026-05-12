@@ -72,9 +72,10 @@ export interface CameraContextType extends UsePanelStateReturn<CanvasPanelState>
 
 const CameraContext = createContext<CameraContextType | undefined>(undefined);
 
-export function useCanvasState() {
+export function useCanvasState(dummy: boolean = false) {
   const context = useContext(CameraContext);
   if (!context) {
+    if (dummy) return DEFAULT_CANVAS_PANEL_STATE;
     throw new Error("useCanvasState must be within CanvasProvider");
   }
   return context;

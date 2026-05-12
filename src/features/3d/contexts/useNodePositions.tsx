@@ -27,7 +27,7 @@ export function useNodePositions() {
     xExpansion,
     yExpansion,
     zExpansion,
-  } = useCanvasState();
+  } = useCanvasState(true);
   const hiddenNodeIds = useProfileStore((s) => s._hiddenNodeIds);
   const { hiddenFloors } = useFloorVisibility();
 

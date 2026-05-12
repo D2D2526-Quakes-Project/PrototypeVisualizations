@@ -1,5 +1,5 @@
-import { AlertTriangle, Check, FilmIcon, Keyboard, LogOutIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertTriangleIcon, Keyboard, LogOutIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import {
@@ -11,45 +11,31 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-// import { useExportVideo } from "@/features/export/ExportProvider";
-// import {
-//   applyWorkspaceState,
-//   copyShareableUrlToClipboard,
-//   createUserProfile,
-//   getActiveProfile,
-//   getCurrentWorkspaceStateSnapshot,
-//   loadFromLocalStorage,
-//   loadSaveProfiles,
-//   PROFILES_UPDATED_EVENT,
-//   renameUserProfile,
-//   deleteUserProfile,
-//   resetProfileToDefault,
-//   setActiveProfile,
-// } from "@/features/3d/lib/statePersistence";
-import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
+import { OPTIONAL_DATASET_KEYS } from "@/features/animation-data/data-loading/loadingTypes";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { Sheet, SheetContent } from "../ui/sheet";
-import { DataMenu } from "./DataMenu";
-import { ProfileMenu } from "./ProfileMenu";
 import { useGlobalStore } from "@/state";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
+import { DataMenu } from "./DataMenu";
+import { OptionalDatasetLoader } from "./OptionalDatasetLoader";
+import { ProfileMenu } from "./ProfileMenu";
+import { ShortcutsBar } from "./ShortcutsBar";
+import { formatNumber } from "@/lib/utils";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { ColorScaleBarTooltip } from "@/features/canvas/components/ColorScaleBar";
+import { useVisibilityWarnings } from "@/features/3d/contexts/useVisibilityWarnings";
+import { Button } from "../ui/button";
 
 export function NavigationBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  // const { showAllDefaultFloors } = useFloorVisibility();
-  // const visibleFloorCount = useViewStore((state) => state.visibleFloors.length);
-  // const showAllNodes = useViewStore((state) => state.showAllNodes);
-  // const renderNodes = useViewStore((state) => state.renderNodes);
-  // const renderFloorSlabs = useViewStore((state) => state.renderFloorSlabs);
-  // const renderXCrossSectionSlabs = useViewStore((state) => state.renderXCrossSectionSlabs);
-  // const renderYCrossSectionSlabs = useViewStore((state) => state.renderYCrossSectionSlabs);
-  // const renderVerticalConnections = useViewStore((state) => state.renderVerticalConnections);
-  // const renderHorizontalConnections = useViewStore((state) => state.renderHorizontalConnections);
-  // const hiddenNodeCount = useViewStore((state) => state.hiddenNodeIds.length);
+  const { frameIndex } = usePlayback();
   const showHiddenMetrics = useGlobalStore((state) => state.showHiddenMetrics);
   const setShowHiddenMetrics = useGlobalStore((state) => state.setShowHiddenMetrics);
-  // const setRenderNodes = useViewStore((state) => state.setRenderNodes);
+
+  const { currentMetricConfig } = useMetrics();
+  const { allVisibilityHiddenWarning, mostNodesHiddenWarning, allFloorsHiddenWarning } = useVisibilityWarnings();
+
   const {
     animationData,
     clearSelection,
@@ -59,13 +45,9 @@ export function NavigationBar() {
     requestDatasetLoad,
     retryDatasetLoad,
   } = useAnimationData();
-  // const { frameIndex } = usePlayback();
-  // const { openExportPanel } = useExportVideo();
-  // const { currentMetric, metricPaletteOverrides, thresholdHighlighting } = useColor();
-  // const config = getMetricConfig(currentMetric);
 
   const [activeMenu, setActiveMenu] = useState("");
-  const [isCopyingLink, setIsCopyingLink] = useState(false);
+  // const [isCopyingLink, setIsCopyingLink] = useState(false);
   const [helpDrawerOpen, setHelpDrawerOpen] = useState(false);
 
   const backToHome = () => {
@@ -90,91 +72,17 @@ export function NavigationBar() {
     () => OPTIONAL_DATASET_KEYS.map((key) => datasetStates[key]).filter((state) => state.available),
     [datasetStates]
   );
-  const backgroundLoadingCount = useMemo(
-    () => optionalDatasetStates.filter((state) => state.stage === "fetching" || state.stage === "parsing").length,
-    [optionalDatasetStates]
-  );
-  const loadedOptionalCount = useMemo(
-    () => optionalDatasetStates.filter((state) => state.stage === "ready").length,
-    [optionalDatasetStates]
-  );
-  const availableOptionalCount = optionalDatasetStates.length;
-  const unselectedAvailableCount = useMemo(
-    () => optionalDatasetStates.filter((state) => !state.selected && state.stage !== "ready").length,
-    [optionalDatasetStates]
-  );
-  const optionalSummaryProgress = useMemo(() => {
-    const activeStates = optionalDatasetStates.filter(
-      (state) => state.stage === "fetching" || state.stage === "parsing"
-    );
-    if (activeStates.length === 0) return 100;
-    return activeStates.reduce((sum, state) => sum + state.progress, 0) / activeStates.length;
-  }, [optionalDatasetStates]);
-  const loadingSummaryLabel = useMemo(() => {
-    if (backgroundLoadingCount > 0) {
-      return `${backgroundLoadingCount} dataset${backgroundLoadingCount === 1 ? "" : "s"} loading`;
-    }
-    if (loadedOptionalCount === availableOptionalCount && availableOptionalCount > 0) {
-      return `${loadedOptionalCount} datasets loaded`;
-    }
-    if (loadedOptionalCount > 0 && unselectedAvailableCount > 0) {
-      return `${loadedOptionalCount} loaded, ${unselectedAvailableCount} available`;
-    }
-    return `${unselectedAvailableCount} dataset${unselectedAvailableCount === 1 ? "" : "s"} available`;
-  }, [availableOptionalCount, backgroundLoadingCount, loadedOptionalCount, unselectedAvailableCount]);
 
-  // const allFloorsHiddenWarning = useMemo(() => {
-  //   const totalFloorCount = animationData?.metadata.storyOrder.length ?? 0;
-  //   if (totalFloorCount === 0) return null;
-  //   if (visibleFloorCount > 0) return null;
-  //   return {
-  //     totalFloorCount,
-  //     restore: () => showAllDefaultFloors(),
-  //   };
-  // }, [animationData, visibleFloorCount, showAllDefaultFloors]);
-
-  // const mostNodesHiddenWarning = useMemo(() => {
-  //   if (hiddenNodeCount < animationData.metadata.nodeCount * 0.75) return null;
-  //   return {
-  //     restore: () => showAllNodes(),
-  //   };
-  // }, [animationData, hiddenNodeCount, showAllNodes]);
-
-  // const allVisibilityHiddenWarning = useMemo(() => {
-  //   if (
-  //     renderNodes ||
-  //     renderFloorSlabs ||
-  //     renderXCrossSectionSlabs ||
-  //     renderYCrossSectionSlabs ||
-  //     renderVerticalConnections ||
-  //     renderHorizontalConnections
-  //   )
-  //     return null;
-  //   return {
-  //     restore: () => {
-  //       setRenderNodes(true);
-  //     },
-  //   };
-  // }, [
-  //   renderNodes,
-  //   renderFloorSlabs,
-  //   renderXCrossSectionSlabs,
-  //   renderYCrossSectionSlabs,
-  //   setRenderNodes,
-  //   renderVerticalConnections,
-  //   renderHorizontalConnections,
-  // ]);
-
-  // useEffect(() => {
-  //   // Ctrl+? for help
-  //   const handleKeyDown = (e: KeyboardEvent) => {
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "/") {
-  //       setHelpDrawerOpen(true);
-  //     }
-  //   };
-  //   window.addEventListener("keydown", handleKeyDown);
-  //   return () => window.removeEventListener("keydown", handleKeyDown);
-  // }, [setHelpDrawerOpen]);
+  useEffect(() => {
+    // Ctrl+? for help
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        setHelpDrawerOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setHelpDrawerOpen]);
 
   return (
     <div className="border-border bg-background grid grid-cols-[auto_auto_auto] items-center gap-3 border-b">
@@ -232,149 +140,74 @@ export function NavigationBar() {
 
       <Sheet open={helpDrawerOpen} onOpenChange={setHelpDrawerOpen}>
         <SheetContent className="h-[35vh] max-h-[50vh]" side="bottom">
-          <div className="flex h-full flex-col overflow-y-auto">{/* <SelectionShortcuts showPlayback={true} /> */}</div>
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Keyboard size={13} className="text-neutral-400" />
+              Shortcuts
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex h-full flex-col overflow-y-auto">
+            <ShortcutsBar />
+          </div>
         </SheetContent>
       </Sheet>
 
       <div className="flex items-center justify-center gap-2 py-1 text-sm whitespace-nowrap">
-        {/* <span className="font-medium">Frame:</span>
+        <span className="font-medium">Frame:</span>
         <span className="font-mono">{frameIndex + 1}</span>
         <span className="text-neutral-300">|</span>
         <span className="font-medium">Time:</span>
-        <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
+        <span className="font-mono">{formatNumber(frameIndex * animationData.metadata.dt)} s</span>
         <span className="text-neutral-300">|</span>
-        <div className="font-medium">{config.label}</div>
+        <div className="font-medium">{currentMetricConfig.label}</div>
         <div className="w-full">
-          <ColorScaleBarTooltip
-            currentMetric={currentMetric}
-            metricPaletteOverrides={metricPaletteOverrides}
-            thresholdHighlighting={thresholdHighlighting}
-            insideLabel
-          />
-        </div> */}
+          <ColorScaleBarTooltip insideLabel />
+        </div>
       </div>
 
       <div className="flex min-w-0 items-center justify-end py-1 pr-2">
-        <div className="flex items-center gap-3 text-xs text-neutral-500">
+        <div className="flex items-center gap-1 text-xs text-neutral-500">
           <div className="truncate">
             {currentBuilding?.name} / {currentSimulation?.name}
           </div>
-          {/* {allFloorsHiddenWarning && (
-            <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] whitespace-nowrap text-amber-800">
-              <AlertTriangle size={11} />
-              <span>All {allFloorsHiddenWarning.totalFloorCount} floors hidden</span>
-              <button
-                type="button"
-                onClick={allFloorsHiddenWarning.restore}
-                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-900 hover:bg-amber-100">
-                Show
-              </button>
-            </div>
-          )} */}
-          {/* {mostNodesHiddenWarning && (
-            <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] whitespace-nowrap text-amber-800">
-              <AlertTriangle size={11} />
-              <span>All nodes hidden</span>
-              <button
-                type="button"
-                onClick={mostNodesHiddenWarning.restore}
-                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-900 hover:bg-amber-100">
-                Show
-              </button>
-            </div>
-          )} */}
-          {/* {allVisibilityHiddenWarning && (
-            <div className="inline-flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] whitespace-nowrap text-amber-800">
-              <AlertTriangle size={11} />
-              <span>All views hidden</span>
-              <button
-                type="button"
-                onClick={allVisibilityHiddenWarning.restore}
-                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-900 hover:bg-amber-100">
-                Show
-              </button>
-            </div>
-          )} */}
-          {/* Optional Datasets Loading */}
-          {optionalDatasetStates.length > 0 ? (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className={`inline-flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-[10px] whitespace-nowrap ${
-                    backgroundLoadingCount > 0
-                      ? "border-amber-300 bg-amber-50 text-amber-800"
-                      : "border-neutral-300 bg-white text-neutral-700"
-                  }`}>
-                  {backgroundLoadingCount > 0 ? <AlertTriangle size={11} /> : <Check size={11} />}
-                  <span>{loadingSummaryLabel}</span>
-                  {backgroundLoadingCount > 0 ? (
-                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-amber-100">
-                      <div
-                        className="h-full rounded-full bg-amber-500 transition-all"
-                        style={{ width: `${optionalSummaryProgress}%` }}
-                      />
-                    </div>
-                  ) : null}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent side="bottom" align="end" className="w-sm space-y-2 p-3">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-neutral-800">Optional dataset loading</div>
-                  <div className="text-xs text-neutral-500">
-                    Selected datasets continue loading in the background. Unselected datasets can be queued on demand.
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  {optionalDatasetStates.map((state) => (
-                    <div key={state.key} className="rounded border border-neutral-200 bg-white px-2 py-1.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-neutral-800">{state.label}</span>
-                        <span className="flex items-center gap-2 text-[10px] text-neutral-500">
-                          {state.stage === "ready" ? (
-                            <>
-                              <Check size={11} /> Loaded
-                            </>
-                          ) : state.stage === "error" ? (
-                            "Failed"
-                          ) : state.selected ? (
-                            state.message
-                          ) : (
-                            "Available"
-                          )}
-                          <div className="inline-block items-center justify-between gap-2 text-[10px]">
-                            {state.stage === "error" ? (
-                              <button
-                                type="button"
-                                onClick={() => retryDatasetLoad(state.key as OptionalDatasetKey)}
-                                className="rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-neutral-700 hover:bg-neutral-100">
-                                Retry
-                              </button>
-                            ) : state.stage === "idle" || !state.selected ? (
-                              <button
-                                type="button"
-                                onClick={() => requestDatasetLoad(state.key as OptionalDatasetKey)}
-                                className="rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-neutral-700 hover:bg-neutral-100">
-                                Load
-                              </button>
-                            ) : null}
-                          </div>
-                        </span>
-                      </div>
-                      <span className="flex items-center gap-2 text-[10px] text-neutral-500">{state.error}</span>
-                      {state.stage === "fetching" || state.stage === "parsing" || state.stage === "queued" ? (
-                        <div className="mt-1 mb-1 h-1.5 overflow-hidden rounded-full bg-neutral-200">
-                          <div
-                            className="h-full rounded-full bg-amber-500 transition-all"
-                            style={{ width: `${state.progress}%` }}
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          ) : null}
+          {allFloorsHiddenWarning && (
+            <Button
+              variant="ghost"
+              className="border-amber-300 bg-amber-50 text-amber-800"
+              size="xs"
+              onClick={allFloorsHiddenWarning}>
+              <AlertTriangleIcon size={11} />
+              All floors hidden
+              <span className="font-bold">Show</span>
+            </Button>
+          )}
+          {mostNodesHiddenWarning && (
+            <Button
+              variant="ghost"
+              className="border-amber-300 bg-amber-50 text-amber-800"
+              size="xs"
+              onClick={mostNodesHiddenWarning}>
+              <AlertTriangleIcon size={11} />
+              All nodes hidden
+              <span className="font-bold">Show</span>
+            </Button>
+          )}
+          {allVisibilityHiddenWarning && (
+            <Button
+              variant="ghost"
+              className="border-amber-300 bg-amber-50 text-amber-800"
+              size="xs"
+              onClick={allVisibilityHiddenWarning}>
+              <AlertTriangleIcon size={11} />
+              All views hidden
+              <span className="font-bold">Show</span>
+            </Button>
+          )}
+          <OptionalDatasetLoader
+            datasetStates={optionalDatasetStates}
+            onRetry={retryDatasetLoad}
+            onRequestLoad={requestDatasetLoad}
+          />
         </div>
       </div>
     </div>

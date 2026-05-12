@@ -28,7 +28,7 @@ export function ProfileMenu() {
             {availableProfileIds.map((profile) => (
               <MenubarRadioItem key={profile} value={profile} className="justify-between capitalize">
                 {profile}
-                <Button variant={"ghost"} size={"icon-xs"} onClick={(e) => handleResetProfile(e, profile)}>
+                <Button variant={"destructive"} size={"icon-xs"} onClick={(e) => handleResetProfile(e, profile)}>
                   <RotateCcwIcon />
                 </Button>
               </MenubarRadioItem>

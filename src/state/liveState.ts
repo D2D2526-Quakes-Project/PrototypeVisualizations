@@ -21,9 +21,8 @@ export interface LiveState {
   clearSelection: () => void;
 
   // Hover
-  hoveredNodeId: number | null;
-  hoveredNodeScreenPos: { x: number; y: number } | null;
-  setHoveredNodeId: (nodeId: number | null, screenPos?: { x: number; y: number }) => void;
+  hoveredItem: HoverItem | null;
+  setHoveredItem: (item: HoverItem | null) => void;
 
   // CrossSection interaction
   selectedCrossSection: CrossSectionSelectionState | null;
@@ -60,9 +59,8 @@ export const createLiveSlice: StateCreator<AppState, [], [], LiveState> = (set) 
     })),
   clearSelection: () => set({ selectedNodeIds: [] }),
 
-  hoveredNodeId: null,
-  hoveredNodeScreenPos: null,
-  setHoveredNodeId: (nodeId, screenPos) => set({ hoveredNodeId: nodeId, hoveredNodeScreenPos: screenPos ?? null }),
+  hoveredItem: null,
+  setHoveredItem: (item) => set({ hoveredItem: item }),
 
   selectedCrossSection: null,
   hoveredCrossSection: null,
@@ -83,6 +81,21 @@ export interface CrossSectionSelectionState {
   screenPos?: { x: number; y: number };
 }
 
+export type HoverItem = (
+  | {
+      type: "node";
+      nodeId: number;
+    }
+  | {
+      type: "crossSection";
+      crossSectionId: string;
+    }
+  | {
+      type: "floor";
+      storyId: string;
+    }
+) & { screenPos?: { x: number; y: number } };
+
 export const LIVE_STATE_KEYS = [
   "_playing",
   "_fps",
@@ -93,19 +106,12 @@ export const LIVE_STATE_KEYS = [
   "autoRotate",
   "setAutoRotate",
   "selectedNodeIds",
-  "boxSelection",
-  "boxSelectionPanelId",
-  "isBoxSelecting",
   "setSelectedNodes",
   "removeSelectedNode",
   "addSelectedNodes",
   "clearSelection",
-  "startBoxSelection",
-  "updateBoxSelection",
-  "endBoxSelection",
-  "hoveredNodeId",
-  "hoveredNodeScreenPos",
-  "setHoveredNodeId",
+  "hoveredItem",
+  "setHoveredItem",
   "selectedCrossSection",
   "hoveredCrossSection",
   "selectCrossSection",

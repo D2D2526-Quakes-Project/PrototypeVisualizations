@@ -1,11 +1,13 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
+import { useFrame, useThree } from "@react-three/fiber";
 import Delaunay from "delaunator";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
+import { useHover } from "../lib/useHover";
 
 export function XCrossSectionSlabsRenderer() {
   return <CrossSectionSlabsRendererImpl crossSectionType="x" />;
@@ -18,17 +20,17 @@ export function YCrossSectionSlabsRenderer() {
 function CrossSectionSlabsRendererImpl({ crossSectionType }: { crossSectionType: "x" | "y" }) {
   const { animationData } = useAnimationData();
   const { visibleNodes } = useNodePositions();
-  // const { getExpandedPosition } = useExpandedScale();
 
   const crossSections = useMemo(() => {
     const metadata = animationData.metadata;
     const crossSectionData = crossSectionType === "x" ? metadata.crossSectionsX : metadata.crossSectionsY;
 
     const result: [string, number[]][] = [];
+    const visibleNodeIds = new Set(visibleNodes);
+
     for (const [crossSectionPos, nodes] of Object.entries(crossSectionData)) {
       if (nodes.length === 0) continue;
 
-      const visibleNodeIds = new Set(visibleNodes);
       const filteredNodes = nodes.filter((id) => visibleNodeIds.has(id));
       if (filteredNodes.length > 0) result.push([crossSectionPos, filteredNodes]);
     }
@@ -53,33 +55,32 @@ function CrossSectionSlabsRendererImpl({ crossSectionType }: { crossSectionType:
 function CrossSectionSlab({
   nodeIds,
   crossSectionType,
+  crossSectionPos,
 }: {
   crossSectionPos: string;
   nodeIds: number[];
   crossSectionType: "x" | "y";
 }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const { invalidate } = useThree();
+
   const { getNodeVisualPosition } = useNodePositions();
   const { frameIndex } = usePlayback();
   const { getNodeColorForCurrentMetric } = useMetrics();
   const { floorOpacity } = useNodeRendering();
+  const { hoveredCrossSection, setHoveredCrossSection } = useHover();
 
-  // const crossSectionId = `cross-section-${crossSectionType}-${crossSectionPos}`;
-  // const isHovered = hoveredCrossSection?.id === crossSectionId; // TODO: Hovering
+  useEffect(() => {
+    invalidate();
+  }, [invalidate, floorOpacity]);
 
-  const geometry = useMemo(() => {
+  const topology = useMemo(() => {
     if (nodeIds.length < 3) return null;
 
-    const nodePositions = nodeIds.map((nodeId) => {
-      const pos = getNodeVisualPosition(nodeId, frameIndex);
-      return { nodeId, pos };
+    const points2D = nodeIds.map((nodeId) => {
+      const pos = getNodeVisualPosition(nodeId, 0);
+      return crossSectionType === "x" ? ([pos[1], pos[2]] as [number, number]) : ([pos[0], pos[2]] as [number, number]);
     });
-
-    let points2D: [number, number][];
-    if (crossSectionType === "x") {
-      points2D = nodePositions.map((p) => [p.pos[1], p.pos[2]] as [number, number]);
-    } else {
-      points2D = nodePositions.map((p) => [p.pos[0], p.pos[2]] as [number, number]);
-    }
 
     const delaunay = Delaunay.from(points2D);
     const triangles = delaunay.triangles;
@@ -87,52 +88,53 @@ function CrossSectionSlab({
     const positions = new Float32Array(triangles.length * 3);
     const colors = new Float32Array(triangles.length * 3);
 
+    return { nodeIds, triangles, positions, colors };
+  }, [nodeIds, crossSectionType, getNodeVisualPosition]);
+
+  useFrame(() => {
+    if (!meshRef.current || !topology) return;
+
+    const { triangles, nodeIds: topologyNodes } = topology;
+    const geometry = meshRef.current.geometry;
+    const posAttr = geometry.attributes.position;
+    const colAttr = geometry.attributes.color;
+
     for (let i = 0; i < triangles.length; i++) {
       const nodeIdx = triangles[i];
-      const nodeId = nodePositions[nodeIdx].nodeId;
-      const nodePos = nodePositions[nodeIdx].pos;
+      const nodeId = topologyNodes[nodeIdx];
 
-      positions[i * 3] = nodePos[0];
-      positions[i * 3 + 1] = nodePos[1];
-      positions[i * 3 + 2] = nodePos[2];
+      const pos = getNodeVisualPosition(nodeId, frameIndex);
 
+      const baseIdx = i * 3;
+
+      posAttr.array[baseIdx] = pos[0];
+      posAttr.array[baseIdx + 1] = pos[1];
+      posAttr.array[baseIdx + 2] = pos[2];
+
+      // Update Color
       const { color } = getNodeColorForCurrentMetric(nodeId, frameIndex);
-      colors[i * 3] = color.r;
-      colors[i * 3 + 1] = color.g;
-      colors[i * 3 + 2] = color.b;
+
+      colAttr.array[baseIdx] = color.r;
+      colAttr.array[baseIdx + 1] = color.g;
+      colAttr.array[baseIdx + 2] = color.b;
     }
 
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-    return new THREE.Mesh(
-      geom,
-      new THREE.MeshBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.1,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      })
-    );
-  }, [nodeIds, frameIndex, getNodeVisualPosition, getNodeColorForCurrentMetric, crossSectionType]);
+    posAttr.needsUpdate = true;
+    colAttr.needsUpdate = true;
+  });
 
   const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();
-    // setHovered({
-    //   id: crossSectionId,
-    //   type: crossSectionType === "x" ? "X" : "Y",
-    //   value: crossSectionPos,
-    //   nodeIds,
-    //   label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,
-    //   screenPos: { x: e.offsetX, y: e.offsetY },
-    // });
+    setHoveredCrossSection({
+      type: "crossSection",
+      crossSectionId: `${crossSectionType}-${crossSectionPos}`,
+      screenPos: { x: e.offsetX, y: e.offsetY },
+    });
   };
 
   const handlePointerOut = (e: PointerEvent) => {
     e.stopPropagation();
-    // setHovered(null);
+    setHoveredCrossSection(null);
   };
 
   const handleClick = (e: PointerEvent) => {
@@ -144,25 +146,25 @@ function CrossSectionSlab({
     //   nodeIds,
     //   label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,
     // });
+    // TODO: Open cross section panel
   };
 
-  if (!geometry) return null;
+  if (!topology) return null;
 
-  // const opacity = isHovered ? 0.9 : 0.1;
-  const opacity = floorOpacity;
+  const opacity = hoveredCrossSection?.crossSectionId === `${crossSectionType}-${crossSectionPos}` ? 1 : floorOpacity;
 
   return (
-    <group onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick}>
-      <mesh geometry={geometry.geometry}>
-        <meshBasicMaterial
-          attach="material"
-          vertexColors
-          transparent
-          opacity={opacity}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-    </group>
+    <mesh
+      ref={meshRef}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
+      onClick={handleClick}
+      frustumCulled={false}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[topology.positions, 3]} usage={THREE.DynamicDrawUsage} />
+        <bufferAttribute attach="attributes-color" args={[topology.colors, 3]} usage={THREE.DynamicDrawUsage} />
+      </bufferGeometry>
+      <meshBasicMaterial vertexColors transparent opacity={opacity} depthWrite={opacity == 1} side={THREE.DoubleSide} />
+    </mesh>
   );
 }

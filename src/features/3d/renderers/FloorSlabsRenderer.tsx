@@ -1,14 +1,15 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { assert } from "@/lib/utils";
+import { useFrame, useThree } from "@react-three/fiber";
 import Delaunay from "delaunator";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFloorVisibility } from "../contexts/useFloorVisibility";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
+import { useHover } from "../lib/useHover";
 
 export function FloorSlabsRenderer() {
   const { visibleFloors } = useFloorVisibility();
@@ -23,84 +24,89 @@ export function FloorSlabsRenderer() {
 }
 
 function FloorSlab({ storyId }: { storyId: string }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const { invalidate } = useThree();
+
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { storyOrder, stories } = animationData.metadata;
   const { avgDisplacementPerStory } = animationData.precomputed;
+
   const { getValueColorForCurrentMetric, getNodeColorForCurrentMetric } = useMetrics();
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { floorOpacity } = useNodeRendering();
+  const { hoveredFloor, setHoveredFloor } = useHover();
 
   const storyCount = storyOrder.length;
   const nodeIds = useMemo(() => stories[storyId], [storyId, stories]);
+  const storyIndex = useMemo(() => storyOrder.indexOf(storyId), [storyOrder, storyId]);
 
-  const avgFloorColor = useMemo((): THREE.Color => {
-    const storyIndex = storyOrder.indexOf(storyId);
-    assert(storyIndex >= 0, "Story index not found");
-    const avg = avgDisplacementPerStory[frameIndex * storyCount + storyIndex];
-    return getValueColorForCurrentMetric(avg === 0 ? undefined : avg).color;
-  }, [frameIndex, getValueColorForCurrentMetric, avgDisplacementPerStory, storyCount, storyOrder, storyId]);
+  useEffect(() => {
+    invalidate();
+  }, [invalidate, floorOpacity]);
 
-  // const isHovered = hoveredCrossSection?.storyId === storyId; //TODO: Hovering
-
-  const geometry = useMemo(() => {
-    if (nodeIds.length < 3) return null;
-
+  const topology = useMemo(() => {
     const visibleNodeIds = new Set(visibleNodes);
     const floorNodes = nodeIds.filter((id) => visibleNodeIds.has(id));
 
-    const nodePositions = floorNodes.map((nodeId) => {
-      const pos = getNodeVisualPosition(nodeId, frameIndex);
-      return { nodeId, pos };
+    if (floorNodes.length < 3) return null;
+
+    const points2D = floorNodes.map((nodeId) => {
+      const pos = getNodeVisualPosition(nodeId, 0);
+      return [pos[0], pos[1]] as [number, number];
     });
 
-    const points2D = nodePositions.map((p) => [p.pos[0], p.pos[1]] as [number, number]);
     const delaunay = Delaunay.from(points2D);
     const triangles = delaunay.triangles;
 
     const positions = new Float32Array(triangles.length * 3);
     const colors = new Float32Array(triangles.length * 3);
 
+    return { floorNodes, triangles, positions, colors };
+  }, [nodeIds, visibleNodes, getNodeVisualPosition]);
+
+  useFrame(() => {
+    if (!meshRef.current || !topology) return;
+
+    const { floorNodes, triangles } = topology;
+    const geometry = meshRef.current.geometry;
+    const posAttr = geometry.attributes.position;
+    const colAttr = geometry.attributes.color;
+
+    assert(storyIndex >= 0, "Story index not found");
+    const avg = avgDisplacementPerStory[frameIndex * storyCount + storyIndex];
+    const avgFloorColor = getValueColorForCurrentMetric(avg === 0 ? undefined : avg).color;
+
     for (let i = 0; i < triangles.length; i++) {
       const nodeIdx = triangles[i];
-      const nodeId = nodePositions[nodeIdx].nodeId;
-      const nodePos = nodePositions[nodeIdx].pos;
+      const nodeId = floorNodes[nodeIdx];
 
-      positions[i * 3] = nodePos[0];
-      positions[i * 3 + 1] = nodePos[1];
-      positions[i * 3 + 2] = nodePos[2];
+      const pos = getNodeVisualPosition(nodeId, frameIndex);
+      const baseIdx = i * 3;
+
+      posAttr.array[baseIdx] = pos[0];
+      posAttr.array[baseIdx + 1] = pos[1];
+      posAttr.array[baseIdx + 2] = pos[2];
 
       const { noValue, color } = getNodeColorForCurrentMetric(nodeId, frameIndex);
       const nodeColor = noValue ? avgFloorColor : color;
 
-      colors[i * 3] = nodeColor.r;
-      colors[i * 3 + 1] = nodeColor.g;
-      colors[i * 3 + 2] = nodeColor.b;
+      colAttr.array[baseIdx] = nodeColor.r;
+      colAttr.array[baseIdx + 1] = nodeColor.g;
+      colAttr.array[baseIdx + 2] = nodeColor.b;
     }
-
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-    return new THREE.Mesh(geom);
-  }, [nodeIds, frameIndex, visibleNodes, getNodeColorForCurrentMetric, getNodeVisualPosition, avgFloorColor]);
+    posAttr.needsUpdate = true;
+    colAttr.needsUpdate = true;
+  });
 
   const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();
-    // setHovered({
-    //   id: `floor-${storyId}`,
-    //   type: "Z",
-    //   value: storyId,
-    //   nodeIds,
-    //   label: `Floor ${storyId}`,
-    //   storyId,
-    //   screenPos: { x: e.offsetX, y: e.offsetY },
-    // });
+    setHoveredFloor({ type: "floor", storyId, screenPos: { x: e.offsetX, y: e.offsetY } });
   };
 
   const handlePointerOut = (e: PointerEvent) => {
     e.stopPropagation();
-    // setHovered(null);
+    setHoveredFloor(null);
   };
 
   const handleClick = (e: PointerEvent) => {
@@ -113,32 +119,25 @@ function FloorSlab({ storyId }: { storyId: string }) {
     //   label: `Floor ${storyId}`,
     //   storyId,
     // });
+    // TODO: Open floor panel
   };
 
-  if (!geometry) return null;
+  if (!topology) return null;
 
-  // const opacity = isHovered ? 0.9 : floorOpacity;
-  const opacity = floorOpacity;
-
-  const meshes = geometry instanceof THREE.Group ? geometry.children : [geometry];
+  const opacity = hoveredFloor?.storyId === storyId ? 1 : floorOpacity;
 
   return (
-    <group onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick}>
-      {meshes.map((mesh, i) => {
-        const child = mesh as THREE.Mesh;
-        return (
-          <mesh key={i} geometry={child.geometry}>
-            <meshBasicMaterial
-              attach="material"
-              vertexColors
-              transparent
-              opacity={opacity}
-              depthWrite={true}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
-        );
-      })}
-    </group>
+    <mesh
+      ref={meshRef}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
+      onClick={handleClick}
+      frustumCulled={false}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[topology.positions, 3]} usage={THREE.DynamicDrawUsage} />
+        <bufferAttribute attach="attributes-color" args={[topology.colors, 3]} usage={THREE.DynamicDrawUsage} />
+      </bufferGeometry>
+      <meshBasicMaterial vertexColors transparent opacity={opacity} depthWrite={opacity == 1} side={THREE.DoubleSide} />
+    </mesh>
   );
 }

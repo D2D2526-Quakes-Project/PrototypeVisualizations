@@ -1,11 +1,14 @@
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { useCallback, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { BoxSelectionHandler } from "@/features/canvas/components/BoxSelection";
+import { useHover } from "../lib/useHover";
+import { useLiveStore } from "@/state";
+import { useCanvasState } from "../contexts/CanvasContext";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
@@ -18,6 +21,9 @@ export function NodesRenderer() {
   const { getNodeColorForCurrentMetric } = useMetrics();
   const { visibleNodes, getNodeVisualPosition } = useNodePositions();
   const { nodeOpacity, nodeScale, belowThresholdNodeScale } = useNodeRendering();
+  const { hoveredNode, setHoveredNode } = useHover();
+  const selectedNodeIds = useLiveStore((s) => s.selectedNodeIds);
+  const { nodeInteractionEnabled } = useCanvasState();
 
   useEffect(() => {
     invalidate();
@@ -37,18 +43,17 @@ export function NodesRenderer() {
       const { passesThreshold, color } = getNodeColorForCurrentMetric(nodeId, frameIndex);
 
       const effectiveScale = passesThreshold ? nodeScale : nodeScale * belowThresholdNodeScale;
-      // const scale = hoveredNodeId === nodeId ? effectiveScale * 1.35 : effectiveScale;
-      const scale = effectiveScale;
+      const scale = hoveredNode?.nodeId === nodeId ? effectiveScale * 1.35 : effectiveScale;
       tempObject.scale.set(scale, scale, scale);
 
       tempObject.updateMatrix();
       nodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
 
-      // if (hoveredNodeId === nodeId || boxSelectedIndices.has(i)) {
-      //   tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
-      // } else {
-      tempColor.setRGB(color.r, color.g, color.b);
-      // }
+      if (hoveredNode?.nodeId === nodeId || selectedNodeIds.includes(i)) {
+        tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
+      } else {
+        tempColor.setRGB(color.r, color.g, color.b);
+      }
 
       tempColor.toArray(colorAttr.array, i * 3);
     }
@@ -57,14 +62,62 @@ export function NodesRenderer() {
     colorAttr.needsUpdate = true;
   });
 
+  const pointerDownNodeId = useRef<number | undefined>(undefined);
+
+  const handlePointerDown = useCallback(
+    (event: { instanceId?: number; stopPropagation: () => void }) => {
+      if (!nodeInteractionEnabled) return;
+      event.stopPropagation();
+      pointerDownNodeId.current = event.instanceId;
+    },
+    [nodeInteractionEnabled]
+  );
+
+  const handlePointerMove = useCallback(
+    (event: ThreeEvent<PointerEvent>) => {
+      if (!nodeInteractionEnabled) return;
+      event.stopPropagation();
+      if (event.instanceId === undefined) {
+        setHoveredNode(null);
+        return;
+      }
+      const nodeId = visibleNodes[event.instanceId];
+      setHoveredNode({
+        type: "node",
+        nodeId,
+        screenPos: { x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY },
+      });
+    },
+    [nodeInteractionEnabled, setHoveredNode, visibleNodes]
+  );
+
+  const handlePointerOut = useCallback(
+    (event: { stopPropagation: () => void }) => {
+      event.stopPropagation();
+      setHoveredNode(null);
+    },
+    [setHoveredNode]
+  );
+
+  const handleNodeClick = useCallback(
+    (event: { instanceId?: number; stopPropagation: () => void }) => {
+      if (!nodeInteractionEnabled) return;
+      if (event.instanceId === undefined) return;
+      if (event.instanceId !== pointerDownNodeId.current) return;
+      // const nodeId = visibleNodes[event.instanceId];
+      // selectNode(nodeId); // TODO: OPEN NODE PANEL
+    },
+    [nodeInteractionEnabled]
+  );
+
   return (
     <>
       <instancedMesh
         ref={nodesMeshRef}
-        // onPointerDown={handlePointerDown}
-        // onPointerMove={(e) => handlePointerMove(e)}
-        // onPointerOut={(e) => handlePointerOut(e)}
-        // onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
+        onPointerDown={handlePointerDown}
+        onPointerMove={(e) => handlePointerMove(e)}
+        onPointerOut={(e) => handlePointerOut(e)}
+        onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
         args={[undefined, undefined, visibleNodes.length]}
         frustumCulled={false}>
         <sphereGeometry args={[40, 4, 2]}>

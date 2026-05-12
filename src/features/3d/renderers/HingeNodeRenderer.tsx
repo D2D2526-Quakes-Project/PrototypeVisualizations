@@ -77,7 +77,10 @@ export function HingeNodesRenderer() {
 
       const effectiveScale = passesThreshold ? hingeNodeScale : hingeNodeScale * belowThresholdHingeScale;
 
-      const nudge = Math.max(nodeScale * 40 + effectiveScale * 16, effectiveScale * (15 + 16));
+      const nudge = Math.max(
+        nodeScale * 40 + hingeNodeScale * (passesThreshold ? 16 : belowThresholdHingeScale * 16),
+        hingeNodeScale * (15 + (passesThreshold ? 16 : belowThresholdHingeScale * 16))
+      );
       const nudgedPos = [pos[0] + normal[0] * nudge, pos[1] + normal[1] * nudge, pos[2] + normal[2] * nudge];
 
       tempObject.scale.set(effectiveScale, effectiveScale, effectiveScale);

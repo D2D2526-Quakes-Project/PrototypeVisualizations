@@ -1,11 +1,10 @@
+import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
-import { useMetrics } from "@/features/metrics/useMetrics";
-import { UNIT_SCALE } from "@/lib/utils";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
@@ -21,7 +20,7 @@ export function NodesRenderer() {
 
   useEffect(() => {
     invalidate();
-  }, [frameIndex, invalidate]);
+  }, [frameIndex, invalidate, nodeScale, nodeOpacity, belowThresholdNodeScale]);
 
   useFrame(() => {
     if (!nodesMeshRef.current || visibleNodes.length === 0) return;
@@ -36,8 +35,7 @@ export function NodesRenderer() {
 
       const { passesThreshold, color } = getNodeColorForCurrentMetric(frameIndex, nodeId);
 
-      const baseNodeScale = (1 / UNIT_SCALE) * nodeScale;
-      const effectiveScale = passesThreshold ? baseNodeScale : baseNodeScale * belowThresholdNodeScale;
+      const effectiveScale = passesThreshold ? nodeScale : nodeScale * belowThresholdNodeScale;
       // const scale = hoveredNodeId === nodeId ? effectiveScale * 1.35 : effectiveScale;
       const scale = effectiveScale;
       tempObject.scale.set(scale, scale, scale);
@@ -67,7 +65,7 @@ export function NodesRenderer() {
       // onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
       args={[undefined, undefined, visibleNodes.length]}
       frustumCulled={false}>
-      <sphereGeometry args={[1, 4, 2]}>
+      <sphereGeometry args={[40, 4, 2]}>
         <instancedBufferAttribute
           attach="attributes-color"
           args={[new Float32Array(visibleNodes.length * 3).fill(1), 3]}

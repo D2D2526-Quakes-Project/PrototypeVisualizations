@@ -1,21 +1,25 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useMemo, useRef } from "react";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
-import { useFrame } from "@react-three/fiber";
-import { useMetrics } from "@/features/metrics/useMetrics";
 import { useNodeRendering } from "../contexts/useNodeRendering";
-import { UNIT_SCALE } from "@/lib/utils";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
 
 export function HingeNodesRenderer() {
   const { animationData } = useAnimationData();
+  const { invalidate } = useThree();
 
   const { visibleNodes, getNodeVisualPosition } = useNodePositions();
   const { getNodeColorForCurrentMetric } = useMetrics();
   const { nodeScale, hingeNodeScale, belowThresholdHingeScale } = useNodeRendering();
+
+  useEffect(() => {
+    invalidate();
+  }, [hingeNodeScale, belowThresholdHingeScale, nodeScale, invalidate]);
 
   const hingeNodesMeshRef = useRef<THREE.InstancedMesh>(null);
 
@@ -34,11 +38,8 @@ export function HingeNodesRenderer() {
       const jNode = beam.jNodeIndex;
 
       if (visibleNodeSet.has(iNode) && visibleNodeSet.has(jNode)) {
-        const iNodePosFloat = getNodeVisualPosition(iNode, 0);
-        const jNodePosFloat = getNodeVisualPosition(jNode, 0);
-
-        const iNodePos = [iNodePosFloat[0], iNodePosFloat[1], iNodePosFloat[2]];
-        const jNodePos = [jNodePosFloat[0], jNodePosFloat[1], jNodePosFloat[2]];
+        const iNodePos = getNodeVisualPosition(iNode, 0);
+        const jNodePos = getNodeVisualPosition(jNode, 0);
 
         const normal = [jNodePos[0] - iNodePos[0], jNodePos[1] - iNodePos[1], jNodePos[2] - iNodePos[2]];
         const normalLength = Math.sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
@@ -47,7 +48,7 @@ export function HingeNodesRenderer() {
         normal[2] /= normalLength;
 
         if (row.endMask & 0b01) {
-          visibleNodesWithHinges.push({ hingeIdx: i, endCap: 1, pos: iNodePos, normal: jNodePos });
+          visibleNodesWithHinges.push({ hingeIdx: i, endCap: 1, pos: iNodePos, normal: normal });
         }
         if (row.endMask & 0b10) {
           visibleNodesWithHinges.push({
@@ -72,15 +73,17 @@ export function HingeNodesRenderer() {
 
     for (let i = 0; i < visibleNodesWithHinges.length; i += 1) {
       const { hingeIdx, endCap, pos, normal } = visibleNodesWithHinges[i];
-      const nudge = Math.max(nodeScale / UNIT_SCALE, hingeNodeScale / UNIT_SCALE / 5);
-      const nudgedPos = [pos[0] + normal[0] * nudge, pos[1] + normal[1] * nudge, pos[2] + normal[2] * nudge];
-
       const { passesThreshold, color } = getNodeColorForCurrentMetric(endCap, hingeIdx);
 
       const effectiveScale = passesThreshold ? hingeNodeScale : hingeNodeScale * belowThresholdHingeScale;
+
+      const nudge = Math.max(nodeScale * 40 + effectiveScale * 16, effectiveScale * (15 + 16));
+      const nudgedPos = [pos[0] + normal[0] * nudge, pos[1] + normal[1] * nudge, pos[2] + normal[2] * nudge];
+
       tempObject.scale.set(effectiveScale, effectiveScale, effectiveScale);
       tempObject.rotation.set(0, 0, Math.atan2(normal[1], normal[0]) - Math.PI / 2);
       tempObject.position.set(nudgedPos[0], nudgedPos[1], nudgedPos[2]);
+
       tempObject.updateMatrix();
       hingeNodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
 

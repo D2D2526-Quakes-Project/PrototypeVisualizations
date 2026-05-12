@@ -110,7 +110,7 @@ export function useNodePositions() {
    * Not raw displacement data!
    */
   const getNodeVisualPosition = useCallback(
-    (nodeId: number, frameIndex: number) => {
+    (nodeId: number, frameIndex: number): [number, number, number] => {
       let pos = [...initialPositions.at(nodeId)];
 
       pos = [pos[0] + buildingOffset[0], pos[1] + buildingOffset[1], pos[2] + buildingOffset[2]];

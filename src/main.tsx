@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 import * as THREE from "three";
 import { ErrorPage } from "./components/ErrorPage";
-import { NavigationBar } from "./components/NavigationBar";
+import { NavigationBar } from "./components/navigation-bar/NavigationBar";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { PlaybackKeyboardEvents } from "./features/playback/PlaybackKeyboardEvents";
 import "./index.css";

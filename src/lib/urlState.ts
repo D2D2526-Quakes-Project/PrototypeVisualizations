@@ -16,7 +16,7 @@ export async function getSelectionFromCurrentUrl(): Promise<DataSelection | null
   const simulation = params.get("simulation");
   if (!building || !simulation) return null;
 
-  const encoded = params.get("optinalLoads");
+  const encoded = params.get("optionalLoads");
   let optionalLoads: Partial<OptionalDataLoadOptions> | undefined;
   if (!encoded || encoded.length !== OPTIONAL_DATASET_KEYS.length) {
     optionalLoads = undefined;
@@ -27,6 +27,7 @@ export async function getSelectionFromCurrentUrl(): Promise<DataSelection | null
       if (char !== "0" && char !== "1") break;
       parsed[OPTIONAL_DATASET_KEYS[index]] = char === "1";
     }
+    optionalLoads = parsed;
   }
 
   const explicitSelection = optionalLoads ? { building, simulation, optionalLoads } : { building, simulation };

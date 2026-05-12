@@ -54,4 +54,7 @@ export default defineConfig(({ isSsrBuild }) => ({
   optimizeDeps: {
     exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/core"],
   },
+  build: {
+    sourcemap: true,
+  },
 }));

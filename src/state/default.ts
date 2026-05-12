@@ -1,6 +1,6 @@
 import { DEFAULT_THRESHOLDS, type ProfileData } from "./profileState";
 
-function getDefaultProfileData(
+export function getDefaultProfileData(
   overrides: Partial<ProfileData> & Required<Pick<ProfileData, "profileId">>
 ): ProfileData {
   return {

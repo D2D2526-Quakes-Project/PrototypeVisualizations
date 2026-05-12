@@ -2,6 +2,7 @@ import type { SerializedDockview } from "dockview";
 import { type StateCreator } from "zustand";
 import type { AppState } from ".";
 import type { Metric, ThresholdKey } from "@/features/metrics/metrics";
+import { getDefaultProfileData } from "./default";
 
 export type ThresholdState = Record<ThresholdKey, number>;
 
@@ -64,6 +65,7 @@ export interface ProfileState {
 
   profileActions: {
     setActiveProfile: (profId: string) => void;
+    resetProfile: (profId: string) => void;
 
     // Playback
     setFrameIndex: (frame: number) => void;
@@ -159,6 +161,11 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
       setActiveProfile: (buildingId, profId) =>
         set((state) => {
           state.activeProfileIds[buildingId] = profId;
+        }),
+      resetProfile: (buildingId, profId) =>
+        set((state) => {
+          const defaults = getDefaultProfileData({ profileId: profId });
+          state.profiles[buildingId][profId] = defaults;
         }),
 
       // Playback - defaults

@@ -1,16 +1,14 @@
-import { AlertTriangle, Check, Keyboard, LogOutIcon } from "lucide-react";
+import { AlertTriangle, Check, FilmIcon, Keyboard, LogOutIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import {
   Menubar,
+  MenubarCheckboxItem,
   MenubarContent,
   MenubarItem,
   MenubarMenu,
   MenubarSeparator,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,8 +28,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 //   setActiveProfile,
 // } from "@/features/3d/lib/statePersistence";
 import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
-import { Sheet, SheetContent } from "./ui/sheet";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { Sheet, SheetContent } from "../ui/sheet";
+import { DataMenu } from "./DataMenu";
+import { ProfileMenu } from "./ProfileMenu";
+import { useGlobalStore } from "@/state";
 
 export function NavigationBar() {
   const location = useLocation();
@@ -46,8 +47,8 @@ export function NavigationBar() {
   // const renderVerticalConnections = useViewStore((state) => state.renderVerticalConnections);
   // const renderHorizontalConnections = useViewStore((state) => state.renderHorizontalConnections);
   // const hiddenNodeCount = useViewStore((state) => state.hiddenNodeIds.length);
-  // const showHiddenMetrics = useViewStore((state) => state.showHiddenMetrics);
-  // const setShowHiddenMetrics = useViewStore((state) => state.setShowHiddenMetrics);
+  const showHiddenMetrics = useGlobalStore((state) => state.showHiddenMetrics);
+  const setShowHiddenMetrics = useGlobalStore((state) => state.setShowHiddenMetrics);
   // const setRenderNodes = useViewStore((state) => state.setRenderNodes);
   const {
     animationData,
@@ -176,12 +177,9 @@ export function NavigationBar() {
   // }, [setHelpDrawerOpen]);
 
   return (
-    <div className="grid grid-cols-[auto_auto_auto] items-center gap-3 border-b border-neutral-300 bg-neutral-100">
+    <div className="border-border bg-background grid grid-cols-[auto_auto_auto] items-center gap-3 border-b">
       <div className="flex h-full min-w-0 items-center justify-start gap-3">
-        <Menubar
-          className="h-full rounded-none border-none bg-neutral-50/80 pl-2"
-          value={activeMenu}
-          onValueChange={setActiveMenu}>
+        <Menubar className="h-full rounded-none border-none" value={activeMenu} onValueChange={setActiveMenu}>
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
@@ -199,38 +197,16 @@ export function NavigationBar() {
                 Exit to Menu
               </MenubarItem>
 
-              <MenubarSub>
-                <MenubarSubTrigger>Simulation</MenubarSubTrigger>
-                <MenubarSubContent className="w-80 p-2">{/* <DataPicker /> */}</MenubarSubContent>
-              </MenubarSub>
-
-              <MenubarSub>
-                <MenubarSubTrigger>Profiles</MenubarSubTrigger>
-                <MenubarSubContent className="w-96 p-2">{/* <ProfileManager /> */}</MenubarSubContent>
-              </MenubarSub>
-
               {/* <MenubarItem onSelect={openExportPanel}>
-                <Film />
+                <FilmIcon />
                 Export
               </MenubarItem> */}
-              {/* <MenubarItem>
-                <AlertTriangle />
-                Add Split View
-              </MenubarItem> */}
-              {/* <MenubarItem>
-                <AlertTriangle />
-                Datasets
-              </MenubarItem> */}
 
               <MenubarSeparator />
 
-              {/* <MenubarCheckboxItem checked={showHiddenMetrics} onCheckedChange={setShowHiddenMetrics}>
+              <MenubarCheckboxItem checked={showHiddenMetrics} onCheckedChange={setShowHiddenMetrics}>
                 Show Hidden Metrics
-              </MenubarCheckboxItem> */}
-
-              <MenubarSeparator />
-
-              {/* <MenubarItem onClick={clearCurrentSelection}>Clear Selection</MenubarItem> */}
+              </MenubarCheckboxItem>
 
               <MenubarSeparator />
 
@@ -248,9 +224,9 @@ export function NavigationBar() {
                 Help
               </MenubarItem>
             </MenubarContent>
+            <DataMenu />
+            <ProfileMenu />
           </MenubarMenu>
-
-          <div className="h-6 w-px shrink-0 rounded-full bg-neutral-300" />
         </Menubar>
       </div>
 
@@ -319,6 +295,7 @@ export function NavigationBar() {
               </button>
             </div>
           )} */}
+          {/* Optional Datasets Loading */}
           {optionalDatasetStates.length > 0 ? (
             <Popover>
               <PopoverTrigger asChild>
@@ -428,176 +405,3 @@ function AnimatedTitle() {
     </span>
   );
 }
-
-// function DataPicker() {
-//   const { currentBuilding, currentSimulation, loadSelection, optionalLoadOptions } = useAnimationData();
-//   const currentValue =
-//     currentBuilding && currentSimulation ? `${currentBuilding.folder}::${currentSimulation.folder}` : "";
-
-//   return (
-//     <>
-//       <MenubarRadioGroup
-//         value={currentValue}
-//         onValueChange={(value) => {
-//           const [buildingFolder, simulationFolder] = value.split("::");
-//           const selectedBuilding = DataSources.buildings.find((item) => item.folder === buildingFolder);
-//           if (!selectedBuilding) return;
-
-//           const selectedSimulation = selectedBuilding.simulations.find((item) => item.folder === simulationFolder);
-//           if (!selectedSimulation) return;
-
-//           loadSelection(selectedBuilding, selectedSimulation, optionalLoadOptions);
-//           const nextWorkspace = loadFromLocalStorage({
-//             building: selectedBuilding.folder,
-//             simulation: selectedSimulation.folder,
-//             optionalLoads: optionalLoadOptions,
-//           });
-//           if (nextWorkspace) {
-//             applyWorkspaceState(nextWorkspace);
-//           }
-//         }}>
-//         {DataSources.buildings.map((building, buildingIndex) => (
-//           <div key={building.folder}>
-//             {buildingIndex > 0 ? <MenubarSeparator /> : null}
-//             <MenubarLabel>{building.name}</MenubarLabel>
-//             {building.simulations.map((simulation) => (
-//               <MenubarRadioItem key={simulation.folder} value={`${building.folder}::${simulation.folder}`}>
-//                 {simulation.name}
-//               </MenubarRadioItem>
-//             ))}
-//           </div>
-//         ))}
-//       </MenubarRadioGroup>
-//     </>
-//   );
-// }
-
-// function ProfileManager() {
-//   const store = useViewStoreRaw();
-//   const { currentBuilding, currentSimulation, loadSelection, optionalLoadOptions } = useAnimationData();
-//   const [refreshToken, setRefreshToken] = useState(0);
-
-//   useEffect(() => {
-//     const handleProfilesUpdated = () => setRefreshToken((value) => value + 1);
-//     window.addEventListener(PROFILES_UPDATED_EVENT, handleProfilesUpdated);
-//     return () => window.removeEventListener(PROFILES_UPDATED_EVENT, handleProfilesUpdated);
-//   }, []);
-
-//   if (!currentBuilding || !currentSimulation) {
-//     return <div className="px-2 py-1 text-xs text-neutral-500">Load a building to manage profiles.</div>;
-//   }
-
-//   const selection = {
-//     building: currentBuilding.folder,
-//     simulation: currentSimulation.folder,
-//     optionalLoads: optionalLoadOptions,
-//   };
-//   const profiles = loadSaveProfiles(selection);
-//   const activeProfile = getActiveProfile(selection);
-
-//   const applyProfile = (profileId: string) => {
-//     if (!setActiveProfile(profileId, selection)) return;
-//     const nextProfile = getActiveProfile(selection);
-//     if (!nextProfile) return;
-
-//     const nextSelection = nextProfile.currentState.dataSelection;
-//     if (nextSelection) {
-//       const building = DataSources.buildings.find((item) => item.folder === nextSelection.building);
-//       const simulation = building?.simulations.find((item) => item.folder === nextSelection.simulation);
-//       if (building && simulation) {
-//         loadSelection(building, simulation, nextSelection.optionalLoads ?? optionalLoadOptions);
-//       }
-//     }
-
-//     applyWorkspaceState(nextProfile.currentState);
-//     setRefreshToken((value) => value + 1);
-//   };
-
-//   const handleCreateProfile = () => {
-//     const name = window.prompt("New profile name");
-//     if (!name) return;
-//     const created = createUserProfile(name, getCurrentWorkspaceStateSnapshot(store));
-//     if (!created) return;
-//     applyProfile(created.id);
-//   };
-
-//   const handleRenameProfile = () => {
-//     if (!activeProfile || activeProfile.kind !== "user") return;
-//     const nextName = window.prompt("Rename profile", activeProfile.name);
-//     if (!nextName) return;
-//     if (renameUserProfile(activeProfile.id, nextName)) {
-//       setRefreshToken((value) => value + 1);
-//     }
-//   };
-
-//   const handleDeleteProfile = () => {
-//     if (!activeProfile || activeProfile.kind !== "user") return;
-//     if (!window.confirm(`Delete profile "${activeProfile.name}"?`)) return;
-//     if (deleteUserProfile(activeProfile.id)) {
-//       const fallbackProfile = getActiveProfile(selection);
-//       if (fallbackProfile) {
-//         applyWorkspaceState(fallbackProfile.currentState);
-//       }
-//       setRefreshToken((value) => value + 1);
-//     }
-//   };
-
-//   const handleResetProfile = () => {
-//     if (!activeProfile) return;
-//     if (!window.confirm(`Reset profile "${activeProfile.name}" to its default state?`)) return;
-//     if (resetProfileToDefault(activeProfile.id)) {
-//       const resetProfile = getActiveProfile(selection);
-//       if (resetProfile) {
-//         applyWorkspaceState(resetProfile.currentState);
-//       }
-//       setRefreshToken((value) => value + 1);
-//     }
-//   };
-
-//   void refreshToken;
-
-//   return (
-//     <div className="flex flex-col gap-2">
-//       <div className="px-2 text-[10px] text-neutral-500">
-//         Profiles are saved per building and autosave the current workspace.
-//       </div>
-//       <MenubarRadioGroup value={activeProfile?.id ?? ""} onValueChange={applyProfile}>
-//         {profiles.map((profile) => (
-//           <MenubarRadioItem key={profile.id} value={profile.id}>
-//             {profile.name}
-//           </MenubarRadioItem>
-//         ))}
-//       </MenubarRadioGroup>
-//       <MenubarSeparator />
-//       <div className="flex flex-wrap gap-2 px-2 pb-1">
-//         <button
-//           type="button"
-//           className="rounded border border-neutral-300 bg-white px-2 py-1 text-[10px] text-neutral-700 hover:bg-neutral-50"
-//           onClick={handleCreateProfile}>
-//           Save as New
-//         </button>
-//         <button
-//           type="button"
-//           className="rounded border border-neutral-300 bg-white px-2 py-1 text-[10px] text-neutral-700 hover:bg-neutral-50"
-//           onClick={handleResetProfile}
-//           disabled={!activeProfile}>
-//           Reset
-//         </button>
-//         <button
-//           type="button"
-//           className="rounded border border-neutral-300 bg-white px-2 py-1 text-[10px] text-neutral-700 hover:bg-neutral-50 disabled:opacity-40"
-//           onClick={handleRenameProfile}
-//           disabled={activeProfile?.kind !== "user"}>
-//           Rename
-//         </button>
-//         <button
-//           type="button"
-//           className="rounded border border-red-300 bg-white px-2 py-1 text-[10px] text-red-700 hover:bg-red-50 disabled:opacity-40"
-//           onClick={handleDeleteProfile}
-//           disabled={activeProfile?.kind !== "user"}>
-//           Delete
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }

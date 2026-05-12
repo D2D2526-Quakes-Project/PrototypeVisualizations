@@ -1,4 +1,4 @@
-import { ShortcutsBar } from "@/components/ShortcutsBar";
+import { ShortcutsBar } from "@/components/navigation-bar/ShortcutsBar";
 
 interface SelectionShortcutsProps {
   showPlayback: boolean;

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+import { useShallow } from "zustand/react/shallow";
 import { createGlobalSlice, type GlobalState } from "./globalState";
 import { createLiveSlice, LIVE_STATE_KEYS, type LiveState } from "./liveState";
 import {
@@ -50,6 +51,18 @@ export function appStoreState(): AppState {
   return useAppStore.getState();
 }
 
+export function useProfileIds(): string[] {
+  const { currentBuilding, loading } = useAnimationData();
+  const currentBuildingId = currentBuilding.name;
+  return useAppStore(
+    useShallow((state) => {
+      if (!currentBuildingId || loading) return [];
+      const buildingProfiles = state.profiles[currentBuildingId];
+      return Object.keys(buildingProfiles);
+    })
+  );
+}
+
 export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
   const { currentBuilding, loading } = useAnimationData();
   const currentBuildingId = currentBuilding.name;
@@ -92,8 +105,14 @@ export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
     if (!buildingProfiles || Object.keys(buildingProfiles).length == 0) {
       // Default profiles for new building
       const defaultProfiles = createDefaultProfiles();
-      state.profiles[currentBuildingId] = defaultProfiles;
-      state.activeProfileIds[currentBuildingId] = DEFAULT_PROFILE;
+      state.profiles = {
+        ...state.profiles,
+        [currentBuildingId]: defaultProfiles,
+      };
+      state.activeProfileIds = {
+        ...state.activeProfileIds,
+        [currentBuildingId]: DEFAULT_PROFILE,
+      };
       buildingProfiles = defaultProfiles;
       activeProfId = DEFAULT_PROFILE;
     }

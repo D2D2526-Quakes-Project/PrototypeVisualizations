@@ -1,5 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import * as THREE from "three";
+import type { BoxSelection } from "@/state/liveState";
+import type { RefObject } from "react";
 
 // Converting data Inches to Meters
 export const UNIT_SCALE = 0.0254;
@@ -186,4 +189,45 @@ export function numberToColorLight(nodeId: number): string {
 
 export function assert(condition: boolean, message?: string) {
   if (!condition) throw new Error(message);
+}
+
+export function clampToViewport(value: number): number {
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+  return value;
+}
+
+export function performBoxSelection(
+  camera: THREE.Camera,
+  meshRef: RefObject<THREE.InstancedMesh | null>,
+  box: BoxSelection
+): number[] {
+  const minX = Math.min(box.start.x, box.end.x);
+  const maxX = Math.max(box.start.x, box.end.x);
+  const minY = Math.min(box.start.y, box.end.y);
+  const maxY = Math.max(box.start.y, box.end.y);
+
+  const selectedNodes: number[] = [];
+  const mesh = meshRef.current;
+  if (!mesh) return selectedNodes;
+
+  const instanceCount = mesh.count;
+
+  for (let i = 0; i < instanceCount; i++) {
+    const matrix = new THREE.Matrix4();
+    mesh.getMatrixAt(i, matrix);
+
+    const worldPos = new THREE.Vector3().setFromMatrixPosition(matrix);
+    worldPos.applyMatrix4(mesh.matrixWorld);
+    worldPos.project(camera);
+
+    const screenX = (worldPos.x + 1) / 2;
+    const screenY = 1 - (worldPos.y + 1) / 2;
+
+    if (screenX >= minX && screenX <= maxX && screenY >= minY && screenY <= maxY) {
+      selectedNodes.push(i);
+    }
+  }
+
+  return selectedNodes;
 }

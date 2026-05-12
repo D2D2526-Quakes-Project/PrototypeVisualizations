@@ -1,11 +1,20 @@
 import { useEffect, useMemo, useRef } from "react";
 
-import { ChevronRightIcon, EyeIcon, EyeOffIcon, RotateCwIcon, SwatchBookIcon, XCircleIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  EyeIcon,
+  EyeOffIcon,
+  RotateCwIcon,
+  SquareDashedMousePointerIcon,
+  SwatchBookIcon,
+  XCircleIcon,
+} from "lucide-react";
 import { AnimatePresence, motion, stagger } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isEditableTarget } from "@/lib/utils";
 import { useGlobalStore, useLiveStore, useProfileStore } from "@/state";
 import { DEFAULT_COLOR_THEMES } from "@/state/globalState";
@@ -19,7 +28,6 @@ import { SlicesSection } from "./control-sections/SlicesSection";
 import { ThresholdSection } from "./control-sections/ThresholdSection";
 import { ViewsPanel } from "./control-sections/ViewsPanel";
 import { ViewToggleSection } from "./control-sections/ViewToggleSection";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const childVariants = {
   initial: { opacity: 0 },
@@ -98,7 +106,7 @@ export function ViewControls({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
                 transition={{ duration: 0.15 }}
-                className="flex items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
+                className="border-border bg-background flex items-center gap-0.5 rounded-lg border p-1 shadow-lg backdrop-blur-sm select-none">
                 {visibleSelectedCount > 0 && (
                   <>
                     <span className="font-mono text-[10px]">
@@ -117,13 +125,13 @@ export function ViewControls({
                 )}
                 <Tooltip disableHoverableContent>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
+                    <Button
+                      variant={"ghost"}
+                      size={"icon-xs"}
                       onClick={() => hideNodes(selectedNodeIds)}
-                      disabled={visibleSelectedCount === 0}
-                      className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                      <EyeOffIcon size={14} />
-                    </button>
+                      disabled={visibleSelectedCount === 0}>
+                      <EyeOffIcon />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" sideOffset={8}>
                     Hide Selected ({selectedCount})
@@ -131,13 +139,13 @@ export function ViewControls({
                 </Tooltip>
                 <Tooltip disableHoverableContent>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
+                    <Button
+                      variant={"ghost"}
+                      size={"icon-xs"}
                       onClick={() => showNodes(selectedNodeIds)}
-                      disabled={hiddenSelectedCount === 0}
-                      className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                      <EyeIcon size={14} />
-                    </button>
+                      disabled={hiddenSelectedCount === 0}>
+                      <EyeIcon />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" sideOffset={8}>
                     Show Selected ({hiddenSelectedCount})
@@ -145,28 +153,23 @@ export function ViewControls({
                 </Tooltip>
                 <Tooltip disableHoverableContent>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={showAllNodes}
-                      disabled={hiddenCount === 0}
-                      className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                      <RotateCwIcon size={14} />
-                    </button>
+                    <Button variant={"ghost"} size={"icon-xs"} onClick={showAllNodes} disabled={hiddenCount === 0}>
+                      <RotateCwIcon />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" sideOffset={8}>
                     Show All Nodes ({hiddenCount})
                   </TooltipContent>
                 </Tooltip>
-                <div className="mx-0.5 h-4 w-px bg-neutral-300" />
                 <Tooltip disableHoverableContent>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
+                    <Button
+                      variant={"destructive"}
+                      size={"icon-xs"}
                       onClick={clearSelection}
-                      disabled={selectedCount === 0}
-                      className="rounded p-1 text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-30">
-                      <XCircleIcon size={14} />
-                    </button>
+                      disabled={selectedCount === 0}>
+                      <XCircleIcon />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" sideOffset={8}>
                     Clear Selection ({selectedCount})
@@ -207,32 +210,39 @@ export function ViewControls({
                   <ViewsPanel resetView={resetView} resetHomeView={resetHomeView} />
                 </motion.div>
                 {showNodeVisibilityMenu && (
-                  <div className="border-t border-neutral-200 pt-1">
-                    <div className="mb-1 text-xs font-medium text-neutral-700">Selection</div>
-                    <div className="grid grid-cols-2 gap-1">
-                      <button
-                        onClick={() => hideNodes(selectedNodeIds)}
-                        disabled={visibleSelectedCount === 0}
-                        className="inline-flex items-center justify-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-1.5 py-1 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                        <EyeOffIcon size={10} />
-                        Hide ({visibleSelectedCount})
-                      </button>
-                      <button
-                        onClick={showAllNodes}
-                        disabled={hiddenCount === 0}
-                        className="inline-flex items-center justify-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-1.5 py-1 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-30">
-                        <RotateCwIcon size={10} />
-                        Show All ({hiddenCount})
-                      </button>
-                    </div>
-                    <button
-                      onClick={clearSelection}
-                      disabled={selectedCount === 0}
-                      className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded border border-red-200 bg-red-50 px-1.5 py-1 text-[10px] text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-30">
-                      <XCircleIcon size={10} />
-                      Clear Selection ({selectedCount})
-                    </button>
-                  </div>
+                  <>
+                    <div className="my-1 h-px w-full bg-neutral-200" />
+                    <motion.div className="" variants={childVariants}>
+                      <div className="mb-1 flex items-center gap-1">
+                        <SquareDashedMousePointerIcon size={12} className="text-neutral-500" />
+                        <span className="text-xs font-medium text-neutral-700">Selected Nodes</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        <Button
+                          variant={"outline"}
+                          size="xs"
+                          onClick={() => hideNodes(selectedNodeIds)}
+                          disabled={visibleSelectedCount === 0}>
+                          <EyeOffIcon size={10} />
+                          Hide ({visibleSelectedCount})
+                        </Button>
+                        <Button variant={"outline"} size="xs" onClick={showAllNodes} disabled={hiddenCount === 0}>
+                          <RotateCwIcon size={10} />
+                          Show All ({hiddenCount})
+                        </Button>
+
+                        <Button
+                          variant={"destructive"}
+                          size="xs"
+                          onClick={clearSelection}
+                          disabled={selectedCount === 0}
+                          className="col-span-2">
+                          <XCircleIcon size={10} />
+                          Clear Selection ({selectedCount})
+                        </Button>
+                      </div>
+                    </motion.div>
+                  </>
                 )}
                 <div className="my-1 h-px w-full bg-neutral-200" />
                 <motion.div className="flex items-center gap-2" variants={childVariants}>
@@ -273,7 +283,7 @@ export function ViewControls({
                 <div className="my-1 h-px w-full bg-neutral-200" />
                 <motion.div className="" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
-                    <SwatchBookIcon size={12} className="text-neutral-400" />
+                    <SwatchBookIcon size={12} className="text-neutral-500" />
                     <span className="text-xs font-medium text-neutral-700">Theme</span>
                   </div>
                   <div className="flex gap-1 px-1">
@@ -284,7 +294,7 @@ export function ViewControls({
                         className={`h-6 w-full rounded border-2 transition-all ${
                           colorTheme.background === preset.background
                             ? "scale-110 border-black"
-                            : "border-neutral-300 hover:border-neutral-400"
+                            : "border-neutral-300 hover:border-neutral-500"
                         }`}
                         style={{ backgroundColor: preset.background }}
                         title={preset.label}

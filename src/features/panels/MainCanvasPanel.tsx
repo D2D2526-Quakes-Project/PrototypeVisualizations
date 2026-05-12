@@ -5,9 +5,9 @@ import { CameraProvider } from "../3d/contexts/CanvasContext";
 import { SceneTooltip } from "../3d/SceneTooltip";
 import { OrientationCube } from "../canvas/components/OrientationCube";
 import { CameraManager } from "../canvas/CameraManager";
-import { BoxSelectionOverlay } from "../canvas/components/BoxSelectionOverlay";
 import { SmallPlaybackControls } from "../playback/PlaybackControls";
 import { useExportRenderMode } from "../export/renderMode";
+import { BoxSelectionOverlay } from "../canvas/components/BoxSelection";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps) => {
   const panelId = props.api.id;
@@ -20,9 +20,9 @@ export const MainCanvasPanel = (props: IDockviewPanelProps) => {
           <CanvasWithControls>
             <CameraManager />
             <OrientationCube />
-            <BuildingScene panelId={panelId} />
+            <BuildingScene />
           </CanvasWithControls>
-          <BoxSelectionOverlay panelId={panelId} />
+          <BoxSelectionOverlay />
           {exportRenderMode.showTransientUi && (
             <div className="absolute bottom-2 left-2 z-50">
               <SmallPlaybackControls />

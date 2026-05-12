@@ -40,7 +40,6 @@ export function BuildingScene() {
 
   return (
     <>
-      {/* <BoxSelectionHandler   /> */}
       <ambientLight intensity={2} />
       <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
 

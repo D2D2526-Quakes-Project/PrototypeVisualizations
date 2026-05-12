@@ -15,17 +15,10 @@ export interface LiveState {
 
   // Selection
   selectedNodeIds: number[];
-  boxSelection: BoxSelection | null;
-  boxSelectionPanelId: string | null;
-  isBoxSelecting: boolean;
   setSelectedNodes: (nodes: number[]) => void;
   removeSelectedNode: (nodeId: number) => void;
   addSelectedNodes: (nodes: number[]) => void;
-
   clearSelection: () => void;
-  startBoxSelection: (start: { x: number; y: number }, panelId?: string) => void;
-  updateBoxSelection: (end: { x: number; y: number }, panelId?: string) => void;
-  endBoxSelection: (panelId?: string) => void;
 
   // Hover
   hoveredNodeId: number | null;
@@ -56,9 +49,6 @@ export const createLiveSlice: StateCreator<AppState, [], [], LiveState> = (set) 
   selectedNodeIds: [],
   openedNodePanelIds: [],
   hiddenNodeIds: [],
-  boxSelection: null,
-  boxSelectionPanelId: null,
-  isBoxSelecting: false,
   setSelectedNodes: (selectedNodeIds) => set({ selectedNodeIds }),
   removeSelectedNode: (nodeId) =>
     set((state) => ({
@@ -68,37 +58,8 @@ export const createLiveSlice: StateCreator<AppState, [], [], LiveState> = (set) 
     set((state) => ({
       selectedNodeIds: [...new Set([...state.selectedNodeIds, ...nodes])],
     })),
-  clearSelection: () =>
-    set({ selectedNodeIds: [], boxSelection: null, boxSelectionPanelId: null, isBoxSelecting: false }),
-  startBoxSelection: (start, panelId) =>
-    set({
-      boxSelection: { start, end: start },
-      boxSelectionPanelId: panelId ?? null,
-      isBoxSelecting: true,
-    }),
-  updateBoxSelection: (end, panelId) =>
-    set((state) => {
-      if (!state.boxSelection) {
-        return state;
-      }
-      if (panelId && state.boxSelectionPanelId !== panelId) {
-        return state;
-      }
-      const currentEnd = state.boxSelection.end;
-      if (currentEnd.x === end.x && currentEnd.y === end.y) {
-        return state;
-      }
-      return {
-        boxSelection: { ...state.boxSelection, end },
-      };
-    }),
-  endBoxSelection: (panelId) =>
-    set((state) => {
-      if (panelId && state.boxSelectionPanelId && state.boxSelectionPanelId !== panelId) {
-        return state;
-      }
-      return { isBoxSelecting: false, boxSelection: null, boxSelectionPanelId: null };
-    }),
+  clearSelection: () => set({ selectedNodeIds: [] }),
+
   hoveredNodeId: null,
   hoveredNodeScreenPos: null,
   setHoveredNodeId: (nodeId, screenPos) => set({ hoveredNodeId: nodeId, hoveredNodeScreenPos: screenPos ?? null }),
@@ -109,11 +70,6 @@ export const createLiveSlice: StateCreator<AppState, [], [], LiveState> = (set) 
   deselectCrossSection: () => set({ selectedCrossSection: null }),
   setHoveredCrossSection: (hoveredCrossSection) => set({ hoveredCrossSection }),
 });
-
-export interface BoxSelection {
-  start: { x: number; y: number };
-  end: { x: number; y: number };
-}
 
 export type SliceType = "X" | "Y" | "Z";
 

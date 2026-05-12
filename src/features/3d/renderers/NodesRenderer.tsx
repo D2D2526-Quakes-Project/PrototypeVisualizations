@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
+import { BoxSelectionHandler } from "@/features/canvas/components/BoxSelection";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
@@ -20,7 +21,7 @@ export function NodesRenderer() {
 
   useEffect(() => {
     invalidate();
-  }, [frameIndex, invalidate, nodeScale, nodeOpacity, belowThresholdNodeScale]);
+  }, [frameIndex, invalidate, nodeScale, nodeOpacity, belowThresholdNodeScale, visibleNodes.length]);
 
   useFrame(() => {
     if (!nodesMeshRef.current || visibleNodes.length === 0) return;
@@ -57,22 +58,25 @@ export function NodesRenderer() {
   });
 
   return (
-    <instancedMesh
-      ref={nodesMeshRef}
-      // onPointerDown={handlePointerDown}
-      // onPointerMove={(e) => handlePointerMove(e)}
-      // onPointerOut={(e) => handlePointerOut(e)}
-      // onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
-      args={[undefined, undefined, visibleNodes.length]}
-      frustumCulled={false}>
-      <sphereGeometry args={[40, 4, 2]}>
-        <instancedBufferAttribute
-          attach="attributes-color"
-          args={[new Float32Array(visibleNodes.length * 3).fill(1), 3]}
-          usage={THREE.DynamicDrawUsage}
-        />
-      </sphereGeometry>
-      <meshBasicMaterial fog={false} vertexColors transparent opacity={nodeOpacity} />
-    </instancedMesh>
+    <>
+      <instancedMesh
+        ref={nodesMeshRef}
+        // onPointerDown={handlePointerDown}
+        // onPointerMove={(e) => handlePointerMove(e)}
+        // onPointerOut={(e) => handlePointerOut(e)}
+        // onClick={(e) => (e.stopPropagation(), handleNodeClick(e))}
+        args={[undefined, undefined, visibleNodes.length]}
+        frustumCulled={false}>
+        <sphereGeometry args={[40, 4, 2]}>
+          <instancedBufferAttribute
+            attach="attributes-color"
+            args={[new Float32Array(visibleNodes.length * 3).fill(1), 3]}
+            usage={THREE.DynamicDrawUsage}
+          />
+        </sphereGeometry>
+        <meshBasicMaterial fog={false} vertexColors transparent opacity={nodeOpacity} />
+      </instancedMesh>
+      <BoxSelectionHandler nodesMeshRef={nodesMeshRef} />
+    </>
   );
 }

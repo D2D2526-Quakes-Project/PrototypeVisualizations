@@ -46,6 +46,9 @@ export function useGlobalStore<T>(selector: (state: GlobalState) => T): T {
 export function useLiveStore<T>(selector: (state: LiveState) => T): T {
   return useAppStore(selector);
 }
+export function appStoreState(): AppState {
+  return useAppStore.getState();
+}
 
 export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
   const { currentBuilding, loading } = useAnimationData();

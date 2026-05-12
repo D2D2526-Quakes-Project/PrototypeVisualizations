@@ -1,6 +1,6 @@
 // @refresh reset
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { usePanelState, type UsePanelStateReturn } from "../../dockview/usePanelState";
@@ -44,11 +44,25 @@ const DEFAULT_CANVAS_PANEL_STATE: CanvasPanelState = {
   sliceZRange: [0, 100],
 };
 
+export interface BoxSelection {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+}
+
 export interface CameraContextType extends UsePanelStateReturn<CanvasPanelState> {
   orbitControlsRef: React.RefObject<OrbitControlsImpl | null>;
+  panelId: string;
+
+  setPanEnabled: (enabled: boolean) => void;
+  nodeInteractionEnabled: boolean;
+  setNodeInteractionEnabled: (enabled: boolean) => void;
+
+  startBoxSelection: (start: { x: number; y: number }) => void;
+  updateBoxSelection: (end: { x: number; y: number }) => void;
+  endBoxSelection: () => void;
+  boxSelection: BoxSelection | null;
 
   focusOnPosition: (position: [number, number, number]) => void;
-  setEnablePan: (enabled: boolean) => void;
   setSliceRanges: (x: [number, number], y: [number, number], z: [number, number]) => void;
   resetExpandedScale: () => void;
   resetDisplacementScale: () => void;
@@ -73,8 +87,10 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
     defaultState: DEFAULT_CANVAS_PANEL_STATE,
   });
   const { animationData } = useAnimationData();
-
+  const [nodeInteractionEnabled, setNodeInteractionEnabled] = useState(true);
   const orbitControlsRef = useRef<OrbitControlsImpl>(null);
+
+  const [boxSelection, setBoxSelection] = useState<BoxSelection | null>(null);
 
   const setSliceRanges = useCallback(
     (x: [number, number], y: [number, number], z: [number, number]) => {
@@ -116,7 +132,7 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
     controls.update();
   }, []);
 
-  const setEnablePan = useCallback((enabled: boolean) => {
+  const setPanEnabled = useCallback((enabled: boolean) => {
     const controls = orbitControlsRef.current;
     if (!controls) return;
     controls.enablePan = enabled;
@@ -158,17 +174,44 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
     panelState.setCameraPosition([-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance]);
   }, [buildingVerticalCenter, cameraDistance, panelState]);
 
+  const startBoxSelection = useCallback(
+    (start: { x: number; y: number }) => {
+      setBoxSelection({ start, end: start });
+      setNodeInteractionEnabled(false);
+    },
+    [setBoxSelection, setNodeInteractionEnabled]
+  );
+
+  const updateBoxSelection = useCallback(
+    (end: { x: number; y: number }) => {
+      setBoxSelection((current) => ({ ...current!, end }));
+    },
+    [setBoxSelection]
+  );
+
+  const endBoxSelection = useCallback(() => {
+    setBoxSelection(null);
+    setNodeInteractionEnabled(true);
+  }, [setBoxSelection, setNodeInteractionEnabled]);
+
   return (
     <CameraContext.Provider
       value={{
         orbitControlsRef,
         focusOnPosition,
-        setEnablePan,
+        setPanEnabled,
+        nodeInteractionEnabled,
+        setNodeInteractionEnabled,
+        boxSelection,
+        startBoxSelection,
+        updateBoxSelection,
+        endBoxSelection,
         setSliceRanges,
         resetExpandedScale,
         resetDisplacementScale,
         resetView,
         resetHomeView,
+        panelId,
         ...panelState,
       }}>
       {children}

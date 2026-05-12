@@ -1,7 +1,7 @@
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
@@ -24,6 +24,16 @@ export function NodesRenderer() {
   const { hoveredNode, setHoveredNode } = useHover();
   const selectedNodeIds = useLiveStore((s) => s.selectedNodeIds);
   const { nodeInteractionEnabled } = useCanvasState();
+
+  const boxSelectedIndices = useMemo(() => {
+    const indices = new Set<number>();
+    for (let i = 0; i < visibleNodes.length; i++) {
+      if (selectedNodeIds.includes(visibleNodes[i])) {
+        indices.add(i);
+      }
+    }
+    return indices;
+  }, [visibleNodes, selectedNodeIds]);
 
   useEffect(() => {
     invalidate();
@@ -49,7 +59,7 @@ export function NodesRenderer() {
       tempObject.updateMatrix();
       nodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
 
-      if (hoveredNode?.nodeId === nodeId || selectedNodeIds.includes(i)) {
+      if (hoveredNode?.nodeId === nodeId || boxSelectedIndices.has(i)) {
         tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
       } else {
         tempColor.setRGB(color.r, color.g, color.b);

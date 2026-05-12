@@ -1,8 +1,8 @@
+import type { BoxSelection } from "@/features/3d/contexts/CanvasContext";
 import { clsx, type ClassValue } from "clsx";
+import type { RefObject } from "react";
 import { twMerge } from "tailwind-merge";
 import * as THREE from "three";
-import type { BoxSelection } from "@/state/liveState";
-import type { RefObject } from "react";
 
 // Converting data Inches to Meters
 export const UNIT_SCALE = 0.0254;
@@ -200,7 +200,8 @@ export function clampToViewport(value: number): number {
 export function performBoxSelection(
   camera: THREE.Camera,
   meshRef: RefObject<THREE.InstancedMesh | null>,
-  box: BoxSelection
+  box: BoxSelection,
+  visibleNodes: number[]
 ): number[] {
   const minX = Math.min(box.start.x, box.end.x);
   const maxX = Math.max(box.start.x, box.end.x);
@@ -211,9 +212,10 @@ export function performBoxSelection(
   const mesh = meshRef.current;
   if (!mesh) return selectedNodes;
 
-  const instanceCount = mesh.count;
+  for (let i = 0; i < visibleNodes.length; i++) {
+    const nodeId = visibleNodes[i];
+    if (nodeId === undefined) continue;
 
-  for (let i = 0; i < instanceCount; i++) {
     const matrix = new THREE.Matrix4();
     mesh.getMatrixAt(i, matrix);
 
@@ -225,7 +227,7 @@ export function performBoxSelection(
     const screenY = 1 - (worldPos.y + 1) / 2;
 
     if (screenX >= minX && screenX <= maxX && screenY >= minY && screenY <= maxY) {
-      selectedNodes.push(i);
+      selectedNodes.push(nodeId);
     }
   }
 

@@ -1,55 +1,68 @@
 import { usePlayback } from "@/features/playback/usePlayback";
 
-import * as React from "react";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useMetrics } from "@/features/metrics/useMetrics";
+import { formatNumber } from "@/lib/utils";
+import * as React from "react";
+import { useHover } from "./lib/useHover";
 
 export function SceneTooltip({ children }: { children: React.ReactNode }) {
   const { frameIndex } = usePlayback();
   const { animationData } = useAnimationData();
-  const { currentMetric } = useMetrics();
-  // const { hoveredCrossSection } = useCrossSectionSelection();
-  // const hoveredNodeId = useViewStore((s) => s.hoveredNodeId);
-  // const hoveredNodeScreenPos = useViewStore((s) => s.hoveredNodeScreenPos);
+  const { currentMetricConfig } = useMetrics();
+  const { hoveredItem } = useHover();
 
-  // const renderContent = () => {
-  //   const metricConfig = getMetricConfig(currentMetric);
+  const tooltipContent = () => {
+    if (!hoveredItem) return null;
+    if (!hoveredItem.screenPos) return null;
 
-  //   if (hoveredNodeId !== null) {
-  //     const value = metricConfig.getValue(animationData, frameIndex, hoveredNodeId);
+    if (hoveredItem.type === "node") {
+      const nodeId = hoveredItem.nodeId;
+      const value = currentMetricConfig.getValue(animationData, frameIndex, nodeId);
 
-  //     return (
-  //       <div className="flex flex-col gap-1">
-  //         <div className="font-semibold">Node #{hoveredNodeId}</div>
-  //         {value !== undefined && (
-  //           <div>{`${metricConfig.label}: ${formatValue(value, 2)} ${metricConfig.unit.abbr}`}</div>
-  //         )}
-  //         <div className="text-muted-foreground">Click to open panel</div>
-  //       </div>
-  //     );
-  //   }
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="font-semibold">Node #{nodeId}</div>
+          {value !== undefined && (
+            <div>{`${currentMetricConfig.label}: ${formatNumber(value, 2)} ${currentMetricConfig.unit.abbr}`}</div>
+          )}
+          <div className="text-muted-foreground">Click to open panel</div>
+        </div>
+      );
+    }
 
-  //   if (hoveredCrossSection && hoveredCrossSection.storyId) {
-  //     return (
-  //       <div className="flex flex-col gap-1">
-  //         <div className="font-semibold">Floor {hoveredCrossSection.storyId}</div>
-  //         <div className="text-muted-foreground">Click to open panel</div>
-  //       </div>
-  //     );
-  //   }
+    if (hoveredItem.type === "crossSection") {
+      const crossSectionId = hoveredItem.crossSectionId;
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="font-semibold">Cross Section {crossSectionId}</div>
+          <div className="text-muted-foreground">Click to open panel</div>
+        </div>
+      );
+    }
 
-  //   return null;
-  // };
+    if (hoveredItem.type === "floor") {
+      const storyId = hoveredItem.storyId;
+      const storyElevation = animationData.precomputed.storyElevations[storyId];
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="font-semibold">Floor {storyId}</div>
+          <div className="text-muted-foreground">Elevation: {formatNumber(storyElevation, 2)} in</div>
+          <div className="text-muted-foreground">Click to open panel</div>
+        </div>
+      );
+    }
 
-  // const content = renderContent();
-  // const isOpen = content !== null;
+    return null;
+  };
 
-  // const position = hoveredNodeScreenPos ?? hoveredCrossSection?.screenPos ?? null;
+  const content = tooltipContent();
+  const position = hoveredItem?.screenPos ?? null;
 
   return (
     <div className="relative h-full w-full">
       {children}
-      {/* {isOpen && position && (
+      {content && position && (
         <div
           className="bg-popover text-popover-foreground pointer-events-none absolute z-50 rounded-md border px-3 py-1.5 text-xs shadow-md"
           style={{
@@ -58,7 +71,7 @@ export function SceneTooltip({ children }: { children: React.ReactNode }) {
           }}>
           {content}
         </div>
-      )} */}
+      )}
     </div>
   );
 }

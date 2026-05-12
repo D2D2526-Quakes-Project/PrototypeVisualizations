@@ -92,8 +92,11 @@ export function BoxSelectionHandler({ nodesMeshRef }: BoxSelectionHandlerProps) 
       const store = appStoreState();
 
       if (commitSelection && stateRef.current.canvasState.boxSelection) {
-        const selected = performBoxSelection(camera, nodesMeshRef, stateRef.current.canvasState.boxSelection).map(
-          (i) => stateRef.current.visibleNodes[i]
+        const selected = performBoxSelection(
+          camera,
+          nodesMeshRef,
+          stateRef.current.canvasState.boxSelection,
+          stateRef.current.visibleNodes
         );
 
         if (state.isShiftHeld) {

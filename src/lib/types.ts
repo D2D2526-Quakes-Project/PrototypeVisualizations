@@ -133,7 +133,7 @@ export interface AnimationMetadata {
   /** Floors that should be hidden by default */
   hiddenFloors: string[];
   /** Node indices with no translational displacement source coverage in any axis. */
-  displacementMissingNodeIndices?: number[];
+  displacementMissingNodeIndices: number[];
   /** Dense node-index lookup to story id; null for unmapped nodes. */
   nodeToStory: Array<string | null>;
 }
@@ -429,7 +429,7 @@ export interface ComputedStats {
   };
 
   // PER-STORY AGGREGATES
-  /** Average displacement per story (array indexed by storyIndex * frameCount + frameIndex) */
+  /** Average displacement per story (array indexed by frameIndex * storyCount + storyIndex) */
   avgDisplacementPerStory: Float32Array;
   /** Average velocity per story (optional) */
   avgVelocityPerStory?: Float32Array;

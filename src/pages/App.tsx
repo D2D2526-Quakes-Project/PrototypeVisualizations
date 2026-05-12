@@ -1,4 +1,3 @@
-import { NodeSelectionProvider } from "@/features/3d/contexts/NodeSelectionContext";
 import { DockviewWrapper } from "@/features/dockview/dockviewWrapper";
 import {
   MagicPanel,
@@ -28,60 +27,10 @@ const tabComponents = {
   // crossSectionTab: CrossSectionTab,
 };
 
-// function sanitizePanelStates(initialPanelStates: WorkspaceState["panelStates"]): Record<string, SavedPanelState> {
-//   return Object.fromEntries(
-//     Object.entries(initialPanelStates ?? {}).filter((entry): entry is [string, SavedPanelState] => Boolean(entry[1]))
-//   ) as Record<string, SavedPanelState>;
-// }
-
-// function applyStateToStore(store: ReturnType<typeof useViewStoreRaw>, stateToApply: WorkspaceState) {
-//   const state = store.getState();
-//   state.setFrameIndex(stateToApply.frameIndex);
-//   state.setColorMetric(stateToApply.currentMetric);
-//   (Object.keys(state.metricPaletteOverrides) as Metric[]).forEach((metric) => {
-//     if (!(metric in (stateToApply.metricPaletteOverrides ?? {}))) {
-//       state.setMetricPalette(metric, null);
-//     }
-//   });
-//   (Object.entries(stateToApply.metricPaletteOverrides ?? {}) as Array<[Metric, MetricPaletteKey]>).forEach(
-//     ([metric, palette]) => {
-//       state.setMetricPalette(metric, palette);
-//     }
-//   );
-//   state.setThresholdHighlighting(stateToApply.thresholdHighlighting);
-
-//   (Object.entries(stateToApply.thresholds) as Array<[ThresholdKey, number]>).forEach(([key, value]) => {
-//     if (key in THRESHOLD_CONFIGS) {
-//       state.setThreshold(key, value);
-//     }
-//   });
-
-//   state.setVisibleFloors(stateToApply.visibleFloors);
-//   state.clearSelection();
-//   state.setSelectedNodes(stateToApply.selectedNodeIds);
-//   state.setHiddenNodeIds(stateToApply.hiddenNodeIds ?? []);
-//   state.setHideSelectedNodes(stateToApply.hideSelectedNodes ?? false);
-//   state.setColorTheme(stateToApply.colorTheme);
-//   state.setRenderNodes(stateToApply.renderNodes);
-//   state.setRenderFloorSlabs(stateToApply.renderFloorSlabs);
-//   state.setRenderXCrossSectionSlabs(stateToApply.renderXCrossSectionSlabs);
-//   state.setRenderYCrossSectionSlabs(stateToApply.renderYCrossSectionSlabs);
-//   state.setShowCornersOnly(stateToApply.showCornersOnly);
-//   state.setVisualInterpolationEnabled(stateToApply.visualInterpolationEnabled);
-//   state.setRenderVerticalConnections(stateToApply.renderVerticalConnections);
-//   state.setRenderHorizontalConnections(stateToApply.renderHorizontalConnections);
-//   if (stateToApply.layout) {
-//     state.setDockviewLayout(stateToApply.layout);
-//   }
-//   state.setPanelStates(sanitizePanelStates(stateToApply.panelStates));
-// }
-
 export function App() {
   return (
     <div className={"flex min-h-0 flex-1 flex-col"}>
-      <NodeSelectionProvider>
-        <DockviewContainer />
-      </NodeSelectionProvider>
+      <DockviewContainer />
     </div>
   );
 }

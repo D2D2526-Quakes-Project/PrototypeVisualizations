@@ -3,23 +3,7 @@ import { useCallback } from "react";
 import { useAnimationData } from "../animation-data/useAnimationData";
 import { isStaticMetric } from "../metrics/metrics";
 
-export type PlaybackControlParams = {
-  totalFrames: number;
-  frameIndex: number;
-  setFrameIndex: (index: number | ((prevState: number) => number)) => void;
-
-  playing: boolean;
-  setPlaying: (playing: boolean) => void;
-  togglePlaying: () => void;
-
-  skipToStart: () => void;
-  skipToEnd: () => void;
-
-  fps: number;
-  skippedPerFrame: number;
-};
-
-export const usePlayback = (): PlaybackControlParams => {
+export const usePlayback = () => {
   const { animationData } = useAnimationData();
 
   const totalFrames = animationData.metadata.frameCount;

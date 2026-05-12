@@ -1,27 +1,62 @@
-import { useMemo, useRef } from "react";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { useNodePositions } from "../contexts/useNodePositions";
+import { useNodeRendering } from "../contexts/useNodeRendering";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { UNIT_SCALE } from "@/lib/utils";
+
+const tempObject = new THREE.Object3D();
+const tempColor = new THREE.Color();
 
 export function NodesRenderer() {
   const nodesMeshRef = useRef<THREE.InstancedMesh>(null);
 
-  // Filter by floor visibility
-  const visibleNodes = useMemo(() => {
-    return visibleNodesBasedOnMode.filter((nodeId) => {
-      if (hiddenNodeIdSet.has(nodeId)) {
-        return false;
-      }
-      // Check which floor this node belongs to
-      for (const storyId of visibleFloors) {
-        const storyNodes = animationData.metadata.stories[storyId];
-        if (storyNodes && storyNodes.includes(nodeId)) {
-          return true;
-        }
-      }
-      // If node doesn't belong to any visible floor, hide it
-      // But for nodes not in any story (like corner nodes), show them
-      return false;
-    });
-  }, [visibleNodesBasedOnMode, visibleFloors, animationData.metadata.stories, hiddenNodeIdSet]);
+  const { invalidate } = useThree();
+  const { frameIndex } = usePlayback();
+  const { getNodeColorForCurrentMetric } = useMetrics();
+  const { visibleNodes, getNodeVisualPosition } = useNodePositions();
+  const { nodeOpacity, nodeScale, belowThresholdNodeScale } = useNodeRendering();
+
+  useEffect(() => {
+    invalidate();
+  }, [frameIndex, invalidate]);
+
+  useFrame(() => {
+    if (!nodesMeshRef.current || visibleNodes.length === 0) return;
+
+    const colorAttr = nodesMeshRef.current.geometry.attributes.color;
+    if (!colorAttr) return;
+
+    for (let i = 0; i < visibleNodes.length; i++) {
+      const nodeId = visibleNodes[i];
+      const position = getNodeVisualPosition(nodeId, frameIndex);
+      tempObject.position.set(position[0], position[1], position[2]);
+
+      const { passesThreshold, color } = getNodeColorForCurrentMetric(frameIndex, nodeId);
+
+      const baseNodeScale = (1 / UNIT_SCALE) * nodeScale;
+      const effectiveScale = passesThreshold ? baseNodeScale : baseNodeScale * belowThresholdNodeScale;
+      // const scale = hoveredNodeId === nodeId ? effectiveScale * 1.35 : effectiveScale;
+      const scale = effectiveScale;
+      tempObject.scale.set(scale, scale, scale);
+
+      tempObject.updateMatrix();
+      nodesMeshRef.current.setMatrixAt(i, tempObject.matrix);
+
+      // if (hoveredNodeId === nodeId || boxSelectedIndices.has(i)) {
+      //   tempColor.setRGB(2 / 255, 140 / 255, 180 / 255);
+      // } else {
+      tempColor.setRGB(color.r, color.g, color.b);
+      // }
+
+      tempColor.toArray(colorAttr.array, i * 3);
+    }
+
+    nodesMeshRef.current.instanceMatrix.needsUpdate = true;
+    colorAttr.needsUpdate = true;
+  });
 
   return (
     <instancedMesh

@@ -16,9 +16,21 @@ export function PlaybackKeyboardEvents() {
   const frameIndexRef = useRef(frameIndex);
   const playbackStartFrameRef = useRef(frameIndex);
   const playbackStartTimeRef = useRef(0);
-  const frameCountRef = useRef(totalFrames);
+  const frameCountRef = useRef(0);
   const lastFpsUpdateRef = useRef(0);
   const requestedAnimationFrameRef = useRef<number | null>(null);
+
+  const setFpsRef = useRef(setFps);
+  const setSkippedPerFrameRef = useRef(setSkippedPerFrame);
+  const setFrameIndexRef = useRef(setFrameIndex);
+  const setPlayingRef = useRef(setPlaying);
+
+  useEffect(() => {
+    setFpsRef.current = setFps;
+    setSkippedPerFrameRef.current = setSkippedPerFrame;
+    setFrameIndexRef.current = setFrameIndex;
+    setPlayingRef.current = setPlaying;
+  });
 
   const { isCurrentMetricStatic } = useMetrics();
 
@@ -48,8 +60,8 @@ export function PlaybackKeyboardEvents() {
       if (requestedAnimationFrameRef.current !== null) {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
-      setSkippedPerFrame(0);
-      setFps(0);
+      setSkippedPerFrameRef.current(0);
+      setFpsRef.current(0);
       return;
     }
 
@@ -57,8 +69,8 @@ export function PlaybackKeyboardEvents() {
       if (requestedAnimationFrameRef.current !== null) {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
-      setSkippedPerFrame(0);
-      setFps(0);
+      setSkippedPerFrameRef.current(0);
+      setFpsRef.current(0);
       return;
     }
 
@@ -80,32 +92,33 @@ export function PlaybackKeyboardEvents() {
       if (targetFrame >= totalFrames - 1) {
         const previousFrame = displayedFrameRef.current;
         const skipped = Math.max(0, totalFrames - 1 - previousFrame - 1);
-        setSkippedPerFrame(skipped);
+        setSkippedPerFrameRef.current(skipped);
         displayedFrameRef.current = totalFrames - 1;
         if (frameIndexRef.current !== totalFrames - 1) {
-          setFrameIndex(totalFrames - 1);
+          setFrameIndexRef.current(totalFrames - 1);
         }
-        setPlaying(false);
+        setPlayingRef.current(false);
         return;
       }
 
       if (targetFrame > displayedFrameRef.current) {
         const previousFrame = displayedFrameRef.current;
         const skipped = Math.max(0, targetFrame - previousFrame - 1);
-        setSkippedPerFrame(skipped);
+        setSkippedPerFrameRef.current(skipped);
         displayedFrameRef.current = targetFrame;
+        console.log("[Playback] Setting frame:", targetFrame, "(skipped:", skipped, ")");
         if (frameIndexRef.current !== targetFrame) {
-          setFrameIndex(targetFrame);
+          setFrameIndexRef.current(targetFrame);
         }
       } else {
-        setSkippedPerFrame(0);
+        setSkippedPerFrameRef.current(0);
       }
 
       frameCountRef.current += 1;
       if (currentTime - lastFpsUpdateRef.current >= 500) {
         const elapsed = currentTime - lastFpsUpdateRef.current;
         const currentFps = (frameCountRef.current / elapsed) * 1000;
-        setFps(Math.round(currentFps));
+        setFpsRef.current(Math.round(currentFps));
         frameCountRef.current = 0;
         lastFpsUpdateRef.current = currentTime;
       }
@@ -120,7 +133,7 @@ export function PlaybackKeyboardEvents() {
         cancelAnimationFrame(requestedAnimationFrameRef.current);
       }
     };
-  }, [frameRate, isCurrentMetricStatic, playing, setFps, setFrameIndex, setPlaying, setSkippedPerFrame, totalFrames]);
+  }, [frameRate, isCurrentMetricStatic, playing, totalFrames]);
 
   useEffect(() => {
     const changeFrame = (delta: number) => {

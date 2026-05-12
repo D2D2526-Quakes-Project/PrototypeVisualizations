@@ -1,8 +1,9 @@
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useCanvasState } from "@/features/3d/contexts/CanvasContext";
-import { ImageUpscaleIcon, ListChevronsUpDownIcon } from "lucide-react";
+import { ImageUpscaleIcon, ListChevronsUpDownIcon, RotateCcwIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function ScaleSection() {
@@ -21,6 +22,8 @@ export function ScaleSection() {
     setXyDisplacementScale,
     zDisplacementScale,
     setZDisplacementScale,
+    resetExpandedScale,
+    resetDisplacementScale,
   } = useCanvasState();
   const [shiftHeld, setShiftHeld] = useState(false);
 
@@ -73,11 +76,25 @@ export function ScaleSection() {
 
   return (
     <>
-      <Label className="flex items-center gap-1">
+      <div className="flex items-center gap-1">
         <ListChevronsUpDownIcon size={12} className="text-neutral-500" />
-        <span className="flex-1 text-xs font-medium text-neutral-700">Expanded Scale</span>
-        <Switch size="sm" checked={expansionEnabled} onCheckedChange={setExpansionEnabled} />
-      </Label>
+        <Label htmlFor={"expandedscaleid"} className="flex-1 cursor-pointer text-xs font-medium text-neutral-700">
+          Expanded Scale
+        </Label>
+        {expansionEnabled && (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="h-full"
+            title="Reset Expansion"
+            onClick={() => {
+              resetExpandedScale();
+            }}>
+            <RotateCcwIcon className="h-3 w-3" />
+          </Button>
+        )}
+        <Switch id={"expandedscaleid"} size="sm" checked={expansionEnabled} onCheckedChange={setExpansionEnabled} />
+      </div>
 
       {expansionEnabled && (
         <div className="mt-1 space-y-1">
@@ -122,11 +139,30 @@ export function ScaleSection() {
 
       <div className="my-2 h-px w-full bg-neutral-200" />
 
-      <Label className="flex items-center gap-1">
+      <div className="flex items-center gap-1">
         <ImageUpscaleIcon size={12} className="text-neutral-500" />
-        <span className="flex-1 text-xs font-medium text-neutral-700">Displacement Scale</span>
-        <Switch size="sm" checked={displacementEnabled} onCheckedChange={setDisplacementEnabled} />
-      </Label>
+        <Label htmlFor={"displacementscaleid"} className="flex-1 cursor-pointer text-xs font-medium text-neutral-700">
+          Displacement Scale
+        </Label>
+        {displacementEnabled && (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="h-full"
+            title="Reset Displacement"
+            onClick={() => {
+              resetDisplacementScale();
+            }}>
+            <RotateCcwIcon className="h-3 w-3" />
+          </Button>
+        )}
+        <Switch
+          id={"displacementscaleid"}
+          size="sm"
+          checked={displacementEnabled}
+          onCheckedChange={setDisplacementEnabled}
+        />
+      </div>
 
       {displacementEnabled && (
         <div className="mt-1 space-y-1">

@@ -1,9 +1,10 @@
 import { useGlobalStore, useProfileStore } from "@/state";
-import { interpolate } from "culori";
-import { useMemo } from "react";
+import { interpolate, type FindColorByMode } from "culori";
+import { useCallback, useMemo } from "react";
 import * as THREE from "three";
 import { useAnimationData } from "../animation-data/useAnimationData";
 import { getMetricColorScale, isHingeMetric, isStaticMetric, METRIC_CONFIGS, type Metric } from "./metrics";
+import { interpolateColor } from "./colors";
 
 const grayColor = new THREE.Color(0.5, 0.5, 0.5);
 const ERROR_MAGENTA = interpolate(["magenta"], "oklab");
@@ -65,101 +66,102 @@ export function useMetrics() {
   //   [currentMetric, metricPaletteOverrides]
   // );
 
-  // const {
-  //   positiveInterpolator,
-  //   positiveThresholdInterpolator,
-  //   negativeInterpolator,
-  //   negativeThresholdInterpolator,
-  //   fullPositiveInterpolator,
-  //   fullNegativeInterpolator,
-  // } = useMemo(() => {
-  //   return {
-  //     positiveInterpolator: metricConfig.hasPositive
-  //       ? interpolate(metricColorScale.positiveColorStops, "oklab")
-  //       : ERROR_MAGENTA,
-  //     positiveThresholdInterpolator: metricConfig.hasPositive
-  //       ? interpolate(metricColorScale.positiveThresholdColorStops, "oklab")
-  //       : ERROR_MAGENTA,
-  //     negativeInterpolator: metricConfig.hasNegative
-  //       ? interpolate(metricColorScale.negativeColorStops, "oklab")
-  //       : ERROR_MAGENTA,
-  //     negativeThresholdInterpolator: metricConfig.hasNegative
-  //       ? interpolate(metricColorScale.negativeThresholdColorStops, "oklab")
-  //       : ERROR_MAGENTA,
-  //     fullPositiveInterpolator: metricConfig.hasPositive
-  //       ? interpolate(
-  //           [...metricColorScale.positiveColorStops, ...metricColorScale.positiveThresholdColorStops],
-  //           "oklab"
-  //         )
-  //       : ERROR_MAGENTA,
-  //     fullNegativeInterpolator: metricConfig.hasNegative
-  //       ? interpolate(
-  //           [...metricColorScale.negativeColorStops, ...metricColorScale.negativeThresholdColorStops],
-  //           "oklab"
-  //         )
-  //       : ERROR_MAGENTA,
-  //   };
-  // }, [metricConfig, metricColorScale]);
+  const {
+    positiveInterpolator,
+    positiveThresholdInterpolator,
+    negativeInterpolator,
+    negativeThresholdInterpolator,
+    fullPositiveInterpolator,
+    fullNegativeInterpolator,
+  } = useMemo(() => {
+    return {
+      positiveInterpolator: currentMetricConfig.hasPositive
+        ? interpolate(currentMetricColorScale.positiveColorStops, "oklab")
+        : ERROR_MAGENTA,
+      positiveThresholdInterpolator: currentMetricConfig.hasPositive
+        ? interpolate(currentMetricColorScale.positiveThresholdColorStops, "oklab")
+        : ERROR_MAGENTA,
+      negativeInterpolator: currentMetricConfig.hasNegative
+        ? interpolate(currentMetricColorScale.negativeColorStops, "oklab")
+        : ERROR_MAGENTA,
+      negativeThresholdInterpolator: currentMetricConfig.hasNegative
+        ? interpolate(currentMetricColorScale.negativeThresholdColorStops, "oklab")
+        : ERROR_MAGENTA,
+      fullPositiveInterpolator: currentMetricConfig.hasPositive
+        ? interpolate(
+            [...currentMetricColorScale.positiveColorStops, ...currentMetricColorScale.positiveThresholdColorStops],
+            "oklab"
+          )
+        : ERROR_MAGENTA,
+      fullNegativeInterpolator: currentMetricConfig.hasNegative
+        ? interpolate(
+            [...currentMetricColorScale.negativeColorStops, ...currentMetricColorScale.negativeThresholdColorStops],
+            "oklab"
+          )
+        : ERROR_MAGENTA,
+    };
+  }, [currentMetricConfig, currentMetricColorScale]);
 
-  // const maxValue = useMemo(() => {
-  //   return metricConfig.getPrecomputedMax(animationData);
-  // }, [animationData, metricConfig]);
+  const getNodeColorForCurrentMetric = useCallback(
+    (frameIndex: number, nodeId: number) => {
+      if (currentMetricPrecomputedMax === 0)
+        return {
+          passesThreshold: false,
+          color: grayColor,
+        };
 
-  // const thresholdValue = useMemo(() => {
-  //   return thresholds[metricConfig.thresholdKey] ?? 0;
-  // }, [thresholds, metricConfig]);
+      const value = currentMetricConfig.getValue(animationData, frameIndex, nodeId);
+      if (value === undefined || !Number.isFinite(value))
+        return {
+          passesThreshold: false,
+          color: grayColor,
+        };
 
-  // const getNodeColor = useCallback(
-  //   (nodeId: number, frameIndex: number): THREE.Color => {
-  //     if (maxValue === 0) return grayColor;
+      const negative = value < 0;
+      const normalizedValue = Math.min(1, Math.max(0, Math.abs(value / currentMetricPrecomputedMax)));
+      const normalizedThreshold = Math.min(1, Math.max(0, currentMetricThreshold / currentMetricPrecomputedMax));
 
-  //     const value = metricConfig.getValue(animationData, frameIndex, nodeId);
-  //     if (value === undefined || !Number.isFinite(value)) return grayColor;
+      let t: number = normalizedValue;
+      let interpolator: (t: number) => FindColorByMode<"oklab">;
 
-  //     const negative = value < 0;
-  //     const normalizedValue = Math.min(1, Math.max(0, Math.abs(value / maxValue)));
-  //     const normalizedThreshold = Math.min(1, Math.max(0, thresholdValue / maxValue));
+      if (negative) interpolator = fullNegativeInterpolator;
+      else interpolator = fullPositiveInterpolator;
 
-  //     // if (normalizedValue === 0) {
-  //     //   rgbColor = [1, 1, 1];
-  //     // } else {
-  //     let t: number = normalizedValue;
-  //     let interpolator: (t: number) => FindColorByMode<"oklab">;
+      let passesThreshold = false;
 
-  //     if (negative) interpolator = fullNegativeInterpolator;
-  //     else interpolator = fullPositiveInterpolator;
+      if (thresholdHighlighting) {
+        if (normalizedValue < normalizedThreshold) {
+          t = normalizedValue / normalizedThreshold;
+          if (negative) interpolator = negativeInterpolator;
+          else interpolator = positiveInterpolator;
+        } else {
+          t = (normalizedValue - normalizedThreshold) / (1 - normalizedThreshold);
+          if (negative) interpolator = negativeThresholdInterpolator;
+          else interpolator = positiveThresholdInterpolator;
+          passesThreshold = true;
+        }
+      }
 
-  //     if (thresholdHighlighting) {
-  //       if (normalizedValue < normalizedThreshold) {
-  //         t = normalizedValue / normalizedThreshold;
-  //         if (negative) interpolator = negativeInterpolator;
-  //         else interpolator = positiveInterpolator;
-  //       } else {
-  //         t = (normalizedValue - normalizedThreshold) / (1 - normalizedThreshold);
-  //         if (negative) interpolator = negativeThresholdInterpolator;
-  //         else interpolator = positiveThresholdInterpolator;
-  //       }
-  //     }
-
-  //     const rgbColor: [number, number, number] = interpolateColor(interpolator, t);
-  //     // }
-
-  //     return new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]);
-  //   },
-  //   [
-  //     animationData,
-  //     maxValue,
-  //     positiveInterpolator,
-  //     negativeInterpolator,
-  //     thresholdValue,
-  //     metricConfig,
-  //     thresholdHighlighting,
-  //     negativeThresholdInterpolator,
-  //     positiveThresholdInterpolator,
-  //     fullPositiveInterpolator,
-  //     fullNegativeInterpolator,
-  //   ]
-  // );
+      const rgbColor: [number, number, number] = interpolateColor(interpolator, t);
+      return {
+        passesThreshold,
+        color: new THREE.Color(rgbColor[0], rgbColor[1], rgbColor[2]),
+      };
+    },
+    [
+      animationData,
+      positiveInterpolator,
+      negativeInterpolator,
+      thresholdHighlighting,
+      negativeThresholdInterpolator,
+      positiveThresholdInterpolator,
+      fullPositiveInterpolator,
+      fullNegativeInterpolator,
+      currentMetricConfig,
+      currentMetricPrecomputedMax,
+      currentMetricThreshold,
+    ]
+  );
 
   // const getColorFromValue = useCallback(
   //   (value: number): THREE.Color => {
@@ -220,5 +222,6 @@ export function useMetrics() {
     currentMetricThreshold,
     thresholdHighlighting,
     setThresholdHighlighting,
+    getNodeColorForCurrentMetric,
   };
 }

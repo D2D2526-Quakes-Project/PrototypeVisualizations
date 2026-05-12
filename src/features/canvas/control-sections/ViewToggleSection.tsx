@@ -1,7 +1,7 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useRenderModes } from "@/features/3d/lib/useRenderModes";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useMetrics } from "@/features/metrics/useMetrics";
-import { useProfileStore } from "@/state";
 import {
   CheckIcon,
   Columns2Icon,
@@ -17,20 +17,23 @@ import {
 
 export function ViewToggleSection() {
   const { animationData } = useAnimationData();
-  const renderNodes = useProfileStore((s) => s.renderNodes);
-  const setRenderNodes = useProfileStore((s) => s.setRenderNodes);
-  const renderFloorSlabs = useProfileStore((s) => s.renderFloorSlabs);
-  const setRenderFloorSlabs = useProfileStore((s) => s.setRenderFloorSlabs);
-  const renderXCrossSectionSlabs = useProfileStore((s) => s.renderXCrossSectionSlabs);
-  const setRenderXCrossSectionSlabs = useProfileStore((s) => s.setRenderXCrossSectionSlabs);
-  const renderYCrossSectionSlabs = useProfileStore((s) => s.renderYCrossSectionSlabs);
-  const setRenderYCrossSectionSlabs = useProfileStore((s) => s.setRenderYCrossSectionSlabs);
-  const showCornersOnly = useProfileStore((s) => s.showCornersOnly);
-  const setShowCornersOnly = useProfileStore((s) => s.setShowCornersOnly);
-  const renderVerticalConnections = useProfileStore((s) => s.renderVerticalConnections);
-  const setRenderVerticalConnections = useProfileStore((s) => s.setRenderVerticalConnections);
-  const renderHorizontalConnections = useProfileStore((s) => s.renderHorizontalConnections);
-  const setRenderHorizontalConnections = useProfileStore((s) => s.setRenderHorizontalConnections);
+
+  const {
+    renderNodes,
+    setRenderNodes,
+    renderFloorSlabs,
+    setRenderFloorSlabs,
+    renderXCrossSectionSlabs,
+    setRenderXCrossSectionSlabs,
+    renderYCrossSectionSlabs,
+    setRenderYCrossSectionSlabs,
+    showCornersOnly,
+    setShowCornersOnly,
+    renderVerticalConnections,
+    setRenderVerticalConnections,
+    renderHorizontalConnections,
+    setRenderHorizontalConnections,
+  } = useRenderModes();
 
   const { isCurrentMetricHinge } = useMetrics();
 

@@ -498,6 +498,7 @@ function serializeRequiredComputedStats(
 
   const storyCount = metadata.storyOrder.length;
   const frameCount = metadata.frameCount;
+  const missingNodeSet = new Set(metadata.displacementMissingNodeIndices);
 
   const gmMax: [number, number, number] = [-Infinity, -Infinity, -Infinity];
   const gmMin: [number, number, number] = [Infinity, Infinity, Infinity];
@@ -583,12 +584,13 @@ function serializeRequiredComputedStats(
       let storyY = 0;
       let storyZ = 0;
       nodes.forEach((nodeId) => {
+        if (missingNodeSet.has(nodeId)) return;
         const offset = frameOffset + nodeId * 3;
         storyX += dispLin[offset] ?? 0;
         storyY += dispLin[offset + 1] ?? 0;
         storyZ += dispLin[offset + 2] ?? 0;
       });
-      avgDisplacementPerStory[storyIdx * frameCount + frameIdx] = Math.hypot(
+      avgDisplacementPerStory[frameIdx * storyCount + storyIdx] = Math.hypot(
         storyX / nodes.length,
         storyY / nodes.length,
         storyZ / nodes.length

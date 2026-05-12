@@ -1,10 +1,8 @@
+import * as THREE from "three";
+
 export function HingeNodesRenderer() {
   return (
-    <instancedMesh
-      key={`hinge-nodes-${interactiveSceneKey}`}
-      ref={hingeNodesMeshRef}
-      args={[undefined, undefined, hingeNodeGeometry.count]}
-      frustumCulled={false}>
+    <instancedMesh ref={hingeNodesMeshRef} args={[undefined, undefined, hingeNodeGeometry.count]} frustumCulled={false}>
       <coneGeometry args={[16, 30, 4]}>
         <instancedBufferAttribute
           attach="attributes-color"

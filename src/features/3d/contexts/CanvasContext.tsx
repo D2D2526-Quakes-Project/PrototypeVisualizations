@@ -32,9 +32,9 @@ const DEFAULT_CANVAS_PANEL_STATE: CanvasPanelState = {
   cameraTarget: [0, 0, 0],
   cameraZoom: 50,
   expansionEnabled: false,
-  xExpansion: 0,
+  xExpansion: 1,
   yExpansion: 0,
-  zExpansion: 1,
+  zExpansion: 0,
   displacementEnabled: false,
   xyDisplacementScale: 1,
   zDisplacementScale: 1,
@@ -86,14 +86,14 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
   );
 
   const resetExpandedScale = useCallback(() => {
-    panelState.setExpansionEnabled(DEFAULT_CANVAS_PANEL_STATE.expansionEnabled);
+    // panelState.setExpansionEnabled(DEFAULT_CANVAS_PANEL_STATE.expansionEnabled);
     panelState.setXExpansion(DEFAULT_CANVAS_PANEL_STATE.xExpansion);
     panelState.setYExpansion(DEFAULT_CANVAS_PANEL_STATE.yExpansion);
     panelState.setZExpansion(DEFAULT_CANVAS_PANEL_STATE.zExpansion);
   }, [panelState]);
 
   const resetDisplacementScale = useCallback(() => {
-    panelState.setDisplacementEnabled(DEFAULT_CANVAS_PANEL_STATE.displacementEnabled);
+    // panelState.setDisplacementEnabled(DEFAULT_CANVAS_PANEL_STATE.displacementEnabled);
     panelState.setXyDisplacementScale(DEFAULT_CANVAS_PANEL_STATE.xyDisplacementScale);
     panelState.setZDisplacementScale(DEFAULT_CANVAS_PANEL_STATE.zDisplacementScale);
   }, [panelState]);

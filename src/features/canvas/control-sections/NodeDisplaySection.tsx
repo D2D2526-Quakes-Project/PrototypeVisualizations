@@ -1,8 +1,8 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { useNodeRendering } from "@/features/3d/contexts/useNodeRendering";
 import { useMetrics } from "@/features/metrics/useMetrics";
-import { useProfileStore } from "@/state";
 
 import {
   BlendIcon,
@@ -18,24 +18,26 @@ import {
 export function NodeDisplaySection() {
   const { isCurrentMetricHinge } = useMetrics();
 
-  const nodeScale = useProfileStore((s) => s.nodeScale);
-  const nodeOpacity = useProfileStore((s) => s.nodeOpacity);
-  const floorOpacity = useProfileStore((s) => s.floorOpacity);
-  const belowThresholdNodeScale = useProfileStore((s) => s.belowThresholdNodeScale);
-  const connectionLineWidth = useProfileStore((s) => s.connectionLineWidth);
-  const connectionLineOpacity = useProfileStore((s) => s.connectionLineOpacity);
-  const hingeNodeScale = useProfileStore((s) => s.hingeNodeScale);
-  const belowThresholdHingeScale = useProfileStore((s) => s.belowThresholdHingeScale);
-  const visualInterpolationEnabled = useProfileStore((s) => s.visualInterpolationEnabled);
-  const setHingeNodeScale = useProfileStore((s) => s.setHingeNodeScale);
-  const setBelowThresholdHingeScale = useProfileStore((s) => s.setBelowThresholdHingeScale);
-  const setVisualInterpolationEnabled = useProfileStore((s) => s.setVisualInterpolationEnabled);
-  const setNodeScale = useProfileStore((s) => s.setNodeScale);
-  const setNodeOpacity = useProfileStore((s) => s.setNodeOpacity);
-  const setBelowThresholdNodeScale = useProfileStore((s) => s.setBelowThresholdNodeScale);
-  const setFloorOpacity = useProfileStore((s) => s.setFloorOpacity);
-  const setConnectionLineWidth = useProfileStore((s) => s.setConnectionLineWidth);
-  const setConnectionLineOpacity = useProfileStore((s) => s.setConnectionLineOpacity);
+  const {
+    nodeScale,
+    nodeOpacity,
+    floorOpacity,
+    belowThresholdNodeScale,
+    connectionLineWidth,
+    connectionLineOpacity,
+    hingeNodeScale,
+    belowThresholdHingeScale,
+    visualInterpolationEnabled,
+    setHingeNodeScale,
+    setBelowThresholdHingeScale,
+    setVisualInterpolationEnabled,
+    setNodeScale,
+    setNodeOpacity,
+    setBelowThresholdNodeScale,
+    setFloorOpacity,
+    setConnectionLineWidth,
+    setConnectionLineOpacity,
+  } = useNodeRendering();
 
   return (
     <>

@@ -323,7 +323,10 @@ All `.bld` files follow a "Header-Body" architecture:
 - **Purpose**: Non-time-series hinge demand summaries paired by beam/member (PL1 only)
 - **Source Reduction**:
   - Keeps only `Performance Level == 1`
-  - Resolves component numbers (`2/3 -> I`, `4/5 -> J`) during generation
+  - Resolves hinge side during generation using each beam's component pattern:
+    - Singleton `2` maps to `I`
+    - Singleton `3`/`4`/`5` maps to `J`
+    - Multi-hinge beams use the paired pattern (`2/3 -> I`, `4/5 -> J`)
   - Stores one row per beam (`beamIndex`) with both `Max` and `Min` values in the same row
 - **JSON Schema (summary)**:
   ```json

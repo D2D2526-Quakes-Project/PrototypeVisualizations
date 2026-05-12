@@ -154,7 +154,8 @@
 - [ ] While in Floor Slabs view mode with Story Drift color by, the floors look gray because its the values include the nodes with no data
 - [ ] When loading the app and the previously selected color by metric was from optional data and that data is no longer loaded, then it doesn't default back to ISD instead its in a weird broken state.
 - [ ] Elevation is off by one story I think. Ground is 0 and 2nd is 0.
-- [ ] Hinge to assignment allocation is wrong
+- [x] Hinge to assignment allocation is wrong
+  - Updated hinge binary generation to resolve singleton component `3` beams to the `J` end and keep paired beams on the existing `2/3 -> I`, `4/5 -> J` pattern.
 - [ ] The topdown motion graph of per-node motion is offset or wrong or not centered or bounds are wrong.
 
 _Last Updated: May 2026_

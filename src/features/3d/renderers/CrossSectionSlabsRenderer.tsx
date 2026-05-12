@@ -1,146 +1,84 @@
-import { useColor, useExpandedScale } from "@/features/3d/contexts/visualization";
-import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { usePlayback } from "@/features/playback/usePlayback";
 import Delaunay from "delaunator";
 import { useMemo } from "react";
 import * as THREE from "three";
-import { useCrossSectionSelection } from "../contexts/visualization/-CrossSectionSelectionContext";
-import { usePlayback } from "@/features/playback/usePlayback";
+import { useNodePositions } from "../contexts/useNodePositions";
+import { useNodeRendering } from "../contexts/useNodeRendering";
 
-interface CrossSectionSlabsRendererProps {
-  nodeIds: number[];
-  cornersOnly?: boolean;
+export function XCrossSectionSlabsRenderer() {
+  return <CrossSectionSlabsRendererImpl crossSectionType="x" />;
 }
 
-export function XCrossSectionSlabsRenderer({ nodeIds, cornersOnly = false }: CrossSectionSlabsRendererProps) {
-  return <CrossSectionSlabsRendererImpl nodeIds={nodeIds} cornersOnly={cornersOnly} crossSectionType="x" />;
+export function YCrossSectionSlabsRenderer() {
+  return <CrossSectionSlabsRendererImpl crossSectionType="y" />;
 }
 
-export function YCrossSectionSlabsRenderer({ nodeIds, cornersOnly = false }: CrossSectionSlabsRendererProps) {
-  return <CrossSectionSlabsRendererImpl nodeIds={nodeIds} cornersOnly={cornersOnly} crossSectionType="y" />;
-}
-
-function CrossSectionSlabsRendererImpl({
-  nodeIds,
-  cornersOnly = false,
-  crossSectionType,
-}: CrossSectionSlabsRendererProps & { crossSectionType: "x" | "y" }) {
+function CrossSectionSlabsRendererImpl({ crossSectionType }: { crossSectionType: "x" | "y" }) {
   const { animationData } = useAnimationData();
-  const { frameIndex } = usePlayback();
-  const { getExpandedPosition } = useExpandedScale();
-
-  const offset = useMemo(
-    (): [number, number, number] => [
-      -animationData.precomputed.boundingBox.center[0],
-      -animationData.precomputed.boundingBox.center[1],
-      -animationData.precomputed.boundingBox.min[2],
-    ],
-    [animationData.precomputed.boundingBox]
-  );
+  const { visibleNodes } = useNodePositions();
+  // const { getExpandedPosition } = useExpandedScale();
 
   const crossSections = useMemo(() => {
     const metadata = animationData.metadata;
-    const crossSectionKey = crossSectionType === "x" ? ("crossSectionsX" as const) : ("crossSectionsY" as const);
-    const crossSectionData = metadata[crossSectionKey] as Record<string, number[]> | undefined;
-
-    if (!crossSectionData) {
-      return [];
-    }
+    const crossSectionData = crossSectionType === "x" ? metadata.crossSectionsX : metadata.crossSectionsY;
 
     const result: [string, number[]][] = [];
     for (const [crossSectionPos, nodes] of Object.entries(crossSectionData)) {
       if (nodes.length === 0) continue;
 
-      if (cornersOnly) {
-        const cornerSet = new Set<number>();
-        const cornerNodes = metadata.corners;
-        if (cornerNodes) {
-          for (const cornerNodeList of Object.values(cornerNodes)) {
-            cornerNodeList.forEach((id) => cornerSet.add(id));
-          }
-        }
-        const filteredNodes = nodes.filter((id) => cornerSet.has(id));
-        if (filteredNodes.length > 0) {
-          result.push([crossSectionPos, filteredNodes]);
-        }
-      } else {
-        const nodeSet = new Set(nodeIds);
-        const filteredNodes = nodes.filter((id) => nodeSet.has(id));
-        if (filteredNodes.length > 0) {
-          result.push([crossSectionPos, filteredNodes]);
-        }
-      }
+      const visibleNodeIds = new Set(visibleNodes);
+      const filteredNodes = nodes.filter((id) => visibleNodeIds.has(id));
+      if (filteredNodes.length > 0) result.push([crossSectionPos, filteredNodes]);
     }
 
-    return result.sort((a, b) => a[0].localeCompare(b[0]));
-  }, [nodeIds, animationData.metadata, cornersOnly, crossSectionType]);
+    return result;
+  }, [animationData.metadata, crossSectionType, visibleNodes]);
 
   return (
     <group>
       {crossSections.map(([crossSectionPos, nodes]) => (
         <CrossSectionSlab
+          crossSectionType={crossSectionType}
           key={crossSectionPos}
           crossSectionPos={crossSectionPos}
           nodeIds={nodes}
-          frameIndex={frameIndex}
-          getExpandedPosition={getExpandedPosition}
-          offset={offset}
-          cornersOnly={cornersOnly}
-          crossSectionType={crossSectionType}
         />
       ))}
     </group>
   );
 }
 
-interface CrossSectionSlabProps {
+function CrossSectionSlab({
+  nodeIds,
+  crossSectionType,
+}: {
   crossSectionPos: string;
   nodeIds: number[];
-  frameIndex: number;
-  getExpandedPosition: ReturnType<typeof useExpandedScale>["getExpandedPosition"];
-  offset: [number, number, number];
-  cornersOnly?: boolean;
   crossSectionType: "x" | "y";
-}
+}) {
+  const { getNodeVisualPosition } = useNodePositions();
+  const { frameIndex } = usePlayback();
+  const { getNodeColorForCurrentMetric } = useMetrics();
+  const { floorOpacity } = useNodeRendering();
 
-function CrossSectionSlab({
-  crossSectionPos,
-  nodeIds,
-  frameIndex,
-  getExpandedPosition,
-  offset,
-  crossSectionType,
-}: CrossSectionSlabProps) {
-  const { animationData } = useAnimationData();
-  const { getNodeColor: getRawNodeColor } = useColor();
-  const { hoveredCrossSection, selectCrossSection, setHovered } = useCrossSectionSelection();
-  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
-
-  const crossSectionId = `cross-section-${crossSectionType}-${crossSectionPos}`;
-  const isHovered = hoveredCrossSection?.id === crossSectionId;
+  // const crossSectionId = `cross-section-${crossSectionType}-${crossSectionPos}`;
+  // const isHovered = hoveredCrossSection?.id === crossSectionId; // TODO: Hovering
 
   const geometry = useMemo(() => {
-    if (nodeIds.length < 3) {
-      return null;
-    }
+    if (nodeIds.length < 3) return null;
 
     const nodePositions = nodeIds.map((nodeId) => {
-      const pos = animationData.initialPositions.at(nodeId);
-      const disp = visualDisplacement.atFrame(frameIndex).at(nodeId);
-      const expandedPosition = getExpandedPosition(
-        [pos[0], pos[1], pos[2]],
-        [disp[0], disp[1], disp[2]],
-        offset,
-        animationData.metadata
-      );
-      return { nodeId, position: new THREE.Vector3(expandedPosition[0], expandedPosition[1], expandedPosition[2]) };
+      const pos = getNodeVisualPosition(nodeId, frameIndex);
+      return { nodeId, pos };
     });
 
     let points2D: [number, number][];
     if (crossSectionType === "x") {
-      points2D = nodePositions.map((p) => [p.position.y, p.position.z] as [number, number]);
+      points2D = nodePositions.map((p) => [p.pos[1], p.pos[2]] as [number, number]);
     } else {
-      points2D = nodePositions.map((p) => [p.position.x, p.position.z] as [number, number]);
+      points2D = nodePositions.map((p) => [p.pos[0], p.pos[2]] as [number, number]);
     }
 
     const delaunay = Delaunay.from(points2D);
@@ -152,16 +90,16 @@ function CrossSectionSlab({
     for (let i = 0; i < triangles.length; i++) {
       const nodeIdx = triangles[i];
       const nodeId = nodePositions[nodeIdx].nodeId;
-      const nodePos = nodePositions[nodeIdx].position;
+      const nodePos = nodePositions[nodeIdx].pos;
 
-      positions[i * 3] = nodePos.x;
-      positions[i * 3 + 1] = nodePos.y;
-      positions[i * 3 + 2] = nodePos.z;
+      positions[i * 3] = nodePos[0];
+      positions[i * 3 + 1] = nodePos[1];
+      positions[i * 3 + 2] = nodePos[2];
 
-      const nodeColor = getVisualNodeColor(nodeId, frameIndex, getRawNodeColor);
-      colors[i * 3] = nodeColor.r;
-      colors[i * 3 + 1] = nodeColor.g;
-      colors[i * 3 + 2] = nodeColor.b;
+      const { color } = getNodeColorForCurrentMetric(frameIndex, nodeId);
+      colors[i * 3] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
     }
 
     const geom = new THREE.BufferGeometry();
@@ -178,49 +116,40 @@ function CrossSectionSlab({
         side: THREE.DoubleSide,
       })
     );
-  }, [
-    nodeIds,
-    frameIndex,
-    animationData,
-    getRawNodeColor,
-    getVisualNodeColor,
-    getExpandedPosition,
-    offset,
-    crossSectionType,
-    visualDisplacement,
-  ]);
+  }, [nodeIds, frameIndex, getNodeVisualPosition, getNodeColorForCurrentMetric, crossSectionType]);
 
   const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();
-    setHovered({
-      id: crossSectionId,
-      type: crossSectionType === "x" ? "X" : "Y",
-      value: crossSectionPos,
-      nodeIds,
-      label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,
-      screenPos: { x: e.offsetX, y: e.offsetY },
-    });
+    // setHovered({
+    //   id: crossSectionId,
+    //   type: crossSectionType === "x" ? "X" : "Y",
+    //   value: crossSectionPos,
+    //   nodeIds,
+    //   label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,
+    //   screenPos: { x: e.offsetX, y: e.offsetY },
+    // });
   };
 
   const handlePointerOut = (e: PointerEvent) => {
     e.stopPropagation();
-    setHovered(null);
+    // setHovered(null);
   };
 
   const handleClick = (e: PointerEvent) => {
     e.stopPropagation();
-    selectCrossSection({
-      id: crossSectionId,
-      type: crossSectionType === "x" ? "X" : "Y",
-      value: crossSectionPos,
-      nodeIds,
-      label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,
-    });
+    // selectCrossSection({
+    //   id: crossSectionId,
+    //   type: crossSectionType === "x" ? "X" : "Y",
+    //   value: crossSectionPos,
+    //   nodeIds,
+    //   label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,
+    // });
   };
 
   if (!geometry) return null;
 
-  const opacity = isHovered ? 0.9 : 0.1;
+  // const opacity = isHovered ? 0.9 : 0.1;
+  const opacity = floorOpacity;
 
   return (
     <group onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick}>

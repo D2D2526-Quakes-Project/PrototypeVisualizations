@@ -17,7 +17,7 @@ function getDefaultProfileData(
     _currentMetric: "interstoryDrift",
     _thresholdHighlighting: true,
     _hiddenFloors: [],
-    hiddenNodeIds: [],
+    _hiddenNodeIds: [],
 
     openedNodePanelIds: [],
     dockviewLayout: null,

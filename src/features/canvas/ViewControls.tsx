@@ -44,7 +44,7 @@ export function ViewControls({
   const expandedLayoutRef = useRef<HTMLDivElement>(null);
 
   const selectedNodeIds = useLiveStore((s) => s.selectedNodeIds);
-  const hiddenNodeIds = useProfileStore((s) => s.hiddenNodeIds);
+  const hiddenNodeIds = useProfileStore((s) => s._hiddenNodeIds);
   const showAllNodes = useProfileStore((s) => s.showAllNodes);
   const hideNodes = useProfileStore((s) => s.hideNodes);
   const showNodes = useProfileStore((s) => s.showNodes);

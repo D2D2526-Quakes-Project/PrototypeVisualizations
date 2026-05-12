@@ -1,9 +1,9 @@
+import type { DatasetKey, OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
 import {
   buildBeamToHingeIndexMap,
   buildHingeNodeMetrics,
   buildNodeToHingeIndexMap,
 } from "@/features/metrics/hingeMetrics";
-import type { DatasetKey, OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
 import type {
   AnimationMetadata,
   BeamDataAccessor,

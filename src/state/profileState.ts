@@ -32,7 +32,7 @@ export interface ProfileData {
   _hiddenFloors: string[];
 
   // Node Visibility
-  hiddenNodeIds: number[];
+  _hiddenNodeIds: number[];
 
   openedNodePanelIds: number[];
 
@@ -237,18 +237,18 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
 
       // Node Visibility / Selection
       setHiddenNodeIds: mutateProfile((profile, hiddenNodeIds) => {
-        profile.hiddenNodeIds = hiddenNodeIds;
+        profile._hiddenNodeIds = hiddenNodeIds;
       }),
       hideNodes: mutateProfile((profile, nodes) => {
-        profile.hiddenNodeIds = [...new Set([...profile.hiddenNodeIds, ...nodes])];
+        profile._hiddenNodeIds = [...new Set([...profile._hiddenNodeIds, ...nodes])];
       }),
       showNodes: mutateProfile((profile, nodes) => {
         const nodesToShow = new Set(nodes);
 
-        profile.hiddenNodeIds = profile.hiddenNodeIds.filter((id) => !nodesToShow.has(id));
+        profile._hiddenNodeIds = profile._hiddenNodeIds.filter((id) => !nodesToShow.has(id));
       }),
       showAllNodes: mutateProfile((profile) => {
-        profile.hiddenNodeIds = [];
+        profile._hiddenNodeIds = [];
       }),
       addOpenedNodePanel: mutateProfile((profile, nodeId) => {
         profile.openedNodePanelIds = [...new Set([...profile.openedNodePanelIds, nodeId])];

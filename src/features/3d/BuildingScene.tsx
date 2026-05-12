@@ -8,6 +8,7 @@ import { NodesRenderer } from "./renderers/NodesRenderer";
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import { FloorSlabsRenderer } from "./renderers/FloorSlabsRenderer";
+import { XCrossSectionSlabsRenderer, YCrossSectionSlabsRenderer } from "./renderers/CrossSectionSlabsRenderer";
 
 export function BuildingScene() {
   const { invalidate } = useThree();
@@ -43,8 +44,8 @@ export function BuildingScene() {
 
       <group scale={UNIT_SCALE}>
         {renderFloorSlabs && <FloorSlabsRenderer />}
-        {/* {renderXCrossSectionSlabs && <XCrossSectionSlabsRenderer />} */}
-        {/* {renderYCrossSectionSlabs && <YCrossSectionSlabsRenderer />} */}
+        {renderXCrossSectionSlabs && <XCrossSectionSlabsRenderer />}
+        {renderYCrossSectionSlabs && <YCrossSectionSlabsRenderer />}
         {/* {renderVerticalConnections && <VerticalConnectionsRenderer />} */}
         {/* {renderHorizontalConnections && <HorizontalConnectionsRenderer />} */}
         {renderNodes && <NodesRenderer />}

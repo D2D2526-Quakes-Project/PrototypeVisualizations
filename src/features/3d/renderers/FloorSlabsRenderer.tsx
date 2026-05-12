@@ -9,7 +9,6 @@ import * as THREE from "three";
 import { useFloorVisibility } from "../contexts/useFloorVisibility";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
-import { useRenderModes } from "../lib/useRenderModes";
 
 export function FloorSlabsRenderer() {
   const { visibleFloors } = useFloorVisibility();
@@ -29,8 +28,7 @@ function FloorSlab({ storyId }: { storyId: string }) {
   const { storyOrder, stories } = animationData.metadata;
   const { avgDisplacementPerStory } = animationData.precomputed;
   const { getValueColorForCurrentMetric, getNodeColorForCurrentMetric } = useMetrics();
-  const { showCornersOnly } = useRenderModes();
-  const { getNodeVisualPosition } = useNodePositions();
+  const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { floorOpacity } = useNodeRendering();
 
   const storyCount = storyOrder.length;
@@ -48,16 +46,8 @@ function FloorSlab({ storyId }: { storyId: string }) {
   const geometry = useMemo(() => {
     if (nodeIds.length < 3) return null;
 
-    let floorNodes;
-
-    if (showCornersOnly) {
-      const corners = animationData.metadata.cornerNodes[storyId];
-      if (!corners) return null;
-
-      floorNodes = [corners.NE, corners.NW, corners.SE, corners.SW];
-    } else {
-      floorNodes = nodeIds;
-    }
+    const visibleNodeIds = new Set(visibleNodes);
+    const floorNodes = nodeIds.filter((id) => visibleNodeIds.has(id));
 
     const nodePositions = floorNodes.map((nodeId) => {
       const pos = getNodeVisualPosition(nodeId, frameIndex);
@@ -93,16 +83,7 @@ function FloorSlab({ storyId }: { storyId: string }) {
     geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     return new THREE.Mesh(geom);
-  }, [
-    nodeIds,
-    frameIndex,
-    animationData,
-    showCornersOnly,
-    storyId,
-    getNodeColorForCurrentMetric,
-    getNodeVisualPosition,
-    avgFloorColor,
-  ]);
+  }, [nodeIds, frameIndex, visibleNodes, getNodeColorForCurrentMetric, getNodeVisualPosition, avgFloorColor]);
 
   const handlePointerOver = (e: PointerEvent) => {
     e.stopPropagation();

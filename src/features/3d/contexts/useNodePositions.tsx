@@ -28,7 +28,7 @@ export function useNodePositions() {
     yExpansion,
     zExpansion,
   } = useCanvasState();
-  const hiddenNodeIds = useProfileStore((s) => s.hiddenNodeIds);
+  const hiddenNodeIds = useProfileStore((s) => s._hiddenNodeIds);
   const { hiddenFloors } = useFloorVisibility();
 
   const missingNodeSet = useMemo(() => new Set(displacementMissingNodeIndices), [displacementMissingNodeIndices]);
@@ -58,9 +58,7 @@ export function useNodePositions() {
    * Visible Nodes
    */
   const visibleNodes = useMemo(() => {
-    if (showCornersOnly) return cornerNodes;
-
-    let nodes: number[] = Array.from({ length: nodeCount }, (_, i) => i);
+    let nodes: number[] = showCornersOnly ? cornerNodes : Array.from({ length: nodeCount }, (_, i) => i);
 
     if (sliceEnabled) {
       nodes = nodes.filter((nodeId) => {

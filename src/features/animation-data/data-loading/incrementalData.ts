@@ -699,7 +699,7 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
     cornerNodes: cornerNodes,
     storyHeights: storyHeights,
     storyOrder: storyOrder,
-    nodeToBelow: buildingData.metadata.node_to_below ?? [],
+    nodeToBelow: buildingData.metadata.node_to_below.map((belowIdx) => (belowIdx === -1 ? null : belowIdx)) ?? [],
     crossSectionsX: buildingData.metadata.cross_sections_x,
     crossSectionsY: buildingData.metadata.cross_sections_y,
     hiddenFloors: buildingData.metadata.hidden_floors ?? [],
@@ -731,7 +731,7 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
 
     for (let nodeIdx = 0; nodeIdx < nodeCount; nodeIdx++) {
       const belowIdx = metadata.nodeToBelow[nodeIdx];
-      if (belowIdx === undefined || belowIdx < 0) continue; // ground floor or no match
+      if (belowIdx === null || belowIdx < 0) continue; // ground floor or no match
 
       // Current node 3D magnitude
       const nX = dispLin[frameOffset + nodeIdx * 3] ?? 0;

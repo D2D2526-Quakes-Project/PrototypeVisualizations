@@ -142,7 +142,7 @@ export function useMetrics() {
   );
 
   const getNodeColorForCurrentMetric = useCallback(
-    (frameIndex: number, nodeId: number) => {
+    (nodeId: number, frameIndex: number) => {
       if (currentMetricPrecomputedMax === 0)
         return {
           passesThreshold: false,

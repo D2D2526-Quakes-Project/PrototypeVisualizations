@@ -73,7 +73,7 @@ export function HingeNodesRenderer() {
 
     for (let i = 0; i < visibleNodesWithHinges.length; i += 1) {
       const { hingeIdx, endCap, pos, normal } = visibleNodesWithHinges[i];
-      const { passesThreshold, color } = getNodeColorForCurrentMetric(endCap, hingeIdx);
+      const { passesThreshold, color } = getNodeColorForCurrentMetric(hingeIdx, endCap);
 
       const effectiveScale = passesThreshold ? hingeNodeScale : hingeNodeScale * belowThresholdHingeScale;
 

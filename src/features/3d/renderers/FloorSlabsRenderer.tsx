@@ -70,7 +70,7 @@ function FloorSlab({ storyId }: { storyId: string }) {
       positions[i * 3 + 1] = nodePos[1];
       positions[i * 3 + 2] = nodePos[2];
 
-      const { noValue, color } = getNodeColorForCurrentMetric(frameIndex, nodeId);
+      const { noValue, color } = getNodeColorForCurrentMetric(nodeId, frameIndex);
       const nodeColor = noValue ? avgFloorColor : color;
 
       colors[i * 3] = nodeColor.r;

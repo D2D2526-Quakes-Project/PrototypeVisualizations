@@ -1,97 +1,97 @@
-import { usePlayback } from "@/features/playback/usePlayback";
-import { useColor, useExpandedScale } from "@/features/3d/contexts/visualization";
-import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useMemo } from "react";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { useFrame } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useNodePositions } from "../contexts/useNodePositions";
 
-interface HorizontalConnectionsRendererProps {
-  nodeIds: number[];
-  lineWidth?: number;
-  lineOpacity?: number;
-}
+export function HorizontalConnectionsRenderer() {
+  const linesRef = useRef<THREE.LineSegments>(null);
 
-export function HorizontalConnectionsRenderer({
-  nodeIds,
-  lineWidth = 2,
-  lineOpacity = 0.6,
-}: HorizontalConnectionsRendererProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { getExpandedPosition } = useExpandedScale();
-  // const connectionLineColor = useViewStore((s) => s.colorTheme.connectionLines);
-  const { getNodeColor: getRawNodeColor } = useColor();
-  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
-
-  const offset = useMemo(
-    (): [number, number, number] => [
-      -animationData.precomputed.boundingBox.center[0],
-      -animationData.precomputed.boundingBox.center[1],
-      -animationData.precomputed.boundingBox.min[2],
-    ],
-    [animationData.precomputed.boundingBox]
-  );
+  const { getNodeVisualPosition, visibleNodes } = useNodePositions();
+  const { getNodeColorForCurrentMetric } = useMetrics();
 
   const connections = useMemo(() => {
     const beamData = animationData.beamData;
     if (!beamData) return [];
 
-    const result: Array<{ nodeA: number; nodeB: number }> = [];
-    const nodeIdSet = new Set(nodeIds);
+    const result: [number, number][] = [];
+    const visibleNodeSet = new Set(visibleNodes);
 
     for (let i = 0; i < beamData.count; i++) {
       const row = beamData.getRow(i);
       const iNode = row.iNodeIndex;
       const jNode = row.jNodeIndex;
 
-      if (iNode >= 0 && jNode >= 0 && nodeIdSet.has(iNode) && nodeIdSet.has(jNode)) {
-        result.push({ nodeA: iNode, nodeB: jNode });
+      if (visibleNodeSet.has(iNode) && visibleNodeSet.has(jNode)) {
+        result.push([iNode, jNode]);
       }
     }
 
     return result;
-  }, [nodeIds, animationData.beamData]);
+  }, [animationData, visibleNodes]);
+
+  const maxVertices = connections.length * 2;
+  const positions = useMemo(() => new Float32Array(maxVertices * 3), [maxVertices]);
+  const colors = useMemo(() => new Float32Array(maxVertices * 3).fill(1), [maxVertices]);
+
+  useFrame(() => {
+    if (!linesRef.current || connections.length === 0) return;
+
+    const geometry = linesRef.current.geometry;
+    const posAttr = geometry.attributes.position;
+    const colAttr = geometry.attributes.color;
+
+    let vertexCount = 0;
+
+    for (let i = 0; i < connections.length; i++) {
+      const [nodeA, nodeB] = connections[i];
+
+      const posA = getNodeVisualPosition(nodeA, frameIndex);
+      const posB = getNodeVisualPosition(nodeB, frameIndex);
+      const color = getNodeColorForCurrentMetric(nodeA, frameIndex).color;
+
+      const baseIdx = vertexCount * 3;
+
+      // --- Point A
+      posAttr.array[baseIdx] = posA[0];
+      posAttr.array[baseIdx + 1] = posA[1];
+      posAttr.array[baseIdx + 2] = posA[2];
+
+      colAttr.array[baseIdx] = color.r;
+      colAttr.array[baseIdx + 1] = color.g;
+      colAttr.array[baseIdx + 2] = color.b;
+
+      // --- Point B
+      posAttr.array[baseIdx + 3] = posB[0];
+      posAttr.array[baseIdx + 4] = posB[1];
+      posAttr.array[baseIdx + 5] = posB[2];
+
+      colAttr.array[baseIdx + 3] = color.r;
+      colAttr.array[baseIdx + 4] = color.g;
+      colAttr.array[baseIdx + 5] = color.b;
+
+      vertexCount += 2;
+    }
+
+    posAttr.needsUpdate = true;
+    colAttr.needsUpdate = true;
+
+    geometry.setDrawRange(0, vertexCount);
+  });
+
+  if (!animationData.beamData) return null;
 
   return (
-    <group>
-      {connections.map((conn, idx) => {
-        const posA = animationData.initialPositions.at(conn.nodeA);
-        const dispA = visualDisplacement.atFrame(frameIndex).at(conn.nodeA);
-        const expandedA = getExpandedPosition(
-          [posA[0], posA[1], posA[2]],
-          [dispA[0], dispA[1], dispA[2]],
-          offset,
-          animationData.metadata
-        );
-
-        const posB = animationData.initialPositions.at(conn.nodeB);
-        const dispB = visualDisplacement.atFrame(frameIndex).at(conn.nodeB);
-        const expandedB = getExpandedPosition(
-          [posB[0], posB[1], posB[2]],
-          [dispB[0], dispB[1], dispB[2]],
-          offset,
-          animationData.metadata
-        );
-
-        const start = new THREE.Vector3(expandedA[0], expandedA[1], expandedA[2]);
-        const end = new THREE.Vector3(expandedB[0], expandedB[1], expandedB[2]);
-
-        const color = getVisualNodeColor(conn.nodeA, frameIndex, getRawNodeColor);
-
-        const points = [start, end];
-
-        return (
-          <line key={idx}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                args={[new Float32Array(points.flatMap((p) => [p.x, p.y, p.z])), 3]}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color={color} opacity={lineOpacity} transparent linewidth={lineWidth} />
-          </line>
-        );
-      })}
-    </group>
+    <lineSegments ref={linesRef} frustumCulled={false}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} usage={THREE.DynamicDrawUsage} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} usage={THREE.DynamicDrawUsage} />
+      </bufferGeometry>
+      <lineBasicMaterial vertexColors />
+    </lineSegments>
   );
 }

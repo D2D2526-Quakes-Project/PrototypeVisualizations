@@ -33,7 +33,7 @@ export function NodesRenderer() {
       const position = getNodeVisualPosition(nodeId, frameIndex);
       tempObject.position.set(position[0], position[1], position[2]);
 
-      const { passesThreshold, color } = getNodeColorForCurrentMetric(frameIndex, nodeId);
+      const { passesThreshold, color } = getNodeColorForCurrentMetric(nodeId, frameIndex);
 
       const effectiveScale = passesThreshold ? nodeScale : nodeScale * belowThresholdNodeScale;
       // const scale = hoveredNodeId === nodeId ? effectiveScale * 1.35 : effectiveScale;

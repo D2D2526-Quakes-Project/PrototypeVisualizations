@@ -6,10 +6,8 @@ import { useMetrics } from "@/features/metrics/useMetrics";
 
 import {
   BlendIcon,
-  ChevronsLeftRightEllipsisIcon,
   CircleIcon,
   LayersIcon,
-  MoveHorizontalIcon,
   Sliders,
   SquaresIntersectIcon,
   WorkflowIcon,
@@ -23,8 +21,6 @@ export function NodeDisplaySection() {
     nodeOpacity,
     floorOpacity,
     belowThresholdNodeScale,
-    connectionLineWidth,
-    connectionLineOpacity,
     hingeNodeScale,
     belowThresholdHingeScale,
     visualInterpolationEnabled,
@@ -35,8 +31,6 @@ export function NodeDisplaySection() {
     setNodeOpacity,
     setBelowThresholdNodeScale,
     setFloorOpacity,
-    setConnectionLineWidth,
-    setConnectionLineOpacity,
   } = useNodeRendering();
 
   return (
@@ -77,7 +71,7 @@ export function NodeDisplaySection() {
           suffix="%"
           Icon={LayersIcon}
         />
-        <AdjustmentSlider
+        {/* <AdjustmentSlider
           label="Conn Width"
           value={connectionLineWidth}
           onChange={setConnectionLineWidth}
@@ -96,7 +90,7 @@ export function NodeDisplaySection() {
           step={0.05}
           suffix="%"
           Icon={ChevronsLeftRightEllipsisIcon}
-        />
+        /> */}
 
         {isCurrentMetricHinge && (
           <AdjustmentSlider

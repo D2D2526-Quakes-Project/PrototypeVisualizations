@@ -96,7 +96,7 @@ function CrossSectionSlab({
       positions[i * 3 + 1] = nodePos[1];
       positions[i * 3 + 2] = nodePos[2];
 
-      const { color } = getNodeColorForCurrentMetric(frameIndex, nodeId);
+      const { color } = getNodeColorForCurrentMetric(nodeId, frameIndex);
       colors[i * 3] = color.r;
       colors[i * 3 + 1] = color.g;
       colors[i * 3 + 2] = color.b;

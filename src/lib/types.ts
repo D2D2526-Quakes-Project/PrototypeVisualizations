@@ -125,7 +125,7 @@ export interface AnimationMetadata {
   // List of storyIds
   storyOrder: string[];
   /** Node-to-below mapping for ISD calculation: nodeIdx -> belowNodeIdx (-1 for ground or no match) */
-  nodeToBelow: number[];
+  nodeToBelow: (number | null)[];
   /** Cross-section along X axis */
   crossSectionsX: Record<string, number[]>;
   /** Cross-section along Y axis */

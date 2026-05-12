@@ -131,8 +131,15 @@ export function useNodePositions() {
       if (expansionEnabled) {
         pos = [pos[0] * (1 + xExpansion), pos[1] * (1 + yExpansion), pos[2] * (1 + zExpansion)];
       }
+      const aaaa = [pos[0] + disp[0], pos[1] + disp[1], pos[2] + disp[2]];
 
-      return [pos[0] + disp[0], pos[1] + disp[1], pos[2] + disp[2]];
+      // if (Number.isNaN(aaaa[0]) || Number.isNaN(aaaa[1]) || Number.isNaN(aaaa[2])) {
+      //   console.log("NaN", aaaa, nodeId, frameIndex);
+      //   debugger;
+      // }
+
+      return aaaa;
+      // return [pos[0] + disp[0], pos[1] + disp[1], pos[2] + disp[2]];
     },
     [
       initialPositions,

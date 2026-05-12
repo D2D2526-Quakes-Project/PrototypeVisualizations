@@ -1,106 +1,87 @@
-import { usePlayback } from "@/features/playback/usePlayback";
-import { useColor, useExpandedScale } from "@/features/3d/contexts/visualization";
-import { useVisualDisplacement } from "@/features/3d/lib/visualDisplacement";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useMemo } from "react";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useNodePositions } from "../contexts/useNodePositions";
+import { useNodeRendering } from "../contexts/useNodeRendering";
 
-interface VerticalConnectionsRendererProps {
-  nodeIds: number[];
-  lineWidth?: number;
-  lineOpacity?: number;
-}
+export function VerticalConnectionsRenderer() {
+  const linesRef = useRef<THREE.LineSegments>(null);
 
-export function VerticalConnectionsRenderer({
-  nodeIds,
-  lineWidth = 2,
-  lineOpacity = 0.6,
-}: VerticalConnectionsRendererProps) {
+  const { invalidate } = useThree();
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { getExpandedPosition } = useExpandedScale();
-  // const connectionLineColor = useViewStore((s) => s.colorTheme.connectionLines);
-  const { getNodeColor: getRawNodeColor } = useColor();
-  const { displacement: visualDisplacement, getNodeColor: getVisualNodeColor } = useVisualDisplacement();
+  const { getNodeVisualPosition, visibleNodes } = useNodePositions();
+  const { getNodeColorForCurrentMetric } = useMetrics();
+  const { connectionLineWidth, connectionLineOpacity } = useNodeRendering();
 
-  const offset = useMemo(
-    (): [number, number, number] => [
-      -animationData.precomputed.boundingBox.center[0],
-      -animationData.precomputed.boundingBox.center[1],
-      -animationData.precomputed.boundingBox.min[2],
-    ],
-    [animationData.precomputed.boundingBox]
-  );
+  useEffect(() => {
+    invalidate();
+  }, [frameIndex, invalidate, connectionLineOpacity, connectionLineWidth]);
 
-  const connections = useMemo(() => {
-    const nodePositions = new Map<string, number[]>();
+  // Pre-allocate buffer arrays based on maximum possible connections
+  // 1 connection = 1 line = 2 vertices (Point A, Point B) = 6 floats (x,y,z * 2)
+  const maxVertices = visibleNodes.length * 2;
+  const positions = useMemo(() => new Float32Array(maxVertices * 3), [maxVertices]);
+  const colors = useMemo(() => new Float32Array(maxVertices * 3).fill(1), [maxVertices]);
 
-    nodeIds.forEach((nodeId) => {
-      const pos = animationData.initialPositions.at(nodeId);
-      const key = `${pos[0].toFixed(2)},${pos[1].toFixed(2)}`;
-      if (!nodePositions.has(key)) {
-        nodePositions.set(key, []);
-      }
-      nodePositions.get(key)!.push(nodeId);
-    });
+  useFrame(() => {
+    if (!linesRef.current || visibleNodes.length === 0) return;
 
-    const result: Array<{ nodeA: number; nodeB: number }> = [];
+    const geometry = linesRef.current.geometry;
+    const posAttr = geometry.attributes.position;
+    const colAttr = geometry.attributes.color;
 
-    nodePositions.forEach((ids) => {
-      const sorted = ids.sort((a, b) => {
-        const posA = animationData.initialPositions.at(a);
-        const posB = animationData.initialPositions.at(b);
-        return posA[2] - posB[2];
-      });
+    let vertexCount = 0;
 
-      for (let i = 0; i < sorted.length - 1; i++) {
-        result.push({ nodeA: sorted[i], nodeB: sorted[i + 1] });
-      }
-    });
+    for (let i = 0; i < visibleNodes.length; i++) {
+      const nodeId = visibleNodes[i];
+      const nodeBelow = animationData.metadata.nodeToBelow[nodeId];
 
-    return result;
-  }, [nodeIds, animationData]);
+      if (nodeBelow === null) continue;
+
+      const posA = getNodeVisualPosition(nodeId, frameIndex);
+      const posB = getNodeVisualPosition(nodeBelow, frameIndex);
+      const color = getNodeColorForCurrentMetric(nodeId, frameIndex).color;
+
+      const baseIdx = vertexCount * 3;
+
+      // --- Point A
+      posAttr.array[baseIdx] = posA[0];
+      posAttr.array[baseIdx + 1] = posA[1];
+      posAttr.array[baseIdx + 2] = posA[2];
+
+      colAttr.array[baseIdx] = color.r;
+      colAttr.array[baseIdx + 1] = color.g;
+      colAttr.array[baseIdx + 2] = color.b;
+
+      // --- Point B
+      posAttr.array[baseIdx + 3] = posB[0];
+      posAttr.array[baseIdx + 4] = posB[1];
+      posAttr.array[baseIdx + 5] = posB[2];
+
+      colAttr.array[baseIdx + 3] = color.r;
+      colAttr.array[baseIdx + 4] = color.g;
+      colAttr.array[baseIdx + 5] = color.b;
+
+      vertexCount += 2;
+    }
+
+    posAttr.needsUpdate = true;
+    colAttr.needsUpdate = true;
+
+    geometry.setDrawRange(0, vertexCount);
+  });
 
   return (
-    <group>
-      {connections.map((conn, idx) => {
-        const posA = animationData.initialPositions.at(conn.nodeA);
-        const dispA = visualDisplacement.atFrame(frameIndex).at(conn.nodeA);
-        const expandedA = getExpandedPosition(
-          [posA[0], posA[1], posA[2]],
-          [dispA[0], dispA[1], dispA[2]],
-          offset,
-          animationData.metadata
-        );
-
-        const posB = animationData.initialPositions.at(conn.nodeB);
-        const dispB = visualDisplacement.atFrame(frameIndex).at(conn.nodeB);
-        const expandedB = getExpandedPosition(
-          [posB[0], posB[1], posB[2]],
-          [dispB[0], dispB[1], dispB[2]],
-          offset,
-          animationData.metadata
-        );
-
-        const start = new THREE.Vector3(expandedA[0], expandedA[1], expandedA[2]);
-        const end = new THREE.Vector3(expandedB[0], expandedB[1], expandedB[2]);
-
-        const color = getVisualNodeColor(conn.nodeA, frameIndex, getRawNodeColor);
-
-        const points = [start, end];
-
-        return (
-          <line key={idx}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                args={[new Float32Array(points.flatMap((p) => [p.x, p.y, p.z])), 3]}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color={color} opacity={lineOpacity} transparent linewidth={lineWidth} />
-          </line>
-        );
-      })}
-    </group>
+    <lineSegments ref={linesRef} frustumCulled={false}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} usage={THREE.DynamicDrawUsage} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} usage={THREE.DynamicDrawUsage} />
+      </bufferGeometry>
+      <lineBasicMaterial vertexColors />
+    </lineSegments>
   );
 }

@@ -1,14 +1,16 @@
 import { UNIT_SCALE } from "@/lib/utils";
 import { useGlobalStore, useProfileStore } from "@/state";
+import { useThree } from "@react-three/fiber";
+import { useEffect } from "react";
 import { useMetrics } from "../metrics/useMetrics";
+import { XCrossSectionSlabsRenderer, YCrossSectionSlabsRenderer } from "./renderers/CrossSectionSlabsRenderer";
 import { FloorDirectionLabels } from "./renderers/FloorDirectionLabels";
+import { FloorSlabsRenderer } from "./renderers/FloorSlabsRenderer";
 import { FloorTickMarks } from "./renderers/FloorTickMarks";
 import { HingeNodesRenderer } from "./renderers/HingeNodeRenderer";
 import { NodesRenderer } from "./renderers/NodesRenderer";
-import { useEffect } from "react";
-import { useThree } from "@react-three/fiber";
-import { FloorSlabsRenderer } from "./renderers/FloorSlabsRenderer";
-import { XCrossSectionSlabsRenderer, YCrossSectionSlabsRenderer } from "./renderers/CrossSectionSlabsRenderer";
+import { VerticalConnectionsRenderer } from "./renderers/VerticalConnectionsRenderer";
+import { HorizontalConnectionsRenderer } from "./renderers/HorizontalConnectionsRenderer";
 
 export function BuildingScene() {
   const { invalidate } = useThree();
@@ -46,8 +48,8 @@ export function BuildingScene() {
         {renderFloorSlabs && <FloorSlabsRenderer />}
         {renderXCrossSectionSlabs && <XCrossSectionSlabsRenderer />}
         {renderYCrossSectionSlabs && <YCrossSectionSlabsRenderer />}
-        {/* {renderVerticalConnections && <VerticalConnectionsRenderer />} */}
-        {/* {renderHorizontalConnections && <HorizontalConnectionsRenderer />} */}
+        {renderVerticalConnections && <VerticalConnectionsRenderer />}
+        {renderHorizontalConnections && <HorizontalConnectionsRenderer />}
         {renderNodes && <NodesRenderer />}
         {renderHingeNodes && <HingeNodesRenderer />}
       </group>

@@ -143,7 +143,7 @@ function CrossSectionSlab({
     e.stopPropagation();
     openCrossSectionPanel({
       crossSectionType: crossSectionType === "x" ? "X" : "Y",
-      position: crossSectionPos,
+      position: Number(crossSectionPos),
     });
   };
 

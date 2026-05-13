@@ -34,7 +34,7 @@ export function BoundingGeometryRenderer({ axis, opacity = 0.1, color }: Boundin
   if (!geometry) return null;
 
   return (
-    <mesh geometry={geometry}>
+    <mesh geometry={geometry} renderOrder={-10}>
       <meshBasicMaterial
         color={color ?? 0x888888}
         transparent

@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 
-export function VerticalConnectionsRenderer() {
+export function VerticalConnectionsRenderer({ nodeIds: overrideNodeIds }: { nodeIds?: number[] }) {
   const linesRef = useRef<THREE.LineSegments>(null);
 
   const { invalidate } = useThree();
@@ -21,14 +21,16 @@ export function VerticalConnectionsRenderer() {
     invalidate();
   }, [frameIndex, invalidate, connectionLineOpacity, connectionLineWidth]);
 
+  const nodeIds = useMemo(() => (overrideNodeIds ? overrideNodeIds : visibleNodes), [visibleNodes, overrideNodeIds]);
+
   // Pre-allocate buffer arrays based on maximum possible connections
   // 1 connection = 1 line = 2 vertices (Point A, Point B) = 6 floats (x,y,z * 2)
-  const maxVertices = visibleNodes.length * 2;
+  const maxVertices = nodeIds.length * 2;
   const positions = useMemo(() => new Float32Array(maxVertices * 3), [maxVertices]);
   const colors = useMemo(() => new Float32Array(maxVertices * 3).fill(1), [maxVertices]);
 
   useFrame(() => {
-    if (!linesRef.current || visibleNodes.length === 0) return;
+    if (!linesRef.current || nodeIds.length === 0) return;
 
     const geometry = linesRef.current.geometry;
     const posAttr = geometry.attributes.position;
@@ -36,8 +38,8 @@ export function VerticalConnectionsRenderer() {
 
     let vertexCount = 0;
 
-    for (let i = 0; i < visibleNodes.length; i++) {
-      const nodeId = visibleNodes[i];
+    for (let i = 0; i < nodeIds.length; i++) {
+      const nodeId = nodeIds[i];
       const nodeBelow = animationData.metadata.nodeToBelow[nodeId];
 
       if (nodeBelow === null) continue;

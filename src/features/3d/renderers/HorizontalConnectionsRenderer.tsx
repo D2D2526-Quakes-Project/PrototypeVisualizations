@@ -6,7 +6,7 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 
-export function HorizontalConnectionsRenderer() {
+export function HorizontalConnectionsRenderer({ nodeIds: overrideNodeIds }: { nodeIds?: number[] }) {
   const linesRef = useRef<THREE.LineSegments>(null);
 
   const { animationData } = useAnimationData();
@@ -14,12 +14,14 @@ export function HorizontalConnectionsRenderer() {
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { getNodeColorForCurrentMetric } = useMetrics();
 
+  const nodeIds = useMemo(() => (overrideNodeIds ? overrideNodeIds : visibleNodes), [visibleNodes, overrideNodeIds]);
+
   const connections = useMemo(() => {
     const beamData = animationData.beamData;
     if (!beamData) return [];
 
     const result: [number, number][] = [];
-    const visibleNodeSet = new Set(visibleNodes);
+    const visibleNodeSet = new Set(nodeIds);
 
     for (let i = 0; i < beamData.count; i++) {
       const row = beamData.getRow(i);
@@ -32,7 +34,7 @@ export function HorizontalConnectionsRenderer() {
     }
 
     return result;
-  }, [animationData, visibleNodes]);
+  }, [animationData, nodeIds]);
 
   const maxVertices = connections.length * 2;
   const positions = useMemo(() => new Float32Array(maxVertices * 3), [maxVertices]);

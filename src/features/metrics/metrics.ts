@@ -1,4 +1,3 @@
-import { type HingeNodeMetricKey } from "@/features/metrics/hingeMetrics";
 import type { BuildingAnimationData, ComputedStats } from "@/lib/types";
 import { MATPLOTLIB_PALETTES, type MatplotlibPaletteKey } from "./colors/matplotlibColors";
 import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
@@ -43,7 +42,7 @@ export type Metric =
 // | "crossSectionX"
 // | "crossSectionY";
 
-export function isHingeMetric(metric: Metric): metric is HingeNodeMetricKey {
+export function isHingeMetric(metric: Metric) {
   return metric === "hingeRotationMax" || metric === "hingeRotationMin" || metric === "hingeRotationAbs";
 }
 

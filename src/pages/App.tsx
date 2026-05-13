@@ -5,7 +5,7 @@ import {
   MagicPanelTab,
   type MagicPanelParams,
 } from "@/features/dockview/MagicPanel";
-// import { CrossSectionPanel, CrossSectionTab } from "@/features/panels/CrossSectionPanel";
+import { CrossSectionPanel, CrossSectionTab } from "@/features/panels/CrossSectionPanel";
 import { FloorPanel, FloorTab } from "@/features/panels/FloorPanel";
 import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
 import { debounce } from "@/lib/utils";
@@ -17,14 +17,14 @@ const components = {
   nodePanel: NodePanel,
   magicPanel: MagicPanel,
   floorPanel: FloorPanel,
-  // crossSectionPanel: CrossSectionPanel,
+  crossSectionPanel: CrossSectionPanel,
 };
 
 const tabComponents = {
   nodeTab: NodeTab,
   floorTab: FloorTab,
   magicPanelTab: MagicPanelTab,
-  // crossSectionTab: CrossSectionTab,
+  crossSectionTab: CrossSectionTab,
 };
 
 export function App() {

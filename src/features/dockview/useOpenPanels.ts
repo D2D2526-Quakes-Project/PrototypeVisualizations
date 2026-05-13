@@ -1,16 +1,12 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
 import type { DockviewApi } from "dockview";
 import { useDockviewApi } from "./DockviewApiContext";
+import type { CrossSectionParams } from "../panels/CrossSectionPanel";
 
 export interface OpenPanels {
   nodeIds: number[];
   crossSectionIds: CrossSectionParams[];
   floorIds: string[];
-}
-
-export interface CrossSectionParams {
-  crossSectionType: "X" | "Y";
-  position: string;
 }
 
 const EMPTY: OpenPanels = { nodeIds: [], crossSectionIds: [], floorIds: [] };

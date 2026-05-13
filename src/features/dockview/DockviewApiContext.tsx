@@ -1,3 +1,6 @@
+// @refresh reset
+/* eslint-disable react-refresh/only-export-components */
+
 import type { DockviewApi } from "dockview";
 import { createContext, useContext, type ReactNode } from "react";
 

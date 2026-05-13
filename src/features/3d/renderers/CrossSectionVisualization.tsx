@@ -1,28 +1,29 @@
-import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { UNIT_SCALE } from "@/lib/utils";
 
-import { useGlobalStore } from "@/state";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
-import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useRenderModes } from "../lib/useRenderModes";
+import { useNodeRendering } from "../contexts/useNodeRendering";
+import { useMetrics } from "@/features/metrics/useMetrics";
 import { BoundingGeometryRenderer } from "./BoundingGeometryRenderer";
-import { HorizontalConnectionsRenderer } from "./HorizontalConnectionsRenderer";
 import { VerticalConnectionsRenderer } from "./VerticalConnectionsRenderer";
+import { HorizontalConnectionsRenderer } from "./HorizontalConnectionsRenderer";
+import { useGlobalStore } from "@/state";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
 
-interface FloorVisualizationProps {
+interface CrossSectionVisualizationProps {
   nodeIds: number[];
+  crossSectionType: "X" | "Y";
   width: number;
 }
 
-function FloorScene({ nodeIds }: { nodeIds: number[] }) {
+function CrossSectionScene({ nodeIds, axis }: { nodeIds: number[]; axis: "x" | "y" }) {
   const { invalidate } = useThree();
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
@@ -32,6 +33,7 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
   const { nodeScale, nodeOpacity, belowThresholdNodeScale, hingeNodeScale, belowThresholdHingeScale } =
     useNodeRendering();
   const { renderHorizontalConnections, renderVerticalConnections } = useRenderModes();
+  const buildingHeightCenter = animationData.precomputed.boundingBox.center[1] / 2;
 
   useEffect(() => {
     invalidate();
@@ -151,50 +153,51 @@ function FloorScene({ nodeIds }: { nodeIds: number[] }) {
 
   return (
     <group scale={UNIT_SCALE}>
-      <group position={[buildingOffset[0], buildingOffset[1], buildingOffset[2]]}>
-        <BoundingGeometryRenderer axis="z" opacity={0.15} />
-      </group>
+      <group position={[0, 0, -buildingHeightCenter]}>
+        <group position={[buildingOffset[0], buildingOffset[1], buildingOffset[2]]}>
+          <BoundingGeometryRenderer axis={axis} opacity={0.15} />
+        </group>
+        {renderVerticalConnections && <VerticalConnectionsRenderer nodeIds={nodeIds} />}
 
-      {renderVerticalConnections && <VerticalConnectionsRenderer nodeIds={nodeIds} />}
-      {renderHorizontalConnections && <HorizontalConnectionsRenderer nodeIds={nodeIds} />}
+        {renderHorizontalConnections && <HorizontalConnectionsRenderer nodeIds={nodeIds} />}
 
-      <instancedMesh ref={nodesMeshRef} args={[undefined, undefined, nodeIds.length]} frustumCulled={false}>
-        <sphereGeometry args={[40, 4, 2]}>
-          <instancedBufferAttribute
-            attach="attributes-color"
-            args={[new Float32Array(nodeIds.length * 3).fill(1), 3]}
-            usage={THREE.DynamicDrawUsage}
-          />
-        </sphereGeometry>
-        <meshBasicMaterial fog={false} vertexColors transparent opacity={nodeOpacity} />
-      </instancedMesh>
-
-      {renderHingeNodes && hingeNodeGeometry && (
-        <instancedMesh
-          ref={hingeNodesMeshRef}
-          args={[undefined, undefined, hingeNodeGeometry.count]}
-          frustumCulled={false}>
-          <coneGeometry args={[16, 30, 4]}>
+        <instancedMesh ref={nodesMeshRef} args={[undefined, undefined, nodeIds.length]} frustumCulled={false}>
+          <sphereGeometry args={[40, 4, 2]}>
             <instancedBufferAttribute
               attach="attributes-color"
-              args={[new Float32Array(hingeNodeGeometry.count * 3).fill(1), 3]}
+              args={[new Float32Array(nodeIds.length * 3).fill(1), 3]}
               usage={THREE.DynamicDrawUsage}
             />
-          </coneGeometry>
-          <meshBasicMaterial fog={false} vertexColors transparent />
+          </sphereGeometry>
+          <meshBasicMaterial fog={false} vertexColors transparent opacity={nodeOpacity} />
         </instancedMesh>
-      )}
+
+        {renderHingeNodes && hingeNodeGeometry && (
+          <instancedMesh
+            ref={hingeNodesMeshRef}
+            args={[undefined, undefined, hingeNodeGeometry.count]}
+            frustumCulled={false}>
+            <coneGeometry args={[16, 30, 4]}>
+              <instancedBufferAttribute
+                attach="attributes-color"
+                args={[new Float32Array(hingeNodeGeometry.count * 3).fill(1), 3]}
+                usage={THREE.DynamicDrawUsage}
+              />
+            </coneGeometry>
+            <meshBasicMaterial fog={false} vertexColors transparent />
+          </instancedMesh>
+        )}
+      </group>
     </group>
   );
 }
 
-export function FloorVisualization({ nodeIds, width }: FloorVisualizationProps) {
+export function CrossSectionVisualization({ nodeIds, crossSectionType, width }: CrossSectionVisualizationProps) {
   const { animationData } = useAnimationData();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
   const boundingBox = useMemo(() => animationData.precomputed.boundingBox, [animationData.precomputed.boundingBox]);
-  const widthSpan = boundingBox.span[0];
-  const heightSpan = boundingBox.span[1];
-  const aspect = heightSpan / widthSpan;
+  const widthSpan = crossSectionType == "X" ? boundingBox.span[1] : boundingBox.span[0];
+  const aspect = boundingBox.span[2] / widthSpan;
   const height = width * aspect;
   return (
     <div
@@ -207,12 +210,14 @@ export function FloorVisualization({ nodeIds, width }: FloorVisualizationProps) 
         flat
         camera={{
           zoom: 0.9,
-          position: [0, 0, 100],
-          up: [0, 1, 0],
+          position: crossSectionType == "X" ? [-100, 0, 0] : [0, -100, 0],
+          up: [0, 0, 1],
+          // near: -1000,
+          // far: 1000,
           left: (-widthSpan / 2) * UNIT_SCALE,
           right: (widthSpan / 2) * UNIT_SCALE,
-          top: (heightSpan / 2) * UNIT_SCALE,
-          bottom: (-heightSpan / 2) * UNIT_SCALE,
+          top: (boundingBox.span[2] / 2) * UNIT_SCALE,
+          bottom: (-boundingBox.span[2] / 2) * UNIT_SCALE,
         }}
         onCreated={({ scene }) => {
           scene.fog = null;
@@ -222,7 +227,7 @@ export function FloorVisualization({ nodeIds, width }: FloorVisualizationProps) 
         <color attach="background" args={[colorTheme.background]} />
         <ambientLight intensity={2} />
         <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
-        <FloorScene nodeIds={nodeIds} />
+        <CrossSectionScene nodeIds={nodeIds} axis={crossSectionType === "X" ? "x" : "y"} />
       </Canvas>
     </div>
   );

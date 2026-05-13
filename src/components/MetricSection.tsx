@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { MiniTimeSeries } from "@/components/MiniTimeSeries";
 import { AxisMetricRow } from "@/components/AxisMetricRow";
-import { useNodeTimeSeries } from "@/hooks/useNodeTimeSeries";
+import { useNodeTimeSeries } from "@/features/3d/contexts/useNodeTimeSeries";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useProfileStore, useGlobalStore } from "@/state";

@@ -29,7 +29,7 @@
 // import { View3dWorkspace } from "@/pages/App";
 // import { useAnimationData } from "@/lib/useAnimationData";
 // import { ViewProvider, useViewStoreRaw, type ViewStore } from "@/state";
-// import type { IDockviewPanelProps } from "dockview";
+// import type { IDockviewPanelProps } from "dockview-react";
 
 // type ExportMode = "workspace" | "separate-panels";
 // type ExportStatus = "idle" | "loading" | "ready" | "recording" | "complete" | "error";

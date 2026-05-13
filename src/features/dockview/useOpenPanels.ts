@@ -1,5 +1,5 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
-import type { DockviewApi } from "dockview";
+import type { DockviewApi } from "dockview-react";
 import { useDockviewApi } from "./DockviewApiContext";
 import type { CrossSectionParams } from "../panels/CrossSectionPanel";
 

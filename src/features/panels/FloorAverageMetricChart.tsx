@@ -7,7 +7,7 @@ import { usePanelState } from "@/features/dockview/usePanelState";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { formatNumber, formatStoryLabel } from "@/lib/utils";
 
-import type { IDockviewPanelProps } from "dockview";
+import type { IDockviewPanelProps } from "dockview-react";
 import type { EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";

@@ -4,7 +4,7 @@ import { IsometricBuilding } from "@/components/IsometricBoundingBox";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { numberToColor, numberToColorLight } from "@/lib/utils";
-import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
+import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview-react";
 import { XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SectionVisualization } from "../3d/renderers/SectionVisualization";

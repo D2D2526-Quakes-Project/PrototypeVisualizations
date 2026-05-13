@@ -1,4 +1,4 @@
-import type { SerializedDockview } from "dockview";
+import type { SerializedDockview } from "dockview-react";
 import { type StateCreator } from "zustand";
 import type { AppState } from ".";
 import type { Metric, ThresholdKey } from "@/features/metrics/metrics";

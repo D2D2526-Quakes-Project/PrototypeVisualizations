@@ -13,7 +13,7 @@
 }
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "dockview/dist/styles/dockview.css";
+@import "dockview-react/dist/styles/dockview.css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -247,75 +247,70 @@ body {
   }
 }
 
-/* 1. Make the dockview group content transparent so we see the 3D scene */
-.dockview-theme-light {
-  --dv-groupview-background-color: transparent;
-  --dv-paneview-active-outline-color: transparent;
-  --dv-tabs-and-actions-container-background-color: #e5e5e5;
-  --dv-activegroup-visiblepanel-tab-background-color: #e5e5e5;
-  --dv-activegroup-hiddenpanel-tab-background-color: #e5e5e5;
-  --dv-inactivegroup-visiblepanel-tab-background-color: #e5e5e5;
-  --dv-inactivegroup-hiddenpanel-tab-background-color: #e5e5e5;
-  --dv-tab-divider-color: transparent;
-}
+@layer dv-theme {
+  .dockview-theme-light {
+    --dv-groupview-background-color: transparent;
+    --dv-paneview-active-outline-color: transparent;
+    --dv-tabs-and-actions-container-background-color: #e5e5e5;
+    --dv-activegroup-visiblepanel-tab-background-color: #e5e5e5;
+    --dv-activegroup-hiddenpanel-tab-background-color: #e5e5e5;
+    --dv-inactivegroup-visiblepanel-tab-background-color: #e5e5e5;
+    --dv-inactivegroup-hiddenpanel-tab-background-color: #e5e5e5;
+    --dv-tab-divider-color: transparent;
+    /* sizes */
+    --dv-tabs-and-actions-container-height: fit-content;
+  }
 
-.dockview-theme-light .dv-tabs-and-actions-container .dv-right-actions-container {
-  align-items: center;
-  height: 100%;
-}
+  .dockview-theme-light .dv-tabs-and-actions-container .dv-right-actions-container {
+    align-items: center;
+    height: 100%;
+  }
 
-.dockview-theme-light .dv-tab {
-  margin: 0;
-  padding: 0;
-}
+  .dockview-theme-light .dv-tab {
+    margin: 0;
+    padding: 0;
+  }
 
-.dockview-theme-light .dv-tab .dv-default-tab {
-  height: 100%;
-}
+  .dockview-theme-light .dv-tab .dv-default-tab {
+    height: 100%;
+  }
 
-/* Hide Dockview's overflow dropdown button; keep horizontal tab scrolling only. */
-.dockview-theme-light .dv-tabs-overflow-dropdown-default {
-  display: none !important;
-}
+  .dockview-theme-light .dv-tabs-overflow-dropdown-default {
+    display: none !important;
+  }
 
-/* 2. Hide the default tab header for our node panels to create the 'stack' look */
-/* Note: We target groups that contain our nodePanel component */
-.dockview-groupview:has([data-node-id]) .tabs-container {
-  display: none !important;
-}
+  .dockview-groupview:has([data-node-id]) .tabs-container {
+    display: none !important;
+  }
+  .dv-render-container {
+    background: transparent !important;
+  }
+  .dv-floating-group .tabs-container {
+    display: none !important;
+  }
 
-/* 3. Ensure the panel content can be transparent */
-.dv-render-container {
-  background: transparent !important;
-}
+  .dockview-theme-light .dv-sash {
+    background-color: transparent;
+    transition: background-color 120ms ease;
+  }
 
-/* 4. Optional: If you want to hide tabs ONLY for floating panels */
-.dv-floating-group .tabs-container {
-  display: none !important;
-}
+  .dockview-theme-light .dv-sash.dv-sash-vertical {
+    width: 8px;
+    margin-left: -4px;
+    margin-right: -4px;
+    cursor: col-resize;
+  }
 
-/* Make panel resize handles easier to grab and more visible on hover/drag. */
-.dockview-theme-light .dv-sash {
-  background-color: transparent;
-  transition: background-color 120ms ease;
-}
+  .dockview-theme-light .dv-sash.dv-sash-horizontal {
+    height: 8px;
+    margin-top: -4px;
+    margin-bottom: -4px;
+    cursor: row-resize;
+  }
 
-.dockview-theme-light .dv-sash.dv-sash-vertical {
-  width: 8px;
-  margin-left: -4px;
-  margin-right: -4px;
-  cursor: col-resize;
-}
-
-.dockview-theme-light .dv-sash.dv-sash-horizontal {
-  height: 8px;
-  margin-top: -4px;
-  margin-bottom: -4px;
-  cursor: row-resize;
-}
-
-.dockview-theme-light .dv-sash:hover,
-.dockview-theme-light .dv-sash.dv-sash-hover,
-.dockview-theme-light .dv-sash.dv-sash-active {
-  background-color: rgba(59, 130, 246, 0.35);
+  .dockview-theme-light .dv-sash:hover,
+  .dockview-theme-light .dv-sash.dv-sash-hover,
+  .dockview-theme-light .dv-sash.dv-sash-active {
+    background-color: rgba(59, 130, 246, 0.35);
+  }
 }

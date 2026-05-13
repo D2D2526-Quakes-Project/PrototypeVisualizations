@@ -1,6 +1,5 @@
-import type { DockviewApi, DockviewReadyEvent, IDockviewReactProps, SerializedDockview } from "dockview";
-import { DockviewReact, themeLight } from "dockview";
-import "dockview/dist/styles/dockview.css";
+import type { DockviewApi, DockviewReadyEvent, IDockviewReactProps, SerializedDockview } from "dockview-react";
+import { DockviewReact, themeLight } from "dockview-react";
 
 export interface DockviewWrapperProps extends Omit<IDockviewReactProps, "onReady"> {
   className?: string;

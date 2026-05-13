@@ -4,7 +4,7 @@ import { usePanelState } from "@/features/dockview/usePanelState";
 import { usePlayback } from "@/features/playback/usePlayback";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
-import type { IDockviewPanelProps } from "dockview";
+import type { IDockviewPanelProps } from "dockview-react";
 import { ArrowDown, ArrowUp, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 

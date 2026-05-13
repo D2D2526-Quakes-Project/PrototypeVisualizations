@@ -5,7 +5,7 @@ import type { DatasetLoadState } from "@/features/animation-data/data-loading/lo
 import { MainCanvasPanel } from "@/features/panels/MainCanvasPanel";
 import type { BuildingAnimationData } from "@/lib/types";
 
-import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
+import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview-react";
 import type { LucideIcon } from "lucide-react";
 import {
   ChartBarIncreasingIcon,

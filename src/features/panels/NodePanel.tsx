@@ -8,7 +8,7 @@ import { MiniTimeSeries } from "@/components/MiniTimeSeries";
 import { numberToColor, numberToColorLight, threeColorToCSS } from "@/lib/utils";
 import { useGlobalStore, useProfileStore } from "@/state";
 import { getMetricKeyColor } from "@/features/metrics/metrics";
-import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
+import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview-react";
 import { ChartNoAxesCombinedIcon, InfoIcon, TriangleIcon, XIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Vector3 } from "three";

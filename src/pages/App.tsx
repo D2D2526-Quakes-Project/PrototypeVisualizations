@@ -10,7 +10,7 @@ import { FloorPanel, FloorTab } from "@/features/panels/FloorPanel";
 import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
 import { debounce } from "@/lib/utils";
 import { useProfileStore } from "@/state";
-import { type DockviewApi, type SerializedDockview } from "dockview";
+import { type DockviewApi, type SerializedDockview } from "dockview-react";
 import { useCallback, useMemo } from "react";
 
 const components = {

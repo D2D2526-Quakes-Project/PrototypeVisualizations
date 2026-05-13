@@ -6,7 +6,7 @@ import { usePanelState } from "@/features/dockview/usePanelState";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatFixed3, formatNumber } from "@/lib/utils";
-import type { IDockviewPanelProps } from "dockview";
+import type { IDockviewPanelProps } from "dockview-react";
 import { type ECharts, type EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";

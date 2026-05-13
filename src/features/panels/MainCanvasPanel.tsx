@@ -1,6 +1,6 @@
 import { BuildingScene } from "@/features/3d/BuildingScene";
 import { CanvasWithControls } from "@/features/canvas/CanvasWithControls";
-import type { IDockviewPanelProps } from "dockview";
+import type { IDockviewPanelProps } from "dockview-react";
 import { CameraProvider } from "../3d/contexts/CanvasContext";
 import { SceneTooltip } from "../3d/SceneTooltip";
 import { CameraManager } from "../canvas/CameraManager";

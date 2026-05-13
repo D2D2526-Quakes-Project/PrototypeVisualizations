@@ -1,6 +1,6 @@
 import { usePanelState } from "@/features/dockview/usePanelState";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import type { IDockviewPanelProps } from "dockview";
+import type { IDockviewPanelProps } from "dockview-react";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo } from "react";

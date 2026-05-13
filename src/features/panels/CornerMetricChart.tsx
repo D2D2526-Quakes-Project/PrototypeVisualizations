@@ -7,7 +7,7 @@ import { formatNumber, formatStoryLabel } from "@/lib/utils";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import type { DockviewPanelApi } from "dockview";
+import type { DockviewPanelApi } from "dockview-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { getMetricConfig, isHingeMetric, type Metric } from "../metrics/metrics";

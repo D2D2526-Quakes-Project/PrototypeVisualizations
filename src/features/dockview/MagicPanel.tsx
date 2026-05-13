@@ -18,6 +18,7 @@ import type { BuildingAnimationData } from "@/lib/types";
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import type { LucideIcon } from "lucide-react";
 import {
+  ActivityIcon,
   CircleDotDashed,
   Columns,
   LineChart,
@@ -36,6 +37,8 @@ import { useAnimationData } from "../animation-data/useAnimationData";
 import { Timeline } from "../timeline/Timeline";
 import { DockviewApiProvider } from "./DockviewApiContext";
 import { CornerMetricChart } from "../panels/CornerMetricChart";
+import { DataExplorerPanel } from "../panels/DataExplorerPanel";
+import { FloorAverageMetricChart } from "../panels/FloorAverageMetricChart";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -98,22 +101,22 @@ const PANEL_DEFINITIONS = check({
   //   requiredOptionalData: [],
   //   optionalEnhancementData: ["velocityLin", "accelerationLin"],
   // },
-  // "Data Explorer": {
-  //   component: DataExplorerPanel,
-  //   category: "Tables / Data",
-  //   icon: Activity,
-  //   description: "Current values, peaks, and sortable node explorer",
-  //   requiredOptionalData: [],
-  //   optionalEnhancementData: [],
-  // },
-  // "Floor Average Metric": {
-  //   component: FloorAverageMetricChart,
-  //   category: "Core Analysis",
-  //   icon: LineChart,
-  //   description: "Average Metrics for a Floor",
-  //   requiredOptionalData: [],
-  //   optionalEnhancementData: [],
-  // },
+  "Data Explorer": {
+    component: DataExplorerPanel,
+    category: "Tables / Data",
+    icon: ActivityIcon,
+    description: "Current values, peaks, and sortable node explorer",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
+  "Floor Average Metric": {
+    component: FloorAverageMetricChart,
+    category: "Core Analysis",
+    icon: LineChart,
+    description: "Average Metrics for a Floor",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
   // "Velocity Distribution": {
   //   component: VelocityDistributionPanel,
   //   category: "Distributions",

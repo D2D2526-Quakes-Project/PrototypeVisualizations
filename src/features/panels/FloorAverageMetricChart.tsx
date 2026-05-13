@@ -1,466 +1,468 @@
-// import { Button } from "@/components/ui/button";
-// import { Checkbox } from "@/components/ui/checkbox";
-// import { Label } from "@/components/ui/label";
-// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-// import { usePlayback } from "@/features/playback/usePlayback";
-// import { useColor, useFloorVisibility, useThresholds } from "@/features/3d/contexts/visualization";
-// import { usePanelState } from "@/features/dockview/usePanelState";
-// import { formatValue, getMetricConfig, getMetricKeyColor, type Metric } from "@/lib/metrics";
-// import { useAnimationData } from "@/features/animation-data/useAnimationData";
-// import { formatStoryLabel } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { usePanelState } from "@/features/dockview/usePanelState";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { formatNumber, formatStoryLabel } from "@/lib/utils";
 
-// import type { IDockviewPanelProps } from "dockview";
-// import type { EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
-// import ReactECharts from "echarts-for-react";
-// import { ChevronDown } from "lucide-react";
-// import { useEffect, useMemo, useState } from "react";
+import type { IDockviewPanelProps } from "dockview";
+import type { EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
+import ReactECharts from "echarts-for-react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { getMetricConfig, getMetricKeyColor, type Metric } from "../metrics/metrics";
+import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
+import { useMetrics } from "../metrics/useMetrics";
+import { useThresholds } from "../metrics/useThresholds";
+import { useGlobalStore } from "@/state";
 
-// type MetricOption = {
-//   metric: Metric;
-//   label: string;
-//   shortName: string;
-//   color: string;
-// };
+type MetricOption = {
+  metric: Metric;
+  label: string;
+  shortName: string;
+  color: string;
+};
 
-// const MIN_X_AXIS_MAX = 0.01;
-// type FloorDisplacementChartPanelState = {
-//   selectedMetrics: Metric[];
-// };
+const MIN_X_AXIS_MAX = 0.01;
+type FloorDisplacementChartPanelState = {
+  selectedMetrics: Metric[];
+};
 
-// const DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE: FloorDisplacementChartPanelState = {
-//   selectedMetrics: ["displacementX", "displacementY"],
-// };
+const DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE: FloorDisplacementChartPanelState = {
+  selectedMetrics: ["displacementX", "displacementY"],
+};
 
-// function sanitizeSelectedMetrics(value: unknown, availableMetrics: Metric[]): Metric[] {
-//   if (!Array.isArray(value)) {
-//     return availableMetrics.slice(0, Math.min(2, availableMetrics.length));
-//   }
+function sanitizeSelectedMetrics(value: unknown, availableMetrics: Metric[]): Metric[] {
+  if (!Array.isArray(value)) {
+    return availableMetrics.slice(0, Math.min(2, availableMetrics.length));
+  }
 
-//   const valid = value.filter(
-//     (entry): entry is Metric => typeof entry === "string" && availableMetrics.includes(entry as Metric)
-//   );
-//   const unique = Array.from(new Set(valid));
+  const valid = value.filter(
+    (entry): entry is Metric => typeof entry === "string" && availableMetrics.includes(entry as Metric)
+  );
+  const unique = Array.from(new Set(valid));
 
-//   if (unique.length > 0) {
-//     return unique;
-//   }
+  if (unique.length > 0) {
+    return unique;
+  }
 
-//   return availableMetrics.slice(0, Math.min(2, availableMetrics.length));
-// }
+  return availableMetrics.slice(0, Math.min(2, availableMetrics.length));
+}
 
-// function MetricSelect({
-//   options,
-//   selected,
-//   onChange,
-// }: {
-//   options: MetricOption[];
-//   selected: Metric[];
-//   onChange: (metrics: Metric[]) => void;
-// }) {
-//   const [open, setOpen] = useState(false);
+function MetricSelect({
+  options,
+  selected,
+  onChange,
+}: {
+  options: MetricOption[];
+  selected: Metric[];
+  onChange: (metrics: Metric[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
 
-//   const toggleOption = (metric: Metric) => {
-//     if (selected.includes(metric)) {
-//       if (selected.length > 1) {
-//         onChange(selected.filter((entry) => entry !== metric));
-//       }
-//       return;
-//     }
+  const toggleOption = (metric: Metric) => {
+    if (selected.includes(metric)) {
+      if (selected.length > 1) {
+        onChange(selected.filter((entry) => entry !== metric));
+      }
+      return;
+    }
 
-//     onChange([...selected, metric]);
-//   };
+    onChange([...selected, metric]);
+  };
 
-//   const labelText = selected.length + " selected";
+  const labelText = selected.length + " selected";
 
-//   return (
-//     <Popover open={open} onOpenChange={setOpen}>
-//       <PopoverTrigger asChild>
-//         <Button variant="outline" size="sm" className="max-w-full min-w-20">
-//           <span className="text-foreground flex-1 truncate">{labelText || "Select Metrics"}</span>
-//           <ChevronDown
-//             className={`h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
-//           />
-//         </Button>
-//       </PopoverTrigger>
-//       <PopoverContent align="start" className="w-64 p-1">
-//         <div className="flex max-h-80 flex-col gap-0.5 overflow-auto">
-//           {options.map((option) => {
-//             const isChecked = selected.includes(option.metric);
-//             return (
-//               <Label
-//                 key={option.metric}
-//                 className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
-//                 <Checkbox
-//                   checked={isChecked}
-//                   onCheckedChange={() => toggleOption(option.metric)}
-//                   className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
-//                 />
-//                 <span className="flex-1">{option.label}</span>
-//                 <span
-//                   className="h-3 w-3 rounded-full border border-black/10"
-//                   style={{ backgroundColor: option.color }}
-//                 />
-//               </Label>
-//             );
-//           })}
-//         </div>
-//       </PopoverContent>
-//     </Popover>
-//   );
-// }
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="max-w-full min-w-20">
+          <span className="text-foreground flex-1 truncate">{labelText || "Select Metrics"}</span>
+          <ChevronDown
+            className={`h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-1">
+        <div className="flex max-h-80 flex-col gap-0.5 overflow-auto">
+          {options.map((option) => {
+            const isChecked = selected.includes(option.metric);
+            return (
+              <Label
+                key={option.metric}
+                className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
+                <Checkbox
+                  checked={isChecked}
+                  onCheckedChange={() => toggleOption(option.metric)}
+                  className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
+                />
+                <span className="flex-1">{option.label}</span>
+                <span
+                  className="h-3 w-3 rounded-full border border-black/10"
+                  style={{ backgroundColor: option.color }}
+                />
+              </Label>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
-// export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
-//   const { animationData } = useAnimationData();
-//   const { frameIndex } = usePlayback();
-//   const { visibleFloors } = useFloorVisibility();
-//   const { availableMetrics } = useColor();
-//   const { thresholds } = useThresholds();
-//   const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
+export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
+  const { animationData } = useAnimationData();
+  const { frameIndex } = usePlayback();
+  const { visibleFloors } = useFloorVisibility();
+  const { availableMetrics } = useMetrics();
+  const { thresholds } = useThresholds();
+  const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
 
-//   const { state: panelState, setState: setPanelState } = usePanelState<FloorDisplacementChartPanelState>({
-//     panelId: api?.id,
-//     fallbackPanelId: "floor-displacement",
-//     panelType: "floorDisplacementChart",
-//     defaultState: DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE,
-//   });
+  const { state: panelState, setState: setPanelState } = usePanelState<FloorDisplacementChartPanelState>({
+    panelId: api.id,
+    panelType: "Floor Average Metric",
+    defaultState: DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE,
+  });
 
-//   const metricOptions = useMemo<MetricOption[]>(() => {
-//     const metrics =
-//       availableMetrics.length > 0 ? availableMetrics : DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE.selectedMetrics;
-//     return metrics.map((metric: Metric) => {
-//       const config = getMetricConfig(metric);
-//       return {
-//         metric,
-//         label: config.label,
-//         shortName: config.shortLabel,
-//         color: getMetricKeyColor(metric, metricPaletteOverrides),
-//       };
-//     });
-//   }, [availableMetrics, metricPaletteOverrides]);
+  const metricOptions = useMemo<MetricOption[]>(() => {
+    const metrics =
+      availableMetrics.length > 0 ? availableMetrics : DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE.selectedMetrics;
+    return metrics.map((metric: Metric) => {
+      const config = getMetricConfig(metric);
+      return {
+        metric,
+        label: config.label,
+        shortName: config.shortLabel,
+        color: getMetricKeyColor(metric, metricPaletteOverrides),
+      };
+    });
+  }, [availableMetrics, metricPaletteOverrides]);
 
-//   const effectiveSelectedMetrics = useMemo(
-//     () =>
-//       sanitizeSelectedMetrics(
-//         panelState.selectedMetrics,
-//         metricOptions.map((option) => option.metric)
-//       ),
-//     [metricOptions, panelState.selectedMetrics]
-//   );
+  const effectiveSelectedMetrics = useMemo(
+    () =>
+      sanitizeSelectedMetrics(
+        panelState.selectedMetrics,
+        metricOptions.map((option) => option.metric)
+      ),
+    [metricOptions, panelState.selectedMetrics]
+  );
 
-//   useEffect(() => {
-//     const sameLength = panelState.selectedMetrics.length === effectiveSelectedMetrics.length;
-//     const sameOrder =
-//       sameLength && panelState.selectedMetrics.every((metric, index) => metric === effectiveSelectedMetrics[index]);
-//     if (sameOrder) return;
+  useEffect(() => {
+    const sameLength = panelState.selectedMetrics.length === effectiveSelectedMetrics.length;
+    const sameOrder =
+      sameLength && panelState.selectedMetrics.every((metric, index) => metric === effectiveSelectedMetrics[index]);
+    if (sameOrder) return;
 
-//     setPanelState({
-//       selectedMetrics: effectiveSelectedMetrics,
-//     });
-//   }, [effectiveSelectedMetrics, panelState.selectedMetrics, setPanelState]);
+    setPanelState({
+      selectedMetrics: effectiveSelectedMetrics,
+    });
+  }, [effectiveSelectedMetrics, panelState.selectedMetrics, setPanelState]);
 
-//   const storyIds = useMemo(() => Array.from(visibleFloors).slice(1), [visibleFloors]);
+  const storyIds = useMemo(() => Array.from(visibleFloors).slice(1), [visibleFloors]);
 
-//   const metricStoryData = useMemo(() => {
-//     const results = new Map<
-//       Metric,
-//       Array<{
-//         storyId: string;
-//         elevationIn: number;
-//         value: number;
-//       }>
-//     >();
+  const metricStoryData = useMemo(() => {
+    const results = new Map<
+      Metric,
+      Array<{
+        storyId: string;
+        elevationIn: number;
+        value: number;
+      }>
+    >();
 
-//     for (const metric of effectiveSelectedMetrics) {
-//       const metricConfig = getMetricConfig(metric);
-//       const rows = storyIds.map((storyId) => {
-//         const nodes = animationData.metadata.stories[storyId] || [];
-//         const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
+    for (const metric of effectiveSelectedMetrics) {
+      const metricConfig = getMetricConfig(metric);
+      const rows = storyIds.map((storyId) => {
+        const nodes = animationData.metadata.stories[storyId] || [];
+        const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
 
-//         if (nodes.length === 0) {
-//           return { storyId, elevationIn, value: 0 };
-//         }
+        if (nodes.length === 0) {
+          return { storyId, elevationIn, value: 0 };
+        }
 
-//         let sum = 0;
-//         let count = 0;
+        let sum = 0;
+        let count = 0;
 
-//         for (const nodeIdx of nodes) {
-//           const value = metricConfig.getValue(animationData, frameIndex, nodeIdx);
-//           if (value === undefined || Number.isNaN(value)) continue;
-//           sum += value;
-//           count += 1;
-//         }
+        for (const nodeIdx of nodes) {
+          const value = metricConfig.getValue(animationData, frameIndex, nodeIdx);
+          if (value === undefined || Number.isNaN(value)) continue;
+          sum += value;
+          count += 1;
+        }
 
-//         return {
-//           storyId,
-//           elevationIn,
-//           value: count > 0 ? sum / count : 0,
-//         };
-//       });
+        return {
+          storyId,
+          elevationIn,
+          value: count > 0 ? sum / count : 0,
+        };
+      });
 
-//       results.set(metric, rows);
-//     }
+      results.set(metric, rows);
+    }
 
-//     return results;
-//   }, [animationData, effectiveSelectedMetrics, frameIndex, storyIds]);
+    return results;
+  }, [animationData, effectiveSelectedMetrics, frameIndex, storyIds]);
 
-//   const option = useMemo((): EChartsOption => {
-//     // const legendData = effectiveSelectedMetrics.map((metric) => {
-//     //   const option = metricOptions.find((entry) => entry.metric === metric);
-//     //   const config = getMetricConfig(metric);
-//     //   return {
-//     //     name: `${config.shortLabel} (${config.unit.abbr})`,
-//     //     icon: "roundRect",
-//     //     itemStyle: { color: option?.color ?? "#6b7280" },
-//     //   };
-//     // });
+  const option = useMemo((): EChartsOption => {
+    // const legendData = effectiveSelectedMetrics.map((metric) => {
+    //   const option = metricOptions.find((entry) => entry.metric === metric);
+    //   const config = getMetricConfig(metric);
+    //   return {
+    //     name: `${config.shortLabel} (${config.unit.abbr})`,
+    //     icon: "roundRect",
+    //     itemStyle: { color: option?.color ?? "#6b7280" },
+    //   };
+    // });
 
-//     const storyRows = storyIds.map((storyId) => {
-//       const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
-//       return {
-//         storyId,
-//         elevationIn,
-//         label: formatStoryLabel(storyId, elevationIn),
-//       };
-//     });
+    const storyRows = storyIds.map((storyId) => {
+      const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
+      return {
+        storyId,
+        elevationIn,
+        label: formatStoryLabel(storyId, elevationIn),
+      };
+    });
 
-//     const unitGroups = Array.from(
-//       new Map(
-//         effectiveSelectedMetrics.map((metric) => {
-//           const config = getMetricConfig(metric);
-//           return [config.unit.abbr, { metric, config }];
-//         })
-//       ).entries()
-//     ).map(([unit, { metric, config }]) => {
-//       const max = config.getPrecomputedMax(animationData);
-//       return {
-//         unit,
-//         metric,
-//         paddedMin: -Math.max(max * 1.15, MIN_X_AXIS_MAX),
-//         paddedMax: Math.max(max * 1.15, MIN_X_AXIS_MAX),
-//       };
-//     });
+    const unitGroups = Array.from(
+      new Map(
+        effectiveSelectedMetrics.map((metric) => {
+          const config = getMetricConfig(metric);
+          return [config.unit.abbr, { metric, config }];
+        })
+      ).entries()
+    ).map(([unit, { metric, config }]) => {
+      const max = config.getPrecomputedMax(animationData);
+      return {
+        unit,
+        metric,
+        paddedMin: -Math.max(max * 1.15, MIN_X_AXIS_MAX),
+        paddedMax: Math.max(max * 1.15, MIN_X_AXIS_MAX),
+      };
+    });
 
-//     const series: SeriesOption[] = effectiveSelectedMetrics.flatMap((metric) => {
-//       const metricConfig = getMetricConfig(metric);
-//       const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
-//       const xAxisIndex = unitGroups.findIndex((g) => g.unit === metricConfig.unit.abbr);
-//       const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
+    const series: SeriesOption[] = effectiveSelectedMetrics.flatMap((metric) => {
+      const metricConfig = getMetricConfig(metric);
+      const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
+      const xAxisIndex = unitGroups.findIndex((g) => g.unit === metricConfig.unit.abbr);
+      const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
 
-//       const barSeries: SeriesOption = {
-//         name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
-//         type: "bar" as const,
-//         xAxisIndex,
-//         data: (metricStoryData.get(metric) ?? []).map((row) => row.value),
-//         barMaxWidth: 18,
-//         itemStyle: {
-//           color: metricColor,
-//           opacity: 0.85,
-//           borderRadius: [3, 3, 3, 3] as [number, number, number, number],
-//         },
-//         emphasis: {
-//           itemStyle: {
-//             opacity: 1,
-//           },
-//         },
-//         tooltip: {
-//           valueFormatter: (value) => `${formatValue(Number(value), 3)} ${metricConfig.unit.abbr}`,
-//         },
-//       };
+      const barSeries: SeriesOption = {
+        name: `${metricConfig.shortLabel} (${metricConfig.unit.abbr})`,
+        type: "bar" as const,
+        xAxisIndex,
+        data: (metricStoryData.get(metric) ?? []).map((row) => row.value),
+        barMaxWidth: 18,
+        itemStyle: {
+          color: metricColor,
+          opacity: 0.85,
+          borderRadius: [3, 3, 3, 3] as [number, number, number, number],
+        },
+        emphasis: {
+          itemStyle: {
+            opacity: 1,
+          },
+        },
+        tooltip: {
+          valueFormatter: (value) => `${formatNumber(Number(value), 3)} ${metricConfig.unit.abbr}`,
+        },
+      };
 
-//       if (thresholdValue > 0) {
-//         const markLineData = [];
-//         if (metricConfig.hasPositive) {
-//           markLineData.push({ xAxis: thresholdValue, name: `Threshold +${metricConfig.unit.abbr}` });
-//         }
-//         if (metricConfig.hasNegative) {
-//           markLineData.push({ xAxis: -thresholdValue, name: `Threshold -${metricConfig.unit.abbr}` });
-//         }
+      if (thresholdValue > 0) {
+        const markLineData = [];
+        if (metricConfig.hasPositive) {
+          markLineData.push({ xAxis: thresholdValue, name: `Threshold +${metricConfig.unit.abbr}` });
+        }
+        if (metricConfig.hasNegative) {
+          markLineData.push({ xAxis: -thresholdValue, name: `Threshold -${metricConfig.unit.abbr}` });
+        }
 
-//         return [
-//           barSeries,
-//           {
-//             name: `Threshold (${metricConfig.unit.abbr})`,
-//             type: "line" as const,
-//             xAxisIndex,
-//             data: [],
-//             symbol: "line" as const,
-//             lineStyle: { color: metricColor, width: 2, type: "solid" as const },
-//             markLine: {
-//               symbol: "none",
-//               data: markLineData,
-//               lineStyle: { color: metricColor, width: 2, type: "solid" as const },
-//               label: { show: false },
-//               silent: true,
-//             },
-//           } as SeriesOption,
-//         ];
-//       }
+        return [
+          barSeries,
+          {
+            name: `Threshold (${metricConfig.unit.abbr})`,
+            type: "line" as const,
+            xAxisIndex,
+            data: [],
+            symbol: "line" as const,
+            lineStyle: { color: metricColor, width: 2, type: "solid" as const },
+            markLine: {
+              symbol: "none",
+              data: markLineData,
+              lineStyle: { color: metricColor, width: 2, type: "solid" as const },
+              label: { show: false },
+              silent: true,
+            },
+          } as SeriesOption,
+        ];
+      }
 
-//       return [barSeries];
-//     });
+      return [barSeries];
+    });
 
-//     // const axisColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b"];
-//     // const axisSplitColors = ["#e0e7ff", "#e0f2fe", "#d1fae5", "#fef3c7"];
+    // const axisColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b"];
+    // const axisSplitColors = ["#e0e7ff", "#e0f2fe", "#d1fae5", "#fef3c7"];
 
-//     return {
-//       title: {
-//         text: "Floor Response by Story",
-//         subtext: `Average value across floor at the current frame.\n${effectiveSelectedMetrics.map((metric) => getMetricConfig(metric).label).join(", ")}`,
-//         left: 0,
-//         top: 0,
-//         itemGap: 3,
-//         textStyle: { fontSize: 13, fontWeight: 600, color: "#111827" },
-//         subtextStyle: { fontSize: 10, color: "#6b7280" },
-//       },
-//       legend: {
-//         data: (series as Array<{ name?: string; markLine?: unknown }>)
-//           .filter((s): s is { name: string } => !!s.name && !s.name.startsWith("Threshold"))
-//           .map((s) => s.name)
-//           .concat(
-//             (series as Array<{ name?: string; markLine?: unknown }>)
-//               .filter((s): s is { name: string } => !!s.name?.startsWith("Threshold") && !!s.markLine)
-//               .map((s) => s.name)
-//           ) as string[],
-//         top: 52,
-//         right: 0,
-//         orient: "vertical",
-//         itemGap: 8,
-//         selectedMode: false,
-//         textStyle: {
-//           fontSize: 11,
-//           color: "#374151",
-//         },
-//       },
-//       tooltip: {
-//         trigger: "axis",
-//         axisPointer: { type: "shadow" },
-//         backgroundColor: "rgba(255, 255, 255, 0.98)",
-//         borderColor: "#d1d5db",
-//         borderWidth: 1,
-//         padding: 10,
-//         textStyle: { color: "#374151", fontSize: 11 },
-//         formatter: (params) => {
-//           if (!params || !Array.isArray(params) || params.length === 0) return "";
-//           const first = params[0];
-//           const row = storyRows[first.dataIndex];
-//           if (!row) return "";
+    return {
+      title: {
+        text: "Floor Response by Story",
+        subtext: `Average value across floor at the current frame.\n${effectiveSelectedMetrics.map((metric) => getMetricConfig(metric).label).join(", ")}`,
+        left: 0,
+        top: 0,
+        itemGap: 3,
+        textStyle: { fontSize: 13, fontWeight: 600, color: "#111827" },
+        subtextStyle: { fontSize: 10, color: "#6b7280" },
+      },
+      legend: {
+        data: (series as Array<{ name?: string; markLine?: unknown }>)
+          .filter((s): s is { name: string } => !!s.name && !s.name.startsWith("Threshold"))
+          .map((s) => s.name)
+          .concat(
+            (series as Array<{ name?: string; markLine?: unknown }>)
+              .filter((s): s is { name: string } => !!s.name?.startsWith("Threshold") && !!s.markLine)
+              .map((s) => s.name)
+          ) as string[],
+        top: 52,
+        right: 0,
+        orient: "vertical",
+        itemGap: 8,
+        selectedMode: false,
+        textStyle: {
+          fontSize: 11,
+          color: "#374151",
+        },
+      },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        backgroundColor: "rgba(255, 255, 255, 0.98)",
+        borderColor: "#d1d5db",
+        borderWidth: 1,
+        padding: 10,
+        textStyle: { color: "#374151", fontSize: 11 },
+        formatter: (params) => {
+          if (!params || !Array.isArray(params) || params.length === 0) return "";
+          const first = params[0];
+          const row = storyRows[first.dataIndex];
+          if (!row) return "";
 
-//           const lines = [`<div style="font-weight:600;margin-bottom:6px">${row.label}</div>`];
+          const lines = [`<div style="font-weight:600;margin-bottom:6px">${row.label}</div>`];
 
-//           for (const param of params) {
-//             if (typeof param.seriesIndex !== "number") continue;
-//             const metric = effectiveSelectedMetrics[param.seriesIndex];
-//             if (!metric) continue;
-//             const metricConfig = getMetricConfig(metric);
-//             const metricRows = metricStoryData.get(metric) ?? [];
-//             const metricRow = metricRows[param.dataIndex];
-//             if (!metricRow) continue;
+          for (const param of params) {
+            if (typeof param.seriesIndex !== "number") continue;
+            const metric = effectiveSelectedMetrics[param.seriesIndex];
+            if (!metric) continue;
+            const metricConfig = getMetricConfig(metric);
+            const metricRows = metricStoryData.get(metric) ?? [];
+            const metricRow = metricRows[param.dataIndex];
+            if (!metricRow) continue;
 
-//             lines.push(
-//               `<div style="display:flex;align-items:center;gap:8px;margin-top:2px">` +
-//                 `<span style="width:8px;height:8px;border-radius:9999px;background:${param.color}"></span>` +
-//                 `<span style="color:#6b7280">${metricConfig.label}:</span>` +
-//                 `<span style="margin-left:auto;font-weight:600">${formatValue(metricRow.value, 3)} ${metricConfig.unit.abbr}</span>` +
-//                 `</div>`
-//             );
-//           }
+            lines.push(
+              `<div style="display:flex;align-items:center;gap:8px;margin-top:2px">` +
+                `<span style="width:8px;height:8px;border-radius:9999px;background:${param.color}"></span>` +
+                `<span style="color:#6b7280">${metricConfig.label}:</span>` +
+                `<span style="margin-left:auto;font-weight:600">${formatNumber(metricRow.value, 3)} ${metricConfig.unit.abbr}</span>` +
+                `</div>`
+            );
+          }
 
-//           return lines.join("");
-//         },
-//       },
-//       grid: {
-//         left: 0,
-//         right: 0,
-//         top: 62,
-//         bottom: unitGroups.length * 30,
-//         containLabel: false,
-//       },
+          return lines.join("");
+        },
+      },
+      grid: {
+        left: 0,
+        right: 0,
+        top: 62,
+        bottom: unitGroups.length * 30,
+        containLabel: false,
+      },
 
-//       xAxis: unitGroups.map(
-//         (group, idx) =>
-//           ({
-//             type: "value",
-//             xAxisId: String(idx),
-//             offset: idx * 30,
-//             name: group.unit,
-//             nameLocation: "middle",
-//             nameGap: 18,
-//             nameTextStyle: {
-//               fontSize: 10,
-//               color: getMetricKeyColor(group.metric, metricPaletteOverrides),
-//               fontWeight: 500,
-//             },
-//             min: group.paddedMin,
-//             max: group.paddedMax,
-//             position: "bottom",
-//             axisLine: {
-//               lineStyle: { color: getMetricKeyColor(group.metric, metricPaletteOverrides) },
-//             },
-//             axisLabel: {
-//               color: getMetricKeyColor(group.metric, metricPaletteOverrides),
-//               fontSize: 10,
-//               formatter: (value: number) => formatValue(value, 2),
-//             },
-//             splitLine: {
-//               lineStyle: {
-//                 color: getMetricKeyColor(group.metric, metricPaletteOverrides) + "40",
-//                 type: "dashed" as const,
-//               },
-//             },
-//           }) as XAXisComponentOption
-//       ),
-//       yAxis: {
-//         type: "category",
-//         name: "Story",
-//         nameLocation: "end",
-//         nameGap: 4,
-//         nameTextStyle: {
-//           fontSize: 10,
-//           color: "#4b5563",
-//           fontWeight: 500,
-//         },
-//         data: storyRows.map((row) => row.label),
-//         axisLine: {
-//           lineStyle: { color: "#d1d5db" },
-//         },
-//         axisLabel: {
-//           color: "#374151",
-//           fontSize: 10,
-//           fontWeight: 500,
-//         },
-//         axisTick: { show: false },
-//       },
-//       series,
-//       animation: false,
-//     };
-//   }, [
-//     animationData,
-//     effectiveSelectedMetrics,
-//     metricOptions,
-//     metricStoryData,
-//     metricPaletteOverrides,
-//     storyIds,
-//     thresholds,
-//   ]);
+      xAxis: unitGroups.map(
+        (group, idx) =>
+          ({
+            type: "value",
+            xAxisId: String(idx),
+            offset: idx * 30,
+            name: group.unit,
+            nameLocation: "middle",
+            nameGap: 18,
+            nameTextStyle: {
+              fontSize: 10,
+              color: getMetricKeyColor(group.metric, metricPaletteOverrides),
+              fontWeight: 500,
+            },
+            min: group.paddedMin,
+            max: group.paddedMax,
+            position: "bottom",
+            axisLine: {
+              lineStyle: { color: getMetricKeyColor(group.metric, metricPaletteOverrides) },
+            },
+            axisLabel: {
+              color: getMetricKeyColor(group.metric, metricPaletteOverrides),
+              fontSize: 10,
+              formatter: (value: number) => formatNumber(value, 2),
+            },
+            splitLine: {
+              lineStyle: {
+                color: getMetricKeyColor(group.metric, metricPaletteOverrides) + "40",
+                type: "dashed" as const,
+              },
+            },
+          }) as XAXisComponentOption
+      ),
+      yAxis: {
+        type: "category",
+        name: "Story",
+        nameLocation: "end",
+        nameGap: 4,
+        nameTextStyle: {
+          fontSize: 10,
+          color: "#4b5563",
+          fontWeight: 500,
+        },
+        data: storyRows.map((row) => row.label),
+        axisLine: {
+          lineStyle: { color: "#d1d5db" },
+        },
+        axisLabel: {
+          color: "#374151",
+          fontSize: 10,
+          fontWeight: 500,
+        },
+        axisTick: { show: false },
+      },
+      series,
+      animation: false,
+    };
+  }, [
+    animationData,
+    effectiveSelectedMetrics,
+    metricOptions,
+    metricStoryData,
+    metricPaletteOverrides,
+    storyIds,
+    thresholds,
+  ]);
 
-//   return (
-//     <div className="relative flex h-full w-full flex-col bg-white">
-//       <div className="absolute right-0 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-[10px] text-neutral-500">
-//         <MetricSelect
-//           options={metricOptions}
-//           selected={effectiveSelectedMetrics}
-//           onChange={(selectedMetrics) => setPanelState({ selectedMetrics })}
-//         />
-//       </div>
+  return (
+    <div className="relative flex h-full w-full flex-col bg-white">
+      <div className="absolute right-0 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-[10px] text-neutral-500">
+        <MetricSelect
+          options={metricOptions}
+          selected={effectiveSelectedMetrics}
+          onChange={(selectedMetrics) => setPanelState({ selectedMetrics })}
+        />
+      </div>
 
-//       <div className="min-h-0 w-full flex-1">
-//         <ReactECharts
-//           option={option}
-//           replaceMerge={["series", "legend", "xAxis"]}
-//           style={{ height: "100%", width: "100%" }}
-//           opts={{ renderer: "svg" }}
-//         />
-//       </div>
-//     </div>
-//   );
-// }
+      <div className="min-h-0 w-full flex-1">
+        <ReactECharts
+          option={option}
+          replaceMerge={["series", "legend", "xAxis"]}
+          style={{ height: "100%", width: "100%" }}
+          opts={{ renderer: "svg" }}
+        />
+      </div>
+    </div>
+  );
+}

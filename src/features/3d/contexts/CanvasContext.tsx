@@ -84,7 +84,7 @@ export function useCanvasState(dummy: boolean = false) {
 export function CameraProvider({ children, panelId }: { children: ReactNode; panelId: string }) {
   const panelState = usePanelState({
     panelId,
-    panelType: "canvas",
+    panelType: "Main Canvas",
     defaultState: DEFAULT_CANVAS_PANEL_STATE,
   });
   const { animationData } = useAnimationData();

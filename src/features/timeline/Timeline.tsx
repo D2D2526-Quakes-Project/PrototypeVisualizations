@@ -299,7 +299,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
   const { selectedKeys, setSelectedKeys } = usePanelState({
     panelId: api.id,
-    panelType: "timeline",
+    panelType: "Timeline",
     defaultState: DEFAULT_TIMELINE_PANEL_STATE,
   });
   const { isCurrentMetricStatic } = useMetrics();

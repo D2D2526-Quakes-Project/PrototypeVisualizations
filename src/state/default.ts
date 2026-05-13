@@ -22,7 +22,7 @@ export function getDefaultProfileData(
     openedNodePanelIds: [],
     dockviewLayout: null,
     panelStates: {},
-    nodePanelGraphVisibility: { dispX: true, dispY: true, drift: true },
+    nodePanelGraphVisibility: { dispx: true, dispy: true, drift: true },
 
     nodeScale: 1,
     nodeOpacity: 1,

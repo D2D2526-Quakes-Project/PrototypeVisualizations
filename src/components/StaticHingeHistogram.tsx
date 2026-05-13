@@ -4,7 +4,6 @@ import ReactECharts from "echarts-for-react";
 import { useMemo } from "react";
 
 interface StaticHingeHistogramProps {
-  title: string;
   maxHistogram: HingeHistogramResult | null;
   minHistogram: HingeHistogramResult | null;
   height?: number;
@@ -14,7 +13,7 @@ function getCenter(bin: { x0: number; x1: number }) {
   return (bin.x0 + bin.x1) / 2;
 }
 
-export function StaticHingeHistogram({ title, maxHistogram, minHistogram, height = 180 }: StaticHingeHistogramProps) {
+export function StaticHingeHistogram({ maxHistogram, minHistogram, height = 180 }: StaticHingeHistogramProps) {
   const option = useMemo((): EChartsOption => {
     const xValues = Array.from(
       new Set(
@@ -34,19 +33,13 @@ export function StaticHingeHistogram({ title, maxHistogram, minHistogram, height
 
     return {
       animation: false,
-      title: {
-        text: title,
-        left: 8,
-        top: 6,
-        textStyle: { fontSize: 11, color: "#374151" },
-      },
       legend: {
-        top: 6,
-        right: 12,
+        top: 0,
+        right: 0,
         textStyle: { fontSize: 10, color: "#525252" },
         data: ["Max Rotation", "Min Rotation"],
       },
-      grid: { left: 50, right: 16, top: 34, bottom: 42 },
+      grid: { left: 0, right: 0, top: 16, bottom: 0 },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
@@ -73,8 +66,6 @@ export function StaticHingeHistogram({ title, maxHistogram, minHistogram, height
       },
       yAxis: {
         type: "value",
-        name: "Hinge Node Count",
-        nameTextStyle: { color: "#737373", fontSize: 11 },
         axisLabel: { color: "#525252", fontSize: 10 },
         splitLine: { lineStyle: { color: "#f0f0f0" } },
         min: 0,
@@ -96,7 +87,7 @@ export function StaticHingeHistogram({ title, maxHistogram, minHistogram, height
         },
       ],
     };
-  }, [maxHistogram, minHistogram, title]);
+  }, [maxHistogram, minHistogram]);
 
   return <ReactECharts option={option} style={{ height, width: "100%" }} opts={{ renderer: "svg" }} />;
 }

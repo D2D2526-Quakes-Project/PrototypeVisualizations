@@ -1,5 +1,5 @@
+import type { BinaryBuilding, BinarySimulation } from "@/lib/types";
 import type { OptionalDataLoadOptions } from "./loadingTypes";
-import type { BinaryBuilding, BinarySimulation } from "../types";
 
 export const DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS: OptionalDataLoadOptions = {
   beamData: false,

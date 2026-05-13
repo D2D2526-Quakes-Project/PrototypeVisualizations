@@ -233,3 +233,9 @@ export function performBoxSelection(
 
   return selectedNodes;
 }
+
+export function threeColorToCSS(color: THREE.Color): string {
+  // color is r, g, b in [0, 1]
+  const rgb = color.toArray();
+  return `rgb(${Math.round(rgb[0] * 255)}, ${Math.round(rgb[1] * 255)}, ${Math.round(rgb[2] * 255)})`;
+}

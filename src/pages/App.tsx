@@ -7,21 +7,21 @@ import {
 } from "@/features/dockview/MagicPanel";
 // import { CrossSectionPanel, CrossSectionTab } from "@/features/panels/CrossSectionPanel";
 // import { FloorPanel, FloorTab } from "@/features/panels/FloorPanel";
-// import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
+import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
 import { debounce } from "@/lib/utils";
 import { useProfileStore } from "@/state";
 import { type DockviewApi, type SerializedDockview } from "dockview";
 import { useCallback, useMemo } from "react";
 
 const components = {
-  // nodePanel: NodePanel,
+  nodePanel: NodePanel,
   magicPanel: MagicPanel,
   // floorPanel: FloorPanel,
   // crossSectionPanel: CrossSectionPanel,
 };
 
 const tabComponents = {
-  // nodeTab: NodeTab,
+  nodeTab: NodeTab,
   // floorTab: FloorTab,
   magicPanelTab: MagicPanelTab,
   // crossSectionTab: CrossSectionTab,

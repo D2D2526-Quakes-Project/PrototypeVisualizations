@@ -104,6 +104,7 @@ export function useOpenPanels(): OpenPanels & {
         tabComponent: "nodeTab",
         title: `Node ${nodeId}`,
         params: { nodeId },
+        maximumWidth: 300,
         position: { direction: "right" },
       });
     },
@@ -136,6 +137,7 @@ export function useOpenPanels(): OpenPanels & {
         tabComponent: "floorTab",
         title: `Floor ${storyId}`,
         params: { storyId },
+        maximumWidth: 300,
         position: { direction: "right" },
       });
     },
@@ -168,6 +170,7 @@ export function useOpenPanels(): OpenPanels & {
         tabComponent: "crossSectionTab",
         title: `Cross-Section ${params.crossSectionType}-${params.position}`,
         params,
+        maximumWidth: 300,
         position: { direction: "right" },
       });
     },

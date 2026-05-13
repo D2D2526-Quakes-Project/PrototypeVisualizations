@@ -1,37 +1,24 @@
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { usePlayback } from "@/features/playback/usePlayback";
-import { interpolateColor } from "@/features/metrics/colors";
-import { getMetricColorScale, getMetricConfig, getMetricKeyColor, isHingeMetric } from "@/lib/metrics";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { usePlayback } from "@/features/playback/usePlayback";
 
-import { interpolate } from "culori";
+import { MiniRibbon } from "@/components/MiniRibbon";
+import { MiniTimeSeries } from "@/components/MiniTimeSeries";
+import { numberToColor, numberToColorLight, threeColorToCSS } from "@/lib/utils";
+import { useGlobalStore, useProfileStore } from "@/state";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
 import { ChartNoAxesCombinedIcon, InfoIcon, TriangleIcon, XIcon } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Vector3 } from "three";
-import { MiniRibbon } from "./MiniRibbon";
-import { MiniTimeSeries } from "./MiniTimeSeries";
-
-// Generate a unique vibrant color based on node ID
-export function getNodeColor(nodeId: number): string {
-  // Use golden ratio for good distribution
-  const hue = (nodeId * 137.508) % 360;
-  return `hsl(${hue}, 70%, 45%)`;
-}
-
-// Generate a lighter version for backgrounds
-export function getNodeColorLight(nodeId: number): string {
-  const hue = (nodeId * 137.508) % 360;
-  return `hsl(${hue}, 70%, 90%)`;
-}
+import { getMetricKeyColor } from "../metrics/metrics";
+import { useMetrics } from "../metrics/useMetrics";
 
 export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: number }>) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const store = useViewStoreRaw();
-  const nodePanelGraphVisibility = useViewStore((s) => s.nodePanelGraphVisibility);
-  const toggleNodePanelGraph = useViewStore((s) => s.toggleNodePanelGraph);
-  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
+  const nodePanelGraphVisibility = useProfileStore((s) => s.nodePanelGraphVisibility);
+  const toggleNodePanelGraph = useProfileStore((s) => s.toggleNodePanelGraph);
+  const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
   const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
   const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
   const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
@@ -45,13 +32,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
   const rotationYColor = getMetricKeyColor("rotationY", metricPaletteOverrides);
   const rotationZColor = getMetricKeyColor("rotationZ", metricPaletteOverrides);
   const storyDriftColor = getMetricKeyColor("interstoryDrift", metricPaletteOverrides);
-
-  useEffect(() => {
-    store.getState().addOpenedNodePanel(nodeId);
-    return () => {
-      store.getState().removeOpenedNodePanel(nodeId);
-    };
-  }, [nodeId, store]);
+  const { getNodeColorForMetric } = useMetrics();
 
   const initialPosRaw = animationData.initialPositions.at(nodeId);
   const currentDispRaw = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
@@ -541,19 +522,11 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     };
   }, [animationData.displacementRot, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
 
-  const currentMetric = useViewStore((s) => s.currentMetric);
   const hingeEntries = useMemo(() => {
     const nodeToHingeIndexMap = animationData.precomputed.nodeToHingeIndexMap;
     const hingeData = animationData.hingeData;
-    if (!nodeToHingeIndexMap || !hingeData || !isHingeMetric(currentMetric)) {
-      return null;
-    }
+    if (!nodeToHingeIndexMap || !hingeData) return null;
 
-    const metricConfig = getMetricConfig(currentMetric);
-    const metricColorScale = getMetricColorScale(currentMetric, metricPaletteOverrides);
-    const maxValue = metricConfig.getPrecomputedMax(animationData);
-
-    const interpolator = interpolate(metricColorScale.positiveColorStops, "oklab");
     const entries: Array<{
       hingeIdx: number;
       endCap: number;
@@ -564,18 +537,17 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     }> = [];
 
     const hingesForNode = nodeToHingeIndexMap[nodeId];
-    if (!hingesForNode || hingesForNode.length === 0) {
-      return null;
-    }
+    if (!hingesForNode || hingesForNode.length === 0) return null;
 
     for (const { hingeIdx, endCap } of hingesForNode) {
       const hingeRow = hingeData.getRow(hingeIdx);
       const maxVal = endCap === 1 ? hingeRow.iR3Max : hingeRow.jR3Max;
       const minVal = endCap === 1 ? hingeRow.iR3Min : hingeRow.jR3Min;
 
-      const colorValue = maxValue > 0 ? Math.min(1, Math.max(0, Math.abs(maxVal) / maxValue)) : 0;
-      const rgb = interpolateColor(interpolator, colorValue);
-      const color = `rgb(${Math.round(rgb[0] * 255)}, ${Math.round(rgb[1] * 255)}, ${Math.round(rgb[2] * 255)})`;
+      const { color } = getNodeColorForMetric("hingeRotationAbs", hingeIdx, endCap);
+      const colorValue = threeColorToCSS(color);
+
+      console.log(colorValue);
 
       entries.push({
         hingeIdx,
@@ -583,12 +555,12 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         beamIdx: hingeRow.beamIndex,
         maxValue: maxVal,
         minValue: minVal,
-        color,
+        color: colorValue,
       });
     }
 
     return entries.length > 0 ? entries : null;
-  }, [currentMetric, nodeId, metricPaletteOverrides, animationData]);
+  }, [nodeId, animationData, getNodeColorForMetric]);
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -607,13 +579,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <div>
               <span className="font-medium text-neutral-700">Elevation:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.elevation} unit="in" decimals={0} />
+                <UnitTooltip value={storyInfo.elevation} unit="inches" decimals={0} />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Story Height:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.height} unit="in" decimals={0} />
+                <UnitTooltip value={storyInfo.height} unit="inches" decimals={0} />
               </div>
             </div>
             <div>
@@ -631,7 +603,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="font-medium text-neutral-700">
                 X:{" "}
                 <span className="font-mono text-neutral-600">
-                  <UnitTooltip value={currentPos[0]} unit="in" />
+                  <UnitTooltip value={currentPos[0]} unit="inches" />
                 </span>
               </span>
             </div>
@@ -639,7 +611,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="font-medium text-neutral-700">
                 Y:{" "}
                 <span className="font-mono text-neutral-600">
-                  <UnitTooltip value={currentPos[1]} unit="in" />
+                  <UnitTooltip value={currentPos[1]} unit="inches" />
                 </span>
               </span>
             </div>
@@ -647,7 +619,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <span className="font-medium text-neutral-700">
                 Z:{" "}
                 <span className="font-mono text-neutral-600">
-                  <UnitTooltip value={currentPos[2]} unit="in" />
+                  <UnitTooltip value={currentPos[2]} unit="inches" />
                 </span>
               </span>
             </div>
@@ -675,12 +647,12 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   </div>
                   <div className="text-right">
                     <div className="font-mono text-neutral-900">
-                      <UnitTooltip value={entry.maxValue} unit="rad" decimals={4} showConversions={false} />
+                      <UnitTooltip value={entry.maxValue} unit="radians" decimals={4} showConversions={false} />
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-mono text-neutral-900">
-                      <UnitTooltip value={entry.minValue} unit="rad" decimals={4} showConversions={false} />
+                      <UnitTooltip value={entry.minValue} unit="radians" decimals={4} showConversions={false} />
                     </div>
                   </div>
                 </div>
@@ -696,13 +668,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <div>
               <span className="font-medium text-neutral-700">Current Total:</span>
               <div className="font-mono text-neutral-600">
-                <UnitTooltip  value={displacementMag} unit="in" />
+                <UnitTooltip  value={displacementMag} unit="inches" />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Peak Total:</span>
               <div className="font-mono text-neutral-600">
-                <UnitTooltip  value={peakDisplacement.magnitude} unit="in" />
+                <UnitTooltip  value={peakDisplacement.magnitude} unit="inches" />
                 <span className="text-[9px]  text-neutral-500"> @ {peakDisplacement.time.toFixed(2)} s</span>
               </div>
             </div>
@@ -711,7 +683,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <div className="grid grid-cols-2 gap-1">
               <span className="text-neutral-600">Current X:</span>
               <span className="flex items-end justify-between font-mono text-neutral-800">
-                <UnitTooltip value={currentDispRaw[0]} unit="in" />
+                <UnitTooltip value={currentDispRaw[0]} unit="inches" />
                 <button
                   onClick={() => toggleNodePanelGraph("dispX")}
                   className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -725,14 +697,14 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <div className="grid grid-cols-2 gap-1">
               <span className="text-neutral-600">Peak X:</span>
               <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                <UnitTooltip value={peakDisplacement.x} unit="in" />
+                <UnitTooltip value={peakDisplacement.x} unit="inches" />
                 <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.xTime.toFixed(2)} s</span>
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1">
               <span className="text-neutral-600">Current Y:</span>
               <span className="flex items-end justify-between font-mono text-neutral-800">
-                <UnitTooltip value={currentDispRaw[1]} unit="in" />
+                <UnitTooltip value={currentDispRaw[1]} unit="inches" />
                 <button
                   onClick={() => toggleNodePanelGraph("dispY")}
                   className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -746,14 +718,14 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <div className="grid grid-cols-2 gap-1">
               <span className="text-neutral-600">Peak Y:</span>
               <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                <UnitTooltip value={peakDisplacement.y} unit="in" />
+                <UnitTooltip value={peakDisplacement.y} unit="inches" />
                 <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.yTime.toFixed(2)} s</span>
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1">
               <span className="text-neutral-600">Current Z:</span>
               <span className="flex items-end justify-between font-mono text-neutral-800">
-                <UnitTooltip value={currentDispRaw[2]} unit="in" />
+                <UnitTooltip value={currentDispRaw[2]} unit="inches" />
                 <button
                   onClick={() => toggleNodePanelGraph("dispZ")}
                   className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -767,7 +739,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <div className="grid grid-cols-2 gap-1">
               <span className="text-neutral-600">Peak Z:</span>
               <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                <UnitTooltip value={peakDisplacement.z} unit="in" />
+                <UnitTooltip value={peakDisplacement.z} unit="inches" />
                 <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.zTime.toFixed(2)} s</span>
               </span>
             </div>
@@ -778,7 +750,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   times={displacementTimeSeries.times}
                   color={displacementXColor}
                   currentValue={currentDispRaw[0]}
-                  unit="in"
+                  unit="inches"
                   label="Displacement X"
                   peakTime={displacementTimeSeries.peakTimes.x}
                 />
@@ -789,7 +761,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   times={displacementTimeSeries.times}
                   color={displacementYColor}
                   currentValue={currentDispRaw[1]}
-                  unit="in"
+                  unit="inches"
                   label="Displacement Y"
                   peakTime={displacementTimeSeries.peakTimes.y}
                 />
@@ -800,7 +772,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   times={displacementTimeSeries.times}
                   color={displacementZColor}
                   currentValue={currentDispRaw[2]}
-                  unit="in"
+                  unit="inches"
                   label="Displacement Z"
                   peakTime={displacementTimeSeries.peakTimes.z}
                 />
@@ -818,13 +790,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div>
                 <span className="font-medium text-neutral-700">Current Total:</span>
                 <div className="font-mono text-neutral-600">
-                  <UnitTooltip  value={currentRotation.magnitude} unit="rad" />
+                  <UnitTooltip  value={currentRotation.magnitude} unit="radians" />
                 </div>
               </div>
               <div>
                 <span className="font-medium text-neutral-700">Peak Total:</span>
                 <div className="font-mono text-neutral-600">
-                  <UnitTooltip  value={peakRotation.magnitude} unit="rad" />
+                  <UnitTooltip  value={peakRotation.magnitude} unit="radians" />
                 </div>
                 <div className="text-[9px]  text-neutral-500"> @ {peakRotation.time.toFixed(2)} s</div>
               </div>
@@ -834,7 +806,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentRotation.rx} unit="rad" />
+                  <UnitTooltip value={currentRotation.rx} unit="radians" />
                   <button
                     onClick={() => toggleNodePanelGraph("rotX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -848,14 +820,14 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakRotation.rx} unit="rad" />
+                  <UnitTooltip value={peakRotation.rx} unit="radians" />
                   <span className="text-[9px] text-neutral-500"> @ {peakRotation.rxTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentRotation.ry} unit="rad" />
+                  <UnitTooltip value={currentRotation.ry} unit="radians" />
                   <button
                     onClick={() => toggleNodePanelGraph("rotY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -869,14 +841,14 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakRotation.ry} unit="rad" />
+                  <UnitTooltip value={peakRotation.ry} unit="radians" />
                   <span className="text-[9px] text-neutral-500"> @ {peakRotation.ryTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentRotation.rz} unit="rad" />
+                  <UnitTooltip value={currentRotation.rz} unit="radians" />
                   <button
                     onClick={() => toggleNodePanelGraph("rotZ")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -890,7 +862,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakRotation.rz} unit="rad" />
+                  <UnitTooltip value={peakRotation.rz} unit="radians" />
                   <span className="text-[9px] text-neutral-500"> @ {peakRotation.rzTime.toFixed(2)} s</span>
                 </span>
               </div>
@@ -902,7 +874,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                       times={rotationTimeSeries.times}
                       color={rotationXColor}
                       currentValue={currentRotation.rx}
-                      unit="rad"
+                      unit="radians"
                       label="Rotation X"
                       peakTime={rotationTimeSeries.peakTimes.x}
                     />
@@ -913,7 +885,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                       times={rotationTimeSeries.times}
                       color={rotationYColor}
                       currentValue={currentRotation.ry}
-                      unit="rad"
+                      unit="radians"
                       label="Rotation Y"
                       peakTime={rotationTimeSeries.peakTimes.y}
                     />
@@ -924,7 +896,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                       times={rotationTimeSeries.times}
                       color={rotationZColor}
                       currentValue={currentRotation.rz}
-                      unit="rad"
+                      unit="radians"
                       label="Rotation Z"
                       peakTime={rotationTimeSeries.peakTimes.z}
                     />
@@ -944,7 +916,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentVelocity!.x} unit="in/s" />
+                  <UnitTooltip value={currentVelocity!.x} unit="inches/second" />
                   <button
                     onClick={() => toggleNodePanelGraph("velX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -958,7 +930,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakVelocity?.x ?? 0} unit="in/s" />
+                  <UnitTooltip value={peakVelocity?.x ?? 0} unit="inches/second" />
                   <span className="text-[9px] text-neutral-500">
                     @ {peakVelocity ? peakVelocity.xTime.toFixed(2) : "0.00"} s
                   </span>
@@ -967,7 +939,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentVelocity!.y} unit="in/s" />
+                  <UnitTooltip value={currentVelocity!.y} unit="inches/second" />
                   <button
                     onClick={() => toggleNodePanelGraph("velY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -981,7 +953,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakVelocity?.y ?? 0} unit="in/s" />
+                  <UnitTooltip value={peakVelocity?.y ?? 0} unit="inches/second" />
                   <span className="text-[9px] text-neutral-500">
                     @ {peakVelocity ? peakVelocity.yTime.toFixed(2) : "0.00"} s
                   </span>
@@ -990,7 +962,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentVelocity!.z} unit="in/s" />
+                  <UnitTooltip value={currentVelocity!.z} unit="inches/second" />
                   <button
                     onClick={() => toggleNodePanelGraph("velZ")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -1004,7 +976,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakVelocity?.z ?? 0} unit="in/s" />
+                  <UnitTooltip value={peakVelocity?.z ?? 0} unit="inches/second" />
                   <span className="text-[9px] text-neutral-500">
                     @ {peakVelocity ? peakVelocity.zTime.toFixed(2) : "0.00"} s
                   </span>
@@ -1019,7 +991,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     times={velocityTimeSeries.times}
                     color={velocityXColor}
                     currentValue={currentVelocity?.x ?? 0}
-                    unit="in/s"
+                    unit="inches/second"
                     label="Velocity X"
                     peakTime={velocityTimeSeries.peakTimes.x}
                   />
@@ -1030,7 +1002,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     times={velocityTimeSeries.times}
                     color={velocityYColor}
                     currentValue={currentVelocity?.y ?? 0}
-                    unit="in/s"
+                    unit="inches/second"
                     label="Velocity Y"
                     peakTime={velocityTimeSeries.peakTimes.y}
                   />
@@ -1041,7 +1013,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     times={velocityTimeSeries.times}
                     color={velocityZColor}
                     currentValue={currentVelocity?.z ?? 0}
-                    unit="in/s"
+                    unit="inches/second"
                     label="Velocity Z"
                     peakTime={velocityTimeSeries.peakTimes.z}
                   />
@@ -1060,7 +1032,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentAcceleration!.x} unit="in/s²" />
+                  <UnitTooltip value={currentAcceleration!.x} unit="inches/second²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -1074,7 +1046,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakAcceleration?.x ?? 0} unit="in/s²" />
+                  <UnitTooltip value={peakAcceleration?.x ?? 0} unit="inches/second²" />
                   <span className="text-[9px] text-neutral-500">
                     @ {peakAcceleration ? peakAcceleration.xTime.toFixed(2) : "0.00"} s
                   </span>
@@ -1083,7 +1055,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentAcceleration!.y} unit="in/s²" />
+                  <UnitTooltip value={currentAcceleration!.y} unit="inches/second²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -1097,7 +1069,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakAcceleration?.y ?? 0} unit="in/s²" />
+                  <UnitTooltip value={peakAcceleration?.y ?? 0} unit="inches/second²" />
                   <span className="text-[9px] text-neutral-500">
                     @ {peakAcceleration ? peakAcceleration.yTime.toFixed(2) : "0.00"} s
                   </span>
@@ -1106,7 +1078,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentAcceleration!.z} unit="in/s²" />
+                  <UnitTooltip value={currentAcceleration!.z} unit="inches/second²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accZ")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -1120,7 +1092,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakAcceleration?.z ?? 0} unit="in/s²" />
+                  <UnitTooltip value={peakAcceleration?.z ?? 0} unit="inches/second²" />
                   <span className="text-[9px] text-neutral-500">
                     @ {peakAcceleration ? peakAcceleration.zTime.toFixed(2) : "0.00"} s
                   </span>
@@ -1135,7 +1107,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     times={accelerationTimeSeries.times}
                     color={accelerationXColor}
                     currentValue={currentAcceleration?.x ?? 0}
-                    unit="in/s²"
+                    unit="inches/second²"
                     label="Acceleration X"
                     peakTime={accelerationTimeSeries.peakTimes.x}
                   />
@@ -1146,7 +1118,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     times={accelerationTimeSeries.times}
                     color={accelerationYColor}
                     currentValue={currentAcceleration?.y ?? 0}
-                    unit="in/s²"
+                    unit="inches/second²"
                     label="Acceleration Y"
                     peakTime={accelerationTimeSeries.peakTimes.y}
                   />
@@ -1157,7 +1129,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     times={accelerationTimeSeries.times}
                     color={accelerationZColor}
                     currentValue={currentAcceleration?.z ?? 0}
-                    unit="in/s²"
+                    unit="inches/second²"
                     label="Acceleration Z"
                     peakTime={accelerationTimeSeries.peakTimes.z}
                   />
@@ -1175,7 +1147,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={storyDrift.current} unit="%" />
+                  <UnitTooltip value={storyDrift.current} unit="percent" />
                   <button
                     onClick={() => toggleNodePanelGraph("drift")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -1189,7 +1161,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={storyDrift.peak} unit="%" />
+                  <UnitTooltip value={storyDrift.peak} unit="percent" />
                   <span className="text-[9px] text-neutral-500"> @ {storyDrift.peakTime.toFixed(2)} s</span>
                 </span>
               </div>
@@ -1202,7 +1174,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                     times={storyDriftTimeSeries.times}
                     color={storyDriftColor}
                     currentValue={storyDrift.current}
-                    unit="%"
+                    unit="percent"
                     label="Story Drift"
                     peakTime={storyDriftTimeSeries.peakTime}
                   />
@@ -1216,7 +1188,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         <div className="animate-fade-in">
           <h3 className="mb-2 text-sm font-bold">Total Distance Traveled</h3>
           <div className="font-mono text-neutral-600">
-            <UnitTooltip value={totalDistanceTraveled} unit="in" />
+            <UnitTooltip value={totalDistanceTraveled} unit="inches" />
           </div>
         </div>
 
@@ -1247,8 +1219,8 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
 
 export function NodeTab(props: IDockviewPanelHeaderProps<{ nodeId: number }>) {
   const nodeId = props.params.nodeId;
-  const color = getNodeColor(nodeId);
-  const lightColor = getNodeColorLight(nodeId);
+  const color = numberToColor(nodeId);
+  const lightColor = numberToColorLight(nodeId);
 
   const handleClose = () => {
     props.api.close();

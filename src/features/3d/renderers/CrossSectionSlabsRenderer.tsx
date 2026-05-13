@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useHover } from "../lib/useHover";
+import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 
 export function XCrossSectionSlabsRenderer() {
   return <CrossSectionSlabsRendererImpl crossSectionType="x" />;
@@ -69,6 +70,7 @@ function CrossSectionSlab({
   const { getNodeColorForCurrentMetric } = useMetrics();
   const { floorOpacity } = useNodeRendering();
   const { hoveredCrossSection, setHoveredCrossSection } = useHover();
+  const { openCrossSectionPanel } = useOpenPanels();
 
   useEffect(() => {
     invalidate();
@@ -139,14 +141,10 @@ function CrossSectionSlab({
 
   const handleClick = (e: PointerEvent) => {
     e.stopPropagation();
-    // selectCrossSection({
-    //   id: crossSectionId,
-    //   type: crossSectionType === "x" ? "X" : "Y",
-    //   value: crossSectionPos,
-    //   nodeIds,
-    //   label: `${crossSectionType.toUpperCase()} Section ${crossSectionPos}`,
-    // });
-    // TODO: Open cross section panel
+    openCrossSectionPanel({
+      crossSectionType: crossSectionType === "x" ? "X" : "Y",
+      position: crossSectionPos,
+    });
   };
 
   if (!topology) return null;

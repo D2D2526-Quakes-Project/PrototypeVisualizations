@@ -10,6 +10,7 @@ import { useFloorVisibility } from "../contexts/useFloorVisibility";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useHover } from "../lib/useHover";
+import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 
 export function FloorSlabsRenderer() {
   const { visibleFloors } = useFloorVisibility();
@@ -36,6 +37,7 @@ function FloorSlab({ storyId }: { storyId: string }) {
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { floorOpacity } = useNodeRendering();
   const { hoveredFloor, setHoveredFloor } = useHover();
+  const { openFloorPanel } = useOpenPanels();
 
   const storyCount = storyOrder.length;
   const nodeIds = useMemo(() => stories[storyId], [storyId, stories]);
@@ -111,15 +113,7 @@ function FloorSlab({ storyId }: { storyId: string }) {
 
   const handleClick = (e: PointerEvent) => {
     e.stopPropagation();
-    // selectCrossSection({
-    //   id: `floor-${storyId}`,
-    //   type: "Z",
-    //   value: storyId,
-    //   nodeIds,
-    //   label: `Floor ${storyId}`,
-    //   storyId,
-    // });
-    // TODO: Open floor panel
+    openFloorPanel(storyId);
   };
 
   if (!topology) return null;

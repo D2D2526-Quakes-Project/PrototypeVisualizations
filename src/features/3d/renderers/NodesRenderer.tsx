@@ -8,6 +8,7 @@ import { useNodeRendering } from "../contexts/useNodeRendering";
 import { BoxSelectionHandler } from "@/features/canvas/components/BoxSelection";
 import { useHover } from "../lib/useHover";
 import { useLiveStore } from "@/state";
+import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 import { useCanvasState } from "../contexts/CanvasContext";
 
 const tempObject = new THREE.Object3D();
@@ -109,15 +110,17 @@ export function NodesRenderer() {
     [setHoveredNode]
   );
 
+  const { openNodePanel } = useOpenPanels();
+
   const handleNodeClick = useCallback(
     (event: { instanceId?: number; stopPropagation: () => void }) => {
       if (!nodeInteractionEnabled) return;
       if (event.instanceId === undefined) return;
       if (event.instanceId !== pointerDownNodeId.current) return;
-      // const nodeId = visibleNodes[event.instanceId];
-      // selectNode(nodeId); // TODO: OPEN NODE PANEL
+      const nodeId = visibleNodes[event.instanceId];
+      openNodePanel(nodeId);
     },
-    [nodeInteractionEnabled]
+    [nodeInteractionEnabled, visibleNodes, openNodePanel]
   );
 
   return (

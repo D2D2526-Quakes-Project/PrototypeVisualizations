@@ -71,8 +71,16 @@ export function CanvasWithControls({ children }: CanvasWithControlsProps) {
   );
 
   return (
-    <div ref={containerRef} className="relative flex h-full min-h-0 w-full">
-      <div className="min-h-0 max-w-full flex-1">
+    <div ref={containerRef} className="relative flex h-full min-h-0 w-full flex-row-reverse">
+      {exportRenderMode.showTransientUi && (
+        <ViewControls
+          ref={sideControlsRef}
+          docked={isControlsDocked}
+          isExpanded={isViewControlsExpanded}
+          setIsExpanded={handleSetIsViewControlsExpanded}
+        />
+      )}
+      <div className="min-h-0 min-w-0 flex-[1_1_auto]">
         <Canvas
           frameloop="demand"
           linear
@@ -85,15 +93,6 @@ export function CanvasWithControls({ children }: CanvasWithControlsProps) {
           {children}
         </Canvas>
       </div>
-      {exportRenderMode.showTransientUi && (
-        <div ref={sideControlsRef}>
-          <ViewControls
-            docked={isControlsDocked}
-            isExpanded={isViewControlsExpanded}
-            setIsExpanded={handleSetIsViewControlsExpanded}
-          />
-        </div>
-      )}
     </div>
   );
 }

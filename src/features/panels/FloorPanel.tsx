@@ -2,29 +2,17 @@ import { usePlayback } from "@/features/playback/usePlayback";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FloorVisualization } from "./FloorVisualization";
-import { MiniTimeSeries } from "./MiniTimeSeries";
 import { UnitTooltip } from "@/components/ui/unit-tooltip";
-import { getMetricKeyColor } from "@/lib/metrics";
 
 import { ChartNoAxesCombinedIcon, XIcon } from "lucide-react";
-import { stringToNumber } from "@/lib/utils";
 import { IsometricBuilding } from "@/components/IsometricBoundingBox";
 import { HingeLocalizedSummary } from "@/components/HingeLocalizedSummary";
 import type { ShearRow } from "@/lib/types";
-
-// Generate a unique vibrant color based on node ID
-export function getFloorColor(storyId: string): string {
-  const num: number = stringToNumber(storyId);
-  const hue = (num * 137.508) % 360;
-  return `hsl(${hue}, 70%, 45%)`;
-}
-
-export function getFloorColorLight(storyId: string): string {
-  const num: number = stringToNumber(storyId);
-  const hue = (num * 137.508) % 360;
-  return `hsl(${hue}, 70%, 90%)`;
-}
+import { MiniTimeSeries } from "@/components/MiniTimeSeries";
+import { numberToColor, numberToColorLight, stringToNumber } from "@/lib/utils";
+import { useGlobalStore, useProfileStore } from "@/state";
+import { getMetricKeyColor } from "../metrics/metrics";
+import { FloorVisualization } from "../3d/renderers/FloorVisualization";
 
 /** Returns the index of the absolute-maximum value in an array. */
 function peakAbsIndex(arr: number[]): number {
@@ -44,10 +32,9 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const storyId = props.params.storyId;
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const nodePanelGraphVisibility = useViewStore((s) => s.nodePanelGraphVisibility);
-  const toggleNodePanelGraph = useViewStore((s) => s.toggleNodePanelGraph);
-  const metricPaletteOverrides = useViewStore((s) => s.metricPaletteOverrides);
-
+  const nodePanelGraphVisibility = useProfileStore((s) => s.nodePanelGraphVisibility);
+  const toggleNodePanelGraph = useProfileStore((s) => s.toggleNodePanelGraph);
+  const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
   const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
   const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
   const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
@@ -439,13 +426,13 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
             <div>
               <span className="font-medium text-neutral-700">Elevation:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.elevation} unit="in" decimals={1} />
+                <UnitTooltip value={storyInfo.elevation} unit="inches" decimals={1} />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Story Height:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.height} unit="in" decimals={1} />
+                <UnitTooltip value={storyInfo.height} unit="inches" decimals={1} />
               </div>
             </div>
           </div>
@@ -475,15 +462,15 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 <div className="grid grid-cols-2 gap-1 text-xs">
                   <span className="text-neutral-600">Max</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.xMax} unit="kip" />
+                    <UnitTooltip value={shearSummary.xMax} unit="kips" />
                   </span>
                   <span className="text-neutral-600">Min</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.xMin} unit="kip" />
+                    <UnitTooltip value={shearSummary.xMin} unit="kips" />
                   </span>
                   <span className="text-neutral-600">Abs</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.xAbs} unit="kip" />
+                    <UnitTooltip value={shearSummary.xAbs} unit="kips" />
                   </span>
                 </div>
               </div>
@@ -495,15 +482,15 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 <div className="grid grid-cols-2 gap-1 text-xs">
                   <span className="text-neutral-600">Max</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.yMax} unit="kip" />
+                    <UnitTooltip value={shearSummary.yMax} unit="kips" />
                   </span>
                   <span className="text-neutral-600">Min</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.yMin} unit="kip" />
+                    <UnitTooltip value={shearSummary.yMin} unit="kips" />
                   </span>
                   <span className="text-neutral-600">Abs</span>
                   <span className="font-mono text-neutral-800">
-                    <UnitTooltip value={shearSummary.yAbs} unit="kip" />
+                    <UnitTooltip value={shearSummary.yAbs} unit="kips" />
                   </span>
                 </div>
               </div>
@@ -519,7 +506,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementCurrent.x} unit="in" />
+                  <UnitTooltip value={displacementCurrent.x} unit="inches" />
                   <button
                     onClick={() => toggleNodePanelGraph("dispX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -533,14 +520,14 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementPeak.x} unit="in" />
+                  <UnitTooltip value={displacementPeak.x} unit="inches" />
                   <span className="text-[9px] text-neutral-500"> @ {displacementPeak.xTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementCurrent.y} unit="in" />
+                  <UnitTooltip value={displacementCurrent.y} unit="inches" />
                   <button
                     onClick={() => toggleNodePanelGraph("dispY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -554,14 +541,14 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementPeak.y} unit="in" />
+                  <UnitTooltip value={displacementPeak.y} unit="inches" />
                   <span className="text-[9px] text-neutral-500"> @ {displacementPeak.yTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementCurrent.z} unit="in" />
+                  <UnitTooltip value={displacementCurrent.z} unit="inches" />
                   <button
                     onClick={() => toggleNodePanelGraph("dispZ")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -575,7 +562,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={displacementPeak.z} unit="in" />
+                  <UnitTooltip value={displacementPeak.z} unit="inches" />
                   <span className="text-[9px] text-neutral-500"> @ {displacementPeak.zTime.toFixed(2)} s</span>
                 </span>
               </div>
@@ -587,7 +574,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={displacementTimeSeries.times}
                   color={displacementXColor}
                   currentValue={displacementCurrent.x}
-                  unit="in"
+                  unit="inches"
                   label="Displacement X"
                   peakTime={displacementTimeSeries.peakTimes.x}
                 />
@@ -598,7 +585,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={displacementTimeSeries.times}
                   color={displacementYColor}
                   currentValue={displacementCurrent.y}
-                  unit="in"
+                  unit="inches"
                   label="Displacement Y"
                   peakTime={displacementTimeSeries.peakTimes.y}
                 />
@@ -609,7 +596,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={displacementTimeSeries.times}
                   color={displacementZColor}
                   currentValue={displacementCurrent.z}
-                  unit="in"
+                  unit="inches"
                   label="Displacement Z"
                   peakTime={displacementTimeSeries.peakTimes.z}
                 />
@@ -626,7 +613,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityCurrent.x} unit="in/s" />
+                  <UnitTooltip value={velocityCurrent.x} unit="inches/second" />
                   <button
                     onClick={() => toggleNodePanelGraph("velX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -640,14 +627,14 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityPeak.x} unit="in/s" />
+                  <UnitTooltip value={velocityPeak.x} unit="inches/second" />
                   <span className="text-[9px] text-neutral-500">@ {velocityPeak.xTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityCurrent.y} unit="in/s" />
+                  <UnitTooltip value={velocityCurrent.y} unit="inches/second" />
                   <button
                     onClick={() => toggleNodePanelGraph("velY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -661,14 +648,14 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityPeak.y} unit="in/s" />
+                  <UnitTooltip value={velocityPeak.y} unit="inches/second" />
                   <span className="text-[9px] text-neutral-500">@ {velocityPeak.yTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityCurrent.z} unit="in/s" />
+                  <UnitTooltip value={velocityCurrent.z} unit="inches/second" />
                   <button
                     onClick={() => toggleNodePanelGraph("velZ")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -682,7 +669,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={velocityPeak.z} unit="in/s" />
+                  <UnitTooltip value={velocityPeak.z} unit="inches/second" />
                   <span className="text-[9px] text-neutral-500">@ {velocityPeak.zTime.toFixed(2)} s</span>
                 </span>
               </div>
@@ -694,7 +681,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={velocityTimeSeries.times}
                   color={velocityXColor}
                   currentValue={velocityCurrent.x}
-                  unit="in/s"
+                  unit="inches/second"
                   label="Velocity X"
                   peakTime={velocityTimeSeries.peakTimes.x}
                 />
@@ -705,7 +692,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={velocityTimeSeries.times}
                   color={velocityYColor}
                   currentValue={velocityCurrent.y}
-                  unit="in/s"
+                  unit="inches/second"
                   label="Velocity Y"
                   peakTime={velocityTimeSeries.peakTimes.y}
                 />
@@ -716,7 +703,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={velocityTimeSeries.times}
                   color={velocityZColor}
                   currentValue={velocityCurrent.z}
-                  unit="in/s"
+                  unit="inches/second"
                   label="Velocity Z"
                   peakTime={velocityTimeSeries.peakTimes.z}
                 />
@@ -733,7 +720,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current X:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationCurrent.x} unit="in/s²" />
+                  <UnitTooltip value={accelerationCurrent.x} unit="inches/second²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accX")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -747,14 +734,14 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak X:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationPeak.x} unit="in/s²" />
+                  <UnitTooltip value={accelerationPeak.x} unit="inches/second²" />
                   <span className="text-[9px] text-neutral-500">@ {accelerationPeak.xTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Y:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationCurrent.y} unit="in/s²" />
+                  <UnitTooltip value={accelerationCurrent.y} unit="inches/second²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accY")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -768,14 +755,14 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Y:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationPeak.y} unit="in/s²" />
+                  <UnitTooltip value={accelerationPeak.y} unit="inches/second²" />
                   <span className="text-[9px] text-neutral-500">@ {accelerationPeak.yTime.toFixed(2)} s</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Current Z:</span>
                 <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationCurrent.z} unit="in/s²" />
+                  <UnitTooltip value={accelerationCurrent.z} unit="inches/second²" />
                   <button
                     onClick={() => toggleNodePanelGraph("accZ")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
@@ -789,7 +776,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="grid grid-cols-2 gap-1">
                 <span className="text-neutral-600">Peak Z:</span>
                 <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={accelerationPeak.z} unit="in/s²" />
+                  <UnitTooltip value={accelerationPeak.z} unit="inches/second²" />
                   <span className="text-[9px] text-neutral-500">@ {accelerationPeak.zTime.toFixed(2)} s</span>
                 </span>
               </div>
@@ -801,7 +788,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={accelerationTimeSeries.times}
                   color={accelerationXColor}
                   currentValue={accelerationCurrent.x}
-                  unit="in/s²"
+                  unit="inches/second²"
                   label="Acceleration X"
                   peakTime={accelerationTimeSeries.peakTimes.x}
                 />
@@ -812,7 +799,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={accelerationTimeSeries.times}
                   color={accelerationYColor}
                   currentValue={accelerationCurrent.y}
-                  unit="in/s²"
+                  unit="inches/second²"
                   label="Acceleration Y"
                   peakTime={accelerationTimeSeries.peakTimes.y}
                 />
@@ -823,7 +810,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                   times={accelerationTimeSeries.times}
                   color={accelerationZColor}
                   currentValue={accelerationCurrent.z}
-                  unit="in/s²"
+                  unit="inches/second²"
                   label="Acceleration Z"
                   peakTime={accelerationTimeSeries.peakTimes.z}
                 />
@@ -844,10 +831,10 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     <span className="w-8 font-medium text-neutral-700">{corner}:</span>
                     <div className="font-mono text-[10px] text-neutral-600">
                       <span className="mr-1">Current:</span>
-                      <UnitTooltip value={current} unit="%" />
+                      <UnitTooltip value={current} unit="percent" />
                       <span className="mx-2 text-neutral-300">|</span>
                       <span className="mr-1">Peak:</span>
-                      <UnitTooltip value={peaks.peak} unit="%" />
+                      <UnitTooltip value={peaks.peak} unit="percent" />
                       <span className="text-[9px] text-neutral-500">@ {peaks.peakTime.toFixed(2)} s</span>
                     </div>
                   </div>
@@ -862,7 +849,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     times={driftTimeSeries.times}
                     color={storyDriftColor}
                     currentValue={cornerDriftsCurrent.NW ?? 0}
-                    unit="%"
+                    unit="percent"
                     label="Drift NW"
                     peakTime={driftTimeSeries.peakTimes.nw}
                   />
@@ -873,7 +860,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     times={driftTimeSeries.times}
                     color={storyDriftColor}
                     currentValue={cornerDriftsCurrent.NE ?? 0}
-                    unit="%"
+                    unit="percent"
                     label="Drift NE"
                     peakTime={driftTimeSeries.peakTimes.ne}
                   />
@@ -884,7 +871,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     times={driftTimeSeries.times}
                     color={storyDriftColor}
                     currentValue={cornerDriftsCurrent.SW ?? 0}
-                    unit="%"
+                    unit="percent"
                     label="Drift SW"
                     peakTime={driftTimeSeries.peakTimes.sw}
                   />
@@ -895,7 +882,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     times={driftTimeSeries.times}
                     color={storyDriftColor}
                     currentValue={cornerDriftsCurrent.SE ?? 0}
-                    unit="%"
+                    unit="percent"
                     label="Drift SE"
                     peakTime={driftTimeSeries.peakTimes.se}
                   />
@@ -916,8 +903,8 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
 
 export function FloorTab(props: IDockviewPanelHeaderProps<{ storyId: string }>) {
   const storyId = props.params.storyId;
-  const color = getFloorColor(storyId);
-  const lightColor = getFloorColorLight(storyId);
+  const color = numberToColor(stringToNumber(storyId));
+  const lightColor = numberToColorLight(stringToNumber(storyId));
   const { animationData } = useAnimationData();
   const storyElevations = animationData.precomputed.storyElevations;
 

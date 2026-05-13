@@ -25,7 +25,6 @@ export function OpenPanelNodesRenderer() {
     <Points frustumCulled={false}>
       <PointMaterial
         transparent
-        toneMapped={false}
         vertexColors
         size={8}
         sizeAttenuation={true}

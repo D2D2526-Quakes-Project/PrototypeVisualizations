@@ -2,15 +2,16 @@ import { UnitTooltip } from "@/components/ui/unit-tooltip";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePlayback } from "@/features/playback/usePlayback";
 
+import { MetricSection } from "@/components/MetricSection";
 import { MiniRibbon } from "@/components/MiniRibbon";
 import { MiniTimeSeries } from "@/components/MiniTimeSeries";
 import { numberToColor, numberToColorLight, threeColorToCSS } from "@/lib/utils";
 import { useGlobalStore, useProfileStore } from "@/state";
+import { getMetricKeyColor } from "@/features/metrics/metrics";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview";
 import { ChartNoAxesCombinedIcon, InfoIcon, TriangleIcon, XIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Vector3 } from "three";
-import { getMetricKeyColor } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
 
 export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: number }>) {
@@ -19,19 +20,6 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
   const nodePanelGraphVisibility = useProfileStore((s) => s.nodePanelGraphVisibility);
   const toggleNodePanelGraph = useProfileStore((s) => s.toggleNodePanelGraph);
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
-  const displacementXColor = getMetricKeyColor("displacementX", metricPaletteOverrides);
-  const displacementYColor = getMetricKeyColor("displacementY", metricPaletteOverrides);
-  const displacementZColor = getMetricKeyColor("displacementZ", metricPaletteOverrides);
-  const velocityXColor = getMetricKeyColor("velocityX", metricPaletteOverrides);
-  const velocityYColor = getMetricKeyColor("velocityY", metricPaletteOverrides);
-  const velocityZColor = getMetricKeyColor("velocityZ", metricPaletteOverrides);
-  const accelerationXColor = getMetricKeyColor("accelerationX", metricPaletteOverrides);
-  const accelerationYColor = getMetricKeyColor("accelerationY", metricPaletteOverrides);
-  const accelerationZColor = getMetricKeyColor("accelerationZ", metricPaletteOverrides);
-  const rotationXColor = getMetricKeyColor("rotationX", metricPaletteOverrides);
-  const rotationYColor = getMetricKeyColor("rotationY", metricPaletteOverrides);
-  const rotationZColor = getMetricKeyColor("rotationZ", metricPaletteOverrides);
-  const storyDriftColor = getMetricKeyColor("interstoryDrift", metricPaletteOverrides);
   const { getNodeColorForMetric } = useMetrics();
 
   const initialPosRaw = animationData.initialPositions.at(nodeId);
@@ -47,7 +35,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     [initialPosRaw, currentDispRaw]
   );
 
-  // RIBBONS AND PATHS
+  // RIBBON PATH
   const ribbonPath = useMemo(() => {
     const path = new Array(animationData.metadata.frameCount).fill(null).map(() => new Vector3(0, 0, 0));
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
@@ -57,336 +45,8 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     return path;
   }, [animationData.metadata.frameCount, animationData.displacementLin, nodeId]);
 
-  // PEAK DISPLACEMENT ACROSS ALL TIME
-  const peakDisplacement = useMemo(() => {
-    let maxMag = 0,
-      maxX = 0,
-      maxY = 0,
-      maxZ = 0,
-      maxFrame = 0;
-    let maxAbsX = 0,
-      maxAbsXFrame = 0;
-    let maxAbsY = 0,
-      maxAbsYFrame = 0;
-    let maxAbsZ = 0,
-      maxAbsZFrame = 0;
-
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const disp = animationData.displacementLin.atFrame(i).at(nodeId);
-      const mag = Math.hypot(disp[0], disp[1], disp[2]);
-      const absX = Math.abs(disp[0]);
-      const absY = Math.abs(disp[1]);
-      const absZ = Math.abs(disp[2]);
-
-      if (mag > maxMag) {
-        maxMag = mag;
-        maxX = disp[0];
-        maxY = disp[1];
-        maxZ = disp[2];
-        maxFrame = i;
-      }
-      if (absX > maxAbsX) {
-        maxAbsX = absX;
-        maxAbsXFrame = i;
-      }
-      if (absY > maxAbsY) {
-        maxAbsY = absY;
-        maxAbsYFrame = i;
-      }
-      if (absZ > maxAbsZ) {
-        maxAbsZ = absZ;
-        maxAbsZFrame = i;
-      }
-    }
-
-    return {
-      magnitude: maxMag,
-      x: maxX,
-      xTime: maxAbsXFrame * animationData.metadata.dt,
-      y: maxY,
-      yTime: maxAbsYFrame * animationData.metadata.dt,
-      z: maxZ,
-      zTime: maxAbsZFrame * animationData.metadata.dt,
-      frame: maxFrame,
-      time: maxFrame * animationData.metadata.dt,
-    };
-  }, [animationData, nodeId]);
-
-  // VELOCITY (if available)
-  const currentVelocity = useMemo(() => {
-    if (!animationData.velocityLin) return null;
-    const vel = animationData.velocityLin.atFrame(frameIndex).at(nodeId);
-    return {
-      x: vel[0],
-      y: vel[1],
-      z: vel[2],
-      magnitude: Math.hypot(vel[0], vel[1], vel[2]),
-    };
-  }, [animationData.velocityLin, frameIndex, nodeId]);
-
-  const peakVelocity = useMemo(() => {
-    if (!animationData.velocityLin) return null;
-    let maxMag = 0,
-      maxX = 0,
-      maxY = 0,
-      maxZ = 0,
-      maxFrame = 0;
-    let maxAbsX = 0,
-      maxAbsXFrame = 0;
-    let maxAbsY = 0,
-      maxAbsYFrame = 0;
-    let maxAbsZ = 0,
-      maxAbsZFrame = 0;
-
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const vel = animationData.velocityLin.atFrame(i).at(nodeId);
-      const mag = Math.hypot(vel[0], vel[1], vel[2]);
-      const absX = Math.abs(vel[0]);
-      const absY = Math.abs(vel[1]);
-      const absZ = Math.abs(vel[2]);
-
-      if (mag > maxMag) {
-        maxMag = mag;
-        maxX = vel[0];
-        maxY = vel[1];
-        maxZ = vel[2];
-        maxFrame = i;
-      }
-      if (absX > maxAbsX) {
-        maxAbsX = absX;
-        maxAbsXFrame = i;
-      }
-      if (absY > maxAbsY) {
-        maxAbsY = absY;
-        maxAbsYFrame = i;
-      }
-      if (absZ > maxAbsZ) {
-        maxAbsZ = absZ;
-        maxAbsZFrame = i;
-      }
-    }
-
-    return {
-      magnitude: maxMag,
-      x: maxX,
-      xTime: maxAbsXFrame * animationData.metadata.dt,
-      y: maxY,
-      yTime: maxAbsYFrame * animationData.metadata.dt,
-      z: maxZ,
-      zTime: maxAbsZFrame * animationData.metadata.dt,
-      frame: maxFrame,
-      time: maxFrame * animationData.metadata.dt,
-    };
-  }, [animationData.velocityLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
-
-  // ACCELERATION (if available)
-  const currentAcceleration = useMemo(() => {
-    if (!animationData.accelerationLin) return null;
-    const acc = animationData.accelerationLin.atFrame(frameIndex).at(nodeId);
-    return {
-      x: acc[0],
-      y: acc[1],
-      z: acc[2],
-      magnitude: Math.hypot(acc[0], acc[1], acc[2]),
-    };
-  }, [animationData.accelerationLin, frameIndex, nodeId]);
-
-  const peakAcceleration = useMemo(() => {
-    if (!animationData.accelerationLin) return null;
-    let maxMag = 0,
-      maxX = 0,
-      maxY = 0,
-      maxZ = 0,
-      maxFrame = 0;
-    let maxAbsX = 0,
-      maxAbsXFrame = 0;
-    let maxAbsY = 0,
-      maxAbsYFrame = 0;
-    let maxAbsZ = 0,
-      maxAbsZFrame = 0;
-
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const acc = animationData.accelerationLin.atFrame(i).at(nodeId);
-      const mag = Math.hypot(acc[0], acc[1], acc[2]);
-      const absX = Math.abs(acc[0]);
-      const absY = Math.abs(acc[1]);
-      const absZ = Math.abs(acc[2]);
-
-      if (mag > maxMag) {
-        maxMag = mag;
-        maxX = acc[0];
-        maxY = acc[1];
-        maxZ = acc[2];
-        maxFrame = i;
-      }
-      if (absX > maxAbsX) {
-        maxAbsX = absX;
-        maxAbsXFrame = i;
-      }
-      if (absY > maxAbsY) {
-        maxAbsY = absY;
-        maxAbsYFrame = i;
-      }
-      if (absZ > maxAbsZ) {
-        maxAbsZ = absZ;
-        maxAbsZFrame = i;
-      }
-    }
-
-    return {
-      magnitude: maxMag,
-      x: maxX,
-      xTime: maxAbsXFrame * animationData.metadata.dt,
-      y: maxY,
-      yTime: maxAbsYFrame * animationData.metadata.dt,
-      z: maxZ,
-      zTime: maxAbsZFrame * animationData.metadata.dt,
-      frame: maxFrame,
-      time: maxFrame * animationData.metadata.dt,
-    };
-  }, [animationData.accelerationLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
-
-  // ROTATION TIME SERIES (for mini chart)
-  const rotationTimeSeries = useMemo(() => {
-    if (!animationData.displacementRot) return null;
-    const times: number[] = [];
-    const magnitudes: number[] = [];
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    const zValues: number[] = [];
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      times.push(i * animationData.metadata.dt);
-      const rot = animationData.displacementRot.atFrame(i).at(nodeId);
-      magnitudes.push(Math.hypot(rot[0], rot[1], rot[2]));
-      xValues.push(rot[0]);
-      yValues.push(rot[1]);
-      zValues.push(rot[2]);
-    }
-    const getPeakTime = (arr: number[]) => {
-      if (arr.length === 0) return 0;
-      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
-      return times[maxIdx];
-    };
-    return {
-      times,
-      magnitudes,
-      xValues,
-      yValues,
-      zValues,
-      peakTimes: {
-        magnitudes: getPeakTime(magnitudes),
-        x: getPeakTime(xValues),
-        y: getPeakTime(yValues),
-        z: getPeakTime(zValues),
-      },
-    };
-  }, [animationData.displacementRot, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
-
-  // TIME SERIES DATA FOR MINI CHARTS
-  const velocityTimeSeries = useMemo(() => {
-    if (!animationData.velocityLin) return null;
-    const times: number[] = [];
-    const magnitudes: number[] = [];
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    const zValues: number[] = [];
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      times.push(i * animationData.metadata.dt);
-      const vel = animationData.velocityLin.atFrame(i).at(nodeId);
-      magnitudes.push(Math.hypot(vel[0], vel[1], vel[2]));
-      xValues.push(vel[0]);
-      yValues.push(vel[1]);
-      zValues.push(vel[2]);
-    }
-    const getPeakTime = (arr: number[]) => {
-      if (arr.length === 0) return 0;
-      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
-      return times[maxIdx];
-    };
-    return {
-      times,
-      magnitudes,
-      xValues,
-      yValues,
-      zValues,
-      peakTimes: {
-        magnitudes: getPeakTime(magnitudes),
-        x: getPeakTime(xValues),
-        y: getPeakTime(yValues),
-        z: getPeakTime(zValues),
-      },
-    };
-  }, [animationData.velocityLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
-
-  const accelerationTimeSeries = useMemo(() => {
-    if (!animationData.accelerationLin) return null;
-    const times: number[] = [];
-    const magnitudes: number[] = [];
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    const zValues: number[] = [];
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      times.push(i * animationData.metadata.dt);
-      const acc = animationData.accelerationLin.atFrame(i).at(nodeId);
-      magnitudes.push(Math.hypot(acc[0], acc[1], acc[2]));
-      xValues.push(acc[0]);
-      yValues.push(acc[1]);
-      zValues.push(acc[2]);
-    }
-    const getPeakTime = (arr: number[]) => {
-      if (arr.length === 0) return 0;
-      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
-      return times[maxIdx];
-    };
-    return {
-      times,
-      magnitudes,
-      xValues,
-      yValues,
-      zValues,
-      peakTimes: {
-        magnitudes: getPeakTime(magnitudes),
-        x: getPeakTime(xValues),
-        y: getPeakTime(yValues),
-        z: getPeakTime(zValues),
-      },
-    };
-  }, [animationData.accelerationLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
-
-  // DISPLACEMENT TIME SERIES (for mini chart)
-  const displacementTimeSeries = useMemo(() => {
-    const times: number[] = [];
-    const magnitudes: number[] = [];
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    const zValues: number[] = [];
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      times.push(i * animationData.metadata.dt);
-      const disp = animationData.displacementLin.atFrame(i).at(nodeId);
-      magnitudes.push(Math.hypot(disp[0], disp[1], disp[2]));
-      xValues.push(disp[0]);
-      yValues.push(disp[1]);
-      zValues.push(disp[2]);
-    }
-    const getPeakTime = (arr: number[]) => {
-      if (arr.length === 0) return 0;
-      const maxIdx = arr.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
-      return times[maxIdx];
-    };
-    return {
-      times,
-      magnitudes,
-      xValues,
-      yValues,
-      zValues,
-      peakTimes: {
-        magnitudes: getPeakTime(magnitudes),
-        x: getPeakTime(xValues),
-        y: getPeakTime(yValues),
-        z: getPeakTime(zValues),
-      },
-    };
-  }, [animationData.displacementLin, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
+  const { precomputed, metadata } = animationData;
+  const { frameCount, dt } = metadata;
 
   // STRUCTURAL INFO
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
@@ -418,110 +78,35 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     const currentDrift = animationData.storyDrift.get(frameIndex, nodeId) ?? 0;
     const peakDrift = animationData.precomputed.peakStoryDrift[nodeId] ?? 0;
     const peakFrame = animationData.precomputed.peakStoryDriftFrame[nodeId] ?? 0;
-    const peakTime = peakFrame * animationData.metadata.dt;
+    return { current: currentDrift, peak: peakDrift, peakTime: peakFrame * dt };
+  }, [frameIndex, animationData, nodeId, dt]);
 
-    return {
-      current: currentDrift,
-      peak: peakDrift,
-      peakTime: peakTime,
-    };
-  }, [frameIndex, animationData, nodeId]);
-
-  // STORY DRIFT TIME SERIES (for mini chart)
   const storyDriftTimeSeries = useMemo(() => {
     if (!storyDrift) return null;
     const times: number[] = [];
     const values: number[] = [];
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      times.push(i * animationData.metadata.dt);
+    for (let i = 0; i < frameCount; i++) {
+      times.push(i * dt);
       values.push(animationData.storyDrift.get(i, nodeId));
     }
-    const peakTime = (animationData.precomputed.peakStoryDriftFrame[nodeId] ?? 0) * animationData.metadata.dt;
+    const peakTime = (animationData.precomputed.peakStoryDriftFrame[nodeId] ?? 0) * dt;
     return { times, values, peakTime };
-  }, [animationData, storyDrift, nodeId]);
+  }, [animationData, storyDrift, nodeId, frameCount, dt]);
+
+  const storyDriftColor = getMetricKeyColor("interstoryDrift", metricPaletteOverrides);
 
   // DISTANCE TRAVELED
   const totalDistanceTraveled = useMemo(() => {
     let distance = 0;
-    for (let i = 1; i < animationData.metadata.frameCount; i++) {
+    for (let i = 1; i < frameCount; i++) {
       const prev = animationData.displacementLin.atFrame(i - 1).at(nodeId);
       const curr = animationData.displacementLin.atFrame(i).at(nodeId);
-      const dx = curr[0] - prev[0];
-      const dy = curr[1] - prev[1];
-      const dz = curr[2] - prev[2];
-      distance += Math.hypot(dx, dy, dz);
+      distance += Math.hypot(curr[0] - prev[0], curr[1] - prev[1], curr[2] - prev[2]);
     }
     return distance;
-  }, [animationData, nodeId]);
+  }, [animationData, nodeId, frameCount]);
 
-  // ROTATION (current and peak)
-  const currentRotation = useMemo(() => {
-    if (!animationData.displacementRot) return { rx: 0, ry: 0, rz: 0, magnitude: 0 };
-    const rot = animationData.displacementRot.atFrame(frameIndex).at(nodeId);
-    return {
-      rx: rot[0],
-      ry: rot[1],
-      rz: rot[2],
-      magnitude: Math.hypot(rot[0], rot[1], rot[2]),
-    };
-  }, [animationData.displacementRot, frameIndex, nodeId]);
-
-  const peakRotation = useMemo(() => {
-    if (!animationData.displacementRot)
-      return { magnitude: 0, rx: 0, ry: 0, rz: 0, rxTime: 0, ryTime: 0, rzTime: 0, frame: 0, time: 0 };
-    let maxMag = 0,
-      maxRx = 0,
-      maxRy = 0,
-      maxRz = 0,
-      maxFrame = 0;
-    let maxAbsRx = 0,
-      maxAbsRxFrame = 0;
-    let maxAbsRy = 0,
-      maxAbsRyFrame = 0;
-    let maxAbsRz = 0,
-      maxAbsRzFrame = 0;
-
-    for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const rot = animationData.displacementRot.atFrame(i).at(nodeId);
-      const mag = Math.hypot(rot[0], rot[1], rot[2]);
-      const absRx = Math.abs(rot[0]);
-      const absRy = Math.abs(rot[1]);
-      const absRz = Math.abs(rot[2]);
-
-      if (mag > maxMag) {
-        maxMag = mag;
-        maxRx = rot[0];
-        maxRy = rot[1];
-        maxRz = rot[2];
-        maxFrame = i;
-      }
-      if (absRx > maxAbsRx) {
-        maxAbsRx = absRx;
-        maxAbsRxFrame = i;
-      }
-      if (absRy > maxAbsRy) {
-        maxAbsRy = absRy;
-        maxAbsRyFrame = i;
-      }
-      if (absRz > maxAbsRz) {
-        maxAbsRz = absRz;
-        maxAbsRzFrame = i;
-      }
-    }
-
-    return {
-      magnitude: maxMag,
-      rx: maxRx,
-      rxTime: maxAbsRxFrame * animationData.metadata.dt,
-      ry: maxRy,
-      ryTime: maxAbsRyFrame * animationData.metadata.dt,
-      rz: maxRz,
-      rzTime: maxAbsRzFrame * animationData.metadata.dt,
-      frame: maxFrame,
-      time: maxFrame * animationData.metadata.dt,
-    };
-  }, [animationData.displacementRot, animationData.metadata.frameCount, animationData.metadata.dt, nodeId]);
-
+  // HINGE ENTRIES
   const hingeEntries = useMemo(() => {
     const nodeToHingeIndexMap = animationData.precomputed.nodeToHingeIndexMap;
     const hingeData = animationData.hingeData;
@@ -543,19 +128,14 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
       const hingeRow = hingeData.getRow(hingeIdx);
       const maxVal = endCap === 1 ? hingeRow.iR3Max : hingeRow.jR3Max;
       const minVal = endCap === 1 ? hingeRow.iR3Min : hingeRow.jR3Min;
-
       const { color } = getNodeColorForMetric("hingeRotationAbs", hingeIdx, endCap);
-      const colorValue = threeColorToCSS(color);
-
-      console.log(colorValue);
-
       entries.push({
         hingeIdx,
         endCap,
         beamIdx: hingeRow.beamIndex,
         maxValue: maxVal,
         minValue: minVal,
-        color: colorValue,
+        color: threeColorToCSS(color),
       });
     }
 
@@ -597,7 +177,6 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
 
         {/* POSITION */}
         <div className="animate-fade-in">
-          {/* <h3 className="mb-2 text-sm font-bold">Position (in)</h3> */}
           <div className="grid grid-cols-3 gap-2">
             <div>
               <span className="font-medium text-neutral-700">
@@ -626,12 +205,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
           </div>
         </div>
 
+        {/* HINGE ROTATION */}
         {hingeEntries && (
           <div className="animate-fade-in">
             <h3 className="text-sm font-bold">Hinge Rotation</h3>
             <div className="space-y-2">
               <div className="mb-0 grid grid-cols-3 items-center gap-2">
-                <div className="flex items-center gap-1"></div>
+                <div className="flex items-center gap-1" />
                 <div className="text-right">
                   <div className="text-[10px] text-neutral-500">Max</div>
                 </div>
@@ -662,482 +242,45 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         )}
 
         {/* DISPLACEMENT */}
-        <div className="animate-fade-in">
-          <h3 className="mb-2 text-sm font-bold">Displacement</h3>
-          {/* <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="font-medium text-neutral-700">Current Total:</span>
-              <div className="font-mono text-neutral-600">
-                <UnitTooltip  value={displacementMag} unit="inches" />
-              </div>
-            </div>
-            <div>
-              <span className="font-medium text-neutral-700">Peak Total:</span>
-              <div className="font-mono text-neutral-600">
-                <UnitTooltip  value={peakDisplacement.magnitude} unit="inches" />
-                <span className="text-[9px]  text-neutral-500"> @ {peakDisplacement.time.toFixed(2)} s</span>
-              </div>
-            </div>
-          </div> */}
-          <div className="mt-2 space-y-1">
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Current X:</span>
-              <span className="flex items-end justify-between font-mono text-neutral-800">
-                <UnitTooltip value={currentDispRaw[0]} unit="inches" />
-                <button
-                  onClick={() => toggleNodePanelGraph("dispX")}
-                  className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                  title={nodePanelGraphVisibility[`dispX`] ? "Hide graph" : "Show graph"}>
-                  <ChartNoAxesCombinedIcon
-                    className={`size-4 ${nodePanelGraphVisibility[`dispX`] ? "text-blue-500" : "text-neutral-300"}`}
-                  />
-                </button>
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Peak X:</span>
-              <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                <UnitTooltip value={peakDisplacement.x} unit="inches" />
-                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.xTime.toFixed(2)} s</span>
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Current Y:</span>
-              <span className="flex items-end justify-between font-mono text-neutral-800">
-                <UnitTooltip value={currentDispRaw[1]} unit="inches" />
-                <button
-                  onClick={() => toggleNodePanelGraph("dispY")}
-                  className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                  title={nodePanelGraphVisibility[`dispY`] ? "Hide graph" : "Show graph"}>
-                  <ChartNoAxesCombinedIcon
-                    className={`size-4 ${nodePanelGraphVisibility[`dispY`] ? "text-blue-500" : "text-neutral-300"}`}
-                  />
-                </button>
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Peak Y:</span>
-              <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                <UnitTooltip value={peakDisplacement.y} unit="inches" />
-                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.yTime.toFixed(2)} s</span>
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Current Z:</span>
-              <span className="flex items-end justify-between font-mono text-neutral-800">
-                <UnitTooltip value={currentDispRaw[2]} unit="inches" />
-                <button
-                  onClick={() => toggleNodePanelGraph("dispZ")}
-                  className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                  title={nodePanelGraphVisibility[`dispZ`] ? "Hide graph" : "Show graph"}>
-                  <ChartNoAxesCombinedIcon
-                    className={`size-4 ${nodePanelGraphVisibility[`dispZ`] ? "text-blue-500" : "text-neutral-300"}`}
-                  />
-                </button>
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-neutral-600">Peak Z:</span>
-              <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                <UnitTooltip value={peakDisplacement.z} unit="inches" />
-                <span className="text-[9px] text-neutral-500"> @ {peakDisplacement.zTime.toFixed(2)} s</span>
-              </span>
-            </div>
-            <div className="mt-3 space-y-2">
-              {nodePanelGraphVisibility[`dispX`] && (
-                <MiniTimeSeries
-                  data={displacementTimeSeries.xValues}
-                  times={displacementTimeSeries.times}
-                  color={displacementXColor}
-                  currentValue={currentDispRaw[0]}
-                  unit="inches"
-                  label="Displacement X"
-                  peakTime={displacementTimeSeries.peakTimes.x}
-                />
-              )}
-              {nodePanelGraphVisibility[`dispY`] && (
-                <MiniTimeSeries
-                  data={displacementTimeSeries.yValues}
-                  times={displacementTimeSeries.times}
-                  color={displacementYColor}
-                  currentValue={currentDispRaw[1]}
-                  unit="inches"
-                  label="Displacement Y"
-                  peakTime={displacementTimeSeries.peakTimes.y}
-                />
-              )}
-              {nodePanelGraphVisibility[`dispZ`] && (
-                <MiniTimeSeries
-                  data={displacementTimeSeries.zValues}
-                  times={displacementTimeSeries.times}
-                  color={displacementZColor}
-                  currentValue={currentDispRaw[2]}
-                  unit="inches"
-                  label="Displacement Z"
-                  peakTime={displacementTimeSeries.peakTimes.z}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+        <MetricSection
+          title="Displacement"
+          unit="inches"
+          graphPrefix="disp"
+          nodeId={nodeId}
+          accessor={animationData.displacementLin}
+          peakComponentValues={[
+            precomputed.peakNodeDisplacementX[nodeId],
+            precomputed.peakNodeDisplacementY[nodeId],
+            precomputed.peakNodeDisplacementZ[nodeId],
+          ]}
+        />
 
         {/* ROTATION */}
-        {animationData.displacementRot && (
-          <div className="animate-fade-in">
-            <h3 className="mb-2 text-sm font-bold">Rotation</h3>
-
-            {/* <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="font-medium text-neutral-700">Current Total:</span>
-                <div className="font-mono text-neutral-600">
-                  <UnitTooltip  value={currentRotation.magnitude} unit="radians" />
-                </div>
-              </div>
-              <div>
-                <span className="font-medium text-neutral-700">Peak Total:</span>
-                <div className="font-mono text-neutral-600">
-                  <UnitTooltip  value={peakRotation.magnitude} unit="radians" />
-                </div>
-                <div className="text-[9px]  text-neutral-500"> @ {peakRotation.time.toFixed(2)} s</div>
-              </div>
-            </div> */}
-
-            <div className="mt-2 space-y-1">
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current X:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentRotation.rx} unit="radians" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("rotX")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`rotX`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`rotX`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak X:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakRotation.rx} unit="radians" />
-                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.rxTime.toFixed(2)} s</span>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current Y:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentRotation.ry} unit="radians" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("rotY")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`rotY`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`rotY`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak Y:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakRotation.ry} unit="radians" />
-                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.ryTime.toFixed(2)} s</span>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current Z:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentRotation.rz} unit="radians" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("rotZ")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`rotZ`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`rotZ`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak Z:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakRotation.rz} unit="radians" />
-                  <span className="text-[9px] text-neutral-500"> @ {peakRotation.rzTime.toFixed(2)} s</span>
-                </span>
-              </div>
-              {rotationTimeSeries && (
-                <div className="mt-3 space-y-2">
-                  {nodePanelGraphVisibility[`rotX`] && (
-                    <MiniTimeSeries
-                      data={rotationTimeSeries.xValues}
-                      times={rotationTimeSeries.times}
-                      color={rotationXColor}
-                      currentValue={currentRotation.rx}
-                      unit="radians"
-                      label="Rotation X"
-                      peakTime={rotationTimeSeries.peakTimes.x}
-                    />
-                  )}
-                  {nodePanelGraphVisibility[`rotY`] && (
-                    <MiniTimeSeries
-                      data={rotationTimeSeries.yValues}
-                      times={rotationTimeSeries.times}
-                      color={rotationYColor}
-                      currentValue={currentRotation.ry}
-                      unit="radians"
-                      label="Rotation Y"
-                      peakTime={rotationTimeSeries.peakTimes.y}
-                    />
-                  )}
-                  {nodePanelGraphVisibility[`rotZ`] && (
-                    <MiniTimeSeries
-                      data={rotationTimeSeries.zValues}
-                      times={rotationTimeSeries.times}
-                      color={rotationZColor}
-                      currentValue={currentRotation.rz}
-                      unit="radians"
-                      label="Rotation Z"
-                      peakTime={rotationTimeSeries.peakTimes.z}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <MetricSection
+          title="Rotation"
+          unit="radians"
+          graphPrefix="rot"
+          nodeId={nodeId}
+          accessor={animationData.displacementRot}
+        />
 
         {/* VELOCITY */}
-        {animationData.velocityLin && (
-          <div className="animate-fade-in">
-            <h3 className="mb-2 text-sm font-bold">Velocity</h3>
-
-            <div className="mt-2 space-y-1">
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current X:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentVelocity!.x} unit="inches/second" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("velX")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`velX`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`velX`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak X:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakVelocity?.x ?? 0} unit="inches/second" />
-                  <span className="text-[9px] text-neutral-500">
-                    @ {peakVelocity ? peakVelocity.xTime.toFixed(2) : "0.00"} s
-                  </span>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current Y:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentVelocity!.y} unit="inches/second" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("velY")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`velY`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`velY`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak Y:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakVelocity?.y ?? 0} unit="inches/second" />
-                  <span className="text-[9px] text-neutral-500">
-                    @ {peakVelocity ? peakVelocity.yTime.toFixed(2) : "0.00"} s
-                  </span>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current Z:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentVelocity!.z} unit="inches/second" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("velZ")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`velZ`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`velZ`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak Z:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakVelocity?.z ?? 0} unit="inches/second" />
-                  <span className="text-[9px] text-neutral-500">
-                    @ {peakVelocity ? peakVelocity.zTime.toFixed(2) : "0.00"} s
-                  </span>
-                </span>
-              </div>
-            </div>
-            {velocityTimeSeries && (
-              <div className="mt-3 space-y-2">
-                {nodePanelGraphVisibility[`velX`] && (
-                  <MiniTimeSeries
-                    data={velocityTimeSeries.xValues}
-                    times={velocityTimeSeries.times}
-                    color={velocityXColor}
-                    currentValue={currentVelocity?.x ?? 0}
-                    unit="inches/second"
-                    label="Velocity X"
-                    peakTime={velocityTimeSeries.peakTimes.x}
-                  />
-                )}
-                {nodePanelGraphVisibility[`velY`] && (
-                  <MiniTimeSeries
-                    data={velocityTimeSeries.yValues}
-                    times={velocityTimeSeries.times}
-                    color={velocityYColor}
-                    currentValue={currentVelocity?.y ?? 0}
-                    unit="inches/second"
-                    label="Velocity Y"
-                    peakTime={velocityTimeSeries.peakTimes.y}
-                  />
-                )}
-                {nodePanelGraphVisibility[`velZ`] && (
-                  <MiniTimeSeries
-                    data={velocityTimeSeries.zValues}
-                    times={velocityTimeSeries.times}
-                    color={velocityZColor}
-                    currentValue={currentVelocity?.z ?? 0}
-                    unit="inches/second"
-                    label="Velocity Z"
-                    peakTime={velocityTimeSeries.peakTimes.z}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        <MetricSection
+          title="Velocity"
+          unit="inches/second"
+          graphPrefix="vel"
+          nodeId={nodeId}
+          accessor={animationData.velocityLin}
+        />
 
         {/* ACCELERATION */}
-        {animationData.accelerationLin && (
-          <div className="animate-fade-in">
-            <h3 className="mb-2 text-sm font-bold">Acceleration</h3>
-
-            <div className="mt-2 space-y-1">
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current X:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentAcceleration!.x} unit="inches/second²" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("accX")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`accX`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`accX`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak X:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakAcceleration?.x ?? 0} unit="inches/second²" />
-                  <span className="text-[9px] text-neutral-500">
-                    @ {peakAcceleration ? peakAcceleration.xTime.toFixed(2) : "0.00"} s
-                  </span>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current Y:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentAcceleration!.y} unit="inches/second²" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("accY")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`accY`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`accY`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak Y:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakAcceleration?.y ?? 0} unit="inches/second²" />
-                  <span className="text-[9px] text-neutral-500">
-                    @ {peakAcceleration ? peakAcceleration.yTime.toFixed(2) : "0.00"} s
-                  </span>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current Z:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={currentAcceleration!.z} unit="inches/second²" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("accZ")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`accZ`] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`accZ`] ? "text-blue-500" : "text-neutral-300"}`}
-                    />
-                  </button>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak Z:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
-                  <UnitTooltip value={peakAcceleration?.z ?? 0} unit="inches/second²" />
-                  <span className="text-[9px] text-neutral-500">
-                    @ {peakAcceleration ? peakAcceleration.zTime.toFixed(2) : "0.00"} s
-                  </span>
-                </span>
-              </div>
-            </div>
-            {accelerationTimeSeries && (
-              <div className="mt-3 space-y-2">
-                {nodePanelGraphVisibility[`accX`] && (
-                  <MiniTimeSeries
-                    data={accelerationTimeSeries.xValues}
-                    times={accelerationTimeSeries.times}
-                    color={accelerationXColor}
-                    currentValue={currentAcceleration?.x ?? 0}
-                    unit="inches/second²"
-                    label="Acceleration X"
-                    peakTime={accelerationTimeSeries.peakTimes.x}
-                  />
-                )}
-                {nodePanelGraphVisibility[`accY`] && (
-                  <MiniTimeSeries
-                    data={accelerationTimeSeries.yValues}
-                    times={accelerationTimeSeries.times}
-                    color={accelerationYColor}
-                    currentValue={currentAcceleration?.y ?? 0}
-                    unit="inches/second²"
-                    label="Acceleration Y"
-                    peakTime={accelerationTimeSeries.peakTimes.y}
-                  />
-                )}
-                {nodePanelGraphVisibility[`accZ`] && (
-                  <MiniTimeSeries
-                    data={accelerationTimeSeries.zValues}
-                    times={accelerationTimeSeries.times}
-                    color={accelerationZColor}
-                    currentValue={currentAcceleration?.z ?? 0}
-                    unit="inches/second²"
-                    label="Acceleration Z"
-                    peakTime={accelerationTimeSeries.peakTimes.z}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        <MetricSection
+          title="Acceleration"
+          unit="inches/second²"
+          graphPrefix="acc"
+          nodeId={nodeId}
+          accessor={animationData.accelerationLin}
+        />
 
         {/* STORY DRIFT */}
         {storyDrift && (
@@ -1151,9 +294,9 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                   <button
                     onClick={() => toggleNodePanelGraph("drift")}
                     className="rounded p-0.5 transition-colors hover:bg-neutral-200"
-                    title={nodePanelGraphVisibility[`drift`] ? "Hide graph" : "Show graph"}>
+                    title={nodePanelGraphVisibility["drift"] ? "Hide graph" : "Show graph"}>
                     <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility[`drift`] ? "text-blue-500" : "text-neutral-300"}`}
+                      className={`size-4 ${nodePanelGraphVisibility["drift"] ? "text-blue-500" : "text-neutral-300"}`}
                     />
                   </button>
                 </span>
@@ -1166,19 +309,17 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
                 </span>
               </div>
             </div>
-            {storyDriftTimeSeries && (
+            {storyDriftTimeSeries && nodePanelGraphVisibility["drift"] && (
               <div className="mt-3 space-y-2">
-                {nodePanelGraphVisibility[`drift`] && (
-                  <MiniTimeSeries
-                    data={storyDriftTimeSeries.values}
-                    times={storyDriftTimeSeries.times}
-                    color={storyDriftColor}
-                    currentValue={storyDrift.current}
-                    unit="percent"
-                    label="Story Drift"
-                    peakTime={storyDriftTimeSeries.peakTime}
-                  />
-                )}
+                <MiniTimeSeries
+                  data={storyDriftTimeSeries.values}
+                  times={storyDriftTimeSeries.times}
+                  color={storyDriftColor}
+                  currentValue={storyDrift.current}
+                  unit="percent"
+                  label="Story Drift"
+                  peakTime={storyDriftTimeSeries.peakTime}
+                />
               </div>
             )}
           </div>
@@ -1192,15 +333,16 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
           </div>
         </div>
 
-        {/* RIBBONS */}
+        {/* RIBBON */}
         <div className="animate-fade-in">
-          <h3 className="mb-2 text-sm font-bold">Displacement Path (Top View)</h3>
-          <MiniRibbon path={ribbonPath} dt={animationData.metadata.dt} frameIndex={frameIndex} />
+          <h3 className="mb-2 text-sm font-bold">Displacement Path</h3>
+          <MiniRibbon path={ribbonPath} dt={dt} frameIndex={frameIndex} />
           <div className="mt-1 flex gap-1 text-[10px] text-neutral-400 italic">
             <InfoIcon className="size-3" /> Number of points reduced for performance
           </div>
         </div>
 
+        {/* NOT-LOADED NOTICES */}
         <div>
           {!animationData.displacementRot && (
             <div className="text-[10px] text-neutral-400 italic">Rotations not loaded</div>

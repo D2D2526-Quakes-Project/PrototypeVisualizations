@@ -1,22 +1,10 @@
 import { useProfileIds, useProfileStore } from "@/state";
-import { RotateCcwIcon } from "lucide-react";
-import { Button } from "../ui/button";
 import { MenubarContent, MenubarMenu, MenubarRadioGroup, MenubarRadioItem, MenubarTrigger } from "../ui/menubar";
 
 export function ProfileMenu() {
   const profileId = useProfileStore((s) => s.profileId);
   const setActiveProfile = useProfileStore((s) => s.setActiveProfile);
   const availableProfileIds = useProfileIds();
-
-  const resetProfile = useProfileStore((s) => s.resetProfile);
-
-  const handleResetProfile = (e: React.MouseEvent, profId: string) => {
-    e.stopPropagation();
-    if (!window.confirm(`Reset profile "${profId}" to its default state?`)) return;
-    resetProfile(profId);
-  };
-
-  // void refreshToken;
 
   return (
     <MenubarMenu>
@@ -28,9 +16,6 @@ export function ProfileMenu() {
             {availableProfileIds.map((profile) => (
               <MenubarRadioItem key={profile} value={profile} className="justify-between capitalize">
                 {profile}
-                <Button variant={"destructive"} size={"icon-xs"} onClick={(e) => handleResetProfile(e, profile)}>
-                  <RotateCcwIcon />
-                </Button>
               </MenubarRadioItem>
             ))}
           </MenubarRadioGroup>

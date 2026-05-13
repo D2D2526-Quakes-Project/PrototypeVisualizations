@@ -6,7 +6,7 @@ import {
   type MagicPanelParams,
 } from "@/features/dockview/MagicPanel";
 // import { CrossSectionPanel, CrossSectionTab } from "@/features/panels/CrossSectionPanel";
-// import { FloorPanel, FloorTab } from "@/features/panels/FloorPanel";
+import { FloorPanel, FloorTab } from "@/features/panels/FloorPanel";
 import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
 import { debounce } from "@/lib/utils";
 import { useProfileStore } from "@/state";
@@ -16,13 +16,13 @@ import { useCallback, useMemo } from "react";
 const components = {
   nodePanel: NodePanel,
   magicPanel: MagicPanel,
-  // floorPanel: FloorPanel,
+  floorPanel: FloorPanel,
   // crossSectionPanel: CrossSectionPanel,
 };
 
 const tabComponents = {
   nodeTab: NodeTab,
-  // floorTab: FloorTab,
+  floorTab: FloorTab,
   magicPanelTab: MagicPanelTab,
   // crossSectionTab: CrossSectionTab,
 };

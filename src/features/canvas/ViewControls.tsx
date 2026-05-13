@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { forwardRef, useEffect, useMemo, useRef } from "react";
 
 import {
   ChevronRightIcon,
@@ -34,15 +34,14 @@ const childVariants = {
   animate: { opacity: 1 },
 };
 
-export function ViewControls({
-  isExpanded,
-  setIsExpanded,
-  docked,
-}: {
-  isExpanded: boolean;
-  setIsExpanded: (expanded: boolean) => void;
-  docked: boolean;
-}) {
+export const ViewControls = forwardRef<
+  HTMLDivElement,
+  {
+    isExpanded: boolean;
+    setIsExpanded: (expanded: boolean) => void;
+    docked: boolean;
+  }
+>(function ViewControls({ isExpanded, setIsExpanded, docked }, ref) {
   const { resetView, resetHomeView, orthographic, setOrthographic } = useCanvasState();
   const autoRotate = useLiveStore((s) => s.autoRotate);
   const setAutoRotate = useLiveStore((s) => s.setAutoRotate);
@@ -93,7 +92,9 @@ export function ViewControls({
   }, [isExpanded, setIsExpanded, setOrthographic, orthographic, clearSelection]);
 
   return (
-    <div className={`pointer-events-none z-60 w-fit ${docked ? "h-full" : "absolute top-2 right-2 bottom-2"}`}>
+    <div
+      ref={ref}
+      className={`pointer-events-none z-60 w-fit flex-[0_0] ${docked ? "h-full" : "absolute top-2 right-2 bottom-2"}`}>
       <div className="flex h-full max-h-full min-h-0 items-start gap-2">
         {!isExpanded && (
           <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>
@@ -313,4 +314,4 @@ export function ViewControls({
       </div>
     </div>
   );
-}
+});

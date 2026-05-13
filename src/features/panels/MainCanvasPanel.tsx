@@ -1,13 +1,13 @@
-import { CanvasWithControls } from "@/features/canvas/CanvasWithControls";
 import { BuildingScene } from "@/features/3d/BuildingScene";
+import { CanvasWithControls } from "@/features/canvas/CanvasWithControls";
 import type { IDockviewPanelProps } from "dockview";
 import { CameraProvider } from "../3d/contexts/CanvasContext";
 import { SceneTooltip } from "../3d/SceneTooltip";
-import { OrientationCube } from "../canvas/components/OrientationCube";
 import { CameraManager } from "../canvas/CameraManager";
-import { SmallPlaybackControls } from "../playback/PlaybackControls";
-import { useExportRenderMode } from "../export/renderMode";
 import { BoxSelectionOverlay } from "../canvas/components/BoxSelection";
+import { OrientationCube } from "../canvas/components/OrientationCube";
+import { useExportRenderMode } from "../export/renderMode";
+import { SmallPlaybackControls } from "../playback/PlaybackControls";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps) => {
   const panelId = props.api.id;

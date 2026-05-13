@@ -34,6 +34,7 @@ import { useEffect, useId, useState } from "react";
 
 import { useAnimationData } from "../animation-data/useAnimationData";
 import { Timeline } from "../timeline/Timeline";
+import { DockviewApiProvider } from "./DockviewApiContext";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -296,25 +297,27 @@ export const MagicPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   );
 
   return (
-    <div
-      className="relative h-full w-full"
-      data-export-panel-root="true"
-      data-export-panel-id={props.api.id}
-      data-export-panel-title={currentPanelType}>
-      {availability.isAvailable ? (
-        <div className="h-full w-full">
-          <CurrentComponent {...props} />
-        </div>
-      ) : (
-        <PanelUnavailableState
-          panelType={currentPanelType}
-          disabledReason={availability.disabledReason}
-          missingStates={availability.missingStates ?? []}
-          onLoad={requestDatasetLoad}
-          onRetry={retryDatasetLoad}
-        />
-      )}
-    </div>
+    <DockviewApiProvider api={props.containerApi}>
+      <div
+        className="relative h-full w-full"
+        data-export-panel-root="true"
+        data-export-panel-id={props.api.id}
+        data-export-panel-title={currentPanelType}>
+        {availability.isAvailable ? (
+          <div className="h-full w-full">
+            <CurrentComponent {...props} />
+          </div>
+        ) : (
+          <PanelUnavailableState
+            panelType={currentPanelType}
+            disabledReason={availability.disabledReason}
+            missingStates={availability.missingStates ?? []}
+            onLoad={requestDatasetLoad}
+            onRetry={retryDatasetLoad}
+          />
+        )}
+      </div>
+    </DockviewApiProvider>
   );
 };
 

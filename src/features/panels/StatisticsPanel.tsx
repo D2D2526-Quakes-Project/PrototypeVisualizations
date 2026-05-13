@@ -18,7 +18,7 @@ function StatRow({
   decimals?: number;
 }) {
   const numericValue = typeof value === "number" ? value : parseFloat(value as string);
-  const isNumeric = typeof value === "number" || !isFinite(numericValue);
+  const isNumeric = typeof value === "number" || isFinite(numericValue);
 
   if (isNumeric && unit) {
     const numVal = typeof value === "number" ? value : numericValue;

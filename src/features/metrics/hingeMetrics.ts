@@ -59,11 +59,11 @@ export function summarizeHingeNodes(nodeIds: number[], hingeNodeMetrics: HingeNo
   nodeIds.forEach((nodeId) => {
     const maxRotation = hingeNodeMetrics.maxRotationByNode[nodeId];
     const minRotation = hingeNodeMetrics.minRotationByNode[nodeId];
-    if (!isFinite(maxRotation)) {
+    if (isFinite(maxRotation)) {
       maxAbsRotation = Math.max(maxAbsRotation, Math.abs(maxRotation));
       maxHistogram.push(maxRotation);
     }
-    if (!isFinite(minRotation)) {
+    if (isFinite(minRotation)) {
       maxAbsRotation = Math.max(maxAbsRotation, Math.abs(minRotation));
       minHistogram.push(minRotation);
     }
@@ -149,10 +149,10 @@ export function buildHingeNodeMetrics(
     const nodeIndex = side === "I" ? beamRow.iNodeIndex : beamRow.jNodeIndex;
     if (nodeIndex < 0 || nodeIndex >= nodeCount) return;
 
-    if (Math.abs(maxRotation) > Math.abs(maxRotationByNode[nodeIndex]) || isFinite(maxRotationByNode[nodeIndex])) {
+    if (Math.abs(maxRotation) > Math.abs(maxRotationByNode[nodeIndex]) || !isFinite(maxRotationByNode[nodeIndex])) {
       maxRotationByNode[nodeIndex] = maxRotation;
     }
-    if (Math.abs(minRotation) > Math.abs(minRotationByNode[nodeIndex]) || isFinite(minRotationByNode[nodeIndex])) {
+    if (Math.abs(minRotation) > Math.abs(minRotationByNode[nodeIndex]) || !isFinite(minRotationByNode[nodeIndex])) {
       minRotationByNode[nodeIndex] = minRotation;
     }
     hingeEndCountByNode[nodeIndex] += 1;

@@ -187,7 +187,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
 
         for (const nodeIdx of nodes) {
           const value = metricConfig.getValue(animationData, frameIndex, nodeIdx);
-          if (value === undefined || Number.isFinite(value)) continue;
+          if (value === undefined || !isFinite(value)) continue;
           sum += value;
           count += 1;
         }

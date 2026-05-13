@@ -1,18 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-// import { AccelerationDistributionPanel } from "@/features/panels/AccelerationDistributionPanel";
-// import { CornerMetricChart } from "@/features/panels/CornerMetricChart";
-// import { DataExplorerPanel } from "@/features/panels/DataExplorerPanel";
-// import { EndCapPanel } from "@/features/panels/EndCapPanel";
-// import { FloorAverageMetricChart } from "@/features/panels/FloorAverageMetricChart";
-// import { FloorTorsionMapPanel } from "@/features/panels/FloorTorsionMapPanel";
-// import { HingeDistributionPanel } from "@/features/panels/HingeDistributionPanel";
-// import { HistogramChart } from "@/features/panels/HistogramChart";
-// import { ISDThresholdPanel } from "@/features/panels/ISDThresholdPanel";
-import { MainCanvasPanel } from "@/features/panels/MainCanvasPanel";
-// import { VelocityDistributionPanel } from "@/features/panels/VelocityDistributionPanel";
 import type { DatasetLoadState } from "@/features/animation-data/data-loading/loadingTypes";
+import { MainCanvasPanel } from "@/features/panels/MainCanvasPanel";
 import type { BuildingAnimationData } from "@/lib/types";
 
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
@@ -25,7 +15,6 @@ import {
   Columns,
   Grid2X2Icon,
   LineChart,
-  Maximize2,
   Minimize2,
   MoreHorizontal,
   Plus,
@@ -35,16 +24,15 @@ import {
   XIcon,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-// import { StatisticsPanel } from "../panels/StatisticsPanel";
 
 import { useAnimationData } from "../animation-data/useAnimationData";
 import { CornerMetricChart } from "../panels/CornerMetricChart";
 import { DataExplorerPanel } from "../panels/DataExplorerPanel";
 import { FloorAverageMetricChart } from "../panels/FloorAverageMetricChart";
-import { Timeline } from "../timeline/Timeline";
-import { DockviewApiProvider } from "./DockviewApiContext";
 import { HingeDistributionPanel } from "../panels/HingeDistributionPanel";
 import { StatisticsPanel } from "../panels/StatisticsPanel";
+import { Timeline } from "../timeline/Timeline";
+import { DockviewApiProvider } from "./DockviewApiContext";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -99,14 +87,6 @@ const PANEL_DEFINITIONS = check({
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },
-  // "Histogram Chart": {
-  //   component: HistogramChart,
-  //   category: "Supporting Analysis",
-  //   icon: BarChart3,
-  //   description: "Threshold exceedance by position",
-  //   requiredOptionalData: [],
-  //   optionalEnhancementData: ["velocityLin", "accelerationLin"],
-  // },
   "Data Explorer": {
     component: DataExplorerPanel,
     category: "Tables / Data",
@@ -123,22 +103,6 @@ const PANEL_DEFINITIONS = check({
     requiredOptionalData: [],
     optionalEnhancementData: [],
   },
-  // "Velocity Distribution": {
-  //   component: VelocityDistributionPanel,
-  //   category: "Distributions",
-  //   icon: BarChart3,
-  //   description: "Velocity histogram distribution",
-  //   requiredOptionalData: ["velocityLin"],
-  //   optionalEnhancementData: [],
-  // },
-  // "Acceleration Distribution": {
-  //   component: AccelerationDistributionPanel,
-  //   category: "Distributions",
-  //   icon: BarChart3,
-  //   description: "Acceleration histogram distribution",
-  //   requiredOptionalData: ["accelerationLin"],
-  //   optionalEnhancementData: [],
-  // },
   "Hinge Distribution": {
     component: HingeDistributionPanel,
     category: "Distributions",
@@ -147,22 +111,6 @@ const PANEL_DEFINITIONS = check({
     requiredOptionalData: ["hingeData", "beamData"],
     optionalEnhancementData: [],
   },
-  // "Floor Torsion Map": {
-  //   component: FloorTorsionMapPanel,
-  //   category: "Supporting Analysis",
-  //   icon: RotateCw,
-  //   description: "Top-down rotation preview per floor",
-  //   requiredOptionalData: [],
-  //   optionalEnhancementData: [],
-  // },
-  // "End Cap": {
-  //   component: EndCapPanel,
-  //   category: "Supporting Analysis",
-  //   icon: Maximize2,
-  //   description: "View of end-cap nodes (max X) with vertical connections",
-  //   requiredOptionalData: [],
-  //   optionalEnhancementData: [],
-  // },
   // "ISD Threshold": {
   //   component: ISDThresholdPanel,
   //   category: "Core Analysis",
@@ -528,9 +476,9 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   const isMaximized = activePanel.api.isMaximized();
   const showPanelPicker = activePanel.api.isActive || activePanel.api.group.panels.length === 1;
 
-  const handleMaximize = () => {
-    activePanel.api.maximize();
-  };
+  // const handleMaximize = () => {
+  //   activePanel.api.maximize();
+  // };
 
   const handleMinimize = () => {
     activePanel.api.exitMaximized();
@@ -557,9 +505,11 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
         <Columns className="rotate-90" />
       </Button>
 
-      <Button variant="ghost" size="icon-xs" onClick={handleClose} title="Close panel">
-        <X />
-      </Button>
+      {!isTabGroup && (
+        <Button variant="ghost" size="icon-xs" onClick={handleClose} title="Close panel">
+          <X />
+        </Button>
+      )}
 
       {isMaximized ? (
         <Button variant="ghost" size="icon-xs" className="mr-1" onClick={handleMinimize} title="Restore">
@@ -587,39 +537,30 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
                   New Tab
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start"
-                onClick={() => {
-                  handleMaximize();
-                  setIsMoreOpen(false);
-                }}>
-                <Maximize2 className="mr-2 h-4 w-4" />
-                Maximize
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start"
-                onClick={() => {
-                  handleSplitHorizontal();
-                  setIsMoreOpen(false);
-                }}>
-                <Columns className="mr-2 h-4 w-4" />
-                Split Right
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start"
-                onClick={() => {
-                  handleSplitVertical();
-                  setIsMoreOpen(false);
-                }}>
-                <Columns className="mr-2 h-4 w-4 rotate-90" />
-                Split Down
-              </Button>
+              <div className="grid grid-cols-2 gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  onClick={() => {
+                    handleSplitHorizontal();
+                    setIsMoreOpen(false);
+                  }}>
+                  <Columns className="mr-2 h-4 w-4" />
+                  Right
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  onClick={() => {
+                    handleSplitVertical();
+                    setIsMoreOpen(false);
+                  }}>
+                  <Columns className="mr-2 h-4 w-4 rotate-90" />
+                  Down
+                </Button>
+              </div>
               {showPanelPicker ? (
                 <>
                   <div className="mx-1 my-1 h-px bg-neutral-200" />

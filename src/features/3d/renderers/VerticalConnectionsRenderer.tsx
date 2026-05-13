@@ -1,25 +1,18 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
-import { useNodeRendering } from "../contexts/useNodeRendering";
 
 export function VerticalConnectionsRenderer({ nodeIds: overrideNodeIds }: { nodeIds?: number[] }) {
   const linesRef = useRef<THREE.LineSegments>(null);
 
-  const { invalidate } = useThree();
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { getNodeColorForCurrentMetric } = useMetrics();
-  const { connectionLineWidth, connectionLineOpacity } = useNodeRendering();
-
-  useEffect(() => {
-    invalidate();
-  }, [frameIndex, invalidate, connectionLineOpacity, connectionLineWidth]);
 
   const nodeIds = useMemo(() => (overrideNodeIds ? overrideNodeIds : visibleNodes), [visibleNodes, overrideNodeIds]);
 

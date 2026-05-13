@@ -3,8 +3,8 @@ import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useGlobalStore } from "@/state";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
@@ -33,7 +33,6 @@ const VIEW_MODE_TO_AXIS: Record<ViewMode, Axis> = {
 };
 
 function SectionScene({ nodeIds, axis }: { nodeIds: number[]; axis: Axis }) {
-  const { invalidate } = useThree();
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
 
@@ -44,10 +43,6 @@ function SectionScene({ nodeIds, axis }: { nodeIds: number[]; axis: Axis }) {
   const { renderHorizontalConnections, renderVerticalConnections } = useRenderModes();
 
   const buildingHeightCenter = axis !== "z" ? animationData.precomputed.boundingBox.span[2] / 2 : 0;
-
-  useEffect(() => {
-    invalidate();
-  }, [nodeScale, frameIndex, nodeOpacity, belowThresholdNodeScale, hingeNodeScale, renderHingeNodes, invalidate]);
 
   const hingeNodeGeometry = useMemo(() => {
     if (!animationData.hingeData || !animationData.beamData) return null;

@@ -2,7 +2,7 @@ import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import Delaunay from "delaunator";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -27,7 +27,6 @@ function FloorSlab({ storyId }: { storyId: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const posAttrRef = useRef<THREE.BufferAttribute>(null);
   const colAttrRef = useRef<THREE.BufferAttribute>(null);
-  const { invalidate } = useThree();
 
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
@@ -51,10 +50,6 @@ function FloorSlab({ storyId }: { storyId: string }) {
   useEffect(() => {
     floorOpacityRef.current = floorOpacity;
   }, [floorOpacity]);
-
-  useEffect(() => {
-    invalidate();
-  }, [invalidate, floorOpacity]);
 
   const topology = useMemo(() => {
     const visibleNodeIds = new Set(visibleNodes);

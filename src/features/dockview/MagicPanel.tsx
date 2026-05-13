@@ -49,7 +49,6 @@ type PanelDefinition = {
 };
 
 type PanelDataKey =
-  | "beamData"
   | "hingeData"
   | "shearData"
   | "displacementRot"
@@ -108,7 +107,7 @@ const PANEL_DEFINITIONS = check({
     category: "Distributions",
     icon: ChartColumnIcon,
     description: "Global static hinge rotation histogram",
-    requiredOptionalData: ["hingeData", "beamData"],
+    requiredOptionalData: ["hingeData"],
     optionalEnhancementData: [],
   },
   // "ISD Threshold": {
@@ -130,7 +129,6 @@ const PANEL_DEFINITIONS = check({
 });
 
 const PANEL_DATA_LABELS: Record<PanelDataKey, string> = {
-  beamData: "beam connectivity data",
   hingeData: "hinge data",
   shearData: "shear data",
   displacementRot: "rotational displacement data",

@@ -1,14 +1,14 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import Delaunay from "delaunator";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useHover } from "../lib/useHover";
-import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 
 export function XCrossSectionSlabsRenderer() {
   return <CrossSectionSlabsRendererImpl crossSectionType="x" />;
@@ -63,7 +63,6 @@ function CrossSectionSlab({
   crossSectionType: "x" | "y";
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const { invalidate } = useThree();
 
   const { getNodeVisualPosition } = useNodePositions();
   const { frameIndex } = usePlayback();
@@ -71,10 +70,6 @@ function CrossSectionSlab({
   const { floorOpacity } = useNodeRendering();
   const { hoveredCrossSection, setHoveredCrossSection } = useHover();
   const { openCrossSectionPanel } = useOpenPanels();
-
-  useEffect(() => {
-    invalidate();
-  }, [invalidate, floorOpacity]);
 
   const topology = useMemo(() => {
     if (nodeIds.length < 3) return null;

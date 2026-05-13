@@ -1,15 +1,15 @@
+import { BoxSelectionHandler } from "@/features/canvas/components/BoxSelection";
+import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useLiveStore } from "@/state";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
+import { useCallback, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useCanvasState } from "../contexts/CanvasContext";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
-import { BoxSelectionHandler } from "@/features/canvas/components/BoxSelection";
 import { useHover } from "../lib/useHover";
-import { useLiveStore } from "@/state";
-import { useOpenPanels } from "@/features/dockview/useOpenPanels";
-import { useCanvasState } from "../contexts/CanvasContext";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
@@ -17,7 +17,6 @@ const tempColor = new THREE.Color();
 export function NodesRenderer() {
   const nodesMeshRef = useRef<THREE.InstancedMesh>(null);
 
-  const { invalidate } = useThree();
   const { frameIndex } = usePlayback();
   const { getNodeColorForCurrentMetric } = useMetrics();
   const { visibleNodes, getNodeVisualPosition } = useNodePositions();
@@ -35,10 +34,6 @@ export function NodesRenderer() {
     }
     return indices;
   }, [visibleNodes, selectedNodeIds]);
-
-  useEffect(() => {
-    invalidate();
-  }, [frameIndex, invalidate, nodeScale, nodeOpacity, belowThresholdNodeScale, visibleNodes.length]);
 
   useFrame(() => {
     if (!nodesMeshRef.current || visibleNodes.length === 0) return;

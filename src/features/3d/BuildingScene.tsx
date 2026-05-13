@@ -1,48 +1,35 @@
 import { UNIT_SCALE } from "@/lib/utils";
-import { useGlobalStore, useProfileStore } from "@/state";
-import { useThree } from "@react-three/fiber";
-import { useEffect } from "react";
+import { useGlobalStore } from "@/state";
 import { useMetrics } from "../metrics/useMetrics";
+import { useRenderModes } from "./lib/useRenderModes";
 import { XCrossSectionSlabsRenderer, YCrossSectionSlabsRenderer } from "./renderers/CrossSectionSlabsRenderer";
 import { FloorDirectionLabels } from "./renderers/FloorDirectionLabels";
 import { FloorSlabsRenderer } from "./renderers/FloorSlabsRenderer";
 import { FloorTickMarks } from "./renderers/FloorTickMarks";
 import { HingeNodesRenderer } from "./renderers/HingeNodeRenderer";
+import { HorizontalConnectionsRenderer } from "./renderers/HorizontalConnectionsRenderer";
 import { NodesRenderer } from "./renderers/NodesRenderer";
 import { OpenPanelCrossSectionsRenderer } from "./renderers/OpenPanelCrossSectionsRenderer";
 import { OpenPanelFloorsRenderer } from "./renderers/OpenPanelFloorsRenderer";
 import { OpenPanelNodesRenderer } from "./renderers/OpenPanelNodesRenderer";
 import { VerticalConnectionsRenderer } from "./renderers/VerticalConnectionsRenderer";
-import { HorizontalConnectionsRenderer } from "./renderers/HorizontalConnectionsRenderer";
+import { SceneInvalidators } from "./lib/SceneInvaidators";
 
 export function BuildingScene() {
-  const { invalidate } = useThree();
-
-  const renderNodes = useProfileStore((s) => s.renderNodes);
   const { isCurrentMetricHinge: renderHingeNodes } = useMetrics();
-  const renderFloorSlabs = useProfileStore((s) => s.renderFloorSlabs);
-  const renderXCrossSectionSlabs = useProfileStore((s) => s.renderXCrossSectionSlabs);
-  const renderYCrossSectionSlabs = useProfileStore((s) => s.renderYCrossSectionSlabs);
-  const renderVerticalConnections = useProfileStore((s) => s.renderVerticalConnections);
-  const renderHorizontalConnections = useProfileStore((s) => s.renderHorizontalConnections);
-
-  useEffect(() => {
-    invalidate();
-  }, [
-    invalidate,
+  const {
     renderNodes,
-    renderHingeNodes,
     renderFloorSlabs,
     renderXCrossSectionSlabs,
     renderYCrossSectionSlabs,
     renderVerticalConnections,
     renderHorizontalConnections,
-  ]);
-
+  } = useRenderModes();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
 
   return (
     <>
+      <SceneInvalidators />
       <ambientLight intensity={2} />
       <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
 

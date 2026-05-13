@@ -1,7 +1,7 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useMetrics } from "@/features/metrics/useMetrics";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
@@ -11,15 +11,10 @@ const tempColor = new THREE.Color();
 
 export function HingeNodesRenderer() {
   const { animationData } = useAnimationData();
-  const { invalidate } = useThree();
 
   const { visibleNodes, getNodeVisualPosition } = useNodePositions();
   const { getNodeColorForCurrentMetric } = useMetrics();
   const { nodeScale, hingeNodeScale, belowThresholdHingeScale } = useNodeRendering();
-
-  useEffect(() => {
-    invalidate();
-  }, [hingeNodeScale, belowThresholdHingeScale, nodeScale, invalidate]);
 
   const hingeNodesMeshRef = useRef<THREE.InstancedMesh>(null);
 

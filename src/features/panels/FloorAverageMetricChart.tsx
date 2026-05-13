@@ -187,7 +187,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
 
         for (const nodeIdx of nodes) {
           const value = metricConfig.getValue(animationData, frameIndex, nodeIdx);
-          if (value === undefined || Number.isNaN(value)) continue;
+          if (value === undefined || Number.isFinite(value)) continue;
           sum += value;
           count += 1;
         }
@@ -206,16 +206,6 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   }, [animationData, effectiveSelectedMetrics, frameIndex, storyIds]);
 
   const option = useMemo((): EChartsOption => {
-    // const legendData = effectiveSelectedMetrics.map((metric) => {
-    //   const option = metricOptions.find((entry) => entry.metric === metric);
-    //   const config = getMetricConfig(metric);
-    //   return {
-    //     name: `${config.shortLabel} (${config.unit.abbr})`,
-    //     icon: "roundRect",
-    //     itemStyle: { color: option?.color ?? "#6b7280" },
-    //   };
-    // });
-
     const storyRows = storyIds.map((storyId) => {
       const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
       return {
@@ -242,6 +232,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       };
     });
 
+    const seriesMetricMap: (Metric | null)[] = [];
     const series: SeriesOption[] = effectiveSelectedMetrics.flatMap((metric) => {
       const metricConfig = getMetricConfig(metric);
       const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
@@ -278,6 +269,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
           markLineData.push({ xAxis: -thresholdValue, name: `Threshold -${metricConfig.unit.abbr}` });
         }
 
+        seriesMetricMap.push(metric, null);
         return [
           barSeries,
           {
@@ -298,6 +290,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
         ];
       }
 
+      seriesMetricMap.push(metric);
       return [barSeries];
     });
 
@@ -351,7 +344,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
 
           for (const param of params) {
             if (typeof param.seriesIndex !== "number") continue;
-            const metric = effectiveSelectedMetrics[param.seriesIndex];
+            const metric = seriesMetricMap[param.seriesIndex];
             if (!metric) continue;
             const metricConfig = getMetricConfig(metric);
             const metricRows = metricStoryData.get(metric) ?? [];

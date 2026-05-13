@@ -18,15 +18,19 @@ import type { BuildingAnimationData } from "@/lib/types";
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import type { LucideIcon } from "lucide-react";
 import {
-  ActivityIcon,
+  ChartBarIncreasingIcon,
+  ChartColumnIcon,
+  ChartGanttIcon,
   CircleDotDashed,
   Columns,
+  Grid2X2Icon,
   LineChart,
   Maximize2,
   Minimize2,
   MoreHorizontal,
-  PanelTop,
   Plus,
+  Rotate3DIcon,
+  SheetIcon,
   X,
   XIcon,
 } from "lucide-react";
@@ -34,11 +38,13 @@ import { useEffect, useId, useState } from "react";
 // import { StatisticsPanel } from "../panels/StatisticsPanel";
 
 import { useAnimationData } from "../animation-data/useAnimationData";
-import { Timeline } from "../timeline/Timeline";
-import { DockviewApiProvider } from "./DockviewApiContext";
 import { CornerMetricChart } from "../panels/CornerMetricChart";
 import { DataExplorerPanel } from "../panels/DataExplorerPanel";
 import { FloorAverageMetricChart } from "../panels/FloorAverageMetricChart";
+import { Timeline } from "../timeline/Timeline";
+import { DockviewApiProvider } from "./DockviewApiContext";
+import { HingeDistributionPanel } from "../panels/HingeDistributionPanel";
+import { StatisticsPanel } from "../panels/StatisticsPanel";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -80,7 +86,7 @@ const PANEL_DEFINITIONS = check({
   "Corner Metric Chart": {
     component: CornerMetricChart,
     category: "Core Analysis",
-    icon: LineChart,
+    icon: ChartBarIncreasingIcon,
     description: "Per-story corner values for a selected metric",
     requiredOptionalData: [],
     optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot", "velocityRot", "accelerationRot"],
@@ -88,7 +94,7 @@ const PANEL_DEFINITIONS = check({
   "Main Canvas": {
     component: MainCanvasPanel,
     category: "Canvas",
-    icon: PanelTop,
+    icon: Rotate3DIcon,
     description: "3D structure viewport",
     requiredOptionalData: [],
     optionalEnhancementData: [],
@@ -104,7 +110,7 @@ const PANEL_DEFINITIONS = check({
   "Data Explorer": {
     component: DataExplorerPanel,
     category: "Tables / Data",
-    icon: ActivityIcon,
+    icon: SheetIcon,
     description: "Current values, peaks, and sortable node explorer",
     requiredOptionalData: [],
     optionalEnhancementData: [],
@@ -112,7 +118,7 @@ const PANEL_DEFINITIONS = check({
   "Floor Average Metric": {
     component: FloorAverageMetricChart,
     category: "Core Analysis",
-    icon: LineChart,
+    icon: ChartGanttIcon,
     description: "Average Metrics for a Floor",
     requiredOptionalData: [],
     optionalEnhancementData: [],
@@ -133,14 +139,14 @@ const PANEL_DEFINITIONS = check({
   //   requiredOptionalData: ["accelerationLin"],
   //   optionalEnhancementData: [],
   // },
-  // "Hinge Distribution": {
-  //   component: HingeDistributionPanel,
-  //   category: "Distributions",
-  //   icon: BarChart3,
-  //   description: "Global static hinge rotation histogram",
-  //   requiredOptionalData: ["hingeData", "beamData"],
-  //   optionalEnhancementData: [],
-  // },
+  "Hinge Distribution": {
+    component: HingeDistributionPanel,
+    category: "Distributions",
+    icon: ChartColumnIcon,
+    description: "Global static hinge rotation histogram",
+    requiredOptionalData: ["hingeData", "beamData"],
+    optionalEnhancementData: [],
+  },
   // "Floor Torsion Map": {
   //   component: FloorTorsionMapPanel,
   //   category: "Supporting Analysis",
@@ -165,14 +171,14 @@ const PANEL_DEFINITIONS = check({
   //   requiredOptionalData: [],
   //   optionalEnhancementData: [],
   // },
-  // Statistics: {
-  //   component: StatisticsPanel,
-  //   category: "Core Analysis",
-  //   icon: Grid2X2Icon,
-  //   description: "Simulation overview",
-  //   requiredOptionalData: [],
-  //   optionalEnhancementData: [],
-  // },
+  Statistics: {
+    component: StatisticsPanel,
+    category: "Core Analysis",
+    icon: Grid2X2Icon,
+    description: "Simulation overview",
+    requiredOptionalData: [],
+    optionalEnhancementData: [],
+  },
 });
 
 const PANEL_DATA_LABELS: Record<PanelDataKey, string> = {

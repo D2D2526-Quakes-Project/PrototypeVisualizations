@@ -18,9 +18,9 @@ export type HingeHistogramResult = {
   mean: number;
 };
 
-function computeHingeHistogram(values: number[], binCount = 24): HingeHistogramResult | null {
+export function computeHingeHistogram(values: number[], binCount = 24): HingeHistogramResult | null {
   if (values.length === 0) return null;
-
+  values = values.filter((value) => Number.isFinite(value));
   values.sort((a, b) => a - b);
 
   const count = values.length;
@@ -59,11 +59,11 @@ export function summarizeHingeNodes(nodeIds: number[], hingeNodeMetrics: HingeNo
   nodeIds.forEach((nodeId) => {
     const maxRotation = hingeNodeMetrics.maxRotationByNode[nodeId];
     const minRotation = hingeNodeMetrics.minRotationByNode[nodeId];
-    if (!isNaN(maxRotation)) {
+    if (!isFinite(maxRotation)) {
       maxAbsRotation = Math.max(maxAbsRotation, Math.abs(maxRotation));
       maxHistogram.push(maxRotation);
     }
-    if (!isNaN(minRotation)) {
+    if (!isFinite(minRotation)) {
       maxAbsRotation = Math.max(maxAbsRotation, Math.abs(minRotation));
       minHistogram.push(minRotation);
     }
@@ -149,10 +149,10 @@ export function buildHingeNodeMetrics(
     const nodeIndex = side === "I" ? beamRow.iNodeIndex : beamRow.jNodeIndex;
     if (nodeIndex < 0 || nodeIndex >= nodeCount) return;
 
-    if (Math.abs(maxRotation) > Math.abs(maxRotationByNode[nodeIndex]) || isNaN(maxRotationByNode[nodeIndex])) {
+    if (Math.abs(maxRotation) > Math.abs(maxRotationByNode[nodeIndex]) || isFinite(maxRotationByNode[nodeIndex])) {
       maxRotationByNode[nodeIndex] = maxRotation;
     }
-    if (Math.abs(minRotation) > Math.abs(minRotationByNode[nodeIndex]) || isNaN(minRotationByNode[nodeIndex])) {
+    if (Math.abs(minRotation) > Math.abs(minRotationByNode[nodeIndex]) || isFinite(minRotationByNode[nodeIndex])) {
       minRotationByNode[nodeIndex] = minRotation;
     }
     hingeEndCountByNode[nodeIndex] += 1;

@@ -598,7 +598,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       const currentTime = frameIndex * animationData.metadata.dt;
       const xPixel = chart.convertToPixel({ xAxisIndex: 0 }, currentTime);
 
-      if (xPixel != null && !isNaN(xPixel as number)) {
+      if (xPixel != null && !isFinite(xPixel as number)) {
         playheadRef.current.style.transform = `translateX(${xPixel}px)`;
         playheadRef.current.style.display = "block";
 
@@ -611,7 +611,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
           const coords = chart.convertToPixel({ xAxisIndex: index, yAxisIndex: index }, [currentTime, currentValue]);
 
-          if (coords && coords.length === 2 && !isNaN(coords[1])) {
+          if (coords && coords.length === 2 && !isFinite(coords[1])) {
             dot.style.transform = `translate(-50%, calc(${coords[1]}px - 50%))`;
             dot.style.display = "block";
           } else {

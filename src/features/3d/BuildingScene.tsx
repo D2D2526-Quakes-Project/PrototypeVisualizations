@@ -9,6 +9,8 @@ import { FloorSlabsRenderer } from "./renderers/FloorSlabsRenderer";
 import { FloorTickMarks } from "./renderers/FloorTickMarks";
 import { HingeNodesRenderer } from "./renderers/HingeNodeRenderer";
 import { NodesRenderer } from "./renderers/NodesRenderer";
+import { OpenPanelCrossSectionsRenderer } from "./renderers/OpenPanelCrossSectionsRenderer";
+import { OpenPanelFloorsRenderer } from "./renderers/OpenPanelFloorsRenderer";
 import { OpenPanelNodesRenderer } from "./renderers/OpenPanelNodesRenderer";
 import { VerticalConnectionsRenderer } from "./renderers/VerticalConnectionsRenderer";
 import { HorizontalConnectionsRenderer } from "./renderers/HorizontalConnectionsRenderer";
@@ -53,6 +55,8 @@ export function BuildingScene() {
         {renderNodes && <NodesRenderer />}
         {renderHingeNodes && <HingeNodesRenderer />}
         <OpenPanelNodesRenderer />
+        <OpenPanelFloorsRenderer />
+        <OpenPanelCrossSectionsRenderer />
       </group>
 
       <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 1, colorTheme.grid, colorTheme.grid]} />

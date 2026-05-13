@@ -35,6 +35,7 @@ import { useEffect, useId, useState } from "react";
 import { useAnimationData } from "../animation-data/useAnimationData";
 import { Timeline } from "../timeline/Timeline";
 import { DockviewApiProvider } from "./DockviewApiContext";
+import { CornerMetricChart } from "../panels/CornerMetricChart";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -73,14 +74,14 @@ const PANEL_DEFINITIONS = check({
     requiredOptionalData: [],
     optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot"],
   },
-  // "Corner Metric Chart": {
-  //   component: CornerMetricChart,
-  //   category: "Core Analysis",
-  //   icon: LineChart,
-  //   description: "Per-story corner values for a selected metric",
-  //   requiredOptionalData: [],
-  //   optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot", "velocityRot", "accelerationRot"],
-  // },
+  "Corner Metric Chart": {
+    component: CornerMetricChart,
+    category: "Core Analysis",
+    icon: LineChart,
+    description: "Per-story corner values for a selected metric",
+    requiredOptionalData: [],
+    optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot", "velocityRot", "accelerationRot"],
+  },
   "Main Canvas": {
     component: MainCanvasPanel,
     category: "Canvas",

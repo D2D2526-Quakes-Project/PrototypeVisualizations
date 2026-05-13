@@ -13,7 +13,7 @@ import { AveragedMetricSection } from "@/components/AveragedMetricSection";
 import { numberToColor, numberToColorLight, stringToNumber } from "@/lib/utils";
 import { useGlobalStore, useProfileStore } from "@/state";
 import { getMetricKeyColor } from "@/features/metrics/metrics";
-import { FloorVisualization } from "../3d/renderers/FloorVisualization";
+import { SectionVisualization } from "../3d/renderers/SectionVisualization";
 
 export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const storyId = props.params.storyId;
@@ -126,7 +126,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
       <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3">
         {/* 3D VISUALIZATION */}
         <div className="animate-fade-in w-full" ref={containerRef}>
-          <FloorVisualization nodeIds={nodeIds} width={dimensions} />
+          <SectionVisualization nodeIds={nodeIds} width={dimensions} viewMode="floor" />
         </div>
 
         {/* LOCATION INFO */}

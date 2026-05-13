@@ -7,7 +7,7 @@ import { numberToColor, numberToColorLight } from "@/lib/utils";
 import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview";
 import { XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { CrossSectionVisualization } from "../3d/renderers/CrossSectionVisualization";
+import { SectionVisualization } from "../3d/renderers/SectionVisualization";
 
 export interface CrossSectionParams {
   crossSectionType: "X" | "Y";
@@ -43,7 +43,7 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
       <div className="flex-1 space-y-2 overflow-y-scroll p-3 text-xs">
         {/* LOCATION INFO */}
         <div className="animate-fade-in w-full" ref={containerRef}>
-          <CrossSectionVisualization nodeIds={nodeIds} crossSectionType={crossSectionType} width={dimensions} />
+          <SectionVisualization nodeIds={nodeIds} width={dimensions} viewMode={crossSectionType === "X" ? "x" : "y"} />
         </div>{" "}
         <div className="animate-fade-in grid grid-cols-2 gap-2">
           {/* LOCATION INFO */}

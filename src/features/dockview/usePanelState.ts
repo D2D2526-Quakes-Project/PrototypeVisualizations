@@ -1,6 +1,7 @@
 import { debounce } from "@/lib/utils";
 import { useProfileStore } from "@/state";
 import { useMemo, useState, useCallback } from "react";
+import type { PanelType } from "./MagicPanel";
 
 type SetterName<K extends string> = `set${Capitalize<K>}`;
 
@@ -22,7 +23,7 @@ function isUpdater<V>(value: V | ((prev: V) => V)): value is (prev: V) => V {
 
 export function usePanelState<T extends Record<keyof T, unknown>>(params: {
   panelId: string;
-  panelType: string;
+  panelType: PanelType;
   defaultState: T;
 }): UsePanelStateReturn<T> {
   const { panelId, panelType, defaultState } = params;

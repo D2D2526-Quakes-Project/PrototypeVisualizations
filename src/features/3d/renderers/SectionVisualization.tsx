@@ -249,19 +249,19 @@ export function SectionVisualization({ nodeIds, width, viewMode }: SectionVisual
       case "floor":
         return {
           ...baseCamera,
-          position: [0, 0, 100] as const,
+          position: [0, 0, 1000] as const,
           up: [0, 1, 0] as const,
         };
       case "x":
         return {
           ...baseCamera,
-          position: [-100, 0, 0] as const,
+          position: [-1000, 0, 0] as const,
           up: [0, 0, 1] as const,
         };
       case "y":
         return {
           ...baseCamera,
-          position: [0, -100, 0] as const,
+          position: [0, -1000, 0] as const,
           up: [0, 0, 1] as const,
         };
     }
@@ -286,6 +286,8 @@ export function SectionVisualization({ nodeIds, width, viewMode }: SectionVisual
         <ambientLight intensity={2} />
         <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />
         <SectionScene nodeIds={nodeIds} axis={axis} />
+        {/* <OrbitControls />
+        <Box /> */}
       </Canvas>
     </div>
   );

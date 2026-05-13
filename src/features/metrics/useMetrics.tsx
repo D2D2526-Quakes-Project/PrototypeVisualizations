@@ -7,6 +7,8 @@ import { getMetricColorScale, isHingeMetric, isStaticMetric, METRIC_CONFIGS, typ
 import { interpolateColor } from "./colors";
 
 const grayColor = new THREE.Color(0.5, 0.5, 0.5);
+// const magentaColor = new THREE.Color(1, 0, 1);
+const darkGrayColor = new THREE.Color(0.4, 0.4, 0.4);
 const ERROR_MAGENTA = interpolate(["magenta"], "oklab");
 
 export function useMetrics() {
@@ -129,6 +131,10 @@ export function useMetrics() {
 
   const getNodeColorForCurrentMetric = useCallback(
     (nodeId: number, frameIndex: number) => {
+      if (!animationData.metadata.nodeToStory[nodeId]) {
+        return { passesThreshold: false, noValue: true, color: darkGrayColor };
+      }
+
       if (missingNodeSet.has(nodeId)) {
         return { passesThreshold: false, noValue: true, color: grayColor };
       }

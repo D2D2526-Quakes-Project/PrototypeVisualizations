@@ -8,18 +8,28 @@ import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 
 function OpenFloorRect({ storyId }: { storyId: string }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
+
+  const leftWallRef = useRef<THREE.Mesh>(null);
+  const rightWallRef = useRef<THREE.Mesh>(null);
+  const bottomWallRef = useRef<THREE.Mesh>(null);
+  const topWallRef = useRef<THREE.Mesh>(null);
+
   const { animationData } = useAnimationData();
   const { getNodeVisualPosition } = useNodePositions();
   const { frameIndex } = usePlayback();
   const nodeIds = animationData.metadata.stories[storyId] ?? [];
   const color = numberToColor(stringToNumber(storyId));
 
-  useFrame(() => {
-    if (!meshRef.current || nodeIds.length === 0) return;
+  const wallDepth = 1;
 
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
+  useFrame(() => {
+    if (!groupRef.current || nodeIds.length === 0) return;
+
+    let minX = Infinity,
+      maxX = -Infinity;
+    let minY = Infinity,
+      maxY = -Infinity;
     let z = 0;
 
     for (const nodeId of nodeIds) {
@@ -35,17 +45,54 @@ function OpenFloorRect({ storyId }: { storyId: string }) {
     const height = maxY - minY;
     if (width <= 0 || height <= 0) return;
 
-    meshRef.current.position.set((minX + maxX) / 2, (minY + maxY) / 2, z);
-    meshRef.current.scale.set(width, height, 1);
+    groupRef.current.position.set((minX + maxX) / 2, (minY + maxY) / 2, z);
+
+    if (leftWallRef.current) {
+      leftWallRef.current.scale.set(wallDepth, height, 1);
+      leftWallRef.current.position.set(-width / 2, 0, 0);
+    }
+    if (rightWallRef.current) {
+      rightWallRef.current.scale.set(wallDepth, height, 1);
+      rightWallRef.current.position.set(width / 2, 0, 0);
+    }
+    if (bottomWallRef.current) {
+      bottomWallRef.current.scale.set(width, wallDepth, 1);
+      bottomWallRef.current.position.set(0, -height / 2, 0);
+    }
+    if (topWallRef.current) {
+      topWallRef.current.scale.set(width, wallDepth, 1);
+      topWallRef.current.position.set(0, height / 2, 0);
+    }
   });
 
   if (nodeIds.length === 0) return null;
 
   return (
-    <mesh ref={meshRef} renderOrder={-5}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
-    </mesh>
+    <group ref={groupRef}>
+      {/* Left Wall */}
+      <mesh ref={leftWallRef} renderOrder={-5} rotation={[0, -Math.PI / 2, 0]}>
+        <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+
+      {/* Right Wall */}
+      <mesh ref={rightWallRef} renderOrder={-5} rotation={[0, Math.PI / 2, 0]}>
+        <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+
+      {/* Bottom Wall */}
+      <mesh ref={bottomWallRef} renderOrder={-5} rotation={[Math.PI / 2, 0, 0]}>
+        <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+
+      {/* Top Wall */}
+      <mesh ref={topWallRef} renderOrder={-5} rotation={[-Math.PI / 2, 0, 0]}>
+        <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+    </group>
   );
 }
 

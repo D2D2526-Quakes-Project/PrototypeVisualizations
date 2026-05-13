@@ -116,12 +116,12 @@ export function useNodePositions() {
       let disp = [...displacementLin.atFrame(frameIndex).at(nodeId)];
 
       if (visualInterpolationEnabled && missingNodeSet.has(nodeId)) {
-        const story = nodeToStory[nodeId]!;
-        console.assert(story !== null, "Story not found for node");
-        const storyIndex = storyOrder.indexOf(story);
-        console.assert(storyIndex >= 0, "Story index not found");
-        const avg = avgDisplacementPerStory[frameIndex * storyCount + storyIndex];
-        disp = [avg, avg, avg];
+        const story = nodeToStory[nodeId];
+        if (story) {
+          const storyIndex = storyOrder.indexOf(story);
+          const avg = avgDisplacementPerStory[frameIndex * storyCount + storyIndex];
+          disp = [avg, avg, avg];
+        }
       }
 
       if (displacementEnabled) {

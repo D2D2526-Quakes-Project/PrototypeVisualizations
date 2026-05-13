@@ -43,7 +43,7 @@ function SectionScene({ nodeIds, axis }: { nodeIds: number[]; axis: Axis }) {
     useNodeRendering();
   const { renderHorizontalConnections, renderVerticalConnections } = useRenderModes();
 
-  const buildingHeightCenter = axis !== "z" ? animationData.precomputed.boundingBox.center[1] / 2 : 0;
+  const buildingHeightCenter = axis !== "z" ? animationData.precomputed.boundingBox.span[2] / 2 : 0;
 
   useEffect(() => {
     invalidate();
@@ -161,46 +161,42 @@ function SectionScene({ nodeIds, axis }: { nodeIds: number[]; axis: Axis }) {
     colorAttr.needsUpdate = true;
   });
 
-  const content = (
-    <group>
-      <group position={[buildingOffset[0], buildingOffset[1], buildingOffset[2]]}>
-        <BoundingGeometryRenderer axis={axis} opacity={0.15} />
-      </group>
-      {renderVerticalConnections && <VerticalConnectionsRenderer nodeIds={nodeIds} />}
-      {renderHorizontalConnections && <HorizontalConnectionsRenderer nodeIds={nodeIds} />}
-
-      <instancedMesh ref={nodesMeshRef} args={[undefined, undefined, nodeIds.length]} frustumCulled={false}>
-        <sphereGeometry args={[40, 4, 2]}>
-          <instancedBufferAttribute
-            attach="attributes-color"
-            args={[new Float32Array(nodeIds.length * 3).fill(1), 3]}
-            usage={THREE.DynamicDrawUsage}
-          />
-        </sphereGeometry>
-        <meshBasicMaterial fog={false} vertexColors transparent opacity={nodeOpacity} />
-      </instancedMesh>
-
-      {renderHingeNodes && hingeNodeGeometry && (
-        <instancedMesh
-          ref={hingeNodesMeshRef}
-          args={[undefined, undefined, hingeNodeGeometry.count]}
-          frustumCulled={false}>
-          <coneGeometry args={[16, 30, 4]}>
-            <instancedBufferAttribute
-              attach="attributes-color"
-              args={[new Float32Array(hingeNodeGeometry.count * 3).fill(1), 3]}
-              usage={THREE.DynamicDrawUsage}
-            />
-          </coneGeometry>
-          <meshBasicMaterial fog={false} vertexColors transparent />
-        </instancedMesh>
-      )}
-    </group>
-  );
-
   return (
     <group scale={UNIT_SCALE}>
-      <group position={axis !== "z" ? [0, 0, -buildingHeightCenter] : [0, 0, 0]}>{content}</group>
+      <group position={axis !== "z" ? [0, 0, -buildingHeightCenter] : [0, 0, 0]}>
+        <group position={[buildingOffset[0], buildingOffset[1], buildingOffset[2]]}>
+          <BoundingGeometryRenderer axis={axis} opacity={0.15} />
+        </group>
+        {renderVerticalConnections && <VerticalConnectionsRenderer nodeIds={nodeIds} />}
+        {renderHorizontalConnections && <HorizontalConnectionsRenderer nodeIds={nodeIds} />}
+
+        <instancedMesh ref={nodesMeshRef} args={[undefined, undefined, nodeIds.length]} frustumCulled={false}>
+          <sphereGeometry args={[40, 4, 2]}>
+            <instancedBufferAttribute
+              attach="attributes-color"
+              args={[new Float32Array(nodeIds.length * 3).fill(1), 3]}
+              usage={THREE.DynamicDrawUsage}
+            />
+          </sphereGeometry>
+          <meshBasicMaterial fog={false} vertexColors transparent opacity={nodeOpacity} />
+        </instancedMesh>
+
+        {renderHingeNodes && hingeNodeGeometry && (
+          <instancedMesh
+            ref={hingeNodesMeshRef}
+            args={[undefined, undefined, hingeNodeGeometry.count]}
+            frustumCulled={false}>
+            <coneGeometry args={[16, 30, 4]}>
+              <instancedBufferAttribute
+                attach="attributes-color"
+                args={[new Float32Array(hingeNodeGeometry.count * 3).fill(1), 3]}
+                usage={THREE.DynamicDrawUsage}
+              />
+            </coneGeometry>
+            <meshBasicMaterial fog={false} vertexColors transparent />
+          </instancedMesh>
+        )}
+      </group>
     </group>
   );
 }
@@ -243,6 +239,8 @@ export function SectionVisualization({ nodeIds, width, viewMode }: SectionVisual
       right: (widthSpan / 2) * UNIT_SCALE,
       top: (verticalSpan / 2) * UNIT_SCALE,
       bottom: (-verticalSpan / 2) * UNIT_SCALE,
+      near: -10000,
+      far: 10000,
     };
 
     switch (viewMode) {

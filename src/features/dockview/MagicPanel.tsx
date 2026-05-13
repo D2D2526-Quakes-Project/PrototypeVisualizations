@@ -302,14 +302,11 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
 
   return (
     <div
-      className={`group z-10 flex h-full w-full cursor-grab items-center gap-1 p-3 py-0 transition-colors ${
-        isActive ? "bg-amber-50/90 text-amber-900" : "bg-neutral-200/80"
-      }`}>
-      <span
-        className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-amber-900" : "text-neutral-700"}`}>
+      className={`group z-10 flex h-full w-full cursor-grab items-center gap-1 bg-neutral-200/80 p-3 py-0 transition-colors`}>
+      <span className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
         {(() => {
           const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
-          return <Icon className={`size-3.5 ${isActive ? "text-amber-700" : "text-neutral-500"}`} />;
+          return <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />;
         })()}
         {currentPanelType}
       </span>
@@ -485,7 +482,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   };
 
   return (
-    <div className="flex h-full items-center gap-0.5">
+    <div className="flex h-full items-center">
       {isTabGroup && (
         <Button variant="ghost" size="icon-xs" className="ml-1" onClick={handleDuplicateAsTab} title="Duplicate as tab">
           <Plus />
@@ -522,7 +519,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
               <MoreHorizontal />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className={"w-48 p-1"} align="end">
+          <PopoverContent className={"z-100 w-48 p-1"} align="end">
             <div className="flex flex-col gap-0.5">
               {!isTabGroup && (
                 <Button

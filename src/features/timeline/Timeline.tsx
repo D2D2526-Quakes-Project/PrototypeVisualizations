@@ -28,6 +28,8 @@ type ChannelOption = {
   accessor: (idx: number, animationData: BuildingAnimationData) => number;
 };
 
+const GROUND_MOTION_COLOR = "#444444";
+
 const GROUND_CHANNEL_CONFIG: Record<string, ChannelOption> = {
   groundMotionX: {
     label: "X Ground Motion",
@@ -263,7 +265,9 @@ function CheckSelect({
           {options.map(([id, option]) => {
             const isChecked = selected.includes(id);
             const config = GROUND_CHANNEL_CONFIG[id];
-            const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+            const color = config.metric
+              ? getMetricKeyColor(config.metric, metricPaletteOverrides)
+              : GROUND_MOTION_COLOR;
             return (
               <Label
                 key={id}
@@ -363,7 +367,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       });
 
       const config = GROUND_CHANNEL_CONFIG[item.key];
-      const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+      const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : GROUND_MOTION_COLOR;
 
       titles.push({
         text: config.label,
@@ -476,7 +480,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             let config: ChannelOption | undefined = undefined;
             if (seriesMatch) {
               config = GROUND_CHANNEL_CONFIG[seriesMatch.key];
-              color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+              color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : GROUND_MOTION_COLOR;
             } else {
               color = p.color as string;
             }
@@ -649,7 +653,9 @@ export function Timeline({ api }: IDockviewPanelProps) {
           <div className="flex flex-wrap items-center gap-2">
             {seriesData.map((item) => {
               const config = GROUND_CHANNEL_CONFIG[item.key];
-              const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+              const color = config.metric
+                ? getMetricKeyColor(config.metric, metricPaletteOverrides)
+                : GROUND_MOTION_COLOR;
               return (
                 <div
                   key={item.key}
@@ -685,7 +691,9 @@ export function Timeline({ api }: IDockviewPanelProps) {
               style={{ display: "none" }}>
               {seriesData.map((item, index) => {
                 const config = GROUND_CHANNEL_CONFIG[item.key];
-                const color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : "#f87171";
+                const color = config.metric
+                  ? getMetricKeyColor(config.metric, metricPaletteOverrides)
+                  : GROUND_MOTION_COLOR;
                 return (
                   <div
                     key={`dot-${item.key}`}

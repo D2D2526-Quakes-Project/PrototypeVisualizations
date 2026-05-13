@@ -11,11 +11,12 @@ import { SectionVisualization } from "../3d/renderers/SectionVisualization";
 
 export interface CrossSectionParams {
   crossSectionType: "X" | "Y";
-  position: number;
+  position: string;
 }
 
 export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>) {
   const { crossSectionType, position } = props.params;
+  const positionNumber = Number(position);
   const { animationData } = useAnimationData();
   const nodeIds =
     crossSectionType === "X"
@@ -40,7 +41,7 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex-1 space-y-2 overflow-y-scroll p-3 text-xs">
+      <div className="flex-1 space-y-2 overflow-y-scroll p-3 text-xs scrollbar-gutter-stable">
         {/* LOCATION INFO */}
         <div className="animate-fade-in w-full" ref={containerRef}>
           <SectionVisualization nodeIds={nodeIds} width={dimensions} viewMode={crossSectionType === "X" ? "x" : "y"} />
@@ -50,7 +51,7 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
           <div>
             <span className="font-medium text-neutral-700">{crossSectionType} Position:</span>
             <div className="text-neutral-600">
-              <UnitTooltip value={position} unit="inches" decimals={1} />
+              <UnitTooltip value={positionNumber} unit="inches" decimals={1} />
             </div>
           </div>
           <div>
@@ -98,8 +99,9 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
 
 export function CrossSectionTab(props: IDockviewPanelHeaderProps<CrossSectionParams>) {
   const { crossSectionType, position: dataPosition } = props.params;
-  const color = numberToColor(dataPosition);
-  const lightColor = numberToColorLight(dataPosition);
+  const positionNumber = Number(dataPosition);
+  const color = numberToColor(positionNumber);
+  const lightColor = numberToColorLight(positionNumber);
   const { animationData } = useAnimationData();
   const boundingBox = animationData.precomputed.boundingBox;
 
@@ -108,7 +110,7 @@ export function CrossSectionTab(props: IDockviewPanelHeaderProps<CrossSectionPar
   };
 
   const posistion = Math.trunc(
-    crossSectionType == "X" ? dataPosition - boundingBox.center[0] : dataPosition - boundingBox.center[1]
+    crossSectionType == "X" ? positionNumber - boundingBox.center[0] : positionNumber - boundingBox.center[1]
   );
 
   return (

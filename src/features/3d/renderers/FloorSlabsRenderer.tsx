@@ -1,7 +1,7 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { assert } from "@/lib/utils";
 import { useFrame, useThree } from "@react-three/fiber";
 import Delaunay from "delaunator";
 import { useEffect, useMemo, useRef } from "react";
@@ -10,7 +10,6 @@ import { useFloorVisibility } from "../contexts/useFloorVisibility";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useHover } from "../lib/useHover";
-import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 
 export function FloorSlabsRenderer() {
   const { visibleFloors } = useFloorVisibility();
@@ -26,11 +25,13 @@ export function FloorSlabsRenderer() {
 
 function FloorSlab({ storyId }: { storyId: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const posAttrRef = useRef<THREE.BufferAttribute>(null);
+  const colAttrRef = useRef<THREE.BufferAttribute>(null);
   const { invalidate } = useThree();
 
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const { storyOrder, stories } = animationData.metadata;
+  const { stories } = animationData.metadata;
 
   const { getValueColorForCurrentMetric, getNodeColorForCurrentMetric, getNodeValueForCurrentMetric } = useMetrics();
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
@@ -39,21 +40,17 @@ function FloorSlab({ storyId }: { storyId: string }) {
   const { openFloorPanel } = useOpenPanels();
 
   const nodeIds = useMemo(() => stories[storyId], [storyId, stories]);
-  const storyIndex = useMemo(() => storyOrder.indexOf(storyId), [storyOrder, storyId]);
 
-  const avgFloorColor = useMemo(() => {
-    let total = 0;
-    let count = 0;
-    for (const nodeId of nodeIds) {
-      const value = getNodeValueForCurrentMetric(nodeId, frameIndex);
-      if (value == undefined || !isFinite(value)) continue;
-      total += value;
-      count++;
-    }
-    const avg = total / count;
-    const avgFloorColor = getValueColorForCurrentMetric(avg).color;
-    return avgFloorColor;
-  }, [frameIndex, getValueColorForCurrentMetric, getNodeValueForCurrentMetric, nodeIds]);
+  const isHovered = useMemo(() => hoveredFloor?.storyId === storyId, [hoveredFloor?.storyId, storyId]);
+  const isHoveredRef = useRef(isHovered);
+  useEffect(() => {
+    isHoveredRef.current = isHovered;
+  }, [isHovered]);
+
+  const floorOpacityRef = useRef(floorOpacity);
+  useEffect(() => {
+    floorOpacityRef.current = floorOpacity;
+  }, [floorOpacity]);
 
   useEffect(() => {
     invalidate();
@@ -73,42 +70,53 @@ function FloorSlab({ storyId }: { storyId: string }) {
     const delaunay = Delaunay.from(points2D);
     const triangles = delaunay.triangles;
 
-    const positions = new Float32Array(triangles.length * 3);
-    const colors = new Float32Array(triangles.length * 3);
-
-    return { floorNodes, triangles, positions, colors };
+    return { floorNodes, triangles };
   }, [nodeIds, visibleNodes, getNodeVisualPosition]);
 
   useFrame(() => {
-    if (!meshRef.current || !topology) return;
+    const posAttr = posAttrRef.current;
+    const colAttr = colAttrRef.current;
+    const mesh = meshRef.current;
+    if (!posAttr || !colAttr || !mesh || !topology) return;
 
     const { floorNodes, triangles } = topology;
-    const geometry = meshRef.current.geometry;
-    const posAttr = geometry.attributes.position;
-    const colAttr = geometry.attributes.color;
 
-    assert(storyIndex >= 0, "Story index not found");
+    let total = 0;
+    let count = 0;
+    for (const nodeId of floorNodes) {
+      const value = getNodeValueForCurrentMetric(nodeId, frameIndex);
+      if (value == undefined || !isFinite(value)) continue;
+      total += value;
+      count++;
+    }
+    const avgFloorColor = getValueColorForCurrentMetric(total / count).color;
 
     for (let i = 0; i < triangles.length; i++) {
       const nodeIdx = triangles[i];
       const nodeId = floorNodes[nodeIdx];
-
-      const pos = getNodeVisualPosition(nodeId, frameIndex);
       const baseIdx = i * 3;
 
+      const pos = getNodeVisualPosition(nodeId, frameIndex);
       posAttr.array[baseIdx] = pos[0];
       posAttr.array[baseIdx + 1] = pos[1];
       posAttr.array[baseIdx + 2] = pos[2];
 
       const { noValue, color } = getNodeColorForCurrentMetric(nodeId, frameIndex);
       const nodeColor = noValue ? avgFloorColor : color;
-
       colAttr.array[baseIdx] = nodeColor.r;
       colAttr.array[baseIdx + 1] = nodeColor.g;
       colAttr.array[baseIdx + 2] = nodeColor.b;
     }
+
     posAttr.needsUpdate = true;
     colAttr.needsUpdate = true;
+
+    const mat = mesh.material as THREE.MeshBasicMaterial;
+    const targetOpacity = isHoveredRef.current ? 1 : floorOpacityRef.current;
+    if (mat.opacity !== targetOpacity) {
+      mat.opacity = targetOpacity;
+      mat.depthWrite = targetOpacity === 1;
+    }
   });
 
   const handlePointerOver = (e: PointerEvent) => {
@@ -128,8 +136,6 @@ function FloorSlab({ storyId }: { storyId: string }) {
 
   if (!topology) return null;
 
-  const opacity = hoveredFloor?.storyId === storyId ? 1 : floorOpacity;
-
   return (
     <mesh
       ref={meshRef}
@@ -138,10 +144,26 @@ function FloorSlab({ storyId }: { storyId: string }) {
       onClick={handleClick}
       frustumCulled={false}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[topology.positions, 3]} usage={THREE.DynamicDrawUsage} />
-        <bufferAttribute attach="attributes-color" args={[topology.colors, 3]} usage={THREE.DynamicDrawUsage} />
+        <bufferAttribute
+          ref={posAttrRef}
+          attach="attributes-position"
+          args={[new Float32Array(topology.triangles.length * 3), 3]}
+          usage={THREE.DynamicDrawUsage}
+        />
+        <bufferAttribute
+          ref={colAttrRef}
+          attach="attributes-color"
+          args={[new Float32Array(topology.triangles.length * 3), 3]}
+          usage={THREE.DynamicDrawUsage}
+        />
       </bufferGeometry>
-      <meshBasicMaterial vertexColors transparent opacity={opacity} depthWrite={opacity == 1} side={THREE.DoubleSide} />
+      <meshBasicMaterial
+        vertexColors
+        transparent
+        opacity={floorOpacity}
+        depthWrite={floorOpacity === 1}
+        side={THREE.DoubleSide}
+      />
     </mesh>
   );
 }

@@ -123,7 +123,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3 scrollbar-gutter-stable">
         {/* 3D VISUALIZATION */}
         <div className="animate-fade-in w-full" ref={containerRef}>
           <SectionVisualization nodeIds={nodeIds} width={dimensions} viewMode="floor" />

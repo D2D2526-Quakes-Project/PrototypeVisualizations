@@ -68,7 +68,7 @@ function OpenFloorRect({ storyId }: { storyId: string }) {
   if (nodeIds.length === 0) return null;
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} scale={1.1}>
       {/* Left Wall */}
       <mesh ref={leftWallRef} renderOrder={-5} rotation={[0, -Math.PI / 2, 0]}>
         <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />

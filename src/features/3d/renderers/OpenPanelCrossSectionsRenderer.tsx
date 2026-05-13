@@ -19,6 +19,7 @@ function OpenCrossSectionRect({ params }: { params: CrossSectionParams }) {
   const { getNodeVisualPosition } = useNodePositions();
   const { frameIndex } = usePlayback();
   const { crossSectionType, position: dataPosition } = params;
+  const positionNumber = Number(dataPosition);
 
   const isX = crossSectionType === "X";
   const nodeIds = useMemo(() => {
@@ -26,18 +27,26 @@ function OpenCrossSectionRect({ params }: { params: CrossSectionParams }) {
     return data[dataPosition] ?? [];
   }, [animationData.metadata, isX, dataPosition]);
 
-  const color = numberToColor(dataPosition);
+  const color = numberToColor(positionNumber);
 
   const wallDepth = 100;
 
-  const bottomRotation = useMemo(() => (isX ? [Math.PI / 2, 0, 0] : [0, Math.PI / 2, 0]) as [number, number, number], [isX]);
-  const topRotation = useMemo(() => (isX ? [-Math.PI / 2, 0, 0] : [0, -Math.PI / 2, 0]) as [number, number, number], [isX]);
+  const bottomRotation = useMemo(
+    () => (isX ? [Math.PI / 2, 0, 0] : [0, -Math.PI / 2, 0]) as [number, number, number],
+    [isX]
+  );
+  const topRotation = useMemo(
+    () => (isX ? [-Math.PI / 2, 0, 0] : [0, Math.PI / 2, 0]) as [number, number, number],
+    [isX]
+  );
 
   useFrame(() => {
     if (!groupRef.current || nodeIds.length === 0) return;
 
-    let minA = Infinity, maxA = -Infinity;
-    let minB = Infinity, maxB = -Infinity;
+    let minA = Infinity,
+      maxA = -Infinity;
+    let minB = Infinity,
+      maxB = -Infinity;
     let posConst = 0;
 
     for (const nodeId of nodeIds) {
@@ -110,7 +119,7 @@ function OpenCrossSectionRect({ params }: { params: CrossSectionParams }) {
   if (nodeIds.length === 0) return null;
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} scale={1.1}>
       <mesh ref={bottomWallRef} rotation={bottomRotation} renderOrder={-5}>
         <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
         <planeGeometry args={[1, 1]} />

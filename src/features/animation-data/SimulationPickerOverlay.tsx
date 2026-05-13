@@ -360,8 +360,7 @@ type OptionalDataLoadControlConfig = {
 };
 
 const OPTIONAL_DATA_LOAD_CONTROL_CONFIG = [
-  { key: "beamData", label: "Beam", description: "Connectivity + beam mapping support for structural overlays." },
-  { key: "hingeData", label: "Hinge", description: "Hinge summaries and hinge analysis panels." },
+  { key: "hingeData", label: "Beam + Hinge", description: "Beam connectivity + hinge rotation summaries." },
   { key: "shearData", label: "Shear", description: "Static per-floor column shear summaries (kip)." },
   { key: "displacementRot", label: "Rot. disp.", description: "Node rotational displacement channels (rad)." },
   { key: "velocityLin", label: "Tra. velocity", description: "Translational velocity channels (in/s)." },

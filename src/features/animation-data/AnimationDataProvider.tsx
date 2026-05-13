@@ -20,6 +20,7 @@ import {
   DATASET_KEYS,
   DATASET_LABELS,
   getDatasetAvailability,
+  INTERNAL_DATASET_KEYS,
   isOptionalDatasetKey,
   OPTIONAL_DATASET_KEYS,
   REQUIRED_DATASET_KEYS,
@@ -57,7 +58,8 @@ function buildDatasetStates(
   return Object.fromEntries(
     DATASET_KEYS.map((key) => {
       const required = (REQUIRED_DATASET_KEYS as readonly string[]).includes(key);
-      const selected = required || (isOptionalDatasetKey(key) ? optionalLoads[key] : false);
+      const internal = (INTERNAL_DATASET_KEYS as readonly string[]).includes(key);
+      const selected = required || internal || (isOptionalDatasetKey(key) ? optionalLoads[key] : false);
       return [
         key,
         {
@@ -296,7 +298,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       sessionId: number,
       building: BinaryBuilding,
       simulation: BinarySimulation,
-      key: OptionalDatasetKey,
+      key: OptionalDatasetKey | "beamData",
       requiredPromise: Promise<SerializedRequiredAnimationData>,
       forceRefresh: boolean = false
     ) => {
@@ -429,6 +431,18 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
         OPTIONAL_DATASET_KEYS.forEach((key) => {
           if (optionalLoads[key]) {
+            if (key === "hingeData") {
+              void loadOptionalDataset(sessionId, building, simulation, "beamData", Promise.resolve(serialized)).catch(
+                (error) => {
+                  if (sessionIdRef.current !== sessionId) return;
+                  updateDatasetState("beamData", {
+                    stage: "error",
+                    message: "Failed",
+                    error: error instanceof Error ? error.message : String(error),
+                  });
+                }
+              );
+            }
             void loadOptionalDataset(sessionId, building, simulation, key, Promise.resolve(serialized)).catch(
               (error) => {
                 if (sessionIdRef.current !== sessionId) return;
@@ -509,21 +523,29 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       };
       setOptionalLoadOptions(nextOptionalLoads);
       updateUrl(currentBuilding, currentSimulation, nextOptionalLoads);
-      setDatasetStates((current) =>
-        current
-          ? {
-              ...current,
-              [key]: {
-                ...current[key],
-                selected: true,
-                stage: "queued",
-                message: "Queued",
-                error: null,
-                progress: 0,
-              },
-            }
-          : current
-      );
+
+      const queueDataset = (k: DatasetKey) => {
+        setDatasetStates((current) =>
+          current
+            ? {
+                ...current,
+                [k]: {
+                  ...current[k],
+                  selected: true,
+                  stage: "queued",
+                  message: "Queued",
+                  error: null,
+                  progress: 0,
+                },
+              }
+            : current
+        );
+      };
+
+      queueDataset(key);
+      if (key === "hingeData" && currentBuilding.beamData) {
+        queueDataset("beamData");
+      }
 
       if (!animationData) return;
       const sessionId = sessionIdRef.current;
@@ -570,6 +592,23 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           error: error instanceof Error ? error.message : String(error),
         });
       });
+
+      if (key === "hingeData" && currentBuilding.beamData) {
+        void loadOptionalDataset(
+          sessionId,
+          currentBuilding,
+          currentSimulation,
+          "beamData",
+          Promise.resolve(requiredSerialized)
+        ).catch((error) => {
+          if (sessionIdRef.current !== sessionId) return;
+          updateDatasetState("beamData", {
+            stage: "error",
+            message: "Failed",
+            error: error instanceof Error ? error.message : String(error),
+          });
+        });
+      }
     },
     [
       animationData,

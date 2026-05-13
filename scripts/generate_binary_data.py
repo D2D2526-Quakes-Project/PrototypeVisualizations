@@ -2000,6 +2000,11 @@ def process_shear_data(files_config, simulation_output_dir, story_order):
             encoded[story_index, 2] = h2["max"]
             encoded[story_index, 3] = h2["min"]
 
+    for col in range(stride):
+        col_data = encoded[:, col].copy()
+        col_data = np.where(np.isnan(col_data), 0, col_data)
+        encoded[:, col] = np.cumsum(col_data[::-1])[::-1]
+
     populated_rows = int(np.sum(~np.isnan(encoded).all(axis=1)))
     missing_stories = [story for story, row in zip(story_order, encoded) if np.isnan(row).all()]
     print(f"  Story-aligned shear rows: {populated_rows}/{row_count}")

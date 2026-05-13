@@ -134,7 +134,7 @@ export interface OptionalStatsDelta {
 }
 
 export interface SerializedOptionalDatasetResult {
-  key: OptionalDatasetKey;
+  key: OptionalDatasetKey | "beamData";
   kind: "timeSeries" | "beamData" | "hingeData" | "shearData";
   metadata: SimulationMetadata | BeamDataMetadata | HingeMetadata | ShearMetadata;
   data: Float32Array;
@@ -142,7 +142,7 @@ export interface SerializedOptionalDatasetResult {
 }
 
 export interface OptionalWorkerRequest {
-  key: OptionalDatasetKey;
+  key: OptionalDatasetKey | "beamData";
   rawBuffer: ArrayBuffer;
   baseMetadata: AnimationMetadata;
 }

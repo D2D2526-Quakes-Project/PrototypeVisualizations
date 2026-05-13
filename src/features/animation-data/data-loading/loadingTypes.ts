@@ -3,7 +3,6 @@ import type { BinaryBuilding, BinarySimulation } from "@/lib/types";
 export const REQUIRED_DATASET_KEYS = ["building", "displacementLin", "groundMotion"] as const;
 
 export const OPTIONAL_DATASET_KEYS = [
-  "beamData",
   "hingeData",
   "shearData",
   "displacementRot",
@@ -13,16 +12,18 @@ export const OPTIONAL_DATASET_KEYS = [
   "accelerationRot",
 ] as const;
 
-export const DATASET_KEYS = [...REQUIRED_DATASET_KEYS, ...OPTIONAL_DATASET_KEYS] as const;
+export const INTERNAL_DATASET_KEYS = ["beamData"] as const;
+
+export const DATASET_KEYS = [...REQUIRED_DATASET_KEYS, ...OPTIONAL_DATASET_KEYS, ...INTERNAL_DATASET_KEYS] as const;
 
 export type RequiredDatasetKey = (typeof REQUIRED_DATASET_KEYS)[number];
 export type OptionalDatasetKey = (typeof OPTIONAL_DATASET_KEYS)[number];
+export type InternalDatasetKey = (typeof INTERNAL_DATASET_KEYS)[number];
 export type DatasetKey = (typeof DATASET_KEYS)[number];
 
 export type DatasetLoadStage = "idle" | "queued" | "fetching" | "parsing" | "ready" | "error";
 
 export interface OptionalDataLoadOptions {
-  beamData: boolean;
   hingeData: boolean;
   shearData: boolean;
   displacementRot: boolean;

@@ -23,7 +23,7 @@ export function getAvailableOptionalDataLoadOptions(
   simulation: BinarySimulation
 ): OptionalDataLoadOptions {
   return {
-    hingeData: Boolean(simulation.hingeData),
+    hingeData: Boolean(simulation.hingeData) && Boolean(building.beamData),
     shearData: Boolean(simulation.shearData),
     displacementRot: Boolean(simulation.displacementRot),
     velocityLin: Boolean(simulation.velocityLin),

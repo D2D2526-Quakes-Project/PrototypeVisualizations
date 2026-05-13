@@ -233,6 +233,30 @@ export interface BuildingAnimationData {
    * Units: Percent
    */
   storyDrift: NodeValueTimeAccessor;
+
+  /**
+   * Average displacement per story.
+   * Layout: Frame -> Story -> [mag]
+   * Size: frameCount * storyCount
+   * Units: Inches
+   */
+  avgDisplacementPerStory: StoryValueTimeAccessor;
+
+  /**
+   * Average velocity per story (optional).
+   * Layout: Frame -> Story -> [mag]
+   * Size: frameCount * storyCount
+   * Units: Inches/s
+   */
+  avgVelocityPerStory?: StoryValueTimeAccessor;
+
+  /**
+   * Average acceleration per story (optional).
+   * Layout: Frame -> Story -> [mag]
+   * Size: frameCount * storyCount
+   * Units: Inches/s²
+   */
+  avgAccelerationPerStory?: StoryValueTimeAccessor;
 }
 
 export interface IndexAccessor {
@@ -255,6 +279,13 @@ export interface NodeValueTimeAccessor {
   frameCount: number;
   nodeCount: number;
   get: (frameIdx: number, nodeIdx: number) => number;
+}
+
+export interface StoryValueTimeAccessor {
+  data: Float32Array;
+  frameCount: number;
+  storyCount: number;
+  get: (frameIdx: number, storyIdx: number) => number;
 }
 
 export interface BeamRow {
@@ -427,14 +458,6 @@ export interface ComputedStats {
     z: Float32Array;
     mag: Float32Array;
   };
-
-  // PER-STORY AGGREGATES
-  /** Average displacement per story (array indexed by frameIndex * storyCount + storyIndex) */
-  avgDisplacementPerStory: Float32Array;
-  /** Average velocity per story (optional) */
-  avgVelocityPerStory?: Float32Array;
-  /** Average acceleration per story (optional) */
-  avgAccelerationPerStory?: Float32Array;
 
   // HINGE SUMMARY (if hinge data exists)
   hinge?: HingeComputedStats;

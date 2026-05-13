@@ -21,7 +21,7 @@ function OpenFloorRect({ storyId }: { storyId: string }) {
   const nodeIds = animationData.metadata.stories[storyId] ?? [];
   const color = numberToColor(stringToNumber(storyId));
 
-  const wallDepth = 1;
+  const wallDepth = 100;
 
   useFrame(() => {
     if (!groupRef.current || nodeIds.length === 0) return;
@@ -71,25 +71,25 @@ function OpenFloorRect({ storyId }: { storyId: string }) {
     <group ref={groupRef}>
       {/* Left Wall */}
       <mesh ref={leftWallRef} renderOrder={-5} rotation={[0, -Math.PI / 2, 0]}>
-        <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
         <planeGeometry args={[1, 1]} />
       </mesh>
 
       {/* Right Wall */}
       <mesh ref={rightWallRef} renderOrder={-5} rotation={[0, Math.PI / 2, 0]}>
-        <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
         <planeGeometry args={[1, 1]} />
       </mesh>
 
       {/* Bottom Wall */}
       <mesh ref={bottomWallRef} renderOrder={-5} rotation={[Math.PI / 2, 0, 0]}>
-        <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
         <planeGeometry args={[1, 1]} />
       </mesh>
 
       {/* Top Wall */}
       <mesh ref={topWallRef} renderOrder={-5} rotation={[-Math.PI / 2, 0, 0]}>
-        <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
         <planeGeometry args={[1, 1]} />
       </mesh>
     </group>

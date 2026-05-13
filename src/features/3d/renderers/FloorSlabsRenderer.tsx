@@ -29,9 +29,9 @@ function FloorSlab({ storyId }: { storyId: string }) {
   const { invalidate } = useThree();
 
   const { animationData } = useAnimationData();
+  const { avgDisplacementPerStory } = animationData;
   const { frameIndex } = usePlayback();
   const { storyOrder, stories } = animationData.metadata;
-  const { avgDisplacementPerStory } = animationData.precomputed;
 
   const { getValueColorForCurrentMetric, getNodeColorForCurrentMetric } = useMetrics();
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
@@ -39,7 +39,6 @@ function FloorSlab({ storyId }: { storyId: string }) {
   const { hoveredFloor, setHoveredFloor } = useHover();
   const { openFloorPanel } = useOpenPanels();
 
-  const storyCount = storyOrder.length;
   const nodeIds = useMemo(() => stories[storyId], [storyId, stories]);
   const storyIndex = useMemo(() => storyOrder.indexOf(storyId), [storyOrder, storyId]);
 
@@ -76,7 +75,7 @@ function FloorSlab({ storyId }: { storyId: string }) {
     const colAttr = geometry.attributes.color;
 
     assert(storyIndex >= 0, "Story index not found");
-    const avg = avgDisplacementPerStory[frameIndex * storyCount + storyIndex];
+    const avg = avgDisplacementPerStory.get(frameIndex, storyIndex);
     const avgFloorColor = getValueColorForCurrentMetric(avg === 0 ? undefined : avg).color;
 
     for (let i = 0; i < triangles.length; i++) {

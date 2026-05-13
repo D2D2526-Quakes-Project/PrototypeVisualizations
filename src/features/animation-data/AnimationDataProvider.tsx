@@ -546,7 +546,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           peakNodeDisplacementY: animationData.precomputed.peakNodeDisplacementY,
           peakNodeDisplacementZ: animationData.precomputed.peakNodeDisplacementZ,
           avgDisplacementPerFrame: animationData.precomputed.avgDisplacementPerFrame,
-          avgDisplacementPerStory: animationData.precomputed.avgDisplacementPerStory,
+          avgDisplacementPerStory: animationData.avgDisplacementPerStory.data,
           numCrossSectionsX: animationData.precomputed.numCrossSectionsX,
           numCrossSectionsY: animationData.precomputed.numCrossSectionsY,
         },

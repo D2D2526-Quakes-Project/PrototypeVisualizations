@@ -20,6 +20,7 @@ import type {
   ShearMetadata,
   ShearRow,
   SimulationMetadata,
+  StoryValueTimeAccessor,
   TimeIndexAccessor,
 } from "@/lib/types";
 import Delaunay from "delaunator";
@@ -226,6 +227,17 @@ function makeNodeValueTimeAccessor(data: Float32Array, frameCount: number, nodeC
     nodeCount,
     get(frameIdx: number, nodeIdx: number) {
       return data[frameIdx * nodeCount + nodeIdx] ?? 0;
+    },
+  };
+}
+
+function makeStoryValueTimeAccessor(data: Float32Array, frameCount: number, storyCount: number): StoryValueTimeAccessor {
+  return {
+    data,
+    frameCount,
+    storyCount,
+    get(frameIdx: number, storyIdx: number) {
+      return data[frameIdx * storyCount + storyIdx] ?? 0;
     },
   };
 }
@@ -777,15 +789,22 @@ export function rebuildAnimationDataFromSerializedCore(data: SerializedRequiredA
         : buildNodeToStoryMap(data.metadata),
   };
 
+  const { avgDisplacementPerStory: rawAvgDisplacementPerStory, ...restPrecomputed } = data.precomputed;
+
   return {
     metadata,
     precomputed: {
-      ...data.precomputed,
+      ...restPrecomputed,
     },
     initialPositions: makeAccessor(data.initialPositions, 3),
     displacementLin: makeTimeAccessor(data.displacementLin, metadata.nodeCount),
     groundMotion: makeAccessor(data.groundMotion, 3),
     storyDrift: makeNodeValueTimeAccessor(data.storyDrift, metadata.frameCount, metadata.nodeCount),
+    avgDisplacementPerStory: makeStoryValueTimeAccessor(
+      rawAvgDisplacementPerStory,
+      metadata.frameCount,
+      metadata.storyOrder.length
+    ),
   };
 }
 
@@ -793,15 +812,36 @@ export function mergeOptionalDatasetIntoAnimationData(
   animationData: BuildingAnimationData,
   result: SerializedOptionalDatasetResult
 ): BuildingAnimationData {
+  const {
+    avgVelocityPerStory: rawAvgVelocityPerStory,
+    avgAccelerationPerStory: rawAvgAccelerationPerStory,
+    ...restStatsDelta
+  } = result.statsDelta;
+
   const nextPrecomputed: ComputedStats = {
     ...animationData.precomputed,
-    ...result.statsDelta,
+    ...restStatsDelta,
   };
 
   const nextAnimationData: BuildingAnimationData = {
     ...animationData,
     precomputed: nextPrecomputed,
   };
+
+  if (rawAvgVelocityPerStory) {
+    nextAnimationData.avgVelocityPerStory = makeStoryValueTimeAccessor(
+      rawAvgVelocityPerStory,
+      animationData.metadata.frameCount,
+      animationData.metadata.storyOrder.length
+    );
+  }
+  if (rawAvgAccelerationPerStory) {
+    nextAnimationData.avgAccelerationPerStory = makeStoryValueTimeAccessor(
+      rawAvgAccelerationPerStory,
+      animationData.metadata.frameCount,
+      animationData.metadata.storyOrder.length
+    );
+  }
 
   if (result.key === "beamData") {
     nextAnimationData.beamData = makeBeamAccessor(result.metadata as BeamDataMetadata, result.data);
@@ -1052,7 +1092,7 @@ function calculateOptionalTimeSeriesStats(
         storyY += body[offset + 1] ?? 0;
         storyZ += body[offset + 2] ?? 0;
       });
-      avgPerStory[storyIdx * frameCount + frameIdx] = Math.hypot(
+      avgPerStory[frameIdx * storyCount + storyIdx] = Math.hypot(
         storyX / nodes.length,
         storyY / nodes.length,
         storyZ / nodes.length

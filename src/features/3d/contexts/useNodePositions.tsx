@@ -8,8 +8,9 @@ import { useNodeRendering } from "./useNodeRendering";
 
 export function useNodePositions() {
   const { animationData } = useAnimationData();
-  const { initialPositions, displacementLin, avgDisplacementPerStory, metadata } = animationData;
+  const { initialPositions, displacementLin, metadata } = animationData;
   const { nodeCount, nodeToStory, displacementMissingNodeIndices, storyOrder } = metadata;
+  const { avgDisplacementPerStory } = animationData.precomputed;
 
   const { showCornersOnly } = useRenderModes();
   const { visualInterpolationEnabled } = useNodeRendering();
@@ -117,8 +118,8 @@ export function useNodePositions() {
         const story = nodeToStory[nodeId];
         if (story) {
           const storyIndex = storyOrder.indexOf(story);
-          const avg = avgDisplacementPerStory.get(frameIndex, storyIndex);
-          disp = [avg, avg, avg];
+          const avg = avgDisplacementPerStory.atFrame(frameIndex).at(storyIndex);
+          disp = [avg[0], avg[1], avg[2]];
         }
       }
 

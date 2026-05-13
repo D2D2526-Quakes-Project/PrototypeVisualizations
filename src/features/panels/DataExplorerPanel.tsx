@@ -171,6 +171,7 @@ export function DataExplorerPanel({ api }: IDockviewPanelProps) {
   };
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line
   const rowVirtualizer = useVirtualizer({
     count: sortedNodes.length,
     getScrollElement: () => scrollContainerRef.current,

@@ -20,7 +20,6 @@ import type {
   ShearMetadata,
   ShearRow,
   SimulationMetadata,
-  StoryValueTimeAccessor,
   TimeIndexAccessor,
 } from "@/lib/types";
 import Delaunay from "delaunator";
@@ -227,17 +226,6 @@ function makeNodeValueTimeAccessor(data: Float32Array, frameCount: number, nodeC
     nodeCount,
     get(frameIdx: number, nodeIdx: number) {
       return data[frameIdx * nodeCount + nodeIdx] ?? 0;
-    },
-  };
-}
-
-function makeStoryValueTimeAccessor(data: Float32Array, frameCount: number, storyCount: number): StoryValueTimeAccessor {
-  return {
-    data,
-    frameCount,
-    storyCount,
-    get(frameIdx: number, storyIdx: number) {
-      return data[frameIdx * storyCount + storyIdx] ?? 0;
     },
   };
 }
@@ -539,7 +527,7 @@ function serializeRequiredComputedStats(
     z: new Float32Array(frameCount),
     mag: new Float32Array(frameCount),
   };
-  const avgDisplacementPerStory = new Float32Array(storyCount * frameCount);
+  const avgDisplacementPerStory = new Float32Array(storyCount * frameCount * 3);
 
   const peakStoryDrift = new Float32Array(metadata.nodeCount);
   const peakStoryDriftFrame = new Float32Array(metadata.nodeCount);
@@ -595,18 +583,19 @@ function serializeRequiredComputedStats(
       let storyX = 0;
       let storyY = 0;
       let storyZ = 0;
+      let count = 0;
       nodes.forEach((nodeId) => {
         if (missingNodeSet.has(nodeId)) return;
         const offset = frameOffset + nodeId * 3;
         storyX += dispLin[offset] ?? 0;
         storyY += dispLin[offset + 1] ?? 0;
         storyZ += dispLin[offset + 2] ?? 0;
+        count++;
       });
-      avgDisplacementPerStory[frameIdx * storyCount + storyIdx] = Math.hypot(
-        storyX / nodes.length,
-        storyY / nodes.length,
-        storyZ / nodes.length
-      );
+      const avgIdx = (frameIdx * storyCount + storyIdx) * 3;
+      avgDisplacementPerStory[avgIdx] = storyX / count;
+      avgDisplacementPerStory[avgIdx + 1] = storyY / count;
+      avgDisplacementPerStory[avgIdx + 2] = storyZ / count;
     }
   }
 
@@ -795,16 +784,12 @@ export function rebuildAnimationDataFromSerializedCore(data: SerializedRequiredA
     metadata,
     precomputed: {
       ...restPrecomputed,
+      avgDisplacementPerStory: makeTimeAccessor(rawAvgDisplacementPerStory, metadata.storyOrder.length),
     },
     initialPositions: makeAccessor(data.initialPositions, 3),
     displacementLin: makeTimeAccessor(data.displacementLin, metadata.nodeCount),
     groundMotion: makeAccessor(data.groundMotion, 3),
     storyDrift: makeNodeValueTimeAccessor(data.storyDrift, metadata.frameCount, metadata.nodeCount),
-    avgDisplacementPerStory: makeStoryValueTimeAccessor(
-      rawAvgDisplacementPerStory,
-      metadata.frameCount,
-      metadata.storyOrder.length
-    ),
   };
 }
 
@@ -827,21 +812,6 @@ export function mergeOptionalDatasetIntoAnimationData(
     ...animationData,
     precomputed: nextPrecomputed,
   };
-
-  if (rawAvgVelocityPerStory) {
-    nextAnimationData.avgVelocityPerStory = makeStoryValueTimeAccessor(
-      rawAvgVelocityPerStory,
-      animationData.metadata.frameCount,
-      animationData.metadata.storyOrder.length
-    );
-  }
-  if (rawAvgAccelerationPerStory) {
-    nextAnimationData.avgAccelerationPerStory = makeStoryValueTimeAccessor(
-      rawAvgAccelerationPerStory,
-      animationData.metadata.frameCount,
-      animationData.metadata.storyOrder.length
-    );
-  }
 
   if (result.key === "beamData") {
     nextAnimationData.beamData = makeBeamAccessor(result.metadata as BeamDataMetadata, result.data);

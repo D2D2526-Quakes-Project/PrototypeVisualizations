@@ -153,6 +153,21 @@ export function useMetrics() {
     });
   }, [animationData, showHiddenMetrics]);
 
+  const getNodeValueForMetric = useCallback(
+    (nodeId: number, frameIndex: number, metric: Metric) => {
+      const config = METRIC_CONFIGS[metric];
+      return config.getValue(animationData, frameIndex, nodeId);
+    },
+    [animationData]
+  );
+
+  const getNodeValueForCurrentMetric = useCallback(
+    (nodeId: number, frameIndex: number) => {
+      return getNodeValueForMetric(nodeId, frameIndex, currentMetric);
+    },
+    [currentMetric, getNodeValueForMetric]
+  );
+
   return {
     currentMetric,
     setCurrentMetric,
@@ -171,5 +186,7 @@ export function useMetrics() {
     getNodeColorForCurrentMetric,
     getValueColorForMetric,
     getNodeColorForMetric,
+    getNodeValueForCurrentMetric,
+    getNodeValueForMetric,
   };
 }

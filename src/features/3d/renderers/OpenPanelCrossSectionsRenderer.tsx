@@ -9,7 +9,12 @@ import { useNodePositions } from "../contexts/useNodePositions";
 import type { CrossSectionParams } from "../../panels/CrossSectionPanel";
 
 function OpenCrossSectionRect({ params }: { params: CrossSectionParams }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
+  const leftWallRef = useRef<THREE.Mesh>(null);
+  const rightWallRef = useRef<THREE.Mesh>(null);
+  const bottomWallRef = useRef<THREE.Mesh>(null);
+  const topWallRef = useRef<THREE.Mesh>(null);
+
   const { animationData } = useAnimationData();
   const { getNodeVisualPosition } = useNodePositions();
   const { frameIndex } = usePlayback();
@@ -21,14 +26,15 @@ function OpenCrossSectionRect({ params }: { params: CrossSectionParams }) {
     return data[dataPosition] ?? [];
   }, [animationData.metadata, isX, dataPosition]);
 
-  const rotation = useMemo(() => {
-    return isX ? [0, Math.PI / 2, 0] : [Math.PI / 2, 0, 0];
-  }, [isX]);
-
   const color = numberToColor(dataPosition);
 
+  const wallDepth = 100;
+
+  const bottomRotation = useMemo(() => (isX ? [Math.PI / 2, 0, 0] : [0, Math.PI / 2, 0]) as [number, number, number], [isX]);
+  const topRotation = useMemo(() => (isX ? [-Math.PI / 2, 0, 0] : [0, -Math.PI / 2, 0]) as [number, number, number], [isX]);
+
   useFrame(() => {
-    if (!meshRef.current || nodeIds.length === 0) return;
+    if (!groupRef.current || nodeIds.length === 0) return;
 
     let minA = Infinity, maxA = -Infinity;
     let minB = Infinity, maxB = -Infinity;
@@ -59,20 +65,69 @@ function OpenCrossSectionRect({ params }: { params: CrossSectionParams }) {
     const centerB = (minB + maxB) / 2;
 
     if (isX) {
-      meshRef.current.position.set(posConst, centerA, centerB);
+      groupRef.current.position.set(posConst, centerA, centerB);
     } else {
-      meshRef.current.position.set(centerA, posConst, centerB);
+      groupRef.current.position.set(centerA, posConst, centerB);
     }
-    meshRef.current.scale.set(width, height, 1);
+
+    if (isX) {
+      if (bottomWallRef.current) {
+        bottomWallRef.current.scale.set(wallDepth, height, 1);
+        bottomWallRef.current.position.set(0, -width / 2, 0);
+      }
+      if (topWallRef.current) {
+        topWallRef.current.scale.set(wallDepth, height, 1);
+        topWallRef.current.position.set(0, width / 2, 0);
+      }
+      if (leftWallRef.current) {
+        leftWallRef.current.scale.set(wallDepth, width, 1);
+        leftWallRef.current.position.set(0, 0, -height / 2);
+      }
+      if (rightWallRef.current) {
+        rightWallRef.current.scale.set(wallDepth, width, 1);
+        rightWallRef.current.position.set(0, 0, height / 2);
+      }
+    } else {
+      if (bottomWallRef.current) {
+        bottomWallRef.current.scale.set(height, wallDepth, 1);
+        bottomWallRef.current.position.set(-width / 2, 0, 0);
+      }
+      if (topWallRef.current) {
+        topWallRef.current.scale.set(height, wallDepth, 1);
+        topWallRef.current.position.set(width / 2, 0, 0);
+      }
+      if (leftWallRef.current) {
+        leftWallRef.current.scale.set(width, wallDepth, 1);
+        leftWallRef.current.position.set(0, 0, -height / 2);
+      }
+      if (rightWallRef.current) {
+        rightWallRef.current.scale.set(width, wallDepth, 1);
+        rightWallRef.current.position.set(0, 0, height / 2);
+      }
+    }
   });
 
   if (nodeIds.length === 0) return null;
 
   return (
-    <mesh ref={meshRef} rotation={rotation as [number, number, number]} renderOrder={-5}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} side={THREE.DoubleSide} />
-    </mesh>
+    <group ref={groupRef}>
+      <mesh ref={bottomWallRef} rotation={bottomRotation} renderOrder={-5}>
+        <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+      <mesh ref={topWallRef} rotation={topRotation} renderOrder={-5}>
+        <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+      <mesh ref={leftWallRef} rotation={[0, Math.PI, 0]} renderOrder={-5}>
+        <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+      <mesh ref={rightWallRef} rotation={[0, 0, 0]} renderOrder={-5}>
+        <meshBasicMaterial color={color} transparent opacity={0.3} depthWrite={false} side={THREE.BackSide} />
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+    </group>
   );
 }
 

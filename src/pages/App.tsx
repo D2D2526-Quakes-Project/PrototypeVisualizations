@@ -70,22 +70,24 @@ function DockviewContainer() {
       initialHeight: 200,
     });
 
-    // const interstoryDriftPanel = api.addPanel<MagicPanelParams>({
-    //   id: "corner-metric-chart",
-    //   component: "magicPanel",
-    //   tabComponent: "magicPanelTab",
-    //   position: { referencePanel: mainCanvas, direction: "right" },
-    //   params: { panelType: "Corner Metric Chart" },
-    //   initialWidth: 560,
-    // });
+    const interstoryDriftPanel = api.addPanel<MagicPanelParams>({
+      id: "corner-metric-chart",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      position: { referencePanel: mainCanvas, direction: "left" },
+      params: { panelType: "Corner Metric Chart" },
+      initialWidth: 300,
+    });
 
-    // api.addPanel<MagicPanelParams>({
-    //   id: "floor-displacement",
-    //   component: "magicPanel",
-    //   tabComponent: "magicPanelTab",
-    //   position: { referencePanel: interstoryDriftPanel, direction: "within" },
-    //   params: { panelType: "Floor Average Metric" },
-    // });
+    api.addPanel<MagicPanelParams>({
+      id: "floor-displacement",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      position: { referencePanel: interstoryDriftPanel, direction: "within" },
+      params: { panelType: "Floor Average Metric" },
+    });
+
+    interstoryDriftPanel.focus();
   }, []);
 
   return (

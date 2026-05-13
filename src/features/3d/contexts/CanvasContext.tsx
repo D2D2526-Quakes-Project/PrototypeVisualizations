@@ -82,12 +82,19 @@ export function useCanvasState(dummy: boolean = false) {
 }
 
 export function CameraProvider({ children, panelId }: { children: ReactNode; panelId: string }) {
+  const { animationData } = useAnimationData();
+  const boundingBox = animationData.precomputed.boundingBox;
+  const defaultState: CanvasPanelState = {
+    ...DEFAULT_CANVAS_PANEL_STATE,
+    sliceXRange: [boundingBox.min[0], boundingBox.max[0]],
+    sliceYRange: [boundingBox.min[1], boundingBox.max[1]],
+    sliceZRange: [boundingBox.min[2], boundingBox.max[2]],
+  };
   const panelState = usePanelState({
     panelId,
     panelType: "Main Canvas",
-    defaultState: DEFAULT_CANVAS_PANEL_STATE,
+    defaultState,
   });
-  const { animationData } = useAnimationData();
   const [nodeInteractionEnabled, setNodeInteractionEnabled] = useState(true);
   const orbitControlsRef = useRef<OrbitControlsImpl>(null);
 

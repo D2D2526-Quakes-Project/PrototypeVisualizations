@@ -1,7 +1,8 @@
 import { DEFAULT_THRESHOLDS, type ProfileData } from "./profileState";
 
 export function getDefaultProfileData(
-  overrides: Partial<ProfileData> & Required<Pick<ProfileData, "profileId">>
+  overrides: Partial<ProfileData> & Required<Pick<ProfileData, "profileId">>,
+  defaultHiddenFloors?: string[]
 ): ProfileData {
   return {
     frameIndex: 0,
@@ -16,7 +17,7 @@ export function getDefaultProfileData(
     _thresholds: { ...DEFAULT_THRESHOLDS },
     _currentMetric: "interstoryDrift",
     _thresholdHighlighting: true,
-    _hiddenFloors: [],
+    _hiddenFloors: defaultHiddenFloors ?? [],
     _hiddenNodeIds: [],
 
     openedNodePanelIds: [],
@@ -47,8 +48,8 @@ export function getDefaultProfileData(
 
 export const DEFAULT_PROFILE = "default";
 
-export function createDefaultProfiles(): Record<string, ProfileData> {
-  const defaultProfile = getDefaultProfileData({ profileId: "default" });
+export function createDefaultProfiles(defaultHiddenFloors?: string[]): Record<string, ProfileData> {
+  const defaultProfile = getDefaultProfileData({ profileId: "default" }, defaultHiddenFloors);
 
   return {
     ["default"]: defaultProfile,

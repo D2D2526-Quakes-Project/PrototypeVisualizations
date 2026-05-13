@@ -64,7 +64,7 @@ export function useProfileIds(): string[] {
 }
 
 export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
-  const { currentBuilding, loading } = useAnimationData();
+  const { currentBuilding, loading, animationData } = useAnimationData();
   const currentBuildingId = currentBuilding.name;
 
   // Programmatically wrap all actions.
@@ -104,7 +104,8 @@ export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
 
     if (!buildingProfiles || Object.keys(buildingProfiles).length == 0) {
       // Default profiles for new building
-      const defaultProfiles = createDefaultProfiles();
+      const defaultHiddenFloors = animationData?.metadata?.hiddenFloors;
+      const defaultProfiles = createDefaultProfiles(defaultHiddenFloors);
       state.profiles = {
         ...state.profiles,
         [currentBuildingId]: defaultProfiles,

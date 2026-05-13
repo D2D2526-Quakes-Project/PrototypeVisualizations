@@ -6,6 +6,7 @@ import { useGlobalStore } from "@/state";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useNodePositions } from "../contexts/useNodePositions";
+import { useThresholds } from "@/features/metrics/useThresholds";
 
 export function SceneInvalidators() {
   const { invalidate } = useThree();
@@ -35,6 +36,9 @@ export function SceneInvalidators() {
 
   const { visibleNodes } = useNodePositions();
 
+  const { thresholds } = useThresholds();
+  const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
+
   useEffect(() => {
     invalidate();
   }, [
@@ -59,6 +63,8 @@ export function SceneInvalidators() {
     connectionLineOpacity,
     visualInterpolationEnabled,
     visibleNodes,
+    thresholds,
+    metricPaletteOverrides,
   ]);
 
   return null;

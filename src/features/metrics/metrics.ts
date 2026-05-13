@@ -527,12 +527,9 @@ function getShearValue(
   nodeId: number,
   field: "xMax" | "xMin" | "xAbs" | "yMax" | "yMin" | "yAbs"
 ): number | undefined {
-  const nodeToStory =
-    animationData.metadata.nodeToStory && animationData.metadata.nodeToStory.length === animationData.metadata.nodeCount
-      ? animationData.metadata.nodeToStory
-      : null;
+  const nodeToStory = animationData.metadata.nodeToStory;
 
-  let storyId = nodeToStory?.[nodeId];
+  let storyId = nodeToStory[nodeId];
   if (!storyId) {
     for (const candidateStoryId of animationData.metadata.storyOrder) {
       const storyNodes = animationData.metadata.stories[candidateStoryId] ?? [];
@@ -543,7 +540,7 @@ function getShearValue(
     }
   }
 
-  if (!storyId || storyId === "Ground" || storyId === "1") return undefined;
+  if (!storyId) return undefined;
   const row = animationData.shearData?.getByStory(storyId);
   if (!row) return undefined;
   const value = row[field];

@@ -1390,9 +1390,7 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
 
         num_frames = len(d_lx)
         num_nodes = len(id_to_index)
-        missing_lin_node_indices = compute_missing_node_indices(
-            num_nodes, id_to_index, covered_lin_x, covered_lin_y, covered_lin_z
-        )
+        missing_lin_node_indices = compute_missing_node_indices(num_nodes, id_to_index, covered_lin_x, covered_lin_y, covered_lin_z)
 
         # Load Rotational Data if available (also grid format)
         has_rotation = rot_files is not None and len(rot_files) > 0 and isinstance(rot_files[0], list)
@@ -1417,9 +1415,7 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
                 d_rz = np.zeros((num_frames, num_nodes), dtype=np.float32)
                 missing_rot_node_indices = []
             else:
-                missing_rot_node_indices = compute_missing_node_indices(
-                    num_nodes, id_to_index, covered_rot_x, covered_rot_y, covered_rot_z
-                )
+                missing_rot_node_indices = compute_missing_node_indices(num_nodes, id_to_index, covered_rot_x, covered_rot_y, covered_rot_z)
         else:
             has_rotation = False
             d_rx = np.zeros((num_frames, num_nodes), dtype=np.float32)
@@ -1488,9 +1484,7 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
             d_rx, _ = load_ladwp_data(f_rx, col_map_rx)
             d_ry, _ = load_ladwp_data(f_ry, col_map_ry)
             d_rz, _ = load_ladwp_data(f_rz, col_map_rz)
-            missing_rot_node_indices = compute_missing_node_indices(
-                num_nodes, id_to_index, col_map_rx, col_map_ry, col_map_rz
-            )
+            missing_rot_node_indices = compute_missing_node_indices(num_nodes, id_to_index, col_map_rx, col_map_ry, col_map_rz)
         else:
             # Create empty arrays for rotation
             d_rx = np.zeros_like(d_lx)
@@ -1636,9 +1630,7 @@ def normalize_hinge_dataframe(df_hinge, hinge_file):
 def build_hinge_side_lookup_by_beam(normalized_hinge_rows):
     """Resolve hinge side per (beamIndex, componentNo) using per-beam component coverage."""
     side_lookup = {}
-    component_sets_by_beam = normalized_hinge_rows.groupby("beamIndex")["Component No."].agg(
-        lambda values: tuple(sorted({int(value) for value in values.dropna().tolist()}))
-    )
+    component_sets_by_beam = normalized_hinge_rows.groupby("beamIndex")["Component No."].agg(lambda values: tuple(sorted({int(value) for value in values.dropna().tolist()})))
 
     pattern_counts = component_sets_by_beam.value_counts().sort_index()
     print("Resolved hinge component patterns by beam:")
@@ -1665,10 +1657,7 @@ def build_hinge_side_lookup_by_beam(normalized_hinge_rows):
             resolved_sides.append(side)
 
         if len(set(resolved_sides)) != len(component_pattern):
-            raise ValueError(
-                f"Ambiguous multi-component hinge pattern for beam {beam_index}: "
-                f"{component_pattern} resolves to sides {tuple(resolved_sides)}"
-            )
+            raise ValueError(f"Ambiguous multi-component hinge pattern for beam {beam_index}: " f"{component_pattern} resolves to sides {tuple(resolved_sides)}")
 
     return side_lookup
 
@@ -1790,17 +1779,11 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
 
     hinge_side_lookup = build_hinge_side_lookup_by_beam(normalized)
     normalized["hingeSide"] = [
-        hinge_side_lookup.get((int(beam_index), int(component_no)))
-        for beam_index, component_no in zip(normalized["beamIndex"].tolist(), normalized["Component No."].tolist(), strict=False)
+        hinge_side_lookup.get((int(beam_index), int(component_no))) for beam_index, component_no in zip(normalized["beamIndex"].tolist(), normalized["Component No."].tolist(), strict=False)
     ]
     invalid_component_rows = normalized["hingeSide"].isna()
     if bool(invalid_component_rows.any()):
-        sample_pairs = (
-            normalized.loc[invalid_component_rows, ["beamIndex", "Component No."]]
-            .drop_duplicates()
-            .head(10)
-            .to_dict("records")
-        )
+        sample_pairs = normalized.loc[invalid_component_rows, ["beamIndex", "Component No."]].drop_duplicates().head(10).to_dict("records")
         raise ValueError(f"Unsupported hinge beam/component combinations: {sample_pairs}")
 
     duplicate_same_side = int(normalized.duplicated(subset=["beamIndex", "Step Type", "hingeSide"]).sum())
@@ -2002,8 +1985,11 @@ def process_shear_data(files_config, simulation_output_dir, story_order):
 
     for col in range(stride):
         col_data = encoded[:, col].copy()
+        print("Col_data", col, col_data)
         col_data = np.where(np.isnan(col_data), 0, col_data)
+        print("Col_dat2", col, col_data)
         encoded[:, col] = np.cumsum(col_data[::-1])[::-1]
+        print("Col_dat3", col, encoded[:, col])
 
     populated_rows = int(np.sum(~np.isnan(encoded).all(axis=1)))
     missing_stories = [story for story, row in zip(story_order, encoded) if np.isnan(row).all()]

@@ -84,7 +84,8 @@ function FloorSlab({ storyId }: { storyId: string }) {
       total += value;
       count++;
     }
-    const avgFloorColor = getValueColorForCurrentMetric(total / count).color;
+    const metricValueColor = getValueColorForCurrentMetric(total / count);
+    const avgFloorColor = metricValueColor.color;
 
     for (let i = 0; i < triangles.length; i++) {
       const nodeIdx = triangles[i];

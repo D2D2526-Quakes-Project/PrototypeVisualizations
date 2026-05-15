@@ -9,6 +9,8 @@ import {
   MousePointer2,
   Play,
   MousePointerClick,
+  ZoomIn,
+  ZoomOut,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -130,6 +132,18 @@ const shortcuts: Section[] = [
   {
     label: "Navigation",
     shortcuts: [
+      {
+        icon: <ZoomIn size={14} />,
+        label: "Zoom in",
+        description: "Zoom in on active canvas",
+        key: "+ / =",
+      },
+      {
+        icon: <ZoomOut size={14} />,
+        label: "Zoom out",
+        description: "Zoom out on active canvas",
+        key: "-",
+      },
       {
         icon: <Keyboard size={14} />,
         label: "Toggle view panel",

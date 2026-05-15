@@ -1,9 +1,8 @@
 import { UNIT_SCALE } from "@/lib/utils";
-import { useGlobalStore } from "@/state";
 import { useMetrics } from "../metrics/useMetrics";
+import { SceneInvalidators } from "./lib/SceneInvaidators";
 import { useRenderModes } from "./lib/useRenderModes";
 import { XCrossSectionSlabsRenderer, YCrossSectionSlabsRenderer } from "./renderers/CrossSectionSlabsRenderer";
-import { FloorDirectionLabels } from "./renderers/FloorDirectionLabels";
 import { FloorSlabsRenderer } from "./renderers/FloorSlabsRenderer";
 import { FloorTickMarks } from "./renderers/FloorTickMarks";
 import { HingeNodesRenderer } from "./renderers/HingeNodeRenderer";
@@ -13,7 +12,6 @@ import { OpenPanelCrossSectionsRenderer } from "./renderers/OpenPanelCrossSectio
 import { OpenPanelFloorsRenderer } from "./renderers/OpenPanelFloorsRenderer";
 import { OpenPanelNodesRenderer } from "./renderers/OpenPanelNodesRenderer";
 import { VerticalConnectionsRenderer } from "./renderers/VerticalConnectionsRenderer";
-import { SceneInvalidators } from "./lib/SceneInvaidators";
 
 export function BuildingScene() {
   const { isCurrentMetricHinge: renderHingeNodes } = useMetrics();
@@ -25,7 +23,6 @@ export function BuildingScene() {
     renderVerticalConnections,
     renderHorizontalConnections,
   } = useRenderModes();
-  const colorTheme = useGlobalStore((s) => s.colorTheme);
 
   return (
     <>
@@ -46,10 +43,10 @@ export function BuildingScene() {
         <OpenPanelCrossSectionsRenderer />
       </group>
 
-      <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 1, colorTheme.grid, colorTheme.grid]} />
+      {/* <gridHelper rotation={[Math.PI / 2, 0, 0]} args={[200, 1, colorTheme.grid, colorTheme.grid]} /> */}
 
       <FloorTickMarks />
-      <FloorDirectionLabels />
+      {/* <FloorDirectionLabels /> */}
     </>
   );
 }

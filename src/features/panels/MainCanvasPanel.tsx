@@ -5,7 +5,7 @@ import { CameraProvider } from "../3d/contexts/CanvasContext";
 import { SceneTooltip } from "../3d/SceneTooltip";
 import { CameraManager } from "../canvas/CameraManager";
 import { BoxSelectionOverlay } from "../canvas/components/BoxSelection";
-import { OrientationCube } from "../canvas/components/OrientationCube";
+import { OrientationArrows } from "../canvas/components/OrientationArrows";
 import { useExportRenderMode } from "../export/renderMode";
 import { SmallPlaybackControls } from "../playback/PlaybackControls";
 
@@ -19,7 +19,7 @@ export const MainCanvasPanel = (props: IDockviewPanelProps) => {
         <CameraProvider panelId={panelId}>
           <CanvasWithControls>
             <CameraManager />
-            <OrientationCube />
+            <OrientationArrows />
             <BuildingScene />
           </CanvasWithControls>
           <BoxSelectionOverlay />

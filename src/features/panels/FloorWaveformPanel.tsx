@@ -1,8 +1,8 @@
-import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Slider } from "@/components/ui/slider";
 import { useFloorVisibility } from "@/features/3d/contexts/useFloorVisibility";
-import { getScaleStopsAndLabels } from "@/features/canvas/components/colorScaleUtils";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { getScaleStopsAndLabels } from "@/features/canvas/components/colorScaleUtils";
 import { usePanelState } from "@/features/dockview/usePanelState";
 import {
   getMetricColorScale,
@@ -23,6 +23,7 @@ type PlacementMode = "elevation" | "floor";
 type FloorWaveformPanelState = {
   metric: Metric;
   placementMode: PlacementMode;
+  amplitudeScale: number;
 };
 
 type StorySeries = {
@@ -39,6 +40,7 @@ type StorySeries = {
 const DEFAULT_PANEL_STATE: FloorWaveformPanelState = {
   metric: "accelerationX",
   placementMode: "elevation",
+  amplitudeScale: 2,
 };
 
 const MIN_PLOT_HEIGHT = 360;
@@ -48,6 +50,22 @@ const PLOT_MARGINS = {
   bottom: 48,
   left: 84,
 };
+
+// Amplitude slider: maps 0–100 to a multiplier range of 0.25×–8×
+// Using a log scale so small values are easy to dial in
+const AMPLITUDE_SLIDER_MIN = 0;
+const AMPLITUDE_SLIDER_MAX = 100;
+function sliderToAmplitude(sliderValue: number): number {
+  // log scale: 0 → 0.25, 50 → ~1.41, 100 → 8
+  const minLog = Math.log(0.25);
+  const maxLog = Math.log(8);
+  return Math.exp(minLog + (sliderValue / AMPLITUDE_SLIDER_MAX) * (maxLog - minLog));
+}
+function amplitudeToSlider(amplitude: number): number {
+  const minLog = Math.log(0.25);
+  const maxLog = Math.log(8);
+  return ((Math.log(amplitude) - minLog) / (maxLog - minLog)) * AMPLITUDE_SLIDER_MAX;
+}
 
 function formatFloorOnly(storyId: string) {
   const trimmed = storyId.trim();
@@ -264,6 +282,9 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     return Math.max(metricConfig.getPrecomputedMax(animationData), peak, 1e-6);
   }, [animationData, metricConfig, storySeries]);
 
+  // The user-controlled amplitude multiplier (persisted in panel state, default 2)
+  const amplitudeMultiplier = panelState.amplitudeScale ?? DEFAULT_PANEL_STATE.amplitudeScale;
+
   const plotGeometry = useMemo(() => {
     const width = Math.max(plotSize.width, 320);
     const height = Math.max(plotSize.height, MIN_PLOT_HEIGHT);
@@ -273,7 +294,8 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     const minElevation = elevationValues.length > 0 ? Math.min(...elevationValues) : 0;
     const maxElevation = elevationValues.length > 0 ? Math.max(...elevationValues) : 1;
     const step = storySeries.length > 1 ? innerHeight / (storySeries.length - 1) : innerHeight / 2;
-    const amplitudeScale = (step * 2) / maxAbsValue;
+    // Use amplitudeMultiplier instead of the hardcoded 2
+    const amplitudeScale = (step * amplitudeMultiplier) / maxAbsValue;
 
     const baselines = storySeries.map((story, index) => {
       if (panelState.placementMode === "floor") {
@@ -297,7 +319,15 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       amplitudeScale,
       maxFrameIndex: Math.max(0, frameCount - 1),
     };
-  }, [frameCount, maxAbsValue, panelState.placementMode, plotSize.height, plotSize.width, storySeries]);
+  }, [
+    amplitudeMultiplier,
+    frameCount,
+    maxAbsValue,
+    panelState.placementMode,
+    plotSize.height,
+    plotSize.width,
+    storySeries,
+  ]);
 
   const xTickTimes = useMemo(() => {
     const tickCount = Math.min(6, Math.max(2, Math.round(plotGeometry.innerWidth / 140)));
@@ -384,45 +414,60 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-white">
-      <div className="shrink-0 border-b border-neutral-200 px-3 py-1">
-        <div className="flex flex-wrap items-start justify-between gap-1">
-          <div>
-            <div className="text-sm font-semibold text-neutral-900">Floor Waveforms</div>
-            <div className="text-xs text-neutral-500">
-              Average {metricConfig.label.toLowerCase()} history for each visible floor. Color encodes floor peak
-              severity.
-            </div>
-          </div>
-          {/* <div className="flex flex-wrap items-end gap-1">
-            <Label className="flex flex-col gap-1 text-[11px] font-medium text-neutral-600">
-              Metric
-              <NativeSelect
-                size="sm"
-                value={selectedMetric}
-                onChange={(event) => setPanelState({ metric: event.target.value as Metric })}>
-                {selectableMetrics.map((metric) => {
-                  const config = getMetricConfig(metric);
-                  return (
-                    <NativeSelectOption key={metric} value={metric}>
-                      {config.label}
-                    </NativeSelectOption>
-                  );
-                })}
-              </NativeSelect>
-            </Label>
-            <Label className="flex flex-col gap-1 text-[11px] font-medium text-neutral-600">
-              Positioning
-              <NativeSelect
-                size="sm"
-                value={panelState.placementMode}
-                onChange={(event) => setPanelState({ placementMode: event.target.value as PlacementMode })}>
-                <NativeSelectOption value="elevation">Elevation spacing</NativeSelectOption>
-                <NativeSelectOption value="floor">Equal floor spacing</NativeSelectOption>
-              </NativeSelect>
-            </Label>
-          </div> */}
+      <div className="shrink-0 border-b border-neutral-200 px-3 py-1.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-sm font-semibold text-neutral-900">Floor Waveforms</span>
+          <span className="truncate text-[11px] text-neutral-400">
+            Avg {metricConfig.shortLabel} per floor · color = peak severity
+          </span>
         </div>
-        {/* <div className="flex items-center gap-3">
+
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {/* Metric select */}
+          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+            Metric
+            <NativeSelect
+              size="sm"
+              value={selectedMetric}
+              onChange={(event) => setPanelState({ metric: event.target.value as Metric })}>
+              {selectableMetrics.map((metric) => {
+                const config = getMetricConfig(metric);
+                return (
+                  <NativeSelectOption key={metric} value={metric}>
+                    {config.label}
+                  </NativeSelectOption>
+                );
+              })}
+            </NativeSelect>
+          </label>
+
+          {/* Placement mode select */}
+          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+            Spacing
+            <NativeSelect
+              size="sm"
+              value={panelState.placementMode}
+              onChange={(event) => setPanelState({ placementMode: event.target.value as PlacementMode })}>
+              <NativeSelectOption value="elevation">By elevation</NativeSelectOption>
+              <NativeSelectOption value="floor">Equal floors</NativeSelectOption>
+            </NativeSelect>
+          </label>
+
+          {/* Amplitude scale slider */}
+          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+            Amplitude
+            <Slider
+              min={AMPLITUDE_SLIDER_MIN}
+              max={AMPLITUDE_SLIDER_MAX}
+              step={1}
+              value={[amplitudeToSlider(amplitudeMultiplier)]}
+              onValueChange={(value) => setPanelState({ amplitudeScale: sliderToAmplitude(value[0]) })}
+              className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-neutral-200 accent-neutral-700"
+            />
+            <span className="w-8 font-mono text-[10px] text-neutral-400">{amplitudeMultiplier.toFixed(1)}×</span>
+          </label>
+        </div>
+        <div className="flex items-center gap-3">
           <MetricLegend
             metric={selectedMetric}
             maxValue={maxAbsValue}
@@ -430,7 +475,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
             thresholdHighlighting={thresholdHighlighting}
             metricColorScale={metricColorScale}
           />
-        </div> */}
+        </div>
       </div>
 
       <div className="relative min-h-0 flex-1">

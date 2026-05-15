@@ -19,8 +19,6 @@ interface CornerMetricChartProps {
   api: DockviewPanelApi;
 }
 
-import { cyan600, violet500, rose500, amber500 } from "../metrics/colors/tailwindColors";
-
 const cornerColors = {
   // Grayscale
   NW: "#444444",

@@ -87,6 +87,14 @@ function DockviewContainer() {
       params: { panelType: "Floor Average Metric" },
     });
 
+    api.addPanel<MagicPanelParams>({
+      id: "floor-waveforms",
+      component: "magicPanel",
+      tabComponent: "magicPanelTab",
+      position: { referencePanel: interstoryDriftPanel, direction: "within" },
+      params: { panelType: "Floor Waveforms" },
+    });
+
     interstoryDriftPanel.focus();
   }, []);
 

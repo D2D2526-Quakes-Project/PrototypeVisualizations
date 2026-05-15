@@ -29,6 +29,7 @@ import { useAnimationData } from "../animation-data/useAnimationData";
 import { CornerMetricChart } from "../panels/CornerMetricChart";
 import { DataExplorerPanel } from "../panels/DataExplorerPanel";
 import { FloorAverageMetricChart } from "../panels/FloorAverageMetricChart";
+import { FloorWaveformPanel } from "../panels/FloorWaveformPanel";
 import { HingeDistributionPanel } from "../panels/HingeDistributionPanel";
 import { StatisticsPanel } from "../panels/StatisticsPanel";
 import { Timeline } from "../timeline/Timeline";
@@ -101,6 +102,14 @@ const PANEL_DEFINITIONS = check({
     description: "Average Metrics for a Floor",
     requiredOptionalData: [],
     optionalEnhancementData: [],
+  },
+  "Floor Waveforms": {
+    component: FloorWaveformPanel,
+    category: "Core Analysis",
+    icon: ChartGanttIcon,
+    description: "Per-floor waveform histories with elevation or equal-floor spacing",
+    requiredOptionalData: [],
+    optionalEnhancementData: ["velocityLin", "accelerationLin", "displacementRot", "velocityRot", "accelerationRot"],
   },
   "Hinge Distribution": {
     component: HingeDistributionPanel,

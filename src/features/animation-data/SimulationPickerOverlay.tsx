@@ -176,11 +176,7 @@ export function SimulationPickerOverlay({
 
           <div className="sticky top-4 w-48 shrink-0 rounded-lg border border-neutral-300 bg-neutral-100/60 p-2">
             <img className="overflow-hidden rounded-sm bg-contain" src="/stations-map.png" alt="Station map" />
-            <span
-              title="Wang, Zijia & Zhang, Wenqiang & Taymaz, Tuncay & He, Zhongqiu & Xu, Tianhong & Zhang, Zhenguo. (2023). Dynamic Rupture Process of the 2023 Mw 7.8 Kahramanmaraş Earthquake (SE Türkiye): Variable Rupture Speed and Implications for Seismic Hazard. Geophysical Research Letters. 50. 10.1029/2023GL104787."
-              className="text-xs text-neutral-500 underline">
-              Wang, Et. Al. 2023
-            </span>
+            <span className="text-xs text-neutral-500 italic">U.S. Geological Survey ShakeMap</span>
           </div>
         </div>
 

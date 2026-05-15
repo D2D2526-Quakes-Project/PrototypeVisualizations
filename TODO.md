@@ -131,7 +131,8 @@
 - [ ] Building should come with default floor hiding settings
 - [ ] Create dedicated settings menu
 - [ ] Make default view simpler with fewer tabs and panels
-- [ ] Add charts showing all floors with line chart per floor for same metrics like ISD
+- [x] Add charts showing all floors with line chart per floor for same metrics like ISD
+  - Added a `Floor Waveforms` panel with metric selection, threshold-aware coloring, floor-vs-elevation placement, and tooltip/playhead support.
 
 - [ ] Multiple places define an order for the optional data (NavigationBar, Main Menu, optionalLoads query param). This should be centralized and made consistent.
 

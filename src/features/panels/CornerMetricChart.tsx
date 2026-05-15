@@ -1,23 +1,25 @@
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { usePlayback } from "@/features/playback/usePlayback";
-import { usePanelState } from "@/features/dockview/usePanelState";
-import { formatNumber, formatStoryLabel } from "@/lib/utils";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { usePanelState } from "@/features/dockview/usePanelState";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { formatNumber, formatStoryLabel } from "@/lib/utils";
+import type { DockviewPanelApi } from "dockview-react";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import type { DockviewPanelApi } from "dockview-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
-import { getMetricConfig, isHingeMetric, type Metric } from "../metrics/metrics";
 import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
-import { useThresholds } from "../metrics/useThresholds";
+import { getMetricConfig, isHingeMetric, type Metric } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
+import { useThresholds } from "../metrics/useThresholds";
 
 interface CornerMetricChartProps {
   api: DockviewPanelApi;
 }
+
+import { cyan600, violet500, rose500, amber500 } from "../metrics/colors/tailwindColors";
 
 const cornerColors = {
   // Grayscale

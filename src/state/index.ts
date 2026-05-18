@@ -67,7 +67,7 @@ export function useProfileIds(): string[] {
   );
 }
 
-export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
+export function useProfileData<T>(selector: (state: ProfileData) => T): T {
   const { currentBuilding, loading, animationData } = useAnimationData();
   const currentBuildingId = currentBuilding.name;
   const defaultHiddenFloors = animationData.metadata.hiddenFloors;
@@ -86,6 +86,27 @@ export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
       });
     }
   }, [currentBuildingId, loading, defaultHiddenFloors]);
+
+  const fallbackProfile = useMemo(
+    () => createDefaultProfiles(defaultHiddenFloors)[DEFAULT_PROFILE],
+    [defaultHiddenFloors]
+  );
+
+  return useAppStore((state) => {
+    if (!currentBuildingId) return selector({} as ProfileStateAPI);
+
+    const buildingProfiles = state.profiles[currentBuildingId];
+    const activeProfId = state.activeProfileIds[currentBuildingId] ?? DEFAULT_PROFILE;
+
+    const activeProfile = buildingProfiles?.[activeProfId] ?? fallbackProfile;
+
+    return selector(activeProfile);
+  });
+}
+
+export function useProfileActions(): ProfileState["profileActions"] {
+  const { currentBuilding, loading } = useAnimationData();
+  const currentBuildingId = currentBuilding.name;
 
   // Programmatically wrap all actions.
   const boundActions = useMemo(() => {
@@ -114,20 +135,5 @@ export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
     return actions;
   }, [currentBuildingId, loading]);
 
-  const fallbackProfile = useMemo(
-    () => createDefaultProfiles(defaultHiddenFloors)[DEFAULT_PROFILE],
-    [defaultHiddenFloors]
-  );
-
-  return useAppStore((state) => {
-    if (!currentBuildingId) return selector({} as ProfileStateAPI);
-
-    const buildingProfiles = state.profiles[currentBuildingId];
-    const activeProfId = state.activeProfileIds[currentBuildingId] ?? DEFAULT_PROFILE;
-
-    const activeProfile = buildingProfiles?.[activeProfId] ?? fallbackProfile;
-    const projectedState = { ...activeProfile, ...boundActions } as ProfileStateAPI;
-
-    return selector(projectedState);
-  });
+  return boundActions;
 }

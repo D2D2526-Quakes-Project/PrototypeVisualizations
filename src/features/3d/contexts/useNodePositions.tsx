@@ -1,5 +1,5 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useProfileStore } from "@/state";
+import { useProfileData } from "@/state";
 import { useCallback, useMemo } from "react";
 import { useRenderModes } from "../lib/useRenderModes";
 import { useCanvasState } from "./CanvasContext";
@@ -27,7 +27,7 @@ export function useNodePositions() {
     yExpansion,
     zExpansion,
   } = useCanvasState(true);
-  const hiddenNodeIds = useProfileStore((s) => s._hiddenNodeIds);
+  const hiddenNodeIds = useProfileData((s) => s._hiddenNodeIds);
   const { hiddenFloors } = useFloorVisibility();
 
   const missingNodeSet = useMemo(() => new Set(displacementMissingNodeIndices), [displacementMissingNodeIndices]);

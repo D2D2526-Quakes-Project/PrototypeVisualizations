@@ -6,7 +6,7 @@ import { MetricSection } from "@/components/MetricSection";
 import { MiniRibbon } from "@/components/MiniRibbon";
 import { MiniTimeSeries } from "@/components/MiniTimeSeries";
 import { numberToColor, numberToColorLight, threeColorToCSS } from "@/lib/utils";
-import { useGlobalStore, useProfileStore } from "@/state";
+import { useGlobalStore, useProfileActions, useProfileData } from "@/state";
 import { getMetricKeyColor } from "@/features/metrics/metrics";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview-react";
 import { ChartNoAxesCombinedIcon, InfoIcon, TriangleIcon, XIcon } from "lucide-react";
@@ -17,8 +17,8 @@ import { useMetrics } from "../metrics/useMetrics";
 export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: number }>) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const nodePanelGraphVisibility = useProfileStore((s) => s.nodePanelGraphVisibility);
-  const toggleNodePanelGraph = useProfileStore((s) => s.toggleNodePanelGraph);
+  const nodePanelGraphVisibility = useProfileData((s) => s.nodePanelGraphVisibility);
+  const { toggleNodePanelGraph } = useProfileActions();
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
   const { getNodeColorForMetric } = useMetrics();
 

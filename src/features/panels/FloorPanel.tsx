@@ -11,7 +11,7 @@ import type { ShearRow } from "@/lib/types";
 import { MiniTimeSeries } from "@/components/MiniTimeSeries";
 import { AveragedMetricSection } from "@/components/AveragedMetricSection";
 import { numberToColor, numberToColorLight, stringToNumber } from "@/lib/utils";
-import { useGlobalStore, useProfileStore } from "@/state";
+import { useGlobalStore, useProfileData } from "@/state";
 import { getMetricKeyColor } from "@/features/metrics/metrics";
 import { SectionVisualization } from "../3d/renderers/SectionVisualization";
 
@@ -19,7 +19,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const storyId = props.params.storyId;
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const nodePanelGraphVisibility = useProfileStore((s) => s.nodePanelGraphVisibility);
+  const nodePanelGraphVisibility = useProfileData((s) => s.nodePanelGraphVisibility);
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
   const shearXColor = getMetricKeyColor("shearXAbs", metricPaletteOverrides);
   const shearYColor = getMetricKeyColor("shearYAbs", metricPaletteOverrides);
@@ -123,7 +123,7 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3 scrollbar-gutter-stable">
+      <div className="scrollbar-gutter-stable flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3">
         {/* 3D VISUALIZATION */}
         <div className="animate-fade-in w-full" ref={containerRef}>
           <SectionVisualization nodeIds={nodeIds} width={dimensions} viewMode="floor" />

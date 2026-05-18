@@ -114,7 +114,6 @@ function MetricSelect({
 }
 
 export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
-  return null;
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();

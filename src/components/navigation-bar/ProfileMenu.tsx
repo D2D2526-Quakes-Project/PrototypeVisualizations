@@ -1,9 +1,9 @@
-import { useProfileIds, useProfileStore } from "@/state";
+import { useProfileIds, useProfileData, useProfileActions } from "@/state";
 import { MenubarContent, MenubarMenu, MenubarRadioGroup, MenubarRadioItem, MenubarTrigger } from "../ui/menubar";
 
 export function ProfileMenu() {
-  const profileId = useProfileStore((s) => s.profileId);
-  const setActiveProfile = useProfileStore((s) => s.setActiveProfile);
+  const profileId = useProfileData((s) => s.profileId);
+  const { setActiveProfile } = useProfileActions();
   const availableProfileIds = useProfileIds();
 
   return (

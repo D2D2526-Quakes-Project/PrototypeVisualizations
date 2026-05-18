@@ -1,20 +1,23 @@
-import { useProfileStore } from "@/state";
+import { useProfileActions, useProfileData } from "@/state";
 
 export function useRenderModes() {
-  const renderNodes = useProfileStore((s) => s.renderNodes);
-  const setRenderNodes = useProfileStore((s) => s.setRenderNodes);
-  const renderFloorSlabs = useProfileStore((s) => s.renderFloorSlabs);
-  const setRenderFloorSlabs = useProfileStore((s) => s.setRenderFloorSlabs);
-  const renderXCrossSectionSlabs = useProfileStore((s) => s.renderXCrossSectionSlabs);
-  const setRenderXCrossSectionSlabs = useProfileStore((s) => s.setRenderXCrossSectionSlabs);
-  const renderYCrossSectionSlabs = useProfileStore((s) => s.renderYCrossSectionSlabs);
-  const setRenderYCrossSectionSlabs = useProfileStore((s) => s.setRenderYCrossSectionSlabs);
-  const showCornersOnly = useProfileStore((s) => s.showCornersOnly);
-  const setShowCornersOnly = useProfileStore((s) => s.setShowCornersOnly);
-  const renderVerticalConnections = useProfileStore((s) => s.renderVerticalConnections);
-  const setRenderVerticalConnections = useProfileStore((s) => s.setRenderVerticalConnections);
-  const renderHorizontalConnections = useProfileStore((s) => s.renderHorizontalConnections);
-  const setRenderHorizontalConnections = useProfileStore((s) => s.setRenderHorizontalConnections);
+  const renderNodes = useProfileData((s) => s.renderNodes);
+  const renderFloorSlabs = useProfileData((s) => s.renderFloorSlabs);
+  const renderXCrossSectionSlabs = useProfileData((s) => s.renderXCrossSectionSlabs);
+  const renderYCrossSectionSlabs = useProfileData((s) => s.renderYCrossSectionSlabs);
+  const showCornersOnly = useProfileData((s) => s.showCornersOnly);
+  const renderVerticalConnections = useProfileData((s) => s.renderVerticalConnections);
+  const renderHorizontalConnections = useProfileData((s) => s.renderHorizontalConnections);
+
+  const {
+    setRenderNodes,
+    setRenderFloorSlabs,
+    setRenderXCrossSectionSlabs,
+    setRenderYCrossSectionSlabs,
+    setShowCornersOnly,
+    setRenderVerticalConnections,
+    setRenderHorizontalConnections,
+  } = useProfileActions();
 
   return {
     renderNodes,

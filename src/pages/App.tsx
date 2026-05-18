@@ -9,7 +9,7 @@ import { CrossSectionPanel, CrossSectionTab } from "@/features/panels/CrossSecti
 import { FloorPanel, FloorTab } from "@/features/panels/FloorPanel";
 import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
 import { debounce } from "@/lib/utils";
-import { useProfileStore } from "@/state";
+import { useProfileActions, useProfileData } from "@/state";
 import { type DockviewApi, type SerializedDockview } from "dockview-react";
 import { useCallback, useMemo } from "react";
 
@@ -36,9 +36,9 @@ export function App() {
 }
 
 function DockviewContainer() {
-  const profileId = useProfileStore((state) => state.profileId);
-  const dockviewLayout = useProfileStore((state) => state.dockviewLayout);
-  const setDockviewLayout = useProfileStore((state) => state.setDockviewLayout);
+  const profileId = useProfileData((state) => state.profileId);
+  const dockviewLayout = useProfileData((state) => state.dockviewLayout);
+  const { setDockviewLayout } = useProfileActions();
 
   const debouncedSave = useMemo(
     () => debounce((layout: SerializedDockview) => setDockviewLayout(layout), 1000),

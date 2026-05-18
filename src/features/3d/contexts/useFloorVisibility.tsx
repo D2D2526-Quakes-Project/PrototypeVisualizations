@@ -1,15 +1,15 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useProfileStore } from "@/state";
+import { useProfileData } from "@/state";
 
 import { useCallback, useMemo } from "react";
 
 export function useFloorVisibility() {
   const { animationData } = useAnimationData();
-  const hiddenFloors = useProfileStore((s) => s._hiddenFloors);
-  const setHiddenFloors = useProfileStore((s) => s._setHiddenFloors);
-  const toggleFloor = useProfileStore((s) => s._toggleFloor);
-  const showFloors = useProfileStore((s) => s._showFloors);
-  const hideFloors = useProfileStore((s) => s._hideFloors);
+  const hiddenFloors = useProfileData((s) => s._hiddenFloors);
+  const setHiddenFloors = useProfileData((s) => s._setHiddenFloors);
+  const toggleFloor = useProfileData((s) => s._toggleFloor);
+  const showFloors = useProfileData((s) => s._showFloors);
+  const hideFloors = useProfileData((s) => s._hideFloors);
 
   const storyOrder = animationData.metadata.storyOrder;
   const defaultHiddenFloors = animationData.metadata.hiddenFloors;

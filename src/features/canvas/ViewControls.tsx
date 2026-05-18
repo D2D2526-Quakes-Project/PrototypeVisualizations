@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isEditableTarget } from "@/lib/utils";
-import { useGlobalStore, useLiveStore, useProfileStore } from "@/state";
+import { useGlobalStore, useLiveStore, useProfileActions, useProfileData } from "@/state";
 import { DEFAULT_COLOR_THEMES } from "@/state/globalState";
 import { useCanvasState } from "../3d/contexts/CanvasContext";
 import { QuickControls } from "./components/QuickControls";
@@ -51,10 +51,8 @@ export const ViewControls = forwardRef<
   const expandedLayoutRef = useRef<HTMLDivElement>(null);
 
   const selectedNodeIds = useLiveStore((s) => s.selectedNodeIds);
-  const hiddenNodeIds = useProfileStore((s) => s._hiddenNodeIds);
-  const showAllNodes = useProfileStore((s) => s.showAllNodes);
-  const hideNodes = useProfileStore((s) => s.hideNodes);
-  const showNodes = useProfileStore((s) => s.showNodes);
+  const hiddenNodeIds = useProfileData((s) => s._hiddenNodeIds);
+  const { showAllNodes, hideNodes, showNodes } = useProfileActions();
 
   const selectedCount = selectedNodeIds.length;
   const hiddenCount = hiddenNodeIds.length;

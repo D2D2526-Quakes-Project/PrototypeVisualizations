@@ -128,7 +128,6 @@ function getPrecomputedPeakValue(
 }
 
 export function CornerMetricChart({ api }: CornerMetricChartProps) {
-  return null;
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();

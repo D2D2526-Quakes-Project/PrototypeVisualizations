@@ -1,9 +1,8 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { useGlobalStore } from "@/state";
+import { Canvas, useThree } from "@react-three/fiber";
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ViewControls } from "./ViewControls";
-import { Perf } from "r3f-perf";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
@@ -89,7 +88,6 @@ export function CanvasWithControls({ children }: CanvasWithControlsProps) {
           onCreated={({ scene }) => {
             scene.fog = null;
           }}>
-          <Perf />
           <LayoutSizeSync />
           <color attach="background" args={[colorTheme.background]} />
           {children}

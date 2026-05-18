@@ -1,4 +1,4 @@
-import { useGlobalStore, useProfileStore } from "@/state";
+import { useGlobalStore, useProfileActions, useProfileData } from "@/state";
 import { interpolate } from "culori";
 import { useCallback, useMemo } from "react";
 import * as THREE from "three";
@@ -14,16 +14,16 @@ const ERROR_MAGENTA = interpolate(["magenta"], "oklab");
 
 export function useMetrics() {
   const { animationData } = useAnimationData();
-  const currentMetric = useProfileStore((s) => s._currentMetric);
-  const setCurrentMetric = useProfileStore((s) => s._setCurrentMetric);
+  const currentMetric = useProfileData((s) => s._currentMetric);
+  const { _setCurrentMetric: setCurrentMetric, _setThresholdHighlighting: setThresholdHighlighting } =
+    useProfileActions();
   const showHiddenMetrics = useGlobalStore((s) => s.showHiddenMetrics);
 
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
   const setMetricPalette = useGlobalStore((s) => s.setMetricPalette);
 
-  const thresholdHighlighting = useProfileStore((s) => s._thresholdHighlighting);
-  const setThresholdHighlighting = useProfileStore((s) => s._setThresholdHighlighting);
-  const thresholds = useProfileStore((s) => s._thresholds);
+  const thresholdHighlighting = useProfileData((s) => s._thresholdHighlighting);
+  const thresholds = useProfileData((s) => s._thresholds);
 
   const missingNodeSet = useMemo(
     () => new Set(animationData.metadata.displacementMissingNodeIndices),

@@ -39,7 +39,6 @@ const FloorSlab = memo(function FloorSlab({
   isHovered: boolean;
   setHoveredFloor: (hoverItem: HoverItem | null) => void;
 }) {
-  console.log("storyId", storyId, isHovered);
   const meshRef = useRef<THREE.Mesh>(null);
   const posAttrRef = useRef<THREE.BufferAttribute>(null);
   const colAttrRef = useRef<THREE.BufferAttribute>(null);
@@ -88,8 +87,7 @@ const FloorSlab = memo(function FloorSlab({
     };
   }, [topology]);
 
-  useFrame((state, delta) => {
-    // const now = performance.now();
+  useFrame(() => {
     const posAttr = posAttrRef.current;
     const colAttr = colAttrRef.current;
     const mesh = meshRef.current;
@@ -135,8 +133,6 @@ const FloorSlab = memo(function FloorSlab({
       mat.opacity = targetOpacity;
       mat.depthWrite = targetOpacity === 1;
     }
-
-    // console.log("FloorSlab", storyId, performance.now() - now, "delta", delta);
   });
 
   const handlePointerOver = useCallback(

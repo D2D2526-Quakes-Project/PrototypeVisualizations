@@ -17,6 +17,7 @@ import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber, getOrdinalSuffix, threeColorToCSS } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useHover } from "../3d/lib/useHover";
 
 type PlacementMode = "elevation" | "floor";
 
@@ -159,12 +160,12 @@ function HoverTooltip({ story, frame, dt, unit }: { story: StorySeries; frame: n
 }
 
 export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
-  return null;
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
   const { availableMetrics, thresholdHighlighting, getValueColorForMetric, metricPaletteOverrides } = useMetrics();
   const { getThreshold } = useThresholds();
+  const { setHoveredFloor } = useHover();
   const playheadRef = useRef<HTMLDivElement>(null);
   const hoverLineRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
@@ -403,6 +404,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         nearestIndex = index;
       }
     });
+    const storyId = visibleFloors[nearestIndex];
 
     setHoverState({
       frame,
@@ -410,6 +412,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       x: clampedX,
       y: localY,
     });
+    setHoveredFloor({ type: "floor", storyId });
   };
 
   return (

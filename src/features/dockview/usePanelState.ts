@@ -1,5 +1,5 @@
 import { debounce } from "@/lib/utils";
-import { useProfileStore } from "@/state";
+import { useProfileActions, useProfileData } from "@/state";
 import { useMemo, useState, useCallback } from "react";
 import type { PanelType } from "./MagicPanel";
 
@@ -26,8 +26,8 @@ export function usePanelState<T extends Record<keyof T, unknown>>(params: {
 }): UsePanelStateReturn<T> {
   const { panelId, panelType, defaultState } = params;
 
-  const setGlobalPanelState = useProfileStore((store) => store.setPanelState);
-  const savedPanelState = useProfileStore((store) => store.panelStates[panelId]);
+  const { setPanelState: setGlobalPanelState } = useProfileActions();
+  const savedPanelState = useProfileData((store) => store.panelStates[panelId]);
 
   const debouncedSave = useMemo(
     () => debounce((id: string, type: string, state: unknown) => setGlobalPanelState(id, type, state), 1000),

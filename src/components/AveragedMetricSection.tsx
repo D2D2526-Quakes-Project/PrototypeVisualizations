@@ -3,7 +3,7 @@ import { MiniTimeSeries } from "@/components/MiniTimeSeries";
 import { AxisMetricRow } from "@/components/AxisMetricRow";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useProfileStore, useGlobalStore } from "@/state";
+import { useProfileData, useGlobalStore, useProfileActions } from "@/state";
 import { getMetricKeyColor, type Metric, type Unit } from "@/features/metrics/metrics";
 import type { TimeIndexAccessor } from "@/lib/types";
 
@@ -43,8 +43,8 @@ function getByIndex<T>(arr: [T, T, T], i: number): T {
 export function AveragedMetricSection({ title, unit, graphPrefix, nodeIds, accessor }: AveragedMetricSectionProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
-  const nodePanelGraphVisibility = useProfileStore((s) => s.nodePanelGraphVisibility);
-  const toggleNodePanelGraph = useProfileStore((s) => s.toggleNodePanelGraph);
+  const nodePanelGraphVisibility = useProfileData((s) => s.nodePanelGraphVisibility);
+  const { toggleNodePanelGraph } = useProfileActions();
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
 
   const metricPrefix = GRAPH_PREFIX_TO_METRIC[graphPrefix] ?? graphPrefix;

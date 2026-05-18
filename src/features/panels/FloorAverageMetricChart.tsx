@@ -16,7 +16,7 @@ import { getMetricConfig, getMetricKeyColor, type Metric } from "../metrics/metr
 import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
-import { useGlobalStore } from "@/state";
+import { useGlobalStore, useLiveStore } from "@/state";
 
 type MetricOption = {
   metric: Metric;
@@ -126,6 +126,8 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     defaultState: DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE,
   });
 
+  const setHoveredItem = useLiveStore((s) => s.setHoveredItem);
+
   const metricOptions = useMemo<MetricOption[]>(() => {
     const metrics =
       availableMetrics.length > 0 ? availableMetrics : DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE.selectedMetrics;
@@ -161,6 +163,17 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   }, [effectiveSelectedMetrics, panelState.selectedMetrics, setPanelState]);
 
   const storyIds = useMemo(() => Array.from(visibleFloors).slice(1), [visibleFloors]);
+
+  const storyRows = useMemo(() => {
+    return storyIds.map((storyId) => {
+      const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
+      return {
+        storyId,
+        elevationIn,
+        label: formatStoryLabel(storyId, elevationIn),
+      };
+    });
+  }, [animationData, storyIds]);
 
   const metricStoryData = useMemo(() => {
     const results = new Map<
@@ -206,15 +219,6 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   }, [animationData, effectiveSelectedMetrics, frameIndex, storyIds]);
 
   const option = useMemo((): EChartsOption => {
-    const storyRows = storyIds.map((storyId) => {
-      const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
-      return {
-        storyId,
-        elevationIn,
-        label: formatStoryLabel(storyId, elevationIn),
-      };
-    });
-
     const unitGroups = Array.from(
       new Map(
         effectiveSelectedMetrics.map((metric) => {
@@ -434,7 +438,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     metricOptions,
     metricStoryData,
     metricPaletteOverrides,
-    storyIds,
+    storyRows,
     thresholds,
   ]);
 
@@ -454,6 +458,19 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
           replaceMerge={["series", "legend", "xAxis"]}
           style={{ height: "100%", width: "100%" }}
           opts={{ renderer: "svg" }}
+          onEvents={{
+            mouseover: (params: { dataIndex?: number }) => {
+              if (params.dataIndex !== undefined && params.dataIndex >= 0) {
+                const row = storyRows[params.dataIndex];
+                if (row) {
+                  setHoveredItem({ type: "floor", storyId: row.storyId });
+                }
+              }
+            },
+            mouseout: () => {
+              setHoveredItem(null);
+            },
+          }}
         />
       </div>
     </div>

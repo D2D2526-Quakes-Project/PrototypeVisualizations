@@ -33,28 +33,28 @@ const GROUND_MOTION_COLOR = "#444444";
 const GROUND_CHANNEL_CONFIG: Record<string, ChannelOption> = {
   groundMotionX: {
     label: "X Ground Motion",
-    shortName: "X",
+    shortName: "GM X",
     unit: UNITS.g,
     enabled: (animationData) => animationData.groundMotion.data.length > 0,
     accessor: (idx, animationData) => animationData.groundMotion.xAt(idx),
   },
   groundMotionY: {
     label: "Y Ground Motion",
-    shortName: "Y",
+    shortName: "GM Y",
     unit: UNITS.g,
     enabled: (animationData) => animationData.groundMotion.data.length > 0,
     accessor: (idx, animationData) => animationData.groundMotion.yAt(idx),
   },
   // groundMotionZ: {
   //   label: "Z Ground Motion",
-  //   shortName: "Z",
+  //   shortName: "GM Z",
   //   unit: UNITS.g,
   //   enabled: (animationData) => animationData.groundMotion.data.length > 0,
   //   accessor: (idx, animationData) => animationData.groundMotion.zAt(idx),
   // },
   groundMotionMagnitude: {
     label: "Ground Motion",
-    shortName: "Mag",
+    shortName: "GM Mag",
     unit: UNITS.g,
     enabled: (animationData) => animationData.precomputed.groundMotion.magnitude.length > 0,
     accessor: (idx, animationData) => animationData.precomputed.groundMotion.magnitude[idx],
@@ -680,6 +680,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
               ref={chartRef}
               option={option}
               style={{ height: "100%", width: "100%", opacity: isCurrentMetricStatic ? 0.65 : 1 }}
+              replaceMerge={["series"]}
               opts={{ renderer: "canvas" }}
               onChartReady={() => setChartReadyVersion((v) => v + 1)}
             />

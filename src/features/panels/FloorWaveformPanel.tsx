@@ -109,7 +109,6 @@ function MetricLegend({
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       <div className="flex items-center justify-between gap-2 text-[10px] text-neutral-500">
-        <span>Color = floor peak {config.shortLabel}</span>
         {thresholdHighlighting && thresholdValue > 0 ? (
           <span>Threshold highlight on</span>
         ) : (
@@ -417,9 +416,6 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       <div className="shrink-0 border-b border-neutral-200 px-3 py-1.5">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-sm font-semibold text-neutral-900">Floor Waveforms</span>
-          <span className="truncate text-[11px] text-neutral-400">
-            Avg {metricConfig.shortLabel} per floor · color = peak severity
-          </span>
         </div>
 
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">

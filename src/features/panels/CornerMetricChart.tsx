@@ -5,6 +5,7 @@ import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePanelState } from "@/features/dockview/usePanelState";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber, formatStoryLabel } from "@/lib/utils";
+import { useLiveStore } from "@/state";
 import type { DockviewPanelApi } from "dockview-react";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
@@ -163,6 +164,8 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   const metricConfig = useMemo(() => getMetricConfig(selectedMetric), [selectedMetric]);
   const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
   const storyIds = useMemo(() => Array.from(visibleFloors), [visibleFloors]);
+
+  const setHoveredItem = useLiveStore((s) => s.setHoveredItem);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
@@ -595,6 +598,19 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
           style={{ height: "100%", width: "100%" }}
           opts={{ renderer: "svg" }}
           onChartReady={() => setChartReadyVersion((v) => v + 1)}
+          onEvents={{
+            mouseover: (params: { dataIndex?: number }) => {
+              if (params.dataIndex !== undefined && params.dataIndex >= 0) {
+                const storyId = storyIds[params.dataIndex];
+                if (storyId) {
+                  setHoveredItem({ type: "floor", storyId });
+                }
+              }
+            },
+            mouseout: () => {
+              setHoveredItem(null);
+            },
+          }}
         />
       </div>
     </div>

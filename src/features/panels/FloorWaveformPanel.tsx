@@ -16,8 +16,10 @@ import { useThresholds } from "@/features/metrics/useThresholds";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber, getOrdinalSuffix, threeColorToCSS } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import ReactECharts from "echarts-for-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useHover } from "../3d/lib/useHover";
+import type { ECharts } from "echarts";
 
 type PlacementMode = "elevation" | "floor";
 
@@ -44,12 +46,11 @@ const DEFAULT_PANEL_STATE: FloorWaveformPanelState = {
   amplitudeScale: 2,
 };
 
-const MIN_PLOT_HEIGHT = 360;
 const PLOT_MARGINS = {
-  top: 24,
-  right: 24,
-  bottom: 48,
-  left: 84,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
 };
 
 // Amplitude slider: maps 0–100 to a multiplier range of 0.25×–8×
@@ -166,13 +167,19 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   const { availableMetrics, thresholdHighlighting, getValueColorForMetric, metricPaletteOverrides } = useMetrics();
   const { getThreshold } = useThresholds();
   const { setHoveredFloor } = useHover();
+
+  const echartsRef = useRef<ReactECharts>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const hoverLineRef = useRef<HTMLDivElement>(null);
-  const plotRef = useRef<HTMLDivElement>(null);
-  const [plotSize, setPlotSize] = useState({ width: 0, height: 0 });
-  const [hoverState, setHoverState] = useState<{ frame: number; storyIndex: number; x: number; y: number } | null>(
-    null
-  );
+
+  const [hoverState, setHoverState] = useState<{
+    frame: number;
+    storyIndex: number;
+    x: number;
+    y: number;
+    containerWidth: number;
+    containerHeight: number;
+  } | null>(null);
 
   const { state: panelState, setState: setPanelState } = usePanelState<FloorWaveformPanelState>({
     panelId: api.id,
@@ -206,27 +213,8 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
   const visibleStoryIds = useMemo(() => visibleFloors, [visibleFloors]);
 
-  useLayoutEffect(() => {
-    const updateSize = () => {
-      if (!plotRef.current) return;
-      const rect = plotRef.current.getBoundingClientRect();
-      setPlotSize({
-        width: Math.max(0, rect.width),
-        height: Math.max(MIN_PLOT_HEIGHT, rect.height),
-      });
-    };
-
-    updateSize();
-    const observer = new ResizeObserver(updateSize);
-    if (plotRef.current) {
-      observer.observe(plotRef.current);
-    }
-    return () => observer.disconnect();
-  }, []);
-
   const storySeries = useMemo<StorySeries[]>(() => {
     const frameCount = animationData.metadata.frameCount;
-
     const series: StorySeries[] = [];
 
     visibleStoryIds.forEach((storyId) => {
@@ -283,97 +271,132 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     return Math.max(metricConfig.getPrecomputedMax(animationData), peak, 1e-6);
   }, [animationData, metricConfig, storySeries]);
 
-  // The user-controlled amplitude multiplier (persisted in panel state, default 2)
   const amplitudeMultiplier = panelState.amplitudeScale ?? DEFAULT_PANEL_STATE.amplitudeScale;
 
-  const plotGeometry = useMemo(() => {
-    const width = Math.max(plotSize.width, 320);
-    const height = Math.max(plotSize.height, MIN_PLOT_HEIGHT);
-    const innerWidth = Math.max(1, width - PLOT_MARGINS.left - PLOT_MARGINS.right);
-    const innerHeight = Math.max(1, height - PLOT_MARGINS.top - PLOT_MARGINS.bottom);
+  const option = useMemo(() => {
+    if (storySeries.length === 0) return {};
+
     const elevationValues = storySeries.map((story) => story.elevationIn);
     const minElevation = elevationValues.length > 0 ? Math.min(...elevationValues) : 0;
     const maxElevation = elevationValues.length > 0 ? Math.max(...elevationValues) : 1;
-    const step = storySeries.length > 1 ? innerHeight / (storySeries.length - 1) : innerHeight / 2;
-    // Use amplitudeMultiplier instead of the hardcoded 2
-    const amplitudeScale = (step * amplitudeMultiplier) / maxAbsValue;
 
-    const baselines = storySeries.map((story, index) => {
-      if (panelState.placementMode === "floor") {
-        return PLOT_MARGINS.top + innerHeight - index * step;
-      }
+    // Determine the average data gap so the amplitude slider scales intuitively
+    const avgGap = storySeries.length > 1 ? (maxElevation - minElevation) / (storySeries.length - 1) : 10;
+    const dataGap = panelState.placementMode === "elevation" ? avgGap : 10;
+    const dataAmplitudeScale = maxAbsValue > 0 ? (dataGap * amplitudeMultiplier) / maxAbsValue : 1;
 
-      if (maxElevation === minElevation) {
-        return PLOT_MARGINS.top + innerHeight / 2;
-      }
+    const series = storySeries.map((story, index) => {
+      const baselineY = panelState.placementMode === "elevation" ? story.elevationIn : index * 10;
 
-      const normalized = (story.elevationIn - minElevation) / (maxElevation - minElevation);
-      return PLOT_MARGINS.top + innerHeight - normalized * innerHeight;
-    });
-
-    return {
-      width,
-      height,
-      innerWidth,
-      innerHeight,
-      baselines,
-      amplitudeScale,
-      maxFrameIndex: Math.max(0, frameCount - 1),
-    };
-  }, [
-    amplitudeMultiplier,
-    frameCount,
-    maxAbsValue,
-    panelState.placementMode,
-    plotSize.height,
-    plotSize.width,
-    storySeries,
-  ]);
-
-  const xTickTimes = useMemo(() => {
-    const tickCount = Math.min(6, Math.max(2, Math.round(plotGeometry.innerWidth / 140)));
-    if (tickCount <= 1 || totalDuration <= 0) return [0];
-    return Array.from({ length: tickCount }, (_, index) => (index / (tickCount - 1)) * totalDuration);
-  }, [plotGeometry.innerWidth, totalDuration]);
-
-  const storyPaths = useMemo(() => {
-    const sampleStep = Math.max(1, Math.ceil(frameCount / Math.max(400, Math.round(plotGeometry.innerWidth * 1.5))));
-    const maxFrameIndex = Math.max(0, frameCount - 1);
-
-    return storySeries.map((story, storyIndex) => {
-      const baselineY = plotGeometry.baselines[storyIndex] ?? 0;
-      let path = "";
-
-      for (let frame = 0; frame <= maxFrameIndex; frame += sampleStep) {
-        const x = PLOT_MARGINS.left + (maxFrameIndex === 0 ? 0 : (frame / maxFrameIndex) * plotGeometry.innerWidth);
-        const y = baselineY - story.values[frame] * plotGeometry.amplitudeScale;
-        path += `${frame === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-      }
-
-      if (maxFrameIndex > 0 && maxFrameIndex % sampleStep !== 0) {
-        const x = PLOT_MARGINS.left + plotGeometry.innerWidth;
-        const y = baselineY - story.values[maxFrameIndex] * plotGeometry.amplitudeScale;
-        path += `L${x.toFixed(2)},${y.toFixed(2)}`;
+      // Populate coordinate array mapping [time, computedY]
+      const data = new Array(frameCount);
+      for (let i = 0; i < frameCount; i++) {
+        data[i] = [i * dt, baselineY + story.values[i] * dataAmplitudeScale];
       }
 
       return {
-        story,
-        storyIndex,
-        path,
-        baselineY,
+        type: "line",
+        name: story.floorLabel,
+        data: data,
+        z: 2,
+        showSymbol: false,
+        sampling: "lttb",
+        animation: false,
+        clip: false,
+        lineStyle: {
+          color: story.color,
+          width: 1.5,
+        },
+        markLine: {
+          z: 1,
+          silent: true,
+          symbol: ["none", "none"],
+          animation: false,
+          label: {
+            position: "start",
+            distance: 12,
+            formatter:
+              panelState.placementMode === "elevation" ? `${Math.round(story.elevationIn)} in` : story.floorLabel,
+            color: "#374151",
+            fontSize: 10,
+          },
+          lineStyle: { color: "#e5e7eb", width: 1, type: "solid" },
+          data: [{ yAxis: baselineY }],
+        },
       };
     });
-  }, [frameCount, plotGeometry.amplitudeScale, plotGeometry.baselines, plotGeometry.innerWidth, storySeries]);
 
+    return {
+      animation: false,
+      grid: {
+        top: PLOT_MARGINS.top,
+        right: PLOT_MARGINS.right,
+        bottom: PLOT_MARGINS.bottom,
+        left: PLOT_MARGINS.left,
+      },
+      xAxis: {
+        type: "value",
+        name: "Time (s)",
+        nameLocation: "middle",
+        nameGap: 25,
+        nameTextStyle: { color: "#374151", fontSize: 11 },
+        min: 0,
+        max: totalDuration > 0 ? totalDuration : 1,
+        splitNumber: 5,
+        splitLine: { show: true, lineStyle: { color: "#f3f4f6" } },
+        axisLabel: {
+          formatter: (value: number) => `${value.toFixed(1)} s`,
+          color: "#6b7280",
+          fontSize: 10,
+        },
+        axisLine: { lineStyle: { color: "#d1d5db" } },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: "value",
+        name: panelState.placementMode === "elevation" ? "Story Elevation (in)" : "Floor",
+        nameLocation: "middle",
+        nameGap: 50,
+        nameTextStyle: { color: "#374151", fontSize: 11 },
+        min: "dataMin",
+        max: "dataMax",
+        axisLabel: { show: false },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: false },
+      },
+      series: series,
+      tooltip: { show: false }, // Handled via our custom React Tooltip
+    };
+  }, [storySeries, panelState.placementMode, frameCount, dt, totalDuration, amplitudeMultiplier, maxAbsValue]);
+
+  // Handle Playhead visually without React state cycles forcing heavy redraws
   useEffect(() => {
-    if (!playheadRef.current) return;
-    const x =
-      PLOT_MARGINS.left +
-      (plotGeometry.maxFrameIndex === 0 ? 0 : (frameIndex / plotGeometry.maxFrameIndex) * plotGeometry.innerWidth);
-    playheadRef.current.style.transform = `translateX(${x}px)`;
-    playheadRef.current.style.display = storySeries.length > 0 ? "block" : "none";
-  }, [frameIndex, plotGeometry.innerWidth, plotGeometry.maxFrameIndex, storySeries.length]);
+    if (!playheadRef.current || !echartsRef.current) return;
+    const instance = echartsRef.current.getEchartsInstance();
+    if (!instance || storySeries.length === 0) return;
 
+    const currentOption = instance.getOption();
+    if (
+      !currentOption ||
+      !currentOption.series ||
+      (Array.isArray(currentOption.series) && currentOption.series.length === 0)
+    ) {
+      return;
+    }
+
+    const time = frameIndex * dt;
+    const xPixel = instance.convertToPixel({ xAxisIndex: 0 }, time) as number | undefined;
+
+    if (xPixel != null && !isNaN(xPixel)) {
+      playheadRef.current.style.transform = `translateX(${xPixel.toFixed(2)}px)`;
+      playheadRef.current.style.display = "block";
+    } else {
+      playheadRef.current.style.display = "none";
+    }
+  }, [frameIndex, dt, storySeries.length]);
+
+  // Handle visual Hover Line positioning
   useEffect(() => {
     if (!hoverLineRef.current) return;
     if (!hoverState) {
@@ -384,36 +407,56 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     hoverLineRef.current.style.display = "block";
   }, [hoverState]);
 
-  const hoveredStory = hoverState ? storySeries[hoverState.storyIndex] : null;
+  // Attach directly to ZRender events to map pixel coordinates to Data points
+  const handleChartReady = (instance: ECharts) => {
+    const zr = instance.getZr();
 
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const localX = event.clientX - rect.left;
-    const localY = event.clientY - rect.top;
+    zr.on("mousemove", (e) => {
+      const pointInPixel = [e.offsetX, e.offsetY];
 
-    const clampedX = clamp(localX, PLOT_MARGINS.left, PLOT_MARGINS.left + plotGeometry.innerWidth);
-    const normalizedX = plotGeometry.innerWidth <= 0 ? 0 : (clampedX - PLOT_MARGINS.left) / plotGeometry.innerWidth;
-    const frame = Math.round(normalizedX * plotGeometry.maxFrameIndex);
-
-    let nearestIndex = 0;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-    plotGeometry.baselines.forEach((baselineY, index) => {
-      const distance = Math.abs(localY - baselineY);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIndex = index;
+      if (!instance.containPixel("grid", pointInPixel)) {
+        setHoverState(null);
+        setHoveredFloor(null);
+        return;
       }
-    });
-    const storyId = visibleFloors[nearestIndex];
 
-    setHoverState({
-      frame,
-      storyIndex: nearestIndex,
-      x: clampedX,
-      y: localY,
+      const pointInGrid = instance.convertFromPixel({ seriesIndex: 0 }, pointInPixel);
+      const timeX = pointInGrid[0];
+      const elevationY = pointInGrid[1];
+
+      const frame = clamp(Math.round(timeX / dt), 0, frameCount - 1);
+
+      let nearestIndex = 0;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      storySeries.forEach((story, index) => {
+        const baselineY = panelState.placementMode === "elevation" ? story.elevationIn : index * 10;
+        const dist = Math.abs(elevationY - baselineY);
+        if (dist < nearestDistance) {
+          nearestDistance = dist;
+          nearestIndex = index;
+        }
+      });
+
+      const storyId = visibleFloors[nearestIndex];
+
+      setHoverState({
+        frame,
+        storyIndex: nearestIndex,
+        x: e.offsetX,
+        y: e.offsetY,
+        containerWidth: instance.getWidth(),
+        containerHeight: instance.getHeight(),
+      });
+      setHoveredFloor({ type: "floor", storyId });
     });
-    setHoveredFloor({ type: "floor", storyId });
+
+    zr.on("mouseout", () => {
+      setHoverState(null);
+      setHoveredFloor(null);
+    });
   };
+
+  const hoveredStory = hoverState ? storySeries[hoverState.storyIndex] : null;
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-white">
@@ -478,107 +521,16 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         </div>
       </div>
 
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-90 flex-1">
         {storySeries.length > 0 ? (
-          <div
-            ref={plotRef}
-            className="relative h-full w-full touch-none"
-            onPointerMove={handlePointerMove}
-            onPointerLeave={() => setHoverState(null)}>
-            <svg
-              viewBox={`0 0 ${plotGeometry.width} ${plotGeometry.height}`}
-              className="h-full w-full"
-              role="img"
-              aria-label={`Floor waveform chart for ${metricConfig.label}`}>
-              <rect x="0" y="0" width={plotGeometry.width} height={plotGeometry.height} fill="white" />
-
-              <line
-                x1={PLOT_MARGINS.left}
-                y1={PLOT_MARGINS.top}
-                x2={PLOT_MARGINS.left}
-                y2={PLOT_MARGINS.top + plotGeometry.innerHeight}
-                stroke="#d1d5db"
-                strokeWidth="1"
-              />
-              <line
-                x1={PLOT_MARGINS.left}
-                y1={PLOT_MARGINS.top + plotGeometry.innerHeight}
-                x2={PLOT_MARGINS.left + plotGeometry.innerWidth}
-                y2={PLOT_MARGINS.top + plotGeometry.innerHeight}
-                stroke="#d1d5db"
-                strokeWidth="1"
-              />
-
-              {xTickTimes.map((tickTime) => {
-                const x =
-                  PLOT_MARGINS.left + (totalDuration <= 0 ? 0 : (tickTime / totalDuration) * plotGeometry.innerWidth);
-                return (
-                  <g key={tickTime}>
-                    <line
-                      x1={x}
-                      y1={PLOT_MARGINS.top}
-                      x2={x}
-                      y2={PLOT_MARGINS.top + plotGeometry.innerHeight}
-                      stroke="#f3f4f6"
-                      strokeWidth="1"
-                    />
-                    <text x={x} y={plotGeometry.height - 16} textAnchor="middle" fontSize="10" fill="#6b7280">
-                      {formatNumber(tickTime, 1)} s
-                    </text>
-                  </g>
-                );
-              })}
-
-              {storyPaths.map(({ story, path, baselineY }) => (
-                <g key={story.storyId}>
-                  <line
-                    x1={PLOT_MARGINS.left}
-                    y1={baselineY}
-                    x2={PLOT_MARGINS.left + plotGeometry.innerWidth}
-                    y2={baselineY}
-                    stroke="#e5e7eb"
-                    strokeWidth="1"
-                  />
-                  <path d={path} fill="none" stroke={story.color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                </g>
-              ))}
-
-              {storyPaths.map(({ story, baselineY }) => (
-                <g key={`${story.storyId}-label`}>
-                  <line
-                    x1={PLOT_MARGINS.left - 5}
-                    y1={baselineY}
-                    x2={PLOT_MARGINS.left}
-                    y2={baselineY}
-                    stroke="#9ca3af"
-                    strokeWidth="1"
-                  />
-                  <text x={PLOT_MARGINS.left - 8} y={baselineY + 3} textAnchor="end" fontSize="10" fill="#374151">
-                    {panelState.placementMode === "elevation"
-                      ? `${formatNumber(story.elevationIn, 0)} in`
-                      : story.floorLabel}
-                  </text>
-                </g>
-              ))}
-
-              <text
-                x={plotGeometry.width / 2}
-                y={plotGeometry.height - 4}
-                textAnchor="middle"
-                fontSize="11"
-                fill="#374151">
-                Time (s)
-              </text>
-              <text
-                x={18}
-                y={plotGeometry.height / 2}
-                transform={`rotate(-90 18 ${plotGeometry.height / 2})`}
-                textAnchor="middle"
-                fontSize="11"
-                fill="#374151">
-                {panelState.placementMode === "elevation" ? "Story Elevation (in)" : "Floor"}
-              </text>
-            </svg>
+          <div className="relative h-full w-full touch-none">
+            <ReactECharts
+              ref={echartsRef}
+              option={option}
+              style={{ height: "100%", width: "100%" }}
+              onChartReady={handleChartReady}
+              notMerge={true}
+            />
 
             <div
               ref={playheadRef}
@@ -590,19 +542,20 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
               className="pointer-events-none absolute top-6 bottom-12 left-0 z-10 w-px bg-neutral-400/70"
               style={{ display: "none" }}
             />
+
             {hoverState && hoveredStory ? (
               <div
                 className="pointer-events-none absolute z-20 rounded-md border border-neutral-200 bg-white px-3 py-2 text-neutral-900 shadow-lg"
                 style={{
-                  left: clamp(hoverState.x + 12, 16, Math.max(16, plotGeometry.width - 220)),
-                  top: clamp(hoverState.y - 12, 16, Math.max(16, plotGeometry.height - 140)),
+                  left: clamp(hoverState.x + 12, 16, Math.max(16, hoverState.containerWidth - 220)),
+                  top: clamp(hoverState.y - 12, 16, Math.max(16, hoverState.containerHeight - 140)),
                 }}>
                 <HoverTooltip story={hoveredStory} frame={hoverState.frame} dt={dt} unit={metricConfig.unit.abbr} />
               </div>
             ) : null}
           </div>
         ) : (
-          <div ref={plotRef} className="flex h-full items-center justify-center text-sm text-neutral-400">
+          <div className="flex h-full items-center justify-center text-sm text-neutral-400">
             No visible floors available for this panel
           </div>
         )}

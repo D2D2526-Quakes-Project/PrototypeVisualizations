@@ -53,6 +53,8 @@ export interface CameraContextType extends UsePanelStateReturn<CanvasPanelState>
   orbitControlsRef: React.RefObject<OrbitControlsImpl | null>;
   panelId: string;
 
+  isHoveringPanel: boolean;
+
   setPanEnabled: (enabled: boolean) => void;
   nodeInteractionEnabled: boolean;
   setNodeInteractionEnabled: (enabled: boolean) => void;
@@ -81,7 +83,15 @@ export function useCanvasState(dummy: boolean = false) {
   return context;
 }
 
-export function CameraProvider({ children, panelId }: { children: ReactNode; panelId: string }) {
+export function CanvasPanelProvider({
+  children,
+  panelId,
+  isHoveringPanel,
+}: {
+  children: ReactNode;
+  panelId: string;
+  isHoveringPanel: boolean;
+}) {
   const { animationData } = useAnimationData();
   const boundingBox = animationData.precomputed.boundingBox;
   const defaultState: CanvasPanelState = {
@@ -220,6 +230,7 @@ export function CameraProvider({ children, panelId }: { children: ReactNode; pan
         resetView,
         resetHomeView,
         panelId,
+        isHoveringPanel,
         ...panelState,
       }}>
       {children}

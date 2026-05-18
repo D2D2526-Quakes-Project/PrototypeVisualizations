@@ -42,7 +42,7 @@ export const ViewControls = forwardRef<
     docked: boolean;
   }
 >(function ViewControls({ isExpanded, setIsExpanded, docked }, ref) {
-  const { resetView, resetHomeView, orthographic, setOrthographic } = useCanvasState();
+  const { resetView, resetHomeView, orthographic, setOrthographic, isHoveringPanel } = useCanvasState();
   const autoRotate = useLiveStore((s) => s.autoRotate);
   const setAutoRotate = useLiveStore((s) => s.setAutoRotate);
   const colorTheme = useGlobalStore((s) => s.colorTheme);
@@ -96,7 +96,18 @@ export const ViewControls = forwardRef<
       <div className="flex h-full max-h-full min-h-0 items-start gap-2">
         {!isExpanded && (
           <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>
-            <QuickControls isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
+            <AnimatePresence>
+              {isHoveringPanel && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.15 }}
+                  style={{ transformOrigin: "center right" }}>
+                  <QuickControls isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {showNodeVisibilityMenu && (
               <motion.div

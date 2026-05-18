@@ -1,7 +1,7 @@
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { useGlobalStore } from "@/state";
-import { Canvas, useThree } from "@react-three/fiber";
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ViewControls } from "./ViewControls";
 
 interface CanvasWithControlsProps {

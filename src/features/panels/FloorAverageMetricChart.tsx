@@ -2,21 +2,22 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { usePlayback } from "@/features/playback/usePlayback";
-import { usePanelState } from "@/features/dockview/usePanelState";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { usePanelState } from "@/features/dockview/usePanelState";
+import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber, formatStoryLabel } from "@/lib/utils";
 
+import { useGlobalStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview-react";
 import type { EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getMetricConfig, getMetricKeyColor, type Metric } from "../metrics/metrics";
 import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
+import { useHover } from "../3d/lib/useHover";
+import { getMetricConfig, getMetricKeyColor, type Metric } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
-import { useGlobalStore, useLiveStore } from "@/state";
 
 type MetricOption = {
   metric: Metric;
@@ -113,6 +114,7 @@ function MetricSelect({
 }
 
 export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
+  return null;
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
@@ -126,7 +128,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     defaultState: DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE,
   });
 
-  const setHoveredItem = useLiveStore((s) => s.setHoveredItem);
+  const { setHoveredFloor } = useHover();
 
   const metricOptions = useMemo<MetricOption[]>(() => {
     const metrics =
@@ -463,12 +465,12 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
               if (params.dataIndex !== undefined && params.dataIndex >= 0) {
                 const row = storyRows[params.dataIndex];
                 if (row) {
-                  setHoveredItem({ type: "floor", storyId: row.storyId });
+                  setHoveredFloor({ type: "floor", storyId: row.storyId });
                 }
               }
             },
             mouseout: () => {
-              setHoveredItem(null);
+              setHoveredFloor(null);
             },
           }}
         />

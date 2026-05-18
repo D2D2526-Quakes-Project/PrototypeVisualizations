@@ -12,7 +12,7 @@ export function OrientationArrows() {
   return (
     <GizmoHelper
       alignment="top-left"
-      margin={[64, 56]}
+      margin={[45, 45]}
       up={[0, 0, 1]}
       onTarget={() => orbitControlsRef.current?.target.clone() ?? DEFAULT_CAMERA_TARGET}
       onUpdate={() => orbitControlsRef.current?.update()}>
@@ -44,7 +44,7 @@ const AXES = [
 // Sizing configuration relative to the [60, 60, 60] scale group
 const CYLINDER_RADIUS = 0.012;
 const AXIS_LENGTH = 0.45;
-const LABEL_DISTANCE = 0.6;
+const LABEL_DISTANCE = 0.5;
 const SPRITE_SCALE = 0.3;
 
 /**

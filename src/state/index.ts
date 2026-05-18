@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -50,6 +50,10 @@ export function useLiveStore<T>(selector: (state: LiveState) => T): T {
 export function appStoreState(): AppState {
   return useAppStore.getState();
 }
+export function profileStoreStateForBuilding(buildingId: string): ProfileData | undefined {
+  const state = useAppStore.getState();
+  return state.profiles[buildingId]?.[state.activeProfileIds[buildingId]];
+}
 
 export function useProfileIds(): string[] {
   const { currentBuilding, loading } = useAnimationData();
@@ -66,6 +70,22 @@ export function useProfileIds(): string[] {
 export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
   const { currentBuilding, loading, animationData } = useAnimationData();
   const currentBuildingId = currentBuilding.name;
+  const defaultHiddenFloors = animationData.metadata.hiddenFloors;
+
+  useEffect(() => {
+    if (!currentBuildingId || loading) return;
+
+    const state = useAppStore.getState();
+    const hasProfiles = state.profiles[currentBuildingId];
+
+    if (!hasProfiles) {
+      useAppStore.setState((draft) => {
+        const defaultProfiles = createDefaultProfiles(defaultHiddenFloors);
+        draft.profiles[currentBuildingId] = defaultProfiles;
+        draft.activeProfileIds[currentBuildingId] = DEFAULT_PROFILE;
+      });
+    }
+  }, [currentBuildingId, loading, defaultHiddenFloors]);
 
   // Programmatically wrap all actions.
   const boundActions = useMemo(() => {
@@ -94,34 +114,19 @@ export function useProfileStore<T>(selector: (state: ProfileStateAPI) => T): T {
     return actions;
   }, [currentBuildingId, loading]);
 
+  const fallbackProfile = useMemo(
+    () => createDefaultProfiles(defaultHiddenFloors)[DEFAULT_PROFILE],
+    [defaultHiddenFloors]
+  );
+
   return useAppStore((state) => {
-    if (!currentBuildingId) {
-      return selector({} as ProfileStateAPI);
-    }
+    if (!currentBuildingId) return selector({} as ProfileStateAPI);
 
-    let buildingProfiles = state.profiles[currentBuildingId];
-    let activeProfId = state.activeProfileIds[currentBuildingId];
+    const buildingProfiles = state.profiles[currentBuildingId];
+    const activeProfId = state.activeProfileIds[currentBuildingId] ?? DEFAULT_PROFILE;
 
-    if (!buildingProfiles || Object.keys(buildingProfiles).length == 0) {
-      // Default profiles for new building
-      const defaultHiddenFloors = animationData?.metadata?.hiddenFloors;
-      const defaultProfiles = createDefaultProfiles(defaultHiddenFloors);
-      state.profiles = {
-        ...state.profiles,
-        [currentBuildingId]: defaultProfiles,
-      };
-      state.activeProfileIds = {
-        ...state.activeProfileIds,
-        [currentBuildingId]: DEFAULT_PROFILE,
-      };
-      buildingProfiles = defaultProfiles;
-      activeProfId = DEFAULT_PROFILE;
-    }
-    if (!activeProfId) activeProfId = DEFAULT_PROFILE;
-
-    const activeProfile = buildingProfiles[activeProfId] ? buildingProfiles[activeProfId] : ({} as ProfileData);
-
-    const projectedState = Object.assign({}, activeProfile, boundActions) as ProfileStateAPI;
+    const activeProfile = buildingProfiles?.[activeProfId] ?? fallbackProfile;
+    const projectedState = { ...activeProfile, ...boundActions } as ProfileStateAPI;
 
     return selector(projectedState);
   });

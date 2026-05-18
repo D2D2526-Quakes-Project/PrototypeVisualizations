@@ -159,6 +159,7 @@ function HoverTooltip({ story, frame, dt, unit }: { story: StorySeries; frame: n
 }
 
 export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
+  return null;
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();

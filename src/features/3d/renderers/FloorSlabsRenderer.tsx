@@ -1,10 +1,11 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 import { useMetrics } from "@/features/metrics/useMetrics";
-import { usePlayback } from "@/features/playback/usePlayback";
+import { profileStoreStateForBuilding } from "@/state";
+import type { HoverItem } from "@/state/liveState";
 import { useFrame } from "@react-three/fiber";
 import Delaunay from "delaunator";
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFloorVisibility } from "../contexts/useFloorVisibility";
 import { useNodePositions } from "../contexts/useNodePositions";
@@ -13,34 +14,45 @@ import { useHover } from "../lib/useHover";
 
 export function FloorSlabsRenderer() {
   const { visibleFloors } = useFloorVisibility();
+  const { hoveredFloor, setHoveredFloor } = useHover();
 
   return (
     <group>
       {visibleFloors.map((storyId) => (
-        <FloorSlab key={storyId} storyId={storyId} />
+        <FloorSlab
+          key={storyId}
+          storyId={storyId}
+          isHovered={hoveredFloor?.storyId === storyId}
+          setHoveredFloor={setHoveredFloor}
+        />
       ))}
     </group>
   );
 }
 
-function FloorSlab({ storyId }: { storyId: string }) {
+const FloorSlab = memo(function FloorSlab({
+  storyId,
+  isHovered,
+  setHoveredFloor,
+}: {
+  storyId: string;
+  isHovered: boolean;
+  setHoveredFloor: (hoverItem: HoverItem | null) => void;
+}) {
+  console.log("storyId", storyId, isHovered);
   const meshRef = useRef<THREE.Mesh>(null);
   const posAttrRef = useRef<THREE.BufferAttribute>(null);
   const colAttrRef = useRef<THREE.BufferAttribute>(null);
 
-  const { animationData } = useAnimationData();
-  const { frameIndex } = usePlayback();
+  const { animationData, currentBuilding } = useAnimationData();
   const { stories } = animationData.metadata;
 
   const { getValueColorForCurrentMetric, getNodeColorForCurrentMetric, getNodeValueForCurrentMetric } = useMetrics();
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { floorOpacity } = useNodeRendering();
-  const { hoveredFloor, setHoveredFloor } = useHover();
   const { openFloorPanel } = useOpenPanels();
 
   const nodeIds = useMemo(() => stories[storyId], [storyId, stories]);
-
-  const isHovered = useMemo(() => hoveredFloor?.storyId === storyId, [hoveredFloor?.storyId, storyId]);
   const isHoveredRef = useRef(isHovered);
   useEffect(() => {
     isHoveredRef.current = isHovered;
@@ -68,13 +80,23 @@ function FloorSlab({ storyId }: { storyId: string }) {
     return { floorNodes, triangles };
   }, [nodeIds, visibleNodes, getNodeVisualPosition]);
 
-  useFrame(() => {
+  const bufferArrays = useMemo(() => {
+    if (!topology) return null;
+    return {
+      positions: new Float32Array(topology.triangles.length * 3),
+      colors: new Float32Array(topology.triangles.length * 3),
+    };
+  }, [topology]);
+
+  useFrame((state, delta) => {
+    // const now = performance.now();
     const posAttr = posAttrRef.current;
     const colAttr = colAttrRef.current;
     const mesh = meshRef.current;
     if (!posAttr || !colAttr || !mesh || !topology) return;
 
     const { floorNodes, triangles } = topology;
+    const frameIndex = profileStoreStateForBuilding(currentBuilding.name)?.frameIndex ?? 0;
 
     let total = 0;
     let count = 0;
@@ -113,24 +135,35 @@ function FloorSlab({ storyId }: { storyId: string }) {
       mat.opacity = targetOpacity;
       mat.depthWrite = targetOpacity === 1;
     }
+
+    // console.log("FloorSlab", storyId, performance.now() - now, "delta", delta);
   });
 
-  const handlePointerOver = (e: PointerEvent) => {
-    e.stopPropagation();
-    setHoveredFloor({ type: "floor", storyId, screenPos: { x: e.offsetX, y: e.offsetY } });
-  };
+  const handlePointerOver = useCallback(
+    (e: PointerEvent) => {
+      e.stopPropagation();
+      setHoveredFloor({ type: "floor", storyId, screenPos: { x: e.offsetX, y: e.offsetY } });
+    },
+    [setHoveredFloor, storyId]
+  );
 
-  const handlePointerOut = (e: PointerEvent) => {
-    e.stopPropagation();
-    setHoveredFloor(null);
-  };
+  const handlePointerOut = useCallback(
+    (e: PointerEvent) => {
+      e.stopPropagation();
+      setHoveredFloor(null);
+    },
+    [setHoveredFloor]
+  );
 
-  const handleClick = (e: PointerEvent) => {
-    e.stopPropagation();
-    openFloorPanel(storyId);
-  };
+  const handleClick = useCallback(
+    (e: PointerEvent) => {
+      e.stopPropagation();
+      openFloorPanel(storyId);
+    },
+    [openFloorPanel, storyId]
+  );
 
-  if (!topology) return null;
+  if (!topology || !bufferArrays) return null;
 
   return (
     <mesh
@@ -143,13 +176,13 @@ function FloorSlab({ storyId }: { storyId: string }) {
         <bufferAttribute
           ref={posAttrRef}
           attach="attributes-position"
-          args={[new Float32Array(topology.triangles.length * 3), 3]}
+          args={[bufferArrays.positions, 3]}
           usage={THREE.DynamicDrawUsage}
         />
         <bufferAttribute
           ref={colAttrRef}
           attach="attributes-color"
-          args={[new Float32Array(topology.triangles.length * 3), 3]}
+          args={[bufferArrays.colors, 3]}
           usage={THREE.DynamicDrawUsage}
         />
       </bufferGeometry>
@@ -162,4 +195,4 @@ function FloorSlab({ storyId }: { storyId: string }) {
       />
     </mesh>
   );
-}
+});

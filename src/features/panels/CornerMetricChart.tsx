@@ -5,13 +5,13 @@ import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePanelState } from "@/features/dockview/usePanelState";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber, formatStoryLabel } from "@/lib/utils";
-import { useLiveStore } from "@/state";
 import type { DockviewPanelApi } from "dockview-react";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
+import { useHover } from "../3d/lib/useHover";
 import { getMetricConfig, isHingeMetric, type Metric } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
@@ -128,6 +128,7 @@ function getPrecomputedPeakValue(
 }
 
 export function CornerMetricChart({ api }: CornerMetricChartProps) {
+  return null;
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
@@ -165,7 +166,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
   const storyIds = useMemo(() => Array.from(visibleFloors), [visibleFloors]);
 
-  const setHoveredItem = useLiveStore((s) => s.setHoveredItem);
+  const { setHoveredItem } = useHover();
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();

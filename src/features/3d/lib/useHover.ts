@@ -1,4 +1,4 @@
-import { useLiveStore } from "@/state";
+import { appStoreState, useLiveStore } from "@/state";
 import type { HoverItem } from "@/state/liveState";
 import { useCallback, useMemo } from "react";
 
@@ -23,26 +23,32 @@ export function useHover() {
 
   const setHoveredNode = useCallback(
     (hoverItem: HoverItem | null) => {
-      if (hoverItem === null && hoveredItem !== null && hoveredItem.type !== "node") return;
+      const store = appStoreState();
+      const hoveredItemState = store.hoveredItem;
+      if (hoverItem === null && hoveredItemState !== null && hoveredItemState.type !== "node") return;
       setHoveredItem(hoverItem);
     },
-    [hoveredItem, setHoveredItem]
+    [setHoveredItem]
   );
 
   const setHoveredCrossSection = useCallback(
     (hoverItem: HoverItem | null) => {
-      if (hoverItem === null && hoveredItem !== null && hoveredItem.type !== "crossSection") return;
+      const store = appStoreState();
+      const hoveredItemState = store.hoveredItem;
+      if (hoverItem === null && hoveredItemState !== null && hoveredItemState.type !== "crossSection") return;
       setHoveredItem(hoverItem);
     },
-    [hoveredItem, setHoveredItem]
+    [setHoveredItem]
   );
 
   const setHoveredFloor = useCallback(
     (hoverItem: HoverItem | null) => {
-      if (hoverItem === null && hoveredItem !== null && hoveredItem.type !== "floor") return;
+      const store = appStoreState();
+      const hoveredItemState = store.hoveredItem;
+      if (hoverItem === null && hoveredItemState !== null && hoveredItemState.type !== "floor") return;
       setHoveredItem(hoverItem);
     },
-    [hoveredItem, setHoveredItem]
+    [setHoveredItem]
   );
 
   return {

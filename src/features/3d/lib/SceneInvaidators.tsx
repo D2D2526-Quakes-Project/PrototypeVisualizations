@@ -7,6 +7,7 @@ import { usePlayback } from "@/features/playback/usePlayback";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useThresholds } from "@/features/metrics/useThresholds";
+import { useHover } from "./useHover";
 
 export function SceneInvalidators() {
   const { invalidate } = useThree();
@@ -39,6 +40,8 @@ export function SceneInvalidators() {
   const { thresholds } = useThresholds();
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
 
+  const { hoveredItem } = useHover();
+
   useEffect(() => {
     invalidate();
   }, [
@@ -65,6 +68,7 @@ export function SceneInvalidators() {
     visibleNodes,
     thresholds,
     metricPaletteOverrides,
+    hoveredItem,
   ]);
 
   return null;

@@ -9,6 +9,29 @@ export interface DockviewWrapperProps extends Omit<IDockviewReactProps, "onReady
   createDefaultLayout?: (api: DockviewApi) => void;
 }
 
+function isMainCanvasPanel(panel: { params?: Record<string, unknown> }): boolean {
+  return panel.params?.panelType === "Main Canvas";
+}
+
+function ensurePrimaryCanvas(api: DockviewApi): void {
+  const canvasPanels = api.panels.filter(isMainCanvasPanel);
+  const primaryPanels = canvasPanels.filter((p) => p.params?.isPrimary === true);
+
+  if (primaryPanels.length === 0 && canvasPanels.length > 0) {
+    canvasPanels[0]!.api.updateParameters({
+      ...canvasPanels[0]!.params,
+      isPrimary: true,
+    });
+  } else if (primaryPanels.length > 1) {
+    for (let i = 1; i < primaryPanels.length; i++) {
+      primaryPanels[i]!.api.updateParameters({
+        ...primaryPanels[i]!.params,
+        isPrimary: false,
+      });
+    }
+  }
+}
+
 export function DockviewWrapper({
   className,
   onReady,
@@ -20,7 +43,6 @@ export function DockviewWrapper({
   const handleReady = (event: DockviewReadyEvent) => {
     const api = event.api;
 
-    // Load initial layout if provided
     if (initialLayout) {
       try {
         api.fromJSON(initialLayout);
@@ -32,13 +54,32 @@ export function DockviewWrapper({
       createDefaultLayout?.(api);
     }
 
-    // Setup layout change listener
+    ensurePrimaryCanvas(api);
+
     if (onLayoutChange) {
       api.onDidLayoutChange(() => {
         const layout = api.toJSON();
         onLayoutChange(layout);
       });
     }
+
+    api.onDidAddPanel((panel) => {
+      if (isMainCanvasPanel(panel)) {
+        const hasPrimary = api.panels.some(
+          (p) => p.id !== panel.id && isMainCanvasPanel(p) && p.params?.isPrimary === true
+        );
+        panel.api.updateParameters({
+          ...panel.params,
+          isPrimary: !hasPrimary,
+        });
+      }
+    });
+
+    api.onDidRemovePanel((panel) => {
+      if (isMainCanvasPanel(panel) && panel.params?.isPrimary === true) {
+        ensurePrimaryCanvas(api);
+      }
+    });
 
     onReady?.(event);
   };

@@ -11,20 +11,20 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar";
+import { useVisibilityWarnings } from "@/features/3d/contexts/useVisibilityWarnings";
 import { OPTIONAL_DATASET_KEYS } from "@/features/animation-data/data-loading/loadingTypes";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { ColorScaleBarTooltip } from "@/features/canvas/components/ColorScaleBar";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { usePlayback } from "@/features/playback/usePlayback";
+import { formatNumber } from "@/lib/utils";
 import { useGlobalStore } from "@/state";
+import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { DataMenu } from "./DataMenu";
 import { OptionalDatasetLoader } from "./OptionalDatasetLoader";
 import { ProfileMenu } from "./ProfileMenu";
 import { ShortcutsBar } from "./ShortcutsBar";
-import { formatNumber } from "@/lib/utils";
-import { usePlayback } from "@/features/playback/usePlayback";
-import { useMetrics } from "@/features/metrics/useMetrics";
-import { ColorScaleBarTooltip } from "@/features/canvas/components/ColorScaleBar";
-import { useVisibilityWarnings } from "@/features/3d/contexts/useVisibilityWarnings";
-import { Button } from "../ui/button";
 
 export function NavigationBar() {
   const location = useLocation();
@@ -132,9 +132,9 @@ export function NavigationBar() {
                 Help
               </MenubarItem>
             </MenubarContent>
-            <DataMenu />
-            <ProfileMenu />
           </MenubarMenu>
+          <DataMenu />
+          <ProfileMenu />
         </Menubar>
       </div>
 

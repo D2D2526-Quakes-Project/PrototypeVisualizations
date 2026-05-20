@@ -38,7 +38,7 @@ import { DockviewApiProvider } from "./DockviewApiContext";
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
 export type PanelType = keyof typeof PANEL_DEFINITIONS;
-export type MagicPanelParams = { panelType: PanelType };
+export type MagicPanelParams = { panelType: PanelType; isPrimary?: boolean };
 
 type PanelDefinition = {
   component: React.ComponentType<IDockviewPanelProps>;
@@ -288,6 +288,7 @@ export const MagicPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
 
 export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>) => {
   const currentPanelType = props.params.panelType;
+  const isPrimary = props.params.isPrimary;
   const isActive = props.api.isActive;
   const isTabGroup = props.api.group.panels.length > 1;
   const [, setRenderTick] = useState(0);
@@ -307,15 +308,15 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
     };
   }, [props.api, props.containerApi]);
 
+  const panelTitle = currentPanelType === "Main Canvas" ? (isPrimary ? "Primary Canvas" : "Canvas") : currentPanelType;
+  const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
+
   return (
     <div
       className={`group z-10 flex h-full w-full cursor-grab items-center gap-1 bg-neutral-200/80 p-3 py-0 transition-colors`}>
       <span className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
-        {(() => {
-          const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
-          return <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />;
-        })()}
-        {currentPanelType}
+        <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />
+        {panelTitle}
       </span>
       {isTabGroup && (
         // <Button
@@ -441,35 +442,38 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   }
 
   const handleDuplicateAsTab = () => {
+    const isPrimary = activePanel.params?.isPrimary;
     props.containerApi.addPanel({
       id: `panel-${Date.now()}`,
       component: activePanel.api.component,
       tabComponent: activePanel.api.tabComponent,
       title: activePanel.title ?? "Panel",
       position: { referencePanel: activePanel.id },
-      params: { panelType: activePanelType },
+      params: { panelType: activePanelType, isPrimary },
     });
   };
 
   const handleSplitHorizontal = () => {
+    const isPrimary = activePanel.params?.isPrimary;
     props.containerApi.addPanel({
       id: `panel-${Date.now()}`,
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Panel",
       position: { referencePanel: activePanel.id, direction: "right" },
-      params: { panelType: activePanelType },
+      params: { panelType: activePanelType, isPrimary },
     });
   };
 
   const handleSplitVertical = () => {
+    const isPrimary = activePanel.params?.isPrimary;
     props.containerApi.addPanel({
       id: `panel-${Date.now()}`,
       component: "magicPanel",
       tabComponent: "magicPanelTab",
       title: "Panel",
       position: { referencePanel: activePanel.id, direction: "below" },
-      params: { panelType: activePanelType },
+      params: { panelType: activePanelType, isPrimary },
     });
   };
 
@@ -496,18 +500,18 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
         </Button>
       )}
 
-      <Button
+      {/* <Button
         variant="ghost"
         size="icon-xs"
         className={isTabGroup ? "" : "ml-1"}
         onClick={handleSplitHorizontal}
         title="Split horizontally (side by side)">
         <Columns />
-      </Button>
+      </Button> */}
 
-      <Button variant="ghost" size="icon-xs" onClick={handleSplitVertical} title="Split vertically (stacked)">
+      {/* <Button variant="ghost" size="icon-xs" onClick={handleSplitVertical} title="Split vertically (stacked)">
         <Columns className="rotate-90" />
-      </Button>
+      </Button> */}
 
       {!isTabGroup && (
         <Button variant="ghost" size="icon-xs" onClick={handleClose} title="Close panel">

@@ -22,10 +22,10 @@ interface CornerMetricChartProps {
 
 const cornerColors = {
   // Grayscale
-  NW: "#444444",
-  NE: "#888888",
-  SW: "#222222",
-  SE: "#aaaaaa",
+  NW: "#AAAAAA",
+  NE: "#F59E0B",
+  SW: "#E2575A",
+  SE: "#4E79A7",
 } as const;
 
 type CornerKey = keyof typeof cornerColors;

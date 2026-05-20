@@ -12,6 +12,7 @@ import { useRenderModes } from "../lib/useRenderModes";
 import { BoundingGeometryRenderer } from "./BoundingGeometryRenderer";
 import { HorizontalConnectionsRenderer } from "./HorizontalConnectionsRenderer";
 import { VerticalConnectionsRenderer } from "./VerticalConnectionsRenderer";
+import { SceneInvalidators } from "../lib/SceneInvaidators";
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
@@ -275,6 +276,7 @@ export function SectionVisualization({ nodeIds, width, viewMode }: SectionVisual
         }}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
         style={{ width: width, height: height }}>
+        <SceneInvalidators />
         <color attach="background" args={[colorTheme.background]} />
         <ambientLight intensity={2} />
         <hemisphereLight intensity={0.5} groundColor="#1a1a1a" position={[0, 0, 100]} />

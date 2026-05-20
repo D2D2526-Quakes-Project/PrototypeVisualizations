@@ -9,12 +9,14 @@ import { OrientationArrows } from "../canvas/components/OrientationArrows";
 import { KeyboardZoomHandler } from "../canvas/KeyboardZoomHandler";
 import { useExportRenderMode } from "../export/renderMode";
 import { SmallPlaybackControls } from "../playback/PlaybackControls";
+import type { MagicPanelParams } from "../dockview/MagicPanel";
 import { useState } from "react";
 
-export const MainCanvasPanel = (props: IDockviewPanelProps) => {
+export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const panelId = props.api.id;
   const exportRenderMode = useExportRenderMode();
   const isActive = props.api.isActive;
+  const isPrimary = props.params.isPrimary ?? false;
 
   const [isHoveringPanel, setIsHoveringPanel] = useState(false);
 
@@ -32,7 +34,7 @@ export const MainCanvasPanel = (props: IDockviewPanelProps) => {
             <BuildingScene />
           </CanvasWithControls>
           <BoxSelectionOverlay />
-          {exportRenderMode.showTransientUi && (
+          {(isPrimary || exportRenderMode.showTransientUi) && (
             <div className="absolute bottom-2 left-2 z-50">
               <SmallPlaybackControls />
             </div>

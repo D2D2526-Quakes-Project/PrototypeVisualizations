@@ -57,7 +57,7 @@ function DockviewContainer() {
       id: "main-canvas",
       component: "magicPanel",
       tabComponent: "magicPanelTab",
-      params: { panelType: "Main Canvas" },
+      params: { panelType: "Main Canvas", isPrimary: true },
       initialHeight: 760,
     });
 

@@ -1,6 +1,6 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useMetrics } from "@/features/metrics/useMetrics";
-import { useProfileData } from "@/state";
+import { useProfileActions, useProfileData } from "@/state";
 import { useMemo } from "react";
 import { useRenderModes } from "../lib/useRenderModes";
 import { useFloorVisibility } from "./useFloorVisibility";
@@ -10,7 +10,7 @@ export function useVisibilityWarnings() {
   const { visibleFloors, showDefaultFloors } = useFloorVisibility();
   const hiddenNodes = useProfileData((s) => s._hiddenNodeIds);
   const nodeCount = animationData.metadata.nodeCount;
-  const showAllNodes = useProfileData((s) => s.showAllNodes);
+  const { showAllNodes } = useProfileActions();
 
   const {
     setRenderNodes,

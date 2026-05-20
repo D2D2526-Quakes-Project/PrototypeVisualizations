@@ -10,6 +10,7 @@ import { KeyboardZoomHandler } from "../canvas/KeyboardZoomHandler";
 import { useExportRenderMode } from "../export/renderMode";
 import { SmallPlaybackControls } from "../playback/PlaybackControls";
 import type { MagicPanelParams } from "../dockview/MagicPanel";
+import { ViewSettingsOverlay } from "./ViewSettingsOverlay";
 import { useState } from "react";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
@@ -34,6 +35,7 @@ export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) =>
             <BuildingScene />
           </CanvasWithControls>
           <BoxSelectionOverlay />
+          <ViewSettingsOverlay />
           {(isPrimary || exportRenderMode.showTransientUi) && (
             <div className="absolute bottom-2 left-2 z-50">
               <SmallPlaybackControls />

@@ -40,6 +40,7 @@ export const createGlobalSlice: StateCreator<AppState, [], [], GlobalState> = (s
 export interface ColorTheme {
   label: string;
   background: string;
+  canvasText: string;
   connectionLines: string;
   tickMarks: string;
   grid: string;
@@ -50,6 +51,7 @@ export const DEFAULT_COLOR_THEMES: ColorTheme[] = [
   {
     label: "Gray",
     background: "#dcdcdc",
+    canvasText: "#333333",
     connectionLines: "#aaaaaa",
     tickMarks: "#aaaaaa",
     grid: "#888888",
@@ -57,15 +59,17 @@ export const DEFAULT_COLOR_THEMES: ColorTheme[] = [
   },
   {
     label: "White",
+    background: "#ffffff",
+    canvasText: "#333333",
     connectionLines: "#000000",
     tickMarks: "#666666",
     grid: "#888888",
-    background: "#ffffff",
     directionLabels: "#000000",
   },
   {
     label: "Black",
     background: "#1a1a1a",
+    canvasText: "#ffffff",
     connectionLines: "#ffffff",
     tickMarks: "#999999",
     grid: "#666666",
@@ -73,8 +77,8 @@ export const DEFAULT_COLOR_THEMES: ColorTheme[] = [
   },
   {
     label: "Dark Blue",
-
     background: "#1e3a5f",
+    canvasText: "#ffffff",
     connectionLines: "#ffffff",
     tickMarks: "#888888",
     grid: "#555555",

@@ -78,6 +78,10 @@ export function usePanelState<T extends Record<keyof T, unknown>>(params: {
     return generatedSetters;
   }, [defaultState, debouncedSave, panelId, panelType]);
 
+  console.log("localState", localState);
+  console.log("dynamicSetters", dynamicSetters);
+  console.log("setState", setState);
+
   return {
     ...localState,
     ...dynamicSetters,

@@ -10,9 +10,6 @@ export interface LiveState {
   _setFps: (fps: number) => void;
   _setSkippedPerFrame: (frames: number) => void;
 
-  autoRotate: boolean;
-  setAutoRotate: (autoRotate: boolean) => void;
-
   // Selection
   selectedNodeIds: number[];
   setSelectedNodes: (nodes: number[]) => void;
@@ -40,9 +37,6 @@ export const createLiveSlice: StateCreator<AppState, [], [], LiveState> = (set) 
   _setFps: (_fps) => set({ _fps }),
   _skippedPerFrame: 0,
   _setSkippedPerFrame: (_skippedPerFrame) => set({ _skippedPerFrame }),
-
-  autoRotate: false,
-  setAutoRotate: (autoRotate) => set({ autoRotate }),
 
   // Node Visibility / Selection
   selectedNodeIds: [],
@@ -103,8 +97,6 @@ export const LIVE_STATE_KEYS = [
   "_setPlaying",
   "_setFps",
   "_setSkippedPerFrame",
-  "autoRotate",
-  "setAutoRotate",
   "selectedNodeIds",
   "setSelectedNodes",
   "removeSelectedNode",

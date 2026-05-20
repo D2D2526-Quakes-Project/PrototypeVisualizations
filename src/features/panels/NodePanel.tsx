@@ -145,6 +145,15 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3">
+        {/* RIBBON */}
+        <div className="animate-fade-in">
+          <h3 className="mb-2 text-sm font-bold">Displacement Path</h3>
+          <MiniRibbon path={ribbonPath} dt={dt} frameIndex={frameIndex} />
+          <div className="mt-1 flex gap-1 text-[10px] text-neutral-400 italic">
+            <InfoIcon className="size-3" /> Number of points reduced for performance
+          </div>
+        </div>
+
         {/* LOCATION INFO */}
         <div className="animate-fade-in">
           <div className="grid grid-cols-2 gap-2">
@@ -330,15 +339,6 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
           <h3 className="mb-2 text-sm font-bold">Total Distance Traveled</h3>
           <div className="font-mono text-neutral-600">
             <UnitTooltip value={totalDistanceTraveled} unit="inches" />
-          </div>
-        </div>
-
-        {/* RIBBON */}
-        <div className="animate-fade-in">
-          <h3 className="mb-2 text-sm font-bold">Displacement Path</h3>
-          <MiniRibbon path={ribbonPath} dt={dt} frameIndex={frameIndex} />
-          <div className="mt-1 flex gap-1 text-[10px] text-neutral-400 italic">
-            <InfoIcon className="size-3" /> Number of points reduced for performance
           </div>
         </div>
 

@@ -10,6 +10,7 @@ import { UNIT_SCALE } from "@/lib/utils";
 
 export interface CanvasPanelState {
   orthographic: boolean;
+  spin: boolean;
   cameraPosition: [number, number, number];
   cameraTarget: [number, number, number];
   cameraZoom: number | undefined;
@@ -28,6 +29,7 @@ export interface CanvasPanelState {
 
 const DEFAULT_CANVAS_PANEL_STATE: CanvasPanelState = {
   orthographic: false,
+  spin: false,
   cameraPosition: [0, 0, 0],
   cameraTarget: [0, 0, 0],
   cameraZoom: 50,

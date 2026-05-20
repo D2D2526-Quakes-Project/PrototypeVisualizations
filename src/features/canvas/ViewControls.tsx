@@ -43,9 +43,7 @@ export const ViewControls = forwardRef<
     showCanvasSpecificControls?: boolean;
   }
 >(function ViewControls({ isExpanded, setIsExpanded, docked, showCanvasSpecificControls = true }, ref) {
-  const { resetView, resetHomeView, orthographic, setOrthographic, isHoveringPanel } = useCanvasState();
-  const autoRotate = useLiveStore((s) => s.autoRotate);
-  const setAutoRotate = useLiveStore((s) => s.setAutoRotate);
+  const { resetView, resetHomeView, orthographic, setOrthographic, isHoveringPanel, spin, setSpin } = useCanvasState();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
   const setColorTheme = useGlobalStore((s) => s.setColorTheme);
   const clearSelection = useLiveStore((s) => s.clearSelection);
@@ -257,22 +255,23 @@ export const ViewControls = forwardRef<
                     </motion.div>
                   </>
                 )}
-                {showCanvasSpecificControls && <div className="my-1 h-px w-full bg-neutral-200" />}
+
                 {showCanvasSpecificControls && (
-                  <motion.div className="flex items-center gap-2" variants={childVariants}>
-                    <Label className="flex-1 text-xs font-medium text-neutral-700">
-                      Orthographic
-                      <Switch checked={orthographic} onCheckedChange={setOrthographic} />
-                    </Label>
-                    <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-                  </motion.div>
+                  <>
+                    <div className="my-1 h-px w-full bg-neutral-200" />
+                    <motion.div className="flex items-center gap-2" variants={childVariants}>
+                      <Label className="flex-1 text-xs font-medium text-neutral-700">
+                        Orthographic
+                        <Switch checked={orthographic} onCheckedChange={setOrthographic} />
+                      </Label>
+                      <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+                      <Label className="flex-1 text-xs font-medium text-neutral-700">
+                        Spin
+                        <Switch checked={spin} onCheckedChange={setSpin} />
+                      </Label>
+                    </motion.div>
+                  </>
                 )}
-                <motion.div className="flex items-center gap-2" variants={childVariants}>
-                  <Label className="flex-1 text-xs font-medium text-neutral-700">
-                    Spin
-                    <Switch checked={autoRotate} onCheckedChange={setAutoRotate} />
-                  </Label>
-                </motion.div>
                 <div className="my-1 h-px w-full bg-neutral-200" />
                 <motion.div className="" variants={childVariants}>
                   <ViewToggleSection />

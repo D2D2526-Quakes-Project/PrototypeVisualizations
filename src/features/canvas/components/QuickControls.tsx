@@ -3,7 +3,6 @@ import { BoxSelect, ScanEye, Home, RotateCw, ChevronLeftIcon } from "lucide-reac
 import { motion } from "motion/react";
 import { COLLAPSED_VIEW_PRESET_OPTIONS } from "../viewPresets";
 import { useCanvasState } from "@/features/3d/contexts/CanvasContext";
-import { useLiveStore } from "@/state";
 
 export function QuickControls({
   isExpanded,
@@ -12,9 +11,7 @@ export function QuickControls({
   isExpanded: boolean;
   setIsExpanded: (expanded: boolean) => void;
 }) {
-  const { resetView, resetHomeView, orthographic, setOrthographic } = useCanvasState();
-  const autoRotate = useLiveStore((s) => s.autoRotate);
-  const setAutoRotate = useLiveStore((s) => s.setAutoRotate);
+  const { resetView, resetHomeView, orthographic, setOrthographic, spin, setSpin } = useCanvasState();
 
   return (
     <motion.div
@@ -73,12 +70,12 @@ export function QuickControls({
         <TooltipTrigger asChild>
           <button
             type="button"
-            onClick={() => setAutoRotate(!autoRotate)}
+            onClick={() => setSpin(!spin)}
             className={`rounded p-1 transition-colors ${
-              autoRotate ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
+              spin ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
             }`}
             title="Auto Rotate">
-            <RotateCw size={14} className={autoRotate ? "animate-spin" : undefined} />
+            <RotateCw size={14} className={spin ? "animate-spin" : undefined} />
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={8}>

@@ -8,7 +8,6 @@ import { UNIT_SCALE } from "@/lib/utils";
 
 import type { OrthographicCamera as OrthographicCameraImpl, PerspectiveCamera as PerspectiveCameraImpl } from "three";
 import { useCanvasState } from "../3d/contexts/CanvasContext";
-import { useLiveStore } from "@/state";
 
 export function CameraManager() {
   return (
@@ -86,8 +85,7 @@ function Cams() {
 }
 
 function CameraControls() {
-  const { orbitControlsRef, setCameraPosition, setCameraTarget, setCameraZoom } = useCanvasState();
-  const autoRotate = useLiveStore((s) => s.autoRotate);
+  const { orbitControlsRef, setCameraPosition, setCameraTarget, setCameraZoom, spin } = useCanvasState();
 
   const { animationData } = useAnimationData();
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
@@ -124,5 +122,5 @@ function CameraControls() {
     };
   }, [orbitControlsRef, setCameraPosition, setCameraTarget, setCameraZoom]);
 
-  return <OrbitControls ref={orbitControlsRef} enableDamping={false} autoRotate={autoRotate} />;
+  return <OrbitControls ref={orbitControlsRef} enableDamping={false} autoRotate={spin} />;
 }

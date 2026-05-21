@@ -1,0 +1,65 @@
+import { Switch } from "@/components/ui/switch";
+import { motion } from "motion/react";
+import { ColorScaleBar } from "../components/ColorScaleBar";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { METRIC_CONFIGS, type Metric } from "@/features/metrics/metrics";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { PaletteIcon } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+
+export function CanvasMetricSelector() {
+  const { currentMetric, setCurrentMetric, availableMetrics, thresholdHighlighting, setThresholdHighlighting } =
+    useMetrics();
+
+  const [hovering, setHovering] = useState(false);
+
+  return (
+    <div
+      className="bg-background flex w-58 flex-col rounded-lg p-1.5 pb-0.5"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}>
+      <motion.div
+        className="flex items-center gap-1 px-1"
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: hovering ? "auto" : 0, opacity: hovering ? 1 : 0 }}
+        exit={{ height: 0, opacity: 0 }}>
+        <PaletteIcon size={12} className="text-neutral-500" />
+        <span className="text-xs font-medium text-neutral-700">Color By</span>
+        <div className="mb-1 flex flex-1 items-center justify-end gap-2">
+          <Label className="text-xs font-normal text-neutral-500">
+            Show Threshold
+            <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />
+          </Label>
+        </div>
+      </motion.div>
+      <motion.div
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: hovering ? "auto" : 0, opacity: hovering ? 1 : 0 }}
+        exit={{ height: 0, opacity: 0 }}>
+        <NativeSelect
+          value={currentMetric}
+          onChange={(e) => setCurrentMetric(e.target.value as Metric)}
+          className="w-full">
+          {availableMetrics.map((metric) => (
+            <NativeSelectOption key={metric} value={metric}>
+              {METRIC_CONFIGS[metric].label}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </motion.div>
+
+      <motion.span
+        className="px-1 text-xs text-neutral-500"
+        initial={{ height: "auto", opacity: 1 }}
+        animate={{ height: hovering ? 0 : "auto", opacity: hovering ? 0 : 1 }}
+        exit={{ height: "auto", opacity: 1 }}>
+        {METRIC_CONFIGS[currentMetric].label}
+      </motion.span>
+
+      <div className="mt-1">
+        <ColorScaleBar />
+      </div>
+    </div>
+  );
+}

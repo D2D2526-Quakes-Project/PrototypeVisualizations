@@ -30,7 +30,7 @@ export interface CanvasPanelState {
 const DEFAULT_CANVAS_PANEL_STATE: CanvasPanelState = {
   orthographic: false,
   spin: false,
-  cameraPosition: [0, 0, 0],
+  cameraPosition: [100, 100, 100],
   cameraTarget: [0, 0, 0],
   cameraZoom: undefined,
   expansionEnabled: false,

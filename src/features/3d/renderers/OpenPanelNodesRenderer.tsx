@@ -4,11 +4,13 @@ import { numberToColor } from "@/lib/utils";
 import { Point, PointMaterial, Points } from "@react-three/drei";
 import { useMemo } from "react";
 import { useNodePositions } from "../contexts/useNodePositions";
+import { useCanvasState } from "../contexts/CanvasContext";
 
 export function OpenPanelNodesRenderer() {
   const { nodeIds } = useOpenPanels();
   const { frameIndex } = usePlayback();
   const { getNodeVisualPosition } = useNodePositions();
+  const camera = useCanvasState(true);
 
   const nodesData = useMemo(() => {
     return nodeIds.map((nodeId) => {
@@ -21,12 +23,14 @@ export function OpenPanelNodesRenderer() {
     });
   }, [nodeIds, frameIndex, getNodeVisualPosition]);
 
+  const size = camera.orthographic ? (camera.cameraZoom ?? 1) * 4 : 8;
+
   return (
     <Points frustumCulled={false}>
       <PointMaterial
         transparent
         vertexColors
-        size={8}
+        size={size}
         sizeAttenuation={true}
         depthTest={true}
         depthWrite={true}

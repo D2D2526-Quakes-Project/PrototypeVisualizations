@@ -3,13 +3,13 @@
   "buildings": [
     {
       "data_type": "binary",
-      "name": "15story",
+      "name": "15-Story",
       "folder": "15story",
       "building_data": "building.bld",
       "building_data_size": 45753,
       "simulations": [
         {
-          "name": "station3138",
+          "name": "Station 3138",
           "folder": "station3138",
           "size": 2184934345,
           "accelerationLin": "acceleration_lin.bld",
@@ -23,7 +23,7 @@
           "shearData": "shear_data.bld"
         },
         {
-          "name": "station3139",
+          "name": "Station 3139",
           "folder": "station3139",
           "size": 1953102403,
           "accelerationLin": "acceleration_lin.bld",
@@ -42,13 +42,13 @@
     },
     {
       "data_type": "binary",
-      "name": "52story",
+      "name": "52-Story",
       "folder": "52story",
       "building_data": "building.bld",
       "building_data_size": 22323,
       "simulations": [
         {
-          "name": "station3138",
+          "name": "Station 3138",
           "folder": "station3138",
           "size": 198874435,
           "accelerationLin": "acceleration_lin.bld",
@@ -61,7 +61,7 @@
           "velocityRot": "velocity_rot.bld"
         },
         {
-          "name": "station3139",
+          "name": "Station 3139",
           "folder": "station3139",
           "size": 165135984,
           "accelerationLin": "acceleration_lin.bld",
@@ -77,6 +77,31 @@
       ],
       "size": 364057496,
       "beamData": "beam_data.bld"
+    },
+    {
+      "data_type": "binary",
+      "name": "73-Story",
+      "folder": "73story",
+      "building_data": "building.bld",
+      "building_data_size": 55111,
+      "simulations": [
+        {
+          "name": "Station 3138",
+          "folder": "station3138",
+          "size": 914061740,
+          "displacementLin": "displacement_lin.bld",
+          "displacementRot": "displacement_rot.bld",
+          "groundMotion": "ground_motion.bld"
+        },
+        {
+          "name": "Station 3139",
+          "folder": "station3139",
+          "size": 526662648,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld"
+        }
+      ],
+      "size": 1440779499
     }
   ],
   "size": 4502185696

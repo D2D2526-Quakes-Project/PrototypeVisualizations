@@ -3,13 +3,13 @@
   "buildings": [
     {
       "data_type": "binary",
-      "name": "15story",
+      "name": "15-Story",
       "folder": "15story",
       "building_data": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/building.bld",
       "building_data_size": 45753,
       "simulations": [
         {
-          "name": "station3138",
+          "name": "Station 3138",
           "folder": "station3138",
           "size": 2184934965,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138/acceleration_lin.bld",
@@ -24,7 +24,7 @@
           "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3138/velocity_rot.bld"
         },
         {
-          "name": "station3139",
+          "name": "Station 3139",
           "folder": "station3139",
           "size": 1953103006,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/15story/station3139/acceleration_lin.bld",
@@ -44,13 +44,13 @@
     },
     {
       "data_type": "binary",
-      "name": "52story",
+      "name": "52-Story",
       "folder": "52story",
       "building_data": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/building.bld",
       "building_data_size": 22334,
       "simulations": [
         {
-          "name": "station3138",
+          "name": "Station 3138",
           "folder": "station3138",
           "size": 198909378,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3138/acceleration_lin.bld",
@@ -65,7 +65,7 @@
           "velocityRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3138/velocity_rot.bld"
         },
         {
-          "name": "station3139",
+          "name": "Station 3139",
           "folder": "station3139",
           "size": 165169718,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3139/acceleration_lin.bld",
@@ -82,7 +82,32 @@
       ],
       "size": 364118681,
       "beamData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/beam_data.bld"
+    },
+    {
+      "data_type": "binary",
+      "name": "73-Story",
+      "folder": "73story",
+      "building_data": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/building.bld",
+      "building_data_size": 55111,
+      "simulations": [
+        {
+          "name": "Station 3138",
+          "folder": "station3138",
+          "size": 914061740,
+          "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3138/displacement_lin.bld",
+          "displacementRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3138/displacement_rot.bld",
+          "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3138/ground_motion.bld"
+        },
+        {
+          "name": "Station 3139",
+          "folder": "station3139",
+          "size": 526662648,
+          "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3139/displacement_lin.bld",
+          "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3139/ground_motion.bld"
+        }
+      ],
+      "size": 1440779499
     }
   ],
-  "size": 4502233560
+  "size": 5943013059
 }

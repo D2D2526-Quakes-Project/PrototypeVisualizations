@@ -1,20 +1,14 @@
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useEffect, useMemo } from "react";
 import { create } from "zustand";
+import { createDebouncedJSONStorage } from "zustand-debounce";
 import { persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { useShallow } from "zustand/react/shallow";
+import { createDefaultProfiles, DEFAULT_PROFILE } from "./default";
 import { createGlobalSlice, type GlobalState } from "./globalState";
 import { createLiveSlice, LIVE_STATE_KEYS, type LiveState } from "./liveState";
-import {
-  createProfileSlice,
-  type ProfileData,
-  type ProfileState,
-  type ProfileStateAPI,
-  type ProfileStateSetters,
-} from "./profileState";
-import { createDefaultProfiles, DEFAULT_PROFILE } from "./default";
-import { createDebouncedJSONStorage } from "zustand-debounce";
-import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { createProfileSlice, type ProfileData, type ProfileState, type ProfileStateSetters } from "./profileState";
 
 export type AppState = ProfileStateSetters & LiveState & GlobalState;
 
@@ -50,19 +44,28 @@ export function useLiveStore<T>(selector: (state: LiveState) => T): T {
 export function appStoreState(): AppState {
   return useAppStore.getState();
 }
-export function profileStoreStateForBuilding(buildingId: string): ProfileData | undefined {
+
+export function profileStoreStateForBuilding(buildingId: string): ProfileData {
   const state = useAppStore.getState();
-  return state.profiles[buildingId]?.[state.activeProfileIds[buildingId]];
+  const activeProfId = state.activeProfileIds[buildingId] ?? DEFAULT_PROFILE;
+  const profile = state.profiles[buildingId]?.[activeProfId];
+
+  if (profile) return profile;
+
+  return createDefaultProfiles()[DEFAULT_PROFILE];
 }
 
 export function useProfileIds(): string[] {
   const { currentBuilding, loading } = useAnimationData();
-  const currentBuildingId = currentBuilding.folder;
+  const currentBuildingId = currentBuilding?.folder; // Optional chaining for safety
+
   return useAppStore(
     useShallow((state) => {
       if (!currentBuildingId || loading) return [];
       const buildingProfiles = state.profiles[currentBuildingId];
-      return Object.keys(buildingProfiles);
+
+      // FIX: Prevent Object.keys crash if buildingProfiles is undefined
+      return buildingProfiles ? Object.keys(buildingProfiles) : [DEFAULT_PROFILE];
     })
   );
 }
@@ -72,6 +75,11 @@ export function useProfileData<T>(selector: (state: ProfileData) => T): T {
   const currentBuildingId = currentBuilding.folder;
   const defaultHiddenFloors = animationData.metadata.hiddenFloors;
 
+  const fallbackProfile = useMemo(
+    () => createDefaultProfiles(defaultHiddenFloors)[DEFAULT_PROFILE],
+    [defaultHiddenFloors]
+  );
+
   useEffect(() => {
     if (!currentBuildingId || loading) return;
 
@@ -80,20 +88,16 @@ export function useProfileData<T>(selector: (state: ProfileData) => T): T {
 
     if (!hasProfiles) {
       useAppStore.setState((draft) => {
-        const defaultProfiles = createDefaultProfiles(defaultHiddenFloors);
-        draft.profiles[currentBuildingId] = defaultProfiles;
-        draft.activeProfileIds[currentBuildingId] = DEFAULT_PROFILE;
+        if (!draft.profiles[currentBuildingId]) {
+          draft.profiles[currentBuildingId] = createDefaultProfiles(defaultHiddenFloors);
+          draft.activeProfileIds[currentBuildingId] = DEFAULT_PROFILE;
+        }
       });
     }
   }, [currentBuildingId, loading, defaultHiddenFloors]);
 
-  const fallbackProfile = useMemo(
-    () => createDefaultProfiles(defaultHiddenFloors)[DEFAULT_PROFILE],
-    [defaultHiddenFloors]
-  );
-
   return useAppStore((state) => {
-    if (!currentBuildingId) return selector({} as ProfileStateAPI);
+    if (!currentBuildingId || loading) return selector(fallbackProfile);
 
     const buildingProfiles = state.profiles[currentBuildingId];
     const activeProfId = state.activeProfileIds[currentBuildingId] ?? DEFAULT_PROFILE;

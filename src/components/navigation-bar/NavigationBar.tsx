@@ -14,7 +14,6 @@ import {
 import { useVisibilityWarnings } from "@/features/3d/contexts/useVisibilityWarnings";
 import { OPTIONAL_DATASET_KEYS } from "@/features/animation-data/data-loading/loadingTypes";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { ColorScaleBarTooltip } from "@/features/canvas/components/ColorScaleBar";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber } from "@/lib/utils";
@@ -160,9 +159,6 @@ export function NavigationBar() {
         <span className="font-mono">{formatNumber(frameIndex * animationData.metadata.dt)} s</span>
         <span className="text-neutral-300">|</span>
         <div className="font-medium">{currentMetricConfig.label}</div>
-        <div className="w-full">
-          <ColorScaleBarTooltip insideLabel />
-        </div>
       </div>
 
       <div className="flex min-w-0 items-center justify-end py-1 pr-2">

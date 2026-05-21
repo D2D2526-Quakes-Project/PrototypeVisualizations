@@ -64,7 +64,7 @@ def check_outputs_exist(building_name, simulation_name=None):
         return False
 
     if simulation_name is None:
-        return os.path.exists(os.path.join(building_output_dir, "building.bld")) and os.path.exists(os.path.join(building_output_dir, "beam_data.bld"))
+        return os.path.exists(os.path.join(building_output_dir, "building.bld"))
 
     simulation_output_dir = os.path.join(building_output_dir, simulation_name)
     if not os.path.exists(simulation_output_dir):
@@ -167,14 +167,16 @@ def discover_buildings():
             print(f"    corner_positions.csv: {'✓' if has_corner_positions else '✗'} ({corner_positions_file})")
             print(f"    hidden_floors.csv: {'✓' if has_hidden_floors else '✗'} ({hidden_floors_file})")
 
-            if has_node and has_height and has_beam:
+            if has_node and has_height:
                 building_info = {
                     "folder": building_folder,
                     "name": building_folder.capitalize() if building_folder.islower() else building_folder,
                     "node_data": node_data_file,
                     "height": height_file,
-                    "beam_data": beam_data_file,
                 }
+                if has_beam:
+                    building_info["beam_data"] = beam_data_file
+                    print(f"    → Beam data: WILL USE beam_data.csv")
                 if has_corner_positions:
                     building_info["corner_positions"] = corner_positions_file
                     print(f"    → Corner positions: WILL USE CUSTOM XY COORDINATES")
@@ -189,8 +191,6 @@ def discover_buildings():
                     missing.append("node_data.csv")
                 if not has_height:
                     missing.append("building_height.csv")
-                if not has_beam:
-                    missing.append("beam_data.csv")
                 print(f"    → Building REJECTED: missing {', '.join(missing)}")
 
     print(f"\n{'='*70}")
@@ -1324,8 +1324,12 @@ def process_building(building):
 
     write_bld_file("building.bld", header, buffer.tobytes(), building_output_dir)
 
-    # 5. Write beam/member connectivity using the same node ordering used for all simulation arrays.
-    beam_index_by_group2_element_id = process_beam_data(building, id_to_index, building_output_dir)
+    # 5. Write beam/member connectivity (optional, required for hinge data)
+    if "beam_data" in building:
+        beam_index_by_group2_element_id = process_beam_data(building, id_to_index, building_output_dir)
+    else:
+        print(f"    Skipping beam_data.bld: beam_data.csv not available")
+        beam_index_by_group2_element_id = None
 
     return id_to_index, beam_index_by_group2_element_id, building_output_dir, storyOrder
 
@@ -1474,6 +1478,10 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
         d_ly, _ = load_ladwp_data(f_ly, col_map_y)
         d_lz, _ = load_ladwp_data(f_lz, col_map_z)
 
+        num_frames = len(d_lx)
+        num_nodes = len(id_to_index)
+        missing_lin_node_indices = compute_missing_node_indices(num_nodes, id_to_index, col_map_x, col_map_y, col_map_z)
+
         # Load Rotational Data if available
         if has_rotation:
             print(f"Loading Rotational Data...")
@@ -1491,10 +1499,6 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
             d_ry = np.zeros_like(d_lx)
             d_rz = np.zeros_like(d_lx)
             missing_rot_node_indices = []
-
-        num_frames = len(d_lx)
-        num_nodes = len(id_to_index)
-        missing_lin_node_indices = compute_missing_node_indices(num_nodes, id_to_index, col_map_x, col_map_y, col_map_z)
 
         # 3. Interleave Data
         print("Interleaving data...")
@@ -2070,9 +2074,12 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_index_by
     if simulation["has_ground_motion"] and should_process_metric("ground_motion"):
         process_ground_motion(files_config, simulation_output_dir)
 
-    # Process non-time-series hinge data
+    # Process non-time-series hinge data (requires beam_data.csv)
     if simulation.get("has_hinge_data") and should_process_metric("hinge"):
-        process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2_element_id)
+        if beam_index_by_group2_element_id is not None:
+            process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2_element_id)
+        else:
+            print("    Skipping hinge data: beam_data.csv not available for this building")
 
     # Process static per-floor shear data
     if simulation.get("has_shear_data") and should_process_metric("shear"):

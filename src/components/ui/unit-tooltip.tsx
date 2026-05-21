@@ -72,7 +72,7 @@ function UnitTooltipComponent({
   const displayValue = (
     <span className={interactive ? "cursor-help" : undefined}>
       {children || (
-        <span>
+        <span className="whitespace-nowrap">
           {formattedValue} {unit.abbr}
         </span>
       )}

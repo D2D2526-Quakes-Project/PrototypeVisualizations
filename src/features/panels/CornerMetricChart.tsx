@@ -1,4 +1,3 @@
-import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
@@ -552,12 +551,10 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
 
   return (
     <div className="relative flex h-full w-full flex-col gap-2 bg-white">
-      <div className="absolute right-0 z-10 flex items-center gap-2 px-1 pt-1">
-        <Label htmlFor={`${api.id}-metric`} className="text-xs font-medium text-neutral-600">
-          Metric
-        </Label>
+      <div className="absolute right-0 z-10 flex items-start gap-2 px-1 pt-1">
         <NativeSelect
           id={`${api.id}-metric`}
+          size="sm"
           value={selectedMetric}
           onChange={(event) =>
             setPanelState({

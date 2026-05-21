@@ -1,6 +1,6 @@
-import { useCanvasState } from "../3d/contexts/CanvasContext";
-import { useGlobalStore, useProfileData } from "@/state";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { useGlobalStore, useProfileData } from "@/state";
+import { useCanvasState } from "../../3d/contexts/CanvasContext";
 
 export function ViewSettingsOverlay() {
   const canvasState = useCanvasState();
@@ -43,16 +43,10 @@ export function ViewSettingsOverlay() {
     lines.push(`Floors: ${hiddenFloors.join(",")} hidden`);
   }
 
-  lines.push(
-    `${canvasState.cameraPosition.join(",")} | ${(canvasState.cameraTarget.join(","), canvasState.cameraZoom)}`
-  );
-
   if (lines.length === 0) return null;
 
   return (
-    <div
-      className="absolute right-2 bottom-2 z-50 flex flex-col items-end text-[10px]"
-      style={{ color: colorTheme.canvasText }}>
+    <div className="flex flex-col items-end px-1 text-[10px]" style={{ color: colorTheme.canvasText }}>
       {lines.map((line, i) => (
         <span key={i} className="font-mono whitespace-nowrap">
           {line}

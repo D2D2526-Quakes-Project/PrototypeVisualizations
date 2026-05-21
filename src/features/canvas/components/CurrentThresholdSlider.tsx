@@ -1,0 +1,44 @@
+import { Slider } from "@/components/ui/slider";
+import { UnitTooltip } from "@/components/ui/unit-tooltip";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { getThresholdConfig } from "@/features/metrics/metrics";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { useThresholds } from "@/features/metrics/useThresholds";
+
+export function CurrentThresholdSlider() {
+  const { animationData } = useAnimationData();
+  const { currentMetricConfig } = useMetrics();
+  const { thresholds, setThreshold } = useThresholds();
+
+  const config = getThresholdConfig(currentMetricConfig.thresholdKey);
+  const max = Math.max(config.getPrecomputedMax(animationData), thresholds[currentMetricConfig.thresholdKey] || 0, 0);
+  const value = thresholds[currentMetricConfig.thresholdKey];
+
+  return (
+    <div className="bg-background flex flex-col rounded-lg p-1 px-2">
+      <div className="grid grid-cols-[1fr_auto] gap-1">
+        {/* <ThresholdSlider
+          label=""
+          value={thresholds[currentMetricConfig.thresholdKey]}
+          unit={config.unit}
+          onChange={(value) => setThreshold(currentMetricConfig.thresholdKey, value)}
+          max={max}
+          tooltip={tooltip}
+          currentlyUsed={true}
+        /> */}
+
+        <div className="border-border flex w-full min-w-32 items-center border-r py-1 pr-2">
+          <Slider
+            value={[value, max]}
+            onValueChange={(val) => setThreshold(currentMetricConfig.thresholdKey, val[0])}
+            max={max}
+            step={0.01}
+          />
+        </div>
+        <span className="min-w-10 text-right text-xs text-neutral-500">
+          <UnitTooltip value={value} unit={config.unit.label} decimals={2} />
+        </span>
+      </div>
+    </div>
+  );
+}

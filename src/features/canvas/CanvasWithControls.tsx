@@ -6,9 +6,10 @@ import { ViewControls } from "./ViewControls";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
+  overlays?: ReactNode;
 }
 
-export function CanvasWithControls({ children }: CanvasWithControlsProps) {
+export function CanvasWithControls({ children, overlays }: CanvasWithControlsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sideControlsRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -80,7 +81,8 @@ export function CanvasWithControls({ children }: CanvasWithControlsProps) {
           setIsExpanded={handleSetIsViewControlsExpanded}
         />
       )}
-      <div className="min-h-0 min-w-0 flex-[1_1_auto]">
+      <div className="relative min-h-0 min-w-0 flex-[1_1_auto]">
+        {overlays}
         <Canvas
           frameloop="demand"
           linear

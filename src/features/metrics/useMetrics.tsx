@@ -132,12 +132,6 @@ export function useMetrics() {
 
   const getNodeColorForCurrentMetric = useCallback(
     (nodeId: number, frameIndex: number) => {
-      if (nodeId == 3555)
-        return {
-          passesThreshold: false,
-          noValue: true,
-          color: new THREE.Color(1.0, 0, 0.5),
-        };
       if (!animationData.metadata.nodeToStory[nodeId]) {
         return { passesThreshold: false, noValue: true, color: darkGrayColor };
       }

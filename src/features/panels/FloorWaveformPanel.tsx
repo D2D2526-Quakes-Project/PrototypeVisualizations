@@ -213,9 +213,9 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
   const visibleStoryIds = useMemo(() => visibleFloors, [visibleFloors]);
 
-  const storySeries = useMemo<StorySeries[]>(() => {
+  const baseStorySeries = useMemo(() => {
     const frameCount = animationData.metadata.frameCount;
-    const series: StorySeries[] = [];
+    const series: Omit<StorySeries, "color">[] = [];
 
     visibleStoryIds.forEach((storyId) => {
       const nodeIds = animationData.metadata.stories[storyId] ?? [];
@@ -256,12 +256,18 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         peakValue,
         peakAbsValue,
         peakFrame,
-        color: threeColorToCSS(getValueColorForMetric(selectedMetric, peakValue).color),
       });
     });
 
     return series;
-  }, [animationData, getValueColorForMetric, metricConfig, selectedMetric, visibleStoryIds]);
+  }, [animationData, metricConfig, selectedMetric, visibleStoryIds]);
+
+  const storySeries: StorySeries[] = useMemo(() => {
+    return baseStorySeries.map((story) => ({
+      ...story,
+      color: threeColorToCSS(getValueColorForMetric(selectedMetric, story.peakValue).color),
+    }));
+  }, [baseStorySeries, getValueColorForMetric, selectedMetric]);
 
   const frameCount = animationData.metadata.frameCount;
   const dt = animationData.metadata.dt;
@@ -467,7 +473,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           {/* Metric select */}
-          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+          <label className="flex flex-col items-start text-[11px] text-neutral-500">
             Metric
             <NativeSelect
               size="sm"
@@ -485,7 +491,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
           </label>
 
           {/* Placement mode select */}
-          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+          <label className="flex flex-col items-start text-[11px] text-neutral-500">
             Spacing
             <NativeSelect
               size="sm"
@@ -497,17 +503,19 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
           </label>
 
           {/* Amplitude scale slider */}
-          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+          <label className="flex flex-col items-start text-[11px] text-neutral-500">
             Amplitude
-            <Slider
-              min={AMPLITUDE_SLIDER_MIN}
-              max={AMPLITUDE_SLIDER_MAX}
-              step={1}
-              value={[amplitudeToSlider(amplitudeMultiplier)]}
-              onValueChange={(value) => setPanelState({ amplitudeScale: sliderToAmplitude(value[0]) })}
-              className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-neutral-200 accent-neutral-700"
-            />
-            <span className="w-8 font-mono text-[10px] text-neutral-400">{amplitudeMultiplier.toFixed(1)}×</span>
+            <div className="flex items-center gap-1">
+              <Slider
+                min={AMPLITUDE_SLIDER_MIN}
+                max={AMPLITUDE_SLIDER_MAX}
+                step={1}
+                value={[amplitudeToSlider(amplitudeMultiplier)]}
+                onValueChange={(value) => setPanelState({ amplitudeScale: sliderToAmplitude(value[0]) })}
+                className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-neutral-200 accent-neutral-700"
+              />
+              <span className="w-8 font-mono text-[10px] text-neutral-400">{amplitudeMultiplier.toFixed(1)}×</span>
+            </div>
           </label>
         </div>
         <div className="flex items-center gap-3">
@@ -529,7 +537,6 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
               option={option}
               style={{ height: "100%", width: "100%" }}
               onChartReady={handleChartReady}
-              notMerge={true}
             />
 
             <div

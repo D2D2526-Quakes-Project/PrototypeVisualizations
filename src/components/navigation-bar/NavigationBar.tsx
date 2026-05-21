@@ -14,7 +14,6 @@ import {
 import { useVisibilityWarnings } from "@/features/3d/contexts/useVisibilityWarnings";
 import { OPTIONAL_DATASET_KEYS } from "@/features/animation-data/data-loading/loadingTypes";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber } from "@/lib/utils";
 import { useGlobalStore } from "@/state";
@@ -32,7 +31,6 @@ export function NavigationBar() {
   const showHiddenMetrics = useGlobalStore((state) => state.showHiddenMetrics);
   const setShowHiddenMetrics = useGlobalStore((state) => state.setShowHiddenMetrics);
 
-  const { currentMetricConfig } = useMetrics();
   const { allVisibilityHiddenWarning, mostNodesHiddenWarning, allFloorsHiddenWarning } = useVisibilityWarnings();
 
   const {
@@ -157,8 +155,6 @@ export function NavigationBar() {
         <span className="text-neutral-300">|</span>
         <span className="font-medium">Time:</span>
         <span className="font-mono">{formatNumber(frameIndex * animationData.metadata.dt)} s</span>
-        <span className="text-neutral-300">|</span>
-        <div className="font-medium">{currentMetricConfig.label}</div>
       </div>
 
       <div className="flex min-w-0 items-center justify-end py-1 pr-2">

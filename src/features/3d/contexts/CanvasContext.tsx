@@ -32,7 +32,7 @@ const DEFAULT_CANVAS_PANEL_STATE: CanvasPanelState = {
   spin: false,
   cameraPosition: [0, 0, 0],
   cameraTarget: [0, 0, 0],
-  cameraZoom: 50,
+  cameraZoom: undefined,
   expansionEnabled: false,
   xExpansion: 1,
   yExpansion: 0,
@@ -56,6 +56,7 @@ export interface CameraContextType extends UsePanelStateReturn<CanvasPanelState>
   panelId: string;
 
   isHoveringPanel: boolean;
+  isPrimaryPanel: boolean;
 
   setPanEnabled: (enabled: boolean) => void;
   nodeInteractionEnabled: boolean;
@@ -89,10 +90,12 @@ export function CanvasPanelProvider({
   children,
   panelId,
   isHoveringPanel,
+  isPrimaryPanel,
 }: {
   children: ReactNode;
   panelId: string;
   isHoveringPanel: boolean;
+  isPrimaryPanel: boolean;
 }) {
   const { animationData } = useAnimationData();
   const boundingBox = animationData.precomputed.boundingBox;
@@ -190,8 +193,21 @@ export function CanvasPanelProvider({
   );
 
   const resetHomeView = useCallback(() => {
-    panelState.setCameraTarget([0, 0, buildingVerticalCenter]);
-    panelState.setCameraPosition([-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance]);
+    const pos: [number, number, number] = [-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance];
+    const tgt: [number, number, number] = [0, 0, buildingVerticalCenter];
+
+    panelState.setCameraTarget(tgt);
+    panelState.setCameraPosition(pos);
+    if (!panelState.orthographic) {
+      const dx = pos[0] - tgt[0];
+      const dy = pos[1] - tgt[1];
+      const dz = pos[2] - tgt[2];
+      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      panelState.setCameraZoom(distance);
+    } else {
+      panelState.setCameraZoom(undefined);
+    }
   }, [buildingVerticalCenter, cameraDistance, panelState]);
 
   const startBoxSelection = useCallback(
@@ -233,6 +249,7 @@ export function CanvasPanelProvider({
         resetHomeView,
         panelId,
         isHoveringPanel,
+        isPrimaryPanel,
         ...panelState,
       }}>
       {children}

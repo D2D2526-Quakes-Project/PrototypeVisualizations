@@ -1,6 +1,6 @@
 import { debounce } from "@/lib/utils";
 import { useProfileActions, useProfileData } from "@/state";
-import { useMemo, useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { PanelType } from "./MagicPanel";
 
 type SetterName<K extends string> = `set${Capitalize<K>}`;
@@ -44,7 +44,6 @@ export function usePanelState<T extends Record<keyof T, unknown>>(params: {
   const setState = useCallback(
     (updater: Partial<T> | ((prev: T) => Partial<T>)) => {
       setLocalState((prev) => {
-        // Utilizing our custom type guard here!
         const updates = typeof updater === "function" ? updater(prev) : updater;
         const nextState = { ...prev, ...updates };
         debouncedSave(panelId, panelType, nextState);
@@ -77,10 +76,6 @@ export function usePanelState<T extends Record<keyof T, unknown>>(params: {
 
     return generatedSetters;
   }, [defaultState, debouncedSave, panelId, panelType]);
-
-  console.log("localState", localState);
-  console.log("dynamicSetters", dynamicSetters);
-  console.log("setState", setState);
 
   return {
     ...localState,

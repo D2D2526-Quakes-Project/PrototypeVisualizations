@@ -43,7 +43,8 @@ export const ViewControls = forwardRef<
     showCanvasSpecificControls?: boolean;
   }
 >(function ViewControls({ isExpanded, setIsExpanded, docked, showCanvasSpecificControls = true }, ref) {
-  const { resetView, resetHomeView, orthographic, setOrthographic, isHoveringPanel, spin, setSpin } = useCanvasState();
+  const { resetView, resetHomeView, orthographic, setOrthographic, isHoveringPanel, isPrimaryPanel, spin, setSpin } =
+    useCanvasState();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
   const setColorTheme = useGlobalStore((s) => s.setColorTheme);
   const clearSelection = useLiveStore((s) => s.clearSelection);
@@ -96,7 +97,7 @@ export const ViewControls = forwardRef<
         {!isExpanded && (
           <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>
             <AnimatePresence>
-              {isHoveringPanel && (
+              {(isHoveringPanel || isPrimaryPanel) && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}

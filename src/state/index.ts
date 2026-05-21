@@ -57,7 +57,7 @@ export function profileStoreStateForBuilding(buildingId: string): ProfileData | 
 
 export function useProfileIds(): string[] {
   const { currentBuilding, loading } = useAnimationData();
-  const currentBuildingId = currentBuilding.name;
+  const currentBuildingId = currentBuilding.folder;
   return useAppStore(
     useShallow((state) => {
       if (!currentBuildingId || loading) return [];
@@ -69,7 +69,7 @@ export function useProfileIds(): string[] {
 
 export function useProfileData<T>(selector: (state: ProfileData) => T): T {
   const { currentBuilding, loading, animationData } = useAnimationData();
-  const currentBuildingId = currentBuilding.name;
+  const currentBuildingId = currentBuilding.folder;
   const defaultHiddenFloors = animationData.metadata.hiddenFloors;
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export function useProfileData<T>(selector: (state: ProfileData) => T): T {
 
 export function useProfileActions(): ProfileState["profileActions"] {
   const { currentBuilding, loading } = useAnimationData();
-  const currentBuildingId = currentBuilding.name;
+  const currentBuildingId = currentBuilding.folder;
 
   // Programmatically wrap all actions.
   const boundActions = useMemo(() => {

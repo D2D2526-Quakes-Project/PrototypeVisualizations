@@ -43,6 +43,10 @@ export function ViewSettingsOverlay() {
     lines.push(`Floors: ${hiddenFloors.join(",")} hidden`);
   }
 
+  lines.push(
+    `${canvasState.cameraPosition.join(",")} | ${(canvasState.cameraTarget.join(","), canvasState.cameraZoom)}`
+  );
+
   if (lines.length === 0) return null;
 
   return (

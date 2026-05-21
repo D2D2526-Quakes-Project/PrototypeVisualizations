@@ -27,7 +27,7 @@ export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) =>
       onMouseEnter={() => setIsHoveringPanel(true)}
       onMouseLeave={() => setIsHoveringPanel(false)}>
       <SceneTooltip>
-        <CanvasPanelProvider panelId={panelId} isHoveringPanel={isHoveringPanel}>
+        <CanvasPanelProvider panelId={panelId} isHoveringPanel={isHoveringPanel} isPrimaryPanel={isPrimary}>
           <KeyboardZoomHandler isActive={isActive} />
           <CanvasWithControls>
             <CameraManager />
@@ -36,7 +36,7 @@ export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) =>
           </CanvasWithControls>
           <BoxSelectionOverlay />
           <ViewSettingsOverlay />
-          {(isPrimary || exportRenderMode.showTransientUi) && (
+          {isPrimary && exportRenderMode.showTransientUi && (
             <div className="absolute bottom-2 left-2 z-50">
               <SmallPlaybackControls />
             </div>

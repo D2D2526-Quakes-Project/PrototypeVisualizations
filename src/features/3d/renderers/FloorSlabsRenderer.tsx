@@ -94,7 +94,7 @@ const FloorSlab = memo(function FloorSlab({
     if (!posAttr || !colAttr || !mesh || !topology) return;
 
     const { floorNodes, triangles } = topology;
-    const frameIndex = profileStoreStateForBuilding(currentBuilding.name)?.frameIndex ?? 0;
+    const frameIndex = profileStoreStateForBuilding(currentBuilding.folder)?.frameIndex ?? 0;
 
     let total = 0;
     let count = 0;

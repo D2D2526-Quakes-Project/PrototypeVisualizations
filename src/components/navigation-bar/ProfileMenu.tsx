@@ -1,4 +1,5 @@
 import { useProfileIds, useProfileData, useProfileActions } from "@/state";
+import { PROFILE_LABELS } from "@/state/default";
 import { MenubarContent, MenubarMenu, MenubarRadioGroup, MenubarRadioItem, MenubarTrigger } from "../ui/menubar";
 
 export function ProfileMenu() {
@@ -14,8 +15,8 @@ export function ProfileMenu() {
           <div className="px-2 text-[10px] text-neutral-500">Autosaved per building.</div>
           <MenubarRadioGroup value={profileId} onValueChange={setActiveProfile}>
             {availableProfileIds.map((profile) => (
-              <MenubarRadioItem key={profile} value={profile} className="justify-between capitalize">
-                {profile}
+              <MenubarRadioItem key={profile} value={profile} className="justify-between">
+                {PROFILE_LABELS[profile] ?? profile}
               </MenubarRadioItem>
             ))}
           </MenubarRadioGroup>

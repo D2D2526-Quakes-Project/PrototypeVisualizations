@@ -88,7 +88,7 @@
       "name": "73-Story",
       "folder": "73story",
       "building_data": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/building.bld",
-      "building_data_size": 56389,
+      "building_data_size": 56351,
       "simulations": [
         {
           "name": "Station 3138",
@@ -106,8 +106,8 @@
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3139/ground_motion.bld"
         }
       ],
-      "size": 1440780777
+      "size": 1440780739
     }
   ],
-  "size": 5943014337
+  "size": 5943014299
 }

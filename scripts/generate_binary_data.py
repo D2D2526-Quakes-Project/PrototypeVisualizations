@@ -1294,7 +1294,7 @@ def process_building(building):
         story = row["Story level"]
         storyHeights[story] = row["Story Height (ft)"] * 12
 
-    storyOrder = list(stories.keys())
+    storyOrder = list(storyHeights.keys())
     storyOrder.reverse()
     print(f"Story order: {storyOrder}")
 

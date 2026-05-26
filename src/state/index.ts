@@ -1,16 +1,36 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { create } from "zustand";
-import { createDebouncedJSONStorage } from "zustand-debounce";
 import { persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { useShallow } from "zustand/react/shallow";
-import { createDefaultProfiles, DEFAULT_PROFILE } from "./default";
 import { createGlobalSlice, type GlobalState } from "./globalState";
 import { createLiveSlice, LIVE_STATE_KEYS, type LiveState } from "./liveState";
 import { createProfileSlice, type ProfileData, type ProfileState, type ProfileStateSetters } from "./profileState";
+import { createDefaultProfiles, DEFAULT_PROFILE } from "./default";
+import { createDebouncedJSONStorage } from "zustand-debounce";
 
 export type AppState = ProfileStateSetters & LiveState & GlobalState;
+
+let _storeSaving = false;
+const _storeSavingListeners = new Set<() => void>();
+
+function setStoreSaving(saving: boolean) {
+  if (_storeSaving === saving) return;
+  _storeSaving = saving;
+  _storeSavingListeners.forEach((l) => l());
+}
+
+export function useStoreSaving(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      _storeSavingListeners.add(cb);
+      return () => _storeSavingListeners.delete(cb);
+    },
+    () => _storeSaving,
+    () => _storeSaving
+  );
+}
 
 const useAppStore = create<AppState>()(
   persist(
@@ -30,6 +50,8 @@ const useAppStore = create<AppState>()(
         ),
       storage: createDebouncedJSONStorage("localStorage", {
         debounceTime: 1000,
+        onWrite: () => setStoreSaving(true),
+        onSave: () => setStoreSaving(false),
       }),
     }
   )

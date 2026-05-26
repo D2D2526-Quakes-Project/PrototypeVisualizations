@@ -1,15 +1,25 @@
-import { useProfileIds, useProfileData, useProfileActions } from "@/state";
+import { useProfileIds, useProfileData, useProfileActions, useStoreSaving } from "@/state";
 import { PROFILE_LABELS } from "@/state/default";
 import { MenubarContent, MenubarMenu, MenubarRadioGroup, MenubarRadioItem, MenubarTrigger } from "../ui/menubar";
+import { LoaderCircleIcon } from "lucide-react";
 
 export function ProfileMenu() {
   const profileId = useProfileData((s) => s.profileId);
   const { setActiveProfile } = useProfileActions();
   const availableProfileIds = useProfileIds();
 
+  const storeSaving = useStoreSaving();
+
   return (
     <MenubarMenu>
-      <MenubarTrigger>Profiles</MenubarTrigger>
+      <MenubarTrigger>
+        Profiles
+        {storeSaving && (
+          <span className="ml-1 text-neutral-400" title="Saving...">
+            <LoaderCircleIcon className="size-3 animate-spin" />
+          </span>
+        )}
+      </MenubarTrigger>
       <MenubarContent>
         <div className="flex flex-col gap-2">
           <div className="px-2 text-[10px] text-neutral-500">Autosaved per building.</div>

@@ -2,7 +2,12 @@ import type { SerializedDockview } from "dockview-react";
 import { type StateCreator } from "zustand";
 import type { AppState } from ".";
 import type { Metric, ThresholdKey } from "@/features/metrics/metrics";
-import { createDefaultProfiles, DEFAULT_PROFILE, getDefaultProfileData } from "./default";
+import {
+  BUILT_IN_PROFILES,
+  createDefaultProfiles,
+  DEFAULT_PROFILE,
+  getBuiltInProfileData,
+} from "./default";
 
 export type ThresholdState = Record<ThresholdKey, number>;
 
@@ -140,26 +145,30 @@ export type ProfileStateAPI = ProfileData & ProfileState["profileActions"];
 export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never]], [], ProfileStateSetters> = (
   set
 ) => {
+  const ensureProfilesInitialized = (state: AppState, buildingId: string, profId?: string) => {
+    if (!state.profiles[buildingId]) {
+      state.profiles[buildingId] = createDefaultProfiles();
+    }
+    if (!state.activeProfileIds[buildingId]) {
+      state.activeProfileIds[buildingId] = DEFAULT_PROFILE;
+    }
+    for (const builtInId of BUILT_IN_PROFILES) {
+      if (!state.profiles[buildingId][builtInId]) {
+        state.profiles[buildingId][builtInId] = getBuiltInProfileData(builtInId);
+      }
+    }
+    const targetProfId = profId ?? state.activeProfileIds[buildingId];
+    if (!state.profiles[buildingId][targetProfId]) {
+      state.profiles[buildingId][targetProfId] = getBuiltInProfileData(targetProfId);
+    }
+  };
+
   const mutateProfile = <Args extends Array<unknown>>(recipe: (profile: ProfileData, ...args: Args) => void) => {
     return (buildingId: string, ...args: Args) =>
       set((state) => {
-        // FIX: Auto-initialize the building profile map if it doesn't exist
-        if (!state.profiles[buildingId]) {
-          state.profiles[buildingId] = createDefaultProfiles();
-        }
-
-        // FIX: Ensure active profile ID is tracked
-        if (!state.activeProfileIds[buildingId]) {
-          state.activeProfileIds[buildingId] = DEFAULT_PROFILE;
-        }
+        ensureProfilesInitialized(state, buildingId);
 
         const profId = state.activeProfileIds[buildingId];
-
-        // FIX: Ensure the specific profile object exists before attempting to mutate
-        if (!state.profiles[buildingId][profId]) {
-          state.profiles[buildingId][profId] = getDefaultProfileData({ profileId: profId });
-        }
-
         const profile = state.profiles[buildingId][profId];
 
         // Apply the specific action change
@@ -175,12 +184,13 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
     profileActions: {
       setActiveProfile: (buildingId, profId) =>
         set((state) => {
+          ensureProfilesInitialized(state, buildingId, profId);
           state.activeProfileIds[buildingId] = profId;
         }),
       resetProfile: (buildingId, profId) =>
         set((state) => {
-          const defaults = getDefaultProfileData({ profileId: profId });
-          state.profiles[buildingId][profId] = defaults;
+          ensureProfilesInitialized(state, buildingId, profId);
+          state.profiles[buildingId][profId] = getBuiltInProfileData(profId);
         }),
 
       // Playback - defaults

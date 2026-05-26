@@ -1,6 +1,6 @@
 import type { BoxSelection } from "@/features/3d/contexts/CanvasContext";
 import { clsx, type ClassValue } from "clsx";
-import type { RefObject } from "react";
+import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
 import { twMerge } from "tailwind-merge";
 import * as THREE from "three";
 
@@ -141,18 +141,92 @@ export const throttle = <T extends unknown[]>(callback: (...args: T) => void, de
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Procedure = (...args: any[]) => void;
 
-export function debounce<T extends Procedure>(callback: T, delay: number): (...args: Parameters<T>) => void {
-  let timerId: ReturnType<typeof setTimeout> | undefined;
+type DebouncedFunction<T extends Procedure> = {
+  (...args: Parameters<T>): void;
+  cancel: () => void;
+  flush: () => void;
+  isPending: () => boolean;
+};
 
-  return (...args: Parameters<T>) => {
+export function debounce<T extends Procedure>(callback: T, delay: number): DebouncedFunction<T> {
+  let timerId: ReturnType<typeof setTimeout> | undefined;
+  let lastArgs: Parameters<T> | undefined;
+
+  const fn = (...args: Parameters<T>) => {
+    lastArgs = args;
     if (timerId) {
       clearTimeout(timerId);
     }
 
     timerId = setTimeout(() => {
+      timerId = undefined;
+      lastArgs = undefined;
       callback(...args);
     }, delay);
   };
+
+  fn.cancel = () => {
+    if (timerId) {
+      clearTimeout(timerId);
+      timerId = undefined;
+      lastArgs = undefined;
+    }
+  };
+
+  fn.flush = () => {
+    if (timerId && lastArgs) {
+      clearTimeout(timerId);
+      timerId = undefined;
+      const args = lastArgs;
+      lastArgs = undefined;
+      callback(...args);
+    }
+  };
+
+  fn.isPending = () => timerId !== undefined;
+
+  return fn;
+}
+
+export function useDebouncedCallback<T extends Procedure>(
+  callback: T,
+  delay: number
+): {
+  call: (...args: Parameters<T>) => void;
+  cancel: () => void;
+  isPending: boolean;
+} {
+  const [isPending, setIsPending] = useState(false);
+
+  const debouncedFn = useMemo(
+    () =>
+      debounce((...args: Parameters<T>) => {
+        setIsPending(false);
+        callback(...args);
+      }, delay),
+    [callback, delay]
+  );
+
+  const call = useCallback(
+    (...args: Parameters<T>) => {
+      setIsPending(true);
+      debouncedFn(...args);
+    },
+    [debouncedFn]
+  );
+
+  const cancel = useCallback(() => {
+    setIsPending(false);
+    debouncedFn.cancel();
+  }, [debouncedFn]);
+
+  useEffect(() => {
+    return () => {
+      debouncedFn.cancel();
+    };
+  }, [debouncedFn]);
+
+  return { call, cancel, isPending };
 }
 
 export function slidingWindow3<T>(arr: T[]): [T | undefined, T, T | undefined][] {

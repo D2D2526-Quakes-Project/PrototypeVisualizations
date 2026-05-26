@@ -1,7 +1,8 @@
-import { debounce } from "@/lib/utils";
 import { useProfileActions, useProfileData } from "@/state";
 import { useCallback, useMemo, useState } from "react";
+import { setPanelSaving } from "./panelSavingStore";
 import type { PanelType } from "./MagicPanel";
+import { useDebouncedCallback } from "@/lib/utils";
 
 type SetterName<K extends string> = `set${Capitalize<K>}`;
 
@@ -13,6 +14,7 @@ export type UsePanelStateReturn<T> = T &
   DynamicSetters<T> & {
     state: T;
     setState: (nextState: Partial<T> | ((prev: T) => Partial<T>)) => void;
+    isSaving: boolean;
   };
 
 function isUpdater<V>(value: V | ((prev: V) => V)): value is (prev: V) => V {
@@ -29,9 +31,12 @@ export function usePanelState<T extends Record<keyof T, unknown>>(params: {
   const { setPanelState: setGlobalPanelState } = useProfileActions();
   const savedPanelState = useProfileData((store) => store.panelStates[panelId]);
 
-  const debouncedSave = useMemo(
-    () => debounce((id: string, type: string, state: unknown) => setGlobalPanelState(id, type, state), 1000),
-    [setGlobalPanelState]
+  const { call: debouncedSave, isPending: isSaving } = useDebouncedCallback(
+    (id: string, type: string, state: unknown) => {
+      setPanelSaving(id, false);
+      setGlobalPanelState(id, type, state);
+    },
+    1000
   );
 
   const [localState, setLocalState] = useState<T>(() => {
@@ -41,16 +46,24 @@ export function usePanelState<T extends Record<keyof T, unknown>>(params: {
     return { ...defaultState, ...(savedPanelState.state as Partial<T>) };
   });
 
+  const saveWithTracking = useCallback(
+    (id: string, type: string, state: unknown) => {
+      setPanelSaving(id, true);
+      debouncedSave(id, type, state);
+    },
+    [debouncedSave]
+  );
+
   const setState = useCallback(
     (updater: Partial<T> | ((prev: T) => Partial<T>)) => {
       setLocalState((prev) => {
         const updates = typeof updater === "function" ? updater(prev) : updater;
         const nextState = { ...prev, ...updates };
-        debouncedSave(panelId, panelType, nextState);
+        saveWithTracking(panelId, panelType, nextState);
         return nextState;
       });
     },
-    [panelId, panelType, debouncedSave]
+    [panelId, panelType, saveWithTracking]
   );
 
   // Generate the setters
@@ -68,19 +81,20 @@ export function usePanelState<T extends Record<keyof T, unknown>>(params: {
           const newValue = isUpdater(valueOrUpdater) ? valueOrUpdater(prev[key]) : valueOrUpdater;
 
           const nextState = { ...prev, [key]: newValue };
-          debouncedSave(panelId, panelType, nextState);
+          saveWithTracking(panelId, panelType, nextState);
           return nextState;
         });
       }) as DynamicSetters<T>[SetterName<typeof key>];
     }
 
     return generatedSetters;
-  }, [defaultState, debouncedSave, panelId, panelType]);
+  }, [defaultState, saveWithTracking, panelId, panelType]);
 
   return {
     ...localState,
     ...dynamicSetters,
     state: localState,
     setState,
+    isSaving,
   };
 }

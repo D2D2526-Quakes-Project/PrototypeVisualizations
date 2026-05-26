@@ -1,3 +1,4 @@
+import { BUILT_IN_PROFILE_DEFINITIONS } from "@/state/default";
 import { DockviewWrapper } from "@/features/dockview/dockviewWrapper";
 import {
   MagicPanel,
@@ -11,7 +12,8 @@ import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
 import { debounce } from "@/lib/utils";
 import { useProfileActions, useProfileData } from "@/state";
 import { type DockviewApi, type SerializedDockview } from "dockview-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 
 const components = {
   nodePanel: NodePanel,
@@ -31,6 +33,7 @@ export function App() {
   return (
     <div className={"flex min-h-0 flex-1 flex-col"}>
       <DockviewContainer />
+      <ProfileDatasetEffect />
     </div>
   );
 }
@@ -39,6 +42,8 @@ function DockviewContainer() {
   const profileId = useProfileData((state) => state.profileId);
   const dockviewLayout = useProfileData((state) => state.dockviewLayout);
   const { setDockviewLayout } = useProfileActions();
+  const { animationData } = useAnimationData();
+  const storyOrder = animationData.metadata.storyOrder;
 
   const debouncedSave = useMemo(
     () => debounce((layout: SerializedDockview) => setDockviewLayout(layout), 1000),
@@ -52,51 +57,22 @@ function DockviewContainer() {
     [debouncedSave]
   );
 
-  const createDefaultLayout = useCallback((api: DockviewApi) => {
-    const mainCanvas = api.addPanel<MagicPanelParams>({
-      id: "main-canvas",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      params: { panelType: "Main Canvas", isPrimary: true },
-      initialHeight: 760,
-    });
-
-    api.addPanel<MagicPanelParams>({
-      id: "timeline",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      position: { referencePanel: mainCanvas, direction: "below" },
-      params: { panelType: "Timeline" },
-      initialHeight: 200,
-    });
-
-    const interstoryDriftPanel = api.addPanel<MagicPanelParams>({
-      id: "corner-metric-chart",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      position: { referencePanel: mainCanvas, direction: "left" },
-      params: { panelType: "Corner Metric Chart" },
-      initialWidth: 300,
-    });
-
-    api.addPanel<MagicPanelParams>({
-      id: "floor-displacement",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      position: { referencePanel: interstoryDriftPanel, direction: "within" },
-      params: { panelType: "Floor Average Metric" },
-    });
-
-    api.addPanel<MagicPanelParams>({
-      id: "floor-waveforms",
-      component: "magicPanel",
-      tabComponent: "magicPanelTab",
-      position: { referencePanel: interstoryDriftPanel, direction: "within" },
-      params: { panelType: "Floor Waveforms" },
-    });
-
-    interstoryDriftPanel.focus();
-  }, []);
+  const createDefaultLayout = useCallback(
+    (api: DockviewApi) => {
+      if (profileId === "displacements") {
+        createDisplacementsLayout(api);
+      } else if (profileId === "hinges-preview") {
+        createHingesPreviewLayout(api, storyOrder);
+      } else if (profileId === "shear") {
+        createShearLayout(api);
+      } else if (profileId === "story-drifts") {
+        createStoryDriftsLayout(api);
+      } else {
+        createDefaultLayout_(api);
+      }
+    },
+    [profileId, storyOrder]
+  );
 
   return (
     <DockviewWrapper
@@ -111,4 +87,193 @@ function DockviewContainer() {
       singleTabMode="fullwidth"
     />
   );
+}
+
+function ProfileDatasetEffect() {
+  const profileId = useProfileData((state) => state.profileId);
+  const { datasetStates, requestDatasetLoad } = useAnimationData();
+
+  useEffect(() => {
+    const def = BUILT_IN_PROFILE_DEFINITIONS.find((d) => d.profileId === profileId);
+    if (!def || !datasetStates) return;
+
+    for (const key of def.requiredDatasets) {
+      const state = datasetStates[key];
+      if (state?.available && state.stage !== "fetching" && state.stage !== "parsing" && state.stage !== "ready") {
+        requestDatasetLoad(key);
+      }
+    }
+  }, [profileId, datasetStates, requestDatasetLoad]);
+
+  return null;
+}
+
+function createDefaultLayout_(api: DockviewApi) {
+  const mainCanvas = api.addPanel<MagicPanelParams>({
+    id: "main-canvas",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    params: { panelType: "Main Canvas", isPrimary: true },
+    initialHeight: 760,
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "timeline",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: mainCanvas, direction: "below" },
+    params: { panelType: "Timeline" },
+    initialHeight: 200,
+  });
+
+  const interstoryDriftPanel = api.addPanel<MagicPanelParams>({
+    id: "corner-metric-chart",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: mainCanvas, direction: "left" },
+    params: { panelType: "Corner Metric Chart" },
+    initialWidth: 300,
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "floor-displacement",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: interstoryDriftPanel, direction: "within" },
+    params: { panelType: "Floor Average Metric" },
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "floor-waveforms",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: interstoryDriftPanel, direction: "within" },
+    params: { panelType: "Floor Waveforms" },
+  });
+
+  interstoryDriftPanel.focus();
+}
+
+function createDisplacementsLayout(api: DockviewApi) {
+  const primaryCanvas = api.addPanel<MagicPanelParams>({
+    id: "main-canvas-primary",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    params: { panelType: "Main Canvas", isPrimary: true },
+    initialHeight: 760,
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "main-canvas-secondary",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: primaryCanvas, direction: "right" },
+    params: { panelType: "Main Canvas", isPrimary: false },
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "floor-displacement",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: primaryCanvas, direction: "left" },
+    params: { panelType: "Floor Average Metric" },
+    initialWidth: 300,
+  });
+
+  primaryCanvas.focus();
+}
+
+function createHingesPreviewLayout(api: DockviewApi, storyOrder: string[]) {
+  const primaryCanvas = api.addPanel<MagicPanelParams>({
+    id: "main-canvas-primary",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    params: { panelType: "Main Canvas", isPrimary: true },
+    initialHeight: 760,
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "hinge-distribution",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: primaryCanvas, direction: "left" },
+    params: { panelType: "Hinge Distribution" },
+    initialWidth: 400,
+  });
+
+  const nonEmptyStories = storyOrder.length >= 2 ? storyOrder.slice(-2) : [];
+  if (nonEmptyStories.length > 0) {
+    const topFloor = api.addPanel<{ storyId: string }>({
+      id: "floor-" + nonEmptyStories[nonEmptyStories.length - 1]!,
+      component: "floorPanel",
+      tabComponent: "floorTab",
+      position: { referencePanel: primaryCanvas, direction: "right" },
+      params: { storyId: nonEmptyStories[nonEmptyStories.length - 1]! },
+      initialWidth: 350,
+    });
+
+    if (nonEmptyStories.length > 1) {
+      api.addPanel<{ storyId: string }>({
+        id: "floor-" + nonEmptyStories[nonEmptyStories.length - 2]!,
+        component: "floorPanel",
+        tabComponent: "floorTab",
+        position: { referencePanel: topFloor, direction: "below" },
+        params: { storyId: nonEmptyStories[nonEmptyStories.length - 2]! },
+        initialHeight: 380,
+      });
+    }
+  }
+
+  primaryCanvas.focus();
+}
+
+function createShearLayout(api: DockviewApi) {
+  const primaryCanvas = api.addPanel<MagicPanelParams>({
+    id: "main-canvas-primary",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    params: { panelType: "Main Canvas", isPrimary: true },
+    initialHeight: 760,
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "floor-average",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: primaryCanvas, direction: "left" },
+    params: { panelType: "Floor Average Metric" },
+    initialWidth: 300,
+  });
+
+  primaryCanvas.focus();
+}
+
+function createStoryDriftsLayout(api: DockviewApi) {
+  const primaryCanvas = api.addPanel<MagicPanelParams>({
+    id: "main-canvas-primary",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    params: { panelType: "Main Canvas", isPrimary: true },
+    initialHeight: 760,
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "corner-metric-chart",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: primaryCanvas, direction: "left" },
+    params: { panelType: "Corner Metric Chart" },
+    initialWidth: 300,
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "timeline",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: primaryCanvas, direction: "below" },
+    params: { panelType: "Timeline" },
+    initialHeight: 200,
+  });
+
+  primaryCanvas.focus();
 }

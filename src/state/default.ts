@@ -1,4 +1,5 @@
-import { DEFAULT_THRESHOLDS, type ProfileData } from "./profileState";
+import type { OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
+import { DEFAULT_THRESHOLDS, type ProfileData, type SavedPanelState } from "./profileState";
 
 export function getDefaultProfileData(
   overrides: Partial<ProfileData> & Required<Pick<ProfileData, "profileId">>,
@@ -38,23 +39,198 @@ export function getDefaultProfileData(
   };
 }
 
-// function getDamageScreeningProfileData(buildingId: string): ProfileData {
-//   return getDefaultProfileData({
-//     profileId: SYSTEM_PROFILE_DAMAGE_SCREENING_ID,
-//     currentMetric: "rotationZ",
-//     thresholds: { ...DEFAULT_THRESHOLDS, rotation: 0.008, interstoryDrift: 0.35 },
-//   });
-// }
+export const BUILT_IN_PROFILES = [
+  "default",
+  "displacements",
+  "hinges-preview",
+  "shear",
+  "story-drifts",
+] as const;
+
+export type BuiltInProfileId = (typeof BUILT_IN_PROFILES)[number];
+
+export const PROFILE_LABELS: Record<string, string> = {
+  default: "Default",
+  displacements: "Displacements",
+  "hinges-preview": "Hinges Preview",
+  shear: "Shear",
+  "story-drifts": "Story Drifts",
+};
+
+export interface BuiltInProfileDefinition {
+  profileId: string;
+  label: string;
+  requiredDatasets: OptionalDatasetKey[];
+  getOverrides: (defaultHiddenFloors?: string[]) => Partial<ProfileData>;
+  defaultPanelStates: Record<string, SavedPanelState>;
+}
+
+export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
+  {
+    profileId: "default",
+    label: "Default",
+    requiredDatasets: [],
+    getOverrides: () => ({}),
+    defaultPanelStates: {},
+  },
+  {
+    profileId: "displacements",
+    label: "Displacements",
+    requiredDatasets: [],
+    getOverrides: () => ({
+      _currentMetric: "displacementMag",
+      nodeScale: 1.5,
+      renderFloorSlabs: true,
+      floorOpacity: 0.2,
+      renderHorizontalConnections: true,
+      renderVerticalConnections: true,
+    }),
+    defaultPanelStates: {
+      "main-canvas-primary": {
+        panelId: "main-canvas-primary",
+        type: "Main Canvas",
+        state: {
+          orthographic: false,
+          spin: false,
+          cameraPosition: [0, 0, 200],
+          cameraTarget: [0, 0, 0],
+          cameraZoom: undefined,
+        },
+      },
+      "main-canvas-secondary": {
+        panelId: "main-canvas-secondary",
+        type: "Main Canvas",
+        state: {
+          orthographic: false,
+          spin: false,
+          cameraPosition: [200, 0, 0],
+          cameraTarget: [0, 0, 0],
+          cameraZoom: undefined,
+        },
+      },
+      "floor-displacement": {
+        panelId: "floor-displacement",
+        type: "Floor Average Metric",
+        state: {
+          selectedMetrics: ["displacementX", "displacementY"],
+        },
+      },
+    },
+  },
+  {
+    profileId: "hinges-preview",
+    label: "Hinges Preview",
+    requiredDatasets: ["hingeData"],
+    getOverrides: () => ({
+      _currentMetric: "hingeRotationAbs",
+      renderNodes: true,
+      nodeScale: 0.7,
+      hingeNodeScale: 1.5,
+      renderFloorSlabs: false,
+      renderHorizontalConnections: false,
+      renderVerticalConnections: false,
+    }),
+    defaultPanelStates: {
+      "main-canvas-primary": {
+        panelId: "main-canvas-primary",
+        type: "Main Canvas",
+        state: {
+          orthographic: true,
+          spin: true,
+          cameraPosition: [-100, -100, 100],
+          cameraTarget: [0, 0, 0],
+          cameraZoom: undefined,
+        },
+      },
+    },
+  },
+  {
+    profileId: "shear",
+    label: "Shear",
+    requiredDatasets: ["shearData"],
+    getOverrides: () => ({
+      _currentMetric: "shearXAbs",
+      renderNodes: false,
+      renderFloorSlabs: true,
+      floorOpacity: 1,
+      renderHorizontalConnections: false,
+      renderVerticalConnections: false,
+    }),
+    defaultPanelStates: {
+      "main-canvas-primary": {
+        panelId: "main-canvas-primary",
+        type: "Main Canvas",
+        state: {
+          orthographic: false,
+          spin: false,
+          cameraPosition: [100, 100, 100],
+          cameraTarget: [0, 0, 0],
+          cameraZoom: undefined,
+        },
+      },
+      "floor-average": {
+        panelId: "floor-average",
+        type: "Floor Average Metric",
+        state: {
+          selectedMetrics: ["shearXAbs", "shearYAbs"],
+        },
+      },
+    },
+  },
+  {
+    profileId: "story-drifts",
+    label: "Story Drifts",
+    requiredDatasets: [],
+    getOverrides: () => ({
+      _currentMetric: "interstoryDrift",
+      renderNodes: true,
+      renderFloorSlabs: true,
+      floorOpacity: 0.7,
+      renderHorizontalConnections: false,
+      renderVerticalConnections: false,
+    }),
+    defaultPanelStates: {
+      "main-canvas-primary": {
+        panelId: "main-canvas-primary",
+        type: "Main Canvas",
+        state: {
+          orthographic: false,
+          spin: false,
+          cameraPosition: [100, 100, 100],
+          cameraTarget: [0, 0, 0],
+          cameraZoom: undefined,
+        },
+      },
+      "corner-metric-chart": {
+        panelId: "corner-metric-chart",
+        type: "Corner Metric Chart",
+        state: {
+          visibleCorners: ["NW", "NE", "SW", "SE"],
+          metric: "interstoryDrift",
+          displayMode: "bar",
+        },
+      },
+    },
+  },
+];
+
+export function getBuiltInProfileData(
+  profileId: string,
+  defaultHiddenFloors?: string[]
+): ProfileData {
+  const def = BUILT_IN_PROFILE_DEFINITIONS.find((d) => d.profileId === profileId);
+  const overrides = def ? def.getOverrides(defaultHiddenFloors) : {};
+  const base = getDefaultProfileData({ profileId, ...overrides }, defaultHiddenFloors);
+  if (def) {
+    base.panelStates = { ...def.defaultPanelStates };
+  }
+  return base;
+}
 
 export const DEFAULT_PROFILE = "default";
 
 export function createDefaultProfiles(defaultHiddenFloors?: string[]): Record<string, ProfileData> {
-  const defaultProfile = getDefaultProfileData({ profileId: "default" }, defaultHiddenFloors);
-
-  return {
-    ["default"]: defaultProfile,
-    // ["displacement"]: getFloorTorsionProfileData(buildingId),
-    // ["story-drifts"]: getDriftAnalysisProfileData(buildingId),
-    // ["hinges"]: getAccelerationReviewProfileData(buildingId),
-  };
+  return Object.fromEntries(
+    BUILT_IN_PROFILES.map((profId) => [profId, getBuiltInProfileData(profId, defaultHiddenFloors)])
+  );
 }

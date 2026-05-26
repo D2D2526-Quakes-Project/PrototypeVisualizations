@@ -15,6 +15,7 @@ import {
   Columns,
   Grid2X2Icon,
   LineChart,
+  LoaderCircleIcon,
   Minimize2,
   MoreHorizontal,
   Plus,
@@ -26,6 +27,7 @@ import {
 import { useEffect, useId, useState } from "react";
 
 import { useAnimationData } from "../animation-data/useAnimationData";
+import { usePanelSaving } from "./panelSavingStore";
 import { CornerMetricChart } from "../panels/CornerMetricChart";
 import { DataExplorerPanel } from "../panels/DataExplorerPanel";
 import { FloorAverageMetricChart } from "../panels/FloorAverageMetricChart";
@@ -293,6 +295,8 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
   const isTabGroup = props.api.group.panels.length > 1;
   const [, setRenderTick] = useState(0);
 
+  const isSaving = usePanelSaving(props.api.id);
+
   useEffect(() => {
     const bump = () => setRenderTick((value) => value + 1);
 
@@ -318,6 +322,11 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
         <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />
         {panelTitle}
       </span>
+      {isSaving && (
+        <span className="flex items-center gap-0.5" title="Saving...">
+          <LoaderCircleIcon className="size-3 animate-spin text-neutral-400" />
+        </span>
+      )}
       {isTabGroup && (
         // <Button
         //   variant="secondary"

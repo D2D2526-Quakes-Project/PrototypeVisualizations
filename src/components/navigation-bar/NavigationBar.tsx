@@ -82,7 +82,7 @@ export function NavigationBar() {
   }, [setHelpDrawerOpen]);
 
   return (
-    <div className="border-border bg-background grid grid-cols-[auto_auto_auto] items-center gap-3 border-b">
+    <div className="border-border bg-background grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b">
       <div className="flex h-full min-w-0 items-center justify-start gap-3">
         <Menubar className="h-full rounded-none border-none" value={activeMenu} onValueChange={setActiveMenu}>
           <MenubarMenu>

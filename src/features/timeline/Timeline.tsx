@@ -440,6 +440,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       series,
       axisPointer: {
         label: { backgroundColor: "#777" },
+        link: [{ xAxisIndex: "all" }],
       },
       tooltip: {
         trigger: "axis",
@@ -469,28 +470,20 @@ export function Timeline({ api }: IDockviewPanelProps) {
             unit: UnitConfig;
           }> = [];
 
-          params.forEach((p) => {
-            if (!p || !p.seriesName || !p.data) return;
+          seriesData.forEach((item) => {
+            const config = GROUND_CHANNEL_CONFIG[item.key];
+            if (!config) return;
 
-            const seriesMatch = seriesData.find(
-              (seriesItem) => GROUND_CHANNEL_CONFIG[seriesItem.key].label === p.seriesName
-            );
-
-            let color;
-            let config: ChannelOption | undefined = undefined;
-            if (seriesMatch) {
-              config = GROUND_CHANNEL_CONFIG[seriesMatch.key];
-              color = config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : GROUND_MOTION_COLOR;
-            } else {
-              color = p.color as string;
-            }
-            const value = (p.data as number[])[1];
+            const color = config.metric
+              ? getMetricKeyColor(config.metric, metricPaletteOverrides)
+              : GROUND_MOTION_COLOR;
+            const val = config.accessor(frame, animationData);
 
             values.push({
-              name: p.seriesName,
+              name: config.label,
               color,
-              value,
-              unit: config?.unit ?? UNITS.inches,
+              value: val,
+              unit: config.unit ?? UNITS.inches,
             });
           });
 
@@ -499,7 +492,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       },
       animation: false,
     };
-  }, [seriesData, maxFrame, animationData.metadata.dt, metricPaletteOverrides]);
+  }, [seriesData, maxFrame, metricPaletteOverrides, animationData]);
 
   useEffect(() => {
     if (isCurrentMetricStatic) return;

@@ -33,9 +33,9 @@ export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) =>
           <KeyboardZoomHandler isActive={isActive} />
           <CanvasWithControls
             overlays={
-              <div className="absolute right-2 bottom-2 z-1 flex flex-col gap-1">
+              <div className="absolute right-2 bottom-2 z-1 flex flex-col items-end gap-1">
                 <ViewSettingsOverlay />
-                <CurrentThresholdSlider />
+                {isPrimary && <CurrentThresholdSlider />}
                 {isPrimary && <CanvasMetricSelector />}
               </div>
             }>

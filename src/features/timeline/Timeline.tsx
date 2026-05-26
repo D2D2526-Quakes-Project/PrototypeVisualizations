@@ -348,7 +348,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
     const titles: EChartsOption["title"] = [];
 
     const LEFT_MARGIN = 45;
-    const RIGHT_MARGIN = 20;
     const AVAILABLE_HEIGHT_PCT = 92;
 
     seriesData.forEach((item, index) => {
@@ -359,8 +358,8 @@ export function Timeline({ api }: IDockviewPanelProps) {
       const heightPct = rowHeight - 6;
 
       grids.push({
-        left: LEFT_MARGIN,
-        right: RIGHT_MARGIN,
+        left: 0,
+        right: 15,
         top: `${topPct}%`,
         height: `${heightPct}%`,
         containLabel: false,
@@ -411,10 +410,10 @@ export function Timeline({ api }: IDockviewPanelProps) {
         yAxisIndex: index,
         data: item.data,
         symbol: "none",
-        lineStyle: { color, width: 2 },
+        lineStyle: { color, width: 1.5 },
         emphasis: {
           disabled: true,
-          lineStyle: { color, width: 2 },
+          lineStyle: { color, width: 1.5 },
         },
         areaStyle: {
           color: {
@@ -630,14 +629,13 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
   return (
     <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
-      {/* Top Bar Row 1: Controls & Time */}
-      <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-3 py-1.5">
+      <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-2 pb-1">
         {exportRenderMode.showTransientUi && (
           <div className="float-right mt-0.5 ml-2">
             <CheckSelect options={availableChannelOptions} selected={selectedKeys} onChange={setSelectedKeys} />
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700">
+        <div className="flex flex-wrap items-center gap-1 pt-1 text-xs text-neutral-700">
           <span className="font-medium">Frame:</span>
           <span className="font-mono">{frameIndex + 1}</span>
           <span className="text-neutral-300">|</span>

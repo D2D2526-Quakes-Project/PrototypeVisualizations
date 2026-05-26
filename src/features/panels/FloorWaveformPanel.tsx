@@ -2,19 +2,11 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Slider } from "@/components/ui/slider";
 import { useFloorVisibility } from "@/features/3d/contexts/useFloorVisibility";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { getScaleStopsAndLabels } from "@/features/canvas/components/colorScaleUtils";
 import { usePanelState } from "@/features/dockview/usePanelState";
-import {
-  getMetricColorScale,
-  getMetricConfig,
-  isHingeMetric,
-  isStaticMetric,
-  type Metric,
-} from "@/features/metrics/metrics";
+import { getMetricConfig, isHingeMetric, isStaticMetric, type Metric } from "@/features/metrics/metrics";
 import { useMetrics } from "@/features/metrics/useMetrics";
-import { useThresholds } from "@/features/metrics/useThresholds";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { formatNumber, getOrdinalSuffix, threeColorToCSS } from "@/lib/utils";
+import { formatNumber, getOrdinalSuffix } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview-react";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -37,7 +29,6 @@ type StorySeries = {
   peakValue: number;
   peakAbsValue: number;
   peakFrame: number;
-  color: string;
 };
 
 const DEFAULT_PANEL_STATE: FloorWaveformPanelState = {
@@ -80,56 +71,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function MetricLegend({
-  metric,
-  maxValue,
-  thresholdValue,
-  thresholdHighlighting,
-  metricColorScale,
-}: {
-  metric: Metric;
-  maxValue: number;
-  thresholdValue: number;
-  thresholdHighlighting: boolean;
-  metricColorScale: ReturnType<typeof getMetricColorScale>;
-}) {
-  const config = getMetricConfig(metric);
-  const safeMax = maxValue > 0 ? maxValue : 1;
-  const { stops } = getScaleStopsAndLabels(
-    metricColorScale,
-    safeMax,
-    config.hasPositive,
-    config.hasNegative,
-    thresholdHighlighting,
-    thresholdValue
-  );
-
-  const minLabel = `${formatNumber(config.hasNegative ? -safeMax : 0, 2)} ${config.unit.abbr}`;
-  const maxLabel = `${formatNumber(config.hasPositive ? safeMax : 0, 2)} ${config.unit.abbr}`;
-  const midLabel = `${formatNumber(0, 2)} ${config.unit.abbr}`;
-
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1">
-      <div className="flex items-center justify-between gap-2 text-[10px] text-neutral-500">
-        {thresholdHighlighting && thresholdValue > 0 ? (
-          <span>Threshold highlight on</span>
-        ) : (
-          <span>Threshold highlight off</span>
-        )}
-      </div>
-      <div
-        className="h-3 rounded border border-neutral-200"
-        style={{ background: `linear-gradient(to right, ${stops.join(", ")})` }}
-      />
-      <div className="flex items-center justify-between gap-2 font-mono text-[10px] text-neutral-500">
-        <span>{minLabel}</span>
-        {config.hasPositive && config.hasNegative ? <span>{midLabel}</span> : <span />}
-        <span>{maxLabel}</span>
-      </div>
-    </div>
-  );
-}
-
 function HoverTooltip({ story, frame, dt, unit }: { story: StorySeries; frame: number; dt: number; unit: string }) {
   const currentValue = story.values[frame] ?? 0;
   const currentTime = frame * dt;
@@ -164,8 +105,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
-  const { availableMetrics, thresholdHighlighting, getValueColorForMetric, metricPaletteOverrides } = useMetrics();
-  const { getThreshold } = useThresholds();
+  const { availableMetrics } = useMetrics();
   const { setHoveredFloor } = useHover();
 
   const echartsRef = useRef<ReactECharts>(null);
@@ -205,17 +145,12 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   }, [panelState.metric, selectedMetric, setPanelState]);
 
   const metricConfig = useMemo(() => getMetricConfig(selectedMetric), [selectedMetric]);
-  const metricColorScale = useMemo(
-    () => getMetricColorScale(selectedMetric, metricPaletteOverrides),
-    [metricPaletteOverrides, selectedMetric]
-  );
-  const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : getThreshold(selectedMetric);
 
   const visibleStoryIds = useMemo(() => visibleFloors, [visibleFloors]);
 
   const baseStorySeries = useMemo(() => {
     const frameCount = animationData.metadata.frameCount;
-    const series: Omit<StorySeries, "color">[] = [];
+    const series: StorySeries[] = [];
 
     visibleStoryIds.forEach((storyId) => {
       const nodeIds = animationData.metadata.stories[storyId] ?? [];
@@ -260,14 +195,9 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     });
 
     return series;
-  }, [animationData, metricConfig, selectedMetric, visibleStoryIds]);
+  }, [animationData, metricConfig, visibleStoryIds]);
 
-  const storySeries: StorySeries[] = useMemo(() => {
-    return baseStorySeries.map((story) => ({
-      ...story,
-      color: threeColorToCSS(getValueColorForMetric(selectedMetric, story.peakValue).color),
-    }));
-  }, [baseStorySeries, getValueColorForMetric, selectedMetric]);
+  const storySeries: StorySeries[] = baseStorySeries;
 
   const frameCount = animationData.metadata.frameCount;
   const dt = animationData.metadata.dt;
@@ -310,7 +240,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         animation: false,
         clip: false,
         lineStyle: {
-          color: story.color,
+          color: "#000000",
           width: 1.5,
         },
         markLine: {
@@ -348,14 +278,13 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         nameTextStyle: { color: "#374151", fontSize: 11 },
         min: 0,
         max: totalDuration > 0 ? totalDuration : 1,
-        splitNumber: 5,
-        splitLine: { show: true, lineStyle: { color: "#f3f4f6" } },
+        splitLine: { show: false },
         axisLabel: {
           formatter: (value: number) => `${value.toFixed(1)} s`,
           color: "#6b7280",
           fontSize: 10,
         },
-        axisLine: { lineStyle: { color: "#d1d5db" } },
+        axisLine: { show: false },
         axisTick: { show: false },
       },
       yAxis: {
@@ -372,7 +301,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         splitLine: { show: false },
       },
       series: series,
-      tooltip: { show: false }, // Handled via our custom React Tooltip
+      tooltip: { show: false },
     };
   }, [storySeries, panelState.placementMode, frameCount, dt, totalDuration, amplitudeMultiplier, maxAbsValue]);
 
@@ -466,67 +395,52 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-white">
-      <div className="shrink-0 border-b border-neutral-200 px-3 py-1.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-sm font-semibold text-neutral-900">Floor Waveforms</span>
-        </div>
+      <div className="flex shrink-0 flex-wrap gap-1 border-b border-neutral-200 px-2 pb-1">
+        {/* Metric select */}
+        <label className="flex flex-col items-start text-[11px] text-neutral-500">
+          Metric
+          <NativeSelect
+            size="sm"
+            value={selectedMetric}
+            onChange={(event) => setPanelState({ metric: event.target.value as Metric })}>
+            {selectableMetrics.map((metric) => {
+              const config = getMetricConfig(metric);
+              return (
+                <NativeSelectOption key={metric} value={metric}>
+                  {config.label}
+                </NativeSelectOption>
+              );
+            })}
+          </NativeSelect>
+        </label>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-          {/* Metric select */}
-          <label className="flex flex-col items-start text-[11px] text-neutral-500">
-            Metric
-            <NativeSelect
-              size="sm"
-              value={selectedMetric}
-              onChange={(event) => setPanelState({ metric: event.target.value as Metric })}>
-              {selectableMetrics.map((metric) => {
-                const config = getMetricConfig(metric);
-                return (
-                  <NativeSelectOption key={metric} value={metric}>
-                    {config.label}
-                  </NativeSelectOption>
-                );
-              })}
-            </NativeSelect>
-          </label>
+        {/* Placement mode select */}
+        <label className="flex flex-col items-start text-[11px] text-neutral-500">
+          Spacing
+          <NativeSelect
+            size="sm"
+            value={panelState.placementMode}
+            onChange={(event) => setPanelState({ placementMode: event.target.value as PlacementMode })}>
+            <NativeSelectOption value="elevation">By elevation</NativeSelectOption>
+            <NativeSelectOption value="floor">Equal floors</NativeSelectOption>
+          </NativeSelect>
+        </label>
 
-          {/* Placement mode select */}
-          <label className="flex flex-col items-start text-[11px] text-neutral-500">
-            Spacing
-            <NativeSelect
-              size="sm"
-              value={panelState.placementMode}
-              onChange={(event) => setPanelState({ placementMode: event.target.value as PlacementMode })}>
-              <NativeSelectOption value="elevation">By elevation</NativeSelectOption>
-              <NativeSelectOption value="floor">Equal floors</NativeSelectOption>
-            </NativeSelect>
-          </label>
-
-          {/* Amplitude scale slider */}
-          <label className="flex flex-col items-start text-[11px] text-neutral-500">
-            Amplitude
-            <div className="flex items-center gap-1">
-              <Slider
-                min={AMPLITUDE_SLIDER_MIN}
-                max={AMPLITUDE_SLIDER_MAX}
-                step={1}
-                value={[amplitudeToSlider(amplitudeMultiplier)]}
-                onValueChange={(value) => setPanelState({ amplitudeScale: sliderToAmplitude(value[0]) })}
-                className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-neutral-200 accent-neutral-700"
-              />
-              <span className="w-8 font-mono text-[10px] text-neutral-400">{amplitudeMultiplier.toFixed(1)}×</span>
-            </div>
-          </label>
-        </div>
-        <div className="flex items-center gap-3">
-          <MetricLegend
-            metric={selectedMetric}
-            maxValue={maxAbsValue}
-            thresholdValue={thresholdValue}
-            thresholdHighlighting={thresholdHighlighting}
-            metricColorScale={metricColorScale}
-          />
-        </div>
+        {/* Amplitude scale slider */}
+        <label className="flex flex-col items-start text-[11px] text-neutral-500">
+          Amplitude
+          <div className="flex items-center gap-1">
+            <Slider
+              min={AMPLITUDE_SLIDER_MIN}
+              max={AMPLITUDE_SLIDER_MAX}
+              step={1}
+              value={[amplitudeToSlider(amplitudeMultiplier)]}
+              onValueChange={(value) => setPanelState({ amplitudeScale: sliderToAmplitude(value[0]) })}
+              className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-neutral-200 accent-neutral-700"
+            />
+            <span className="w-8 font-mono text-[10px] text-neutral-400">{amplitudeMultiplier.toFixed(1)}×</span>
+          </div>
+        </label>
       </div>
 
       <div className="relative min-h-90 flex-1">

@@ -131,7 +131,9 @@ function CameraControls({ pendingCameraCommandRef }: { pendingCameraCommandRef: 
     const controls = orbitControlsRef.current;
     if (!controls || !initialStateApplied.current) return;
 
-    const { cameraPosition, cameraTarget, cameraZoom } = panelState;
+    const cameraPosition = panelState.cameraPosition;
+    const cameraTarget = panelState.cameraTarget;
+    const cameraZoom = panelState.cameraZoom;
     const camera = controls.object;
 
     if (saveDebounceTimer.current) {
@@ -156,7 +158,6 @@ function CameraControls({ pendingCameraCommandRef }: { pendingCameraCommandRef: 
     orthographic,
     orbitControlsRef,
     pendingCameraCommandRef,
-    panelState,
   ]);
 
   const handleChange = useCallback(() => {

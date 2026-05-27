@@ -27,7 +27,6 @@ import {
 import { useEffect, useId, useState } from "react";
 
 import { useAnimationData } from "../animation-data/useAnimationData";
-import { usePanelSaving } from "./panelSavingStore";
 import { CornerMetricChart } from "../panels/CornerMetricChart";
 import { DataExplorerPanel } from "../panels/DataExplorerPanel";
 import { FloorAverageMetricChart } from "../panels/FloorAverageMetricChart";
@@ -36,6 +35,7 @@ import { HingeDistributionPanel } from "../panels/HingeDistributionPanel";
 import { StatisticsPanel } from "../panels/StatisticsPanel";
 import { Timeline } from "../timeline/Timeline";
 import { DockviewApiProvider } from "./DockviewApiContext";
+import { usePanelSaving } from "./panelSavingStore";
 
 type PanelCategory = "Canvas" | "Core Analysis" | "Supporting Analysis" | "Distributions" | "Tables / Data";
 
@@ -315,13 +315,20 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
   const panelTitle = currentPanelType === "Main Canvas" ? (isPrimary ? "Primary Canvas" : "Canvas") : currentPanelType;
   const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
 
-  const groupStyle = isTabGroup ? "border-b-0 border-border border-2 rounded-lg" : "";
-
   return (
     <div
       className={`group h-full w-full cursor-grab p-1 pr-0 active:cursor-grabbing ${isTabGroup && "cursor-pointer"}`}>
       <div
-        className={`group-hover:bg-muted flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors ${groupStyle}`}>
+        className={`group-hover:bg-muted flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors relative ${isTabGroup && isActive && `
+
+        box-content
+        
+          before:absolute before:inset-x-0 before:rounded-t-md before:border-border before:border-2 before:border-b-0 before:top-0 before:h-3/4
+        
+        `}`}>
+          {isTabGroup && isActive && (<>
+          <div className="w-4 h-4 rounded-bl-md border-border absolute bottom-0 left-[calc(100%-2px)] border-b-2 border-l-2"></div>
+          <div className="w-4 h-4 rounded-br-md border-border absolute bottom-0 right-[calc(100%-2px)] border-b-2 border-r-2"></div></>)}
         <span
           className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
           <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />
@@ -348,7 +355,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
   );
 };
 
-function PanelTypePickerMenu({
+export function PanelTypePickerMenu({
   value,
   onChange,
   onRequestClose,

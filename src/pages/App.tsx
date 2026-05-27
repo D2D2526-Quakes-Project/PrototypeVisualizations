@@ -1,4 +1,4 @@
-import { BUILT_IN_PROFILE_DEFINITIONS } from "@/state/default";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { DockviewWrapper } from "@/features/dockview/dockviewWrapper";
 import {
   MagicPanel,
@@ -11,9 +11,9 @@ import { FloorPanel, FloorTab } from "@/features/panels/FloorPanel";
 import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
 import { debounce } from "@/lib/utils";
 import { useFlushOnUnload, useProfileActions, useProfileData } from "@/state";
+import { BUILT_IN_PROFILE_DEFINITIONS } from "@/state/default";
 import { type DockviewApi, type SerializedDockview } from "dockview-react";
 import { useCallback, useEffect, useMemo } from "react";
-import { useAnimationData } from "@/features/animation-data/useAnimationData";
 
 const components = {
   nodePanel: NodePanel,

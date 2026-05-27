@@ -692,7 +692,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
   return (
     <div className="relative flex h-full w-full flex-col bg-white">
-      <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-2 pb-1">
+      <div className="relative z-20 shrink-0 border-b border-neutral-100 px-2 pb-1">
         {exportRenderMode.showTransientUi && (
           <div className="float-right mt-0.5 ml-2">
             <CheckSelect options={availableChannelOptions} selected={selectedKeys} onChange={setSelectedKeys} />

@@ -6,6 +6,8 @@ import type {
   SerializedDockview,
 } from "dockview-react";
 import { DockviewReact, themeLightSpaced } from "dockview-react";
+import { useState } from "react";
+import { EdgeAddPanelZones } from "./EdgeAddPanelZones";
 
 export interface DockviewWrapperProps extends Omit<IDockviewReactProps, "onReady"> {
   className?: string;
@@ -46,6 +48,7 @@ export function DockviewWrapper({
   createDefaultLayout,
   ...props
 }: DockviewWrapperProps) {
+  const [api, setApi] = useState<DockviewApi | null>(null);
   const handleReady = (event: DockviewReadyEvent) => {
     const api = event.api;
 
@@ -61,6 +64,7 @@ export function DockviewWrapper({
     }
 
     ensurePrimaryCanvas(api);
+    setApi(api);
 
     if (onLayoutChange) {
       api.onDidLayoutChange(() => {
@@ -107,7 +111,7 @@ export function DockviewWrapper({
   };
 
   return (
-    <div className="contents flex-1">
+    <div className="relative flex-1">
       <style>{`
         .dockview-theme-light-spaced {
           --dv-sash-color: rgba(0, 0, 0, 0.1);
@@ -201,6 +205,7 @@ export function DockviewWrapper({
         disableFloatingGroups={true}
         disableAutoResizing={true}
       />
+      <EdgeAddPanelZones api={api} />
     </div>
   );
 }

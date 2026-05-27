@@ -122,8 +122,8 @@ export function LoadingOverlay({
           )}
         </motion.div>
 
-        {startupReady ? (
-          <div className="mt-4 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        {startupReady && optionalStates.length > 0 ? (
+          <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
             <div className="flex items-start gap-2">
               <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
               <div>

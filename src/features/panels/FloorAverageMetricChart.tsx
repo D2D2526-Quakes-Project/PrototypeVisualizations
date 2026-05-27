@@ -7,12 +7,13 @@ import { usePanelState } from "@/features/dockview/usePanelState";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber, formatStoryLabel } from "@/lib/utils";
 
+import { useDraftSelection } from "@/lib/useDraftSelection";
 import { useGlobalStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview-react";
 import type { EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
 import { useHover } from "../3d/lib/useHover";
 import { getMetricConfig, getMetricKeyColor, type Metric } from "../metrics/metrics";
@@ -61,23 +62,12 @@ function MetricSelect({
   selected: Metric[];
   onChange: (metrics: Metric[]) => void;
 }) {
-  const [open, setOpen] = useState(false);
-
-  const toggleOption = (metric: Metric) => {
-    if (selected.includes(metric)) {
-      if (selected.length > 1) {
-        onChange(selected.filter((entry) => entry !== metric));
-      }
-      return;
-    }
-
-    onChange([...selected, metric]);
-  };
+  const { open, draft, handleOpenChange, toggleOption } = useDraftSelection(selected, onChange);
 
   const labelText = selected.length + " selected";
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="max-w-full min-w-20">
           <span className="text-foreground flex-1 truncate">{labelText || "Select Metrics"}</span>
@@ -89,7 +79,7 @@ function MetricSelect({
       <PopoverContent align="start" className="w-64 p-1">
         <div className="flex max-h-80 flex-col gap-0.5 overflow-auto">
           {options.map((option) => {
-            const isChecked = selected.includes(option.metric);
+            const isChecked = draft.includes(option.metric);
             return (
               <Label
                 key={option.metric}

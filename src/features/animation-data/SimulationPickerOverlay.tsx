@@ -1,14 +1,11 @@
 import DataSources from "@/data/index";
-import { useState } from "react";
-import type { OptionalDataLoadOptions } from "./data-loading/loadingTypes";
-import { AnimatePresence, motion } from "motion/react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { ChevronRightIcon, CheckIcon } from "lucide-react";
-import { clearCache, clearProcessedCache } from "./data-loading/dataLoader";
-import { getAvailableOptionalDataLoadOptions, normalizeOptionalDataLoadOptions } from "./data-loading/util";
 import type { BinaryBuilding, BinarySimulation } from "@/lib/types";
+import { CheckIcon, ChevronRightIcon, TriangleIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
+import { clearCache, clearProcessedCache } from "./data-loading/dataLoader";
+import type { OptionalDataLoadOptions } from "./data-loading/loadingTypes";
+import { normalizeOptionalDataLoadOptions } from "./data-loading/util";
 
 export function SimulationPickerOverlay({
   onSelect,
@@ -24,11 +21,11 @@ export function SimulationPickerOverlay({
   const [expandedBuildings, setExpandedBuildings] = useState<string[]>(() =>
     DataSources.buildings.map((b) => b.folder)
   );
-  const [pendingSelection, setPendingSelection] = useState<{
+  const [pendingSelection, _setPendingSelection] = useState<{
     building: BinaryBuilding;
     simulation: BinarySimulation;
   } | null>(null);
-  const [optionalLoads, setOptionalLoads] = useState<OptionalDataLoadOptions>(() =>
+  const [optionalLoads, _setOptionalLoads] = useState<OptionalDataLoadOptions>(() =>
     normalizeOptionalDataLoadOptions(initialOptionalLoadOptions)
   );
 
@@ -40,17 +37,17 @@ export function SimulationPickerOverlay({
     );
   };
 
-  const openSelectedSimulation = () => {
-    if (!pendingSelection) return;
-    onSelect(pendingSelection.building, pendingSelection.simulation, optionalLoads);
-  };
+  // const openSelectedSimulation = () => {
+  //   if (!pendingSelection) return;
+  //   onSelect(pendingSelection.building, pendingSelection.simulation, optionalLoads);
+  // };
 
-  const pendingAvailability = pendingSelection
-    ? getAvailableOptionalDataLoadOptions(pendingSelection.building, pendingSelection.simulation)
-    : null;
+  // const pendingAvailability = pendingSelection
+  //   ? getAvailableOptionalDataLoadOptions(pendingSelection.building, pendingSelection.simulation)
+  //   : null;
 
-  const totalSimulationBytes = pendingSelection?.simulation.size ?? 0;
-  const fileCount = pendingSelection ? countSimulationFiles(pendingSelection.simulation) : 0;
+  // const totalSimulationBytes = pendingSelection?.simulation.size ?? 0;
+  // const fileCount = pendingSelection ? countSimulationFiles(pendingSelection.simulation) : 0;
 
   return (
     <motion.div
@@ -145,7 +142,10 @@ export function SimulationPickerOverlay({
                               key={s.folder}
                               type="button"
                               whileTap={{ scale: 0.98 }}
-                              onClick={() => setPendingSelection({ building: b, simulation: s })}
+                              onClick={() => {
+                                // setPendingSelection({ building: b, simulation: s });
+                                onSelect(b, s, optionalLoads);
+                              }}
                               className={`cursor-pointer rounded-md border px-3 py-2 text-left transition-colors ${
                                 isSelected
                                   ? "border-amber-400 bg-amber-50/90"
@@ -174,13 +174,34 @@ export function SimulationPickerOverlay({
             })}
           </div>
 
-          <div className="sticky top-4 w-48 shrink-0 rounded-lg border border-neutral-300 bg-neutral-100/60 p-2">
-            <img className="overflow-hidden rounded-sm bg-contain" src="/stations-map.png" alt="Station map" />
+          <div className="sticky top-4 w-80 shrink-0 rounded-lg border border-neutral-300 bg-neutral-100/60 p-2 pb-1">
+            <div className="relative">
+              <img
+                className="border-border overflow-hidden rounded-sm border bg-contain"
+                src="/stations-map.png"
+                alt="Station map"
+              />
+              <div className="absolute bottom-0 w-full rounded-b-sm border border-neutral-200 bg-neutral-100 p-1 text-xs">
+                <div className="flex w-full items-center *:shrink-0">
+                  <div className="h-4 w-0.5 rounded bg-neutral-400"></div>
+                  <div className="h-0.5 flex-1 bg-neutral-400"></div>
+                  <span className="px-1 whitespace-nowrap">380 km</span>
+                  <div className="h-0.5 flex-1 bg-neutral-400"></div>
+                  <div className="h-4 w-0.5 rounded bg-neutral-400"></div>
+                </div>
+              </div>
+              <div className="absolute top-1 left-1 grid grid-cols-[1fr_auto] items-center justify-items-end gap-1 rounded-sm border border-neutral-200 bg-neutral-100 p-1 text-xs">
+                <div className="h-1 w-4 bg-linear-90 from-red-400 via-yellow-300 to-green-400"></div>
+                <span className="whitespace-nowrap">Intensity Contour</span>
+                <TriangleIcon className="h-3 w-3 shrink-0 self-center text-neutral-500" />
+                <span className="w-full whitespace-nowrap">Seismic Station</span>
+              </div>
+            </div>
             <span className="text-xs text-neutral-500 italic">U.S. Geological Survey ShakeMap</span>
           </div>
         </div>
 
-        <Tooltip disableHoverableContent>
+        {/* <Tooltip disableHoverableContent>
           <TooltipTrigger asChild>
             <motion.div
               initial={{ opacity: 0, y: 6 }}
@@ -284,7 +305,7 @@ export function SimulationPickerOverlay({
 
               <div className="h-8 w-px shrink-0 bg-neutral-300" />
 
-              {/* Open button */}
+              {/* Open button *}
               <button
                 type="button"
                 disabled={!pendingSelection}
@@ -300,7 +321,7 @@ export function SimulationPickerOverlay({
               panels. These can be toggled inside the application aswell.
             </div>
           </TooltipContent>
-        </Tooltip>
+        </Tooltip>*/}
         <div className="flex justify-end gap-2">
           <button
             onClick={() => clearCache()}
@@ -335,32 +356,32 @@ function formatBytes(bytes: number) {
   return `${value.toFixed(precision)} ${units[unitIndex]}`;
 }
 
-function countSimulationFiles(simulation: BinarySimulation) {
-  return [
-    simulation.displacementLin,
-    simulation.displacementRot,
-    simulation.velocityLin,
-    simulation.velocityRot,
-    simulation.accelerationLin,
-    simulation.accelerationRot,
-    simulation.groundMotion,
-    simulation.hingeData,
-    simulation.shearData,
-  ].filter(Boolean).length;
-}
+// function countSimulationFiles(simulation: BinarySimulation) {
+//   return [
+//     simulation.displacementLin,
+//     simulation.displacementRot,
+//     simulation.velocityLin,
+//     simulation.velocityRot,
+//     simulation.accelerationLin,
+//     simulation.accelerationRot,
+//     simulation.groundMotion,
+//     simulation.hingeData,
+//     simulation.shearData,
+//   ].filter(Boolean).length;
+// }
 
-type OptionalDataLoadControlConfig = {
-  key: keyof OptionalDataLoadOptions;
-  label: string;
-  description: string;
-};
+// type OptionalDataLoadControlConfig = {
+//   key: keyof OptionalDataLoadOptions;
+//   label: string;
+//   description: string;
+// };
 
-const OPTIONAL_DATA_LOAD_CONTROL_CONFIG = [
-  { key: "hingeData", label: "Beam + Hinge", description: "Beam connectivity + hinge rotation summaries." },
-  { key: "shearData", label: "Shear", description: "Static per-floor column shear summaries (kip)." },
-  { key: "displacementRot", label: "Rot. disp.", description: "Node rotational displacement channels (rad)." },
-  { key: "velocityLin", label: "Tra. velocity", description: "Translational velocity channels (in/s)." },
-  { key: "velocityRot", label: "Rot. velocity", description: "Rotational velocity channels (rad/s)." },
-  { key: "accelerationLin", label: "Tra. accel.", description: "Translational acceleration channels (in/s²)." },
-  { key: "accelerationRot", label: "Rot. accel.", description: "Rotational acceleration channels (rad/s²)." },
-] as const satisfies readonly OptionalDataLoadControlConfig[];
+// const OPTIONAL_DATA_LOAD_CONTROL_CONFIG = [
+//   { key: "hingeData", label: "Beam + Hinge", description: "Beam connectivity + hinge rotation summaries." },
+//   { key: "shearData", label: "Shear", description: "Static per-floor column shear summaries (kip)." },
+//   { key: "displacementRot", label: "Rot. disp.", description: "Node rotational displacement channels (rad)." },
+//   { key: "velocityLin", label: "Tra. velocity", description: "Translational velocity channels (in/s)." },
+//   { key: "velocityRot", label: "Rot. velocity", description: "Rotational velocity channels (rad/s)." },
+//   { key: "accelerationLin", label: "Tra. accel.", description: "Translational acceleration channels (in/s²)." },
+//   { key: "accelerationRot", label: "Rot. accel.", description: "Rotational acceleration channels (rad/s²)." },
+// ] as const satisfies readonly OptionalDataLoadControlConfig[];

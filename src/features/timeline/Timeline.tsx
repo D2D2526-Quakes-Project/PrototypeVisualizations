@@ -10,6 +10,7 @@ import type { IDockviewPanelProps } from "dockview-react";
 import { type ECharts, type EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { ChevronDown } from "lucide-react";
+import { useDraftSelection } from "@/lib/useDraftSelection";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 
@@ -28,7 +29,7 @@ type ChannelOption = {
   accessor: (idx: number, animationData: BuildingAnimationData) => number;
 };
 
-const GROUND_MOTION_COLOR = "#444444";
+const GROUND_MOTION_COLOR = "#555555";
 
 const GROUND_CHANNEL_CONFIG: Record<string, ChannelOption> = {
   groundMotionX: {
@@ -53,7 +54,7 @@ const GROUND_CHANNEL_CONFIG: Record<string, ChannelOption> = {
   //   accessor: (idx, animationData) => animationData.groundMotion.zAt(idx),
   // },
   groundMotionMagnitude: {
-    label: "Ground Motion",
+    label: "Ground Motion Mag",
     shortName: "GM Mag",
     unit: UNITS.g,
     enabled: (animationData) => animationData.precomputed.groundMotion.magnitude.length > 0,
@@ -232,18 +233,8 @@ function CheckSelect({
   selected: string[];
   onChange: (keys: string[]) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const { open, draft, handleOpenChange, toggleOption } = useDraftSelection(selected, onChange);
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
-
-  const toggleOption = (key: string) => {
-    if (selected.includes(key)) {
-      if (selected.length > 1) {
-        onChange(selected.filter((k) => k !== key && k in GROUND_CHANNEL_CONFIG));
-      }
-    } else {
-      onChange([...selected, key]);
-    }
-  };
 
   const labelText = useMemo(() => {
     if (selected.length === 0) return "Select Channels";
@@ -251,7 +242,7 @@ function CheckSelect({
   }, [selected]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button title={labelText} variant={"outline"} size="xs" className="min-w-16">
           <span className="flex-1 truncate">{labelText}</span>
@@ -263,7 +254,7 @@ function CheckSelect({
       <PopoverContent align="end" className="w-56 p-1">
         <div className="flex flex-col gap-0.5">
           {options.map(([id, option]) => {
-            const isChecked = selected.includes(id);
+            const isChecked = draft.includes(id);
             const config = GROUND_CHANNEL_CONFIG[id];
             const color = config.metric
               ? getMetricKeyColor(config.metric, metricPaletteOverrides)

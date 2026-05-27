@@ -16,7 +16,7 @@ export function CanvasMetricSelector() {
 
   return (
     <div
-      className="bg-background flex w-58 flex-col rounded-lg p-1.5 pb-0.5"
+      className="bg-background flex w-58 flex-col rounded-lg p-1.5 pb-1"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}>
       <motion.div
@@ -57,8 +57,8 @@ export function CanvasMetricSelector() {
         {METRIC_CONFIGS[currentMetric].label}
       </motion.span>
 
-      <div className="mt-1">
-        <ColorScaleBar />
+      <div className="">
+        <ColorScaleBar insideLabel />
       </div>
     </div>
   );

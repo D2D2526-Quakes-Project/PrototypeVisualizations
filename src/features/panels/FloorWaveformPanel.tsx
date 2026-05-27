@@ -6,6 +6,7 @@ import { usePanelState } from "@/features/dockview/usePanelState";
 import { getMetricConfig, isHingeMetric, isStaticMetric, type Metric } from "@/features/metrics/metrics";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
+import { useProfileData } from "@/state";
 import { formatNumber, getOrdinalSuffix } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview-react";
 import ReactECharts from "echarts-for-react";
@@ -104,6 +105,7 @@ function HoverTooltip({ story, frame, dt, unit }: { story: StorySeries; frame: n
 export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
+  const timeRange = useProfileData((s) => s.timeRange);
   const { visibleFloors } = useFloorVisibility();
   const { availableMetrics } = useMetrics();
   const { setHoveredFloor } = useHover();
@@ -276,8 +278,8 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         nameLocation: "middle",
         nameGap: 25,
         nameTextStyle: { color: "#374151", fontSize: 11 },
-        min: 0,
-        max: totalDuration > 0 ? totalDuration : 1,
+        min: timeRange?.start ?? 0,
+        max: timeRange?.end ?? (totalDuration > 0 ? totalDuration : 1),
         splitLine: { show: false },
         axisLabel: {
           formatter: (value: number) => `${value.toFixed(1)} s`,
@@ -303,7 +305,16 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       series: series,
       tooltip: { show: false },
     };
-  }, [storySeries, panelState.placementMode, frameCount, dt, totalDuration, amplitudeMultiplier, maxAbsValue]);
+  }, [
+    storySeries,
+    panelState.placementMode,
+    frameCount,
+    dt,
+    totalDuration,
+    amplitudeMultiplier,
+    maxAbsValue,
+    timeRange,
+  ]);
 
   // Handle Playhead visually without React state cycles forcing heavy redraws
   useEffect(() => {
@@ -455,12 +466,12 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
             <div
               ref={playheadRef}
-              className="pointer-events-none absolute top-6 bottom-12 left-0 z-10 w-px bg-neutral-900/70"
+              className="pointer-events-none absolute top-0 bottom-9 left-0 z-10 w-px bg-neutral-900/70"
               style={{ display: "none" }}
             />
             <div
               ref={hoverLineRef}
-              className="pointer-events-none absolute top-6 bottom-12 left-0 z-10 w-px bg-neutral-400/70"
+              className="pointer-events-none absolute top-0 bottom-9 left-0 z-10 w-px bg-neutral-400/70"
               style={{ display: "none" }}
             />
 

@@ -1,6 +1,7 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
+import { useGlobalStore, useProfileData } from "@/state";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -8,11 +9,15 @@ import { useNodePositions } from "../contexts/useNodePositions";
 
 export function VerticalConnectionsRenderer({ nodeIds: overrideNodeIds }: { nodeIds?: number[] }) {
   const linesRef = useRef<THREE.LineSegments>(null);
+  const coloredConnectionLines = useProfileData((s) => s.coloredConnectionLines);
+  const connectionLinesColor = useGlobalStore((s) => s.colorTheme.connectionLines);
 
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { getNodeColorForCurrentMetric } = useMetrics();
+
+  const themeColor = useMemo(() => new THREE.Color(connectionLinesColor), [connectionLinesColor]);
 
   const nodeIds = useMemo(() => (overrideNodeIds ? overrideNodeIds : visibleNodes), [visibleNodes, overrideNodeIds]);
 
@@ -39,7 +44,9 @@ export function VerticalConnectionsRenderer({ nodeIds: overrideNodeIds }: { node
 
       const posA = getNodeVisualPosition(nodeId, frameIndex);
       const posB = getNodeVisualPosition(nodeBelow, frameIndex);
-      const color = getNodeColorForCurrentMetric(nodeId, frameIndex).color;
+      const color = coloredConnectionLines
+        ? getNodeColorForCurrentMetric(nodeId, frameIndex).color
+        : themeColor;
 
       const baseIdx = vertexCount * 3;
 

@@ -16,7 +16,7 @@ import { OPTIONAL_DATASET_KEYS } from "@/features/animation-data/data-loading/lo
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber } from "@/lib/utils";
-import { useGlobalStore } from "@/state";
+import { useGlobalStore, useProfileActions, useProfileData } from "@/state";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { DataMenu } from "./DataMenu";
@@ -30,6 +30,8 @@ export function NavigationBar() {
   const { frameIndex } = usePlayback();
   const showHiddenMetrics = useGlobalStore((state) => state.showHiddenMetrics);
   const setShowHiddenMetrics = useGlobalStore((state) => state.setShowHiddenMetrics);
+  const coloredConnectionLines = useProfileData((s) => s.coloredConnectionLines);
+  const { setColoredConnectionLines } = useProfileActions();
 
   const { allVisibilityHiddenWarning, mostNodesHiddenWarning, allFloorsHiddenWarning } = useVisibilityWarnings();
 
@@ -111,6 +113,10 @@ export function NavigationBar() {
 
               <MenubarCheckboxItem checked={showHiddenMetrics} onCheckedChange={setShowHiddenMetrics}>
                 Show Hidden Metrics
+              </MenubarCheckboxItem>
+
+              <MenubarCheckboxItem checked={coloredConnectionLines} onCheckedChange={setColoredConnectionLines}>
+                Colored Connection Lines
               </MenubarCheckboxItem>
 
               <MenubarSeparator />

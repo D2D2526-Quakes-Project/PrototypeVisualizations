@@ -26,6 +26,7 @@ export interface ProfileData {
   visualInterpolationEnabled: boolean;
   renderVerticalConnections: boolean;
   renderHorizontalConnections: boolean;
+  coloredConnectionLines: boolean;
 
   // Thresholds
   _thresholds: ThresholdState;
@@ -50,6 +51,9 @@ export interface ProfileData {
 
   // Node Panel Graph Visibility
   nodePanelGraphVisibility: Record<string, boolean>;
+
+  // Shared time zoom range (null = full range)
+  timeRange: { start: number; end: number } | null;
 
   // Node Display
   nodeScale: number;
@@ -84,6 +88,7 @@ export interface ProfileState {
     setVisualInterpolationEnabled: (value: boolean) => void;
     setRenderVerticalConnections: (value: boolean) => void;
     setRenderHorizontalConnections: (value: boolean) => void;
+    setColoredConnectionLines: (value: boolean) => void;
 
     // Thresholds
     setThreshold: (type: ThresholdKey, value: number) => void;
@@ -115,6 +120,9 @@ export interface ProfileState {
     setPanelState: (panelId: string, panelType: string, panelState: unknown) => void;
     removePanelState: (panelId: string) => void;
     setPanelStates: (panelStates: Record<string, SavedPanelState>) => void;
+
+    // Shared time zoom range
+    setTimeRange: (range: { start: number; end: number } | null) => void;
 
     // Node Panel Graph Visibility
     toggleNodePanelGraph: (graphKey: string) => void;
@@ -223,6 +231,9 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
       setRenderHorizontalConnections: mutateProfile((profile, renderHorizontalConnections) => {
         profile.renderHorizontalConnections = renderHorizontalConnections;
       }),
+      setColoredConnectionLines: mutateProfile((profile, coloredConnectionLines) => {
+        profile.coloredConnectionLines = coloredConnectionLines;
+      }),
 
       // Thresholds
       setThreshold: mutateProfile((profile, type, value) => {
@@ -310,6 +321,10 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
       }),
       setPanelStates: mutateProfile((profile, panelStates) => {
         profile.panelStates = panelStates;
+      }),
+
+      setTimeRange: mutateProfile((profile, range) => {
+        profile.timeRange = range;
       }),
 
       toggleNodePanelGraph: mutateProfile((profile, graphKey) => {

@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 
 import type { BuildingAnimationData } from "@/lib/types";
-import { useGlobalStore } from "@/state";
+import { useGlobalStore, useProfileActions } from "@/state";
 import { useAnimationData } from "../animation-data/useAnimationData";
 import { getMetricKeyColor, UNITS, type Metric, type UnitConfig } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
@@ -294,6 +294,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const exportRenderMode = useExportRenderMode();
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
+  const { setTimeRange } = useProfileActions();
   const chartRef = useRef<ReactECharts>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const dotsRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -573,6 +574,16 @@ export function Timeline({ api }: IDockviewPanelProps) {
       setIsDragging(false);
     };
 
+    const handleDataZoom = () => {
+      const chart = chartRef.current?.getEchartsInstance();
+      if (!chart) return;
+      const opt = chart.getOption() as { dataZoom?: Array<{ startValue?: number; endValue?: number }> };
+      const dz = opt.dataZoom?.[0];
+      if (dz?.startValue != null && dz?.endValue != null && isFinite(dz.startValue) && isFinite(dz.endValue)) {
+        setTimeRange({ start: dz.startValue, end: dz.endValue });
+      }
+    };
+
     const attachListeners = () => {
       const chart = chartRef.current?.getEchartsInstance();
       if (!chart || chart === currentChart) return;
@@ -581,6 +592,9 @@ export function Timeline({ api }: IDockviewPanelProps) {
         zr.off("mousedown", handleMouseDown);
         zr.off("mousemove", handleMouseMove);
         zr.off("mouseup", handleMouseUp);
+      }
+      if (currentChart) {
+        currentChart.off("datazoom", handleDataZoom);
       }
 
       currentChart = chart;
@@ -591,6 +605,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       zr.on("mousemove", handleMouseMove);
       zr.on("mouseup", handleMouseUp);
       window.addEventListener("mouseup", handleMouseUp);
+      chart.on("datazoom", handleDataZoom);
     };
 
     attachListeners();
@@ -603,10 +618,13 @@ export function Timeline({ api }: IDockviewPanelProps) {
         zr.off("mousemove", handleMouseMove);
         zr.off("mouseup", handleMouseUp);
       }
+      if (currentChart) {
+        currentChart.off("datazoom", handleDataZoom);
+      }
       window.removeEventListener("mouseup", handleMouseUp);
       currentChart = null;
     };
-  }, [isCurrentMetricStatic, setFrameIndex, dt, maxFrame]);
+  }, [isCurrentMetricStatic, setFrameIndex, dt, maxFrame, setTimeRange]);
 
   useEffect(() => {
     if (isCurrentMetricStatic || selectedKeys.length === 0) return;

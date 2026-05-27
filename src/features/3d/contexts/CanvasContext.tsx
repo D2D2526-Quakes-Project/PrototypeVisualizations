@@ -99,8 +99,11 @@ export function CanvasPanelProvider({
 }) {
   const { animationData } = useAnimationData();
   const boundingBox = animationData.precomputed.boundingBox;
+  const buildingVerticalCenter =
+    (boundingBox.center[2] - boundingBox.min[2]) * UNIT_SCALE;
   const defaultState: CanvasPanelState = {
     ...DEFAULT_CANVAS_PANEL_STATE,
+    cameraTarget: [0, 0, buildingVerticalCenter],
     sliceXRange: [boundingBox.min[0], boundingBox.max[0]],
     sliceYRange: [boundingBox.min[1], boundingBox.max[1]],
     sliceZRange: [boundingBox.min[2], boundingBox.max[2]],
@@ -164,8 +167,6 @@ export function CanvasPanelProvider({
   // Camera controls
 
   const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
-  const buildingVerticalCenter =
-    (animationData.precomputed.boundingBox.center[2] - animationData.precomputed.boundingBox.min[2]) * UNIT_SCALE;
 
   const viewPositions = useMemo(
     () => ({

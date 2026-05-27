@@ -463,6 +463,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
               style={{ height: "100%", width: "100%" }}
               opts={{ renderer: "canvas" }}
               onChartReady={handleChartReady}
+              replaceMerge={["series"]}
             />
 
             <div

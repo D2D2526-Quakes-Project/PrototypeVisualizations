@@ -47,5 +47,6 @@ export function useFloorVisibility() {
     hideAllFloors,
     showDefaultFloors,
     isFloorVisible,
+    setHiddenFloors,
   };
 }

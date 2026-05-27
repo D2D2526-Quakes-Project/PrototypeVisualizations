@@ -315,10 +315,13 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
   const panelTitle = currentPanelType === "Main Canvas" ? (isPrimary ? "Primary Canvas" : "Canvas") : currentPanelType;
   const Icon = PANEL_DEFINITIONS[currentPanelType].icon;
 
+  const groupStyle = isTabGroup ? "border-b-0 border-border border-2 rounded-lg" : "";
+
   return (
     <div
       className={`group h-full w-full cursor-grab p-1 pr-0 active:cursor-grabbing ${isTabGroup && "cursor-pointer"}`}>
-      <div className="group-hover:bg-muted flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors">
+      <div
+        className={`group-hover:bg-muted flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors ${groupStyle}`}>
         <span
           className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
           <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />

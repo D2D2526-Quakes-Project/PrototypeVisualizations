@@ -3,7 +3,7 @@ import { useFloorVisibility } from "@/features/3d/contexts/useFloorVisibility";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { slidingWindow3 } from "@/lib/utils";
 import { AlertTriangleIcon, LayersIcon } from "lucide-react";
-import { useEffect, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useState, type KeyboardEvent, type MouseEvent } from "react";
 
 export function FloorVisibilitySection() {
   const { animationData } = useAnimationData();
@@ -20,28 +20,43 @@ export function FloorVisibilitySection() {
     showAllFloors,
     hideAllFloors,
     isFloorVisible,
+    setHiddenFloors,
   } = useFloorVisibility();
   const [dragVisibility, setDragVisibility] = useState<boolean | null>(null);
+  const [draftHiddenFloors, setDraftHiddenFloors] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     if (dragVisibility === null) return;
-    const handleMouseUp = () => setDragVisibility(null);
+    const handleMouseUp = () => {
+      if (draftHiddenFloors) {
+        setHiddenFloors(Array.from(draftHiddenFloors));
+      }
+      setDraftHiddenFloors(null);
+      setDragVisibility(null);
+    };
     window.addEventListener("mouseup", handleMouseUp);
     return () => window.removeEventListener("mouseup", handleMouseUp);
-  }, [dragVisibility]);
+  }, [dragVisibility, draftHiddenFloors, setHiddenFloors]);
 
   const handleFloorMouseDown = (event: MouseEvent<HTMLButtonElement>, storyId: string) => {
     event.preventDefault();
     const nextVisible = hiddenFloors.includes(storyId);
     setDragVisibility(nextVisible);
-    if (nextVisible) showFloors([storyId]);
-    else hideFloors([storyId]);
+    const draft = new Set(hiddenFloors);
+    if (nextVisible) draft.delete(storyId);
+    else draft.add(storyId);
+    setDraftHiddenFloors(draft);
   };
 
   const handleFloorMouseEnter = (storyId: string) => {
     if (dragVisibility === null) return;
-    if (dragVisibility) showFloors([storyId]);
-    else hideFloors([storyId]);
+    setDraftHiddenFloors((prev) => {
+      if (!prev) return prev;
+      const next = new Set(prev);
+      if (dragVisibility) next.delete(storyId);
+      else next.add(storyId);
+      return next;
+    });
   };
 
   const handleFloorKeyDown = (event: KeyboardEvent<HTMLButtonElement>, storyId: string) => {
@@ -50,6 +65,18 @@ export function FloorVisibilitySection() {
     if (hiddenFloors.includes(storyId)) showFloors([storyId]);
     else hideFloors([storyId]);
   };
+
+  const isVisibleLocal = useCallback(
+    (storyId: string) => {
+      if (draftHiddenFloors) return !draftHiddenFloors.has(storyId);
+      return isFloorVisible(storyId);
+    },
+    [draftHiddenFloors, isFloorVisible],
+  );
+
+  const noFloorsVisibleLocal = draftHiddenFloors
+    ? draftHiddenFloors.size === storyOrder.length
+    : noFloorsVisible;
 
   const orderedStories = [...storyOrder].reverse();
 
@@ -66,7 +93,7 @@ export function FloorVisibilitySection() {
           <span className="text-xs font-medium text-neutral-700">Floors</span>
         </div>
         <div className="flex items-center gap-1">
-          {noFloorsVisible && (
+          {noFloorsVisibleLocal && (
             <Button
               onClick={showDefaultFloors}
               variant={"outline"}
@@ -87,9 +114,9 @@ export function FloorVisibilitySection() {
       </div>
       <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 gap-y-px overflow-hidden rounded">
         {slidingWindow3(orderedStories).map(([pStoryId, storyId, nStoryId]) => {
-          const isVisible = isFloorVisible(storyId);
-          const prevIsVisible = !(pStoryId && isFloorVisible(pStoryId));
-          const nextIsVisible = !(nStoryId && isFloorVisible(nStoryId));
+          const isVisible = isVisibleLocal(storyId);
+          const prevIsVisible = !(pStoryId && isVisibleLocal(pStoryId));
+          const nextIsVisible = !(nStoryId && isVisibleLocal(nStoryId));
           return (
             <button
               key={storyId}

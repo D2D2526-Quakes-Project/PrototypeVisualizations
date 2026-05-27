@@ -40,7 +40,7 @@ export function ViewSettingsOverlay() {
   }
 
   if (visibleFloors !== totalFloors && hiddenFloors.length > 0) {
-    lines.push(`Floors: ${hiddenFloors.join(",")} hidden`);
+    lines.push(`${hiddenFloors.length} hidden floors`);
   }
 
   if (lines.length === 0) return null;

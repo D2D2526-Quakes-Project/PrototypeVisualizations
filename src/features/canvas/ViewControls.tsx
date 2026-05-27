@@ -92,7 +92,7 @@ export const ViewControls = forwardRef<
   return (
     <div
       ref={ref}
-      className={`pointer-events-none z-5 w-fit flex-[0_0] ${docked ? "h-full" : "absolute top-2 right-2 bottom-2"}`}>
+      className={`pointer-events-none z-5 w-fit flex-[0_0] ${docked ? "h-full" : "absolute top-1 right-1 bottom-1"}`}>
       <div className="flex h-full max-h-full min-h-0 items-start gap-2">
         {!isExpanded && (
           <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>

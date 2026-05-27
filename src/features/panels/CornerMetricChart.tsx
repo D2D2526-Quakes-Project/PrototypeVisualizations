@@ -383,7 +383,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
             ? {
                 symbol: "none",
                 data: [{ xAxis: thresholdValue, name: "Threshold" }],
-                lineStyle: { color: "#ef4444", width: 1, type: "dashed" as const },
+                lineStyle: { color: "#000000", width: 1, type: "dashed" as const },
                 label: { show: false },
                 silent: true,
               }
@@ -454,7 +454,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
           ? {
               symbol: "none",
               data: [{ xAxis: thresholdValue, name: "Threshold" }],
-              lineStyle: { color: "#ef4444", width: 1, type: "dashed" as const },
+              lineStyle: { color: "#000000", width: 1, type: "dashed" as const },
               label: { show: false },
               silent: true,
             }

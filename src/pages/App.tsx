@@ -168,15 +168,15 @@ function createDisplacementsLayout(api: DockviewApi) {
     component: "magicPanel",
     tabComponent: "magicPanelTab",
     params: { panelType: "Main Canvas", isPrimary: true },
-    initialHeight: 760,
   });
 
   api.addPanel<MagicPanelParams>({
-    id: "main-canvas-secondary",
+    id: "timeline",
     component: "magicPanel",
     tabComponent: "magicPanelTab",
-    position: { referencePanel: primaryCanvas, direction: "right" },
-    params: { panelType: "Main Canvas", isPrimary: false },
+    position: { referencePanel: primaryCanvas, direction: "below" },
+    params: { panelType: "Timeline" },
+    initialHeight: 220,
   });
 
   api.addPanel<MagicPanelParams>({
@@ -185,7 +185,16 @@ function createDisplacementsLayout(api: DockviewApi) {
     tabComponent: "magicPanelTab",
     position: { referencePanel: primaryCanvas, direction: "left" },
     params: { panelType: "Floor Average Metric" },
-    initialWidth: 300,
+    initialWidth: 500,
+  });
+
+  api.addPanel<MagicPanelParams>({
+    id: "main-canvas-secondary",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: primaryCanvas, direction: "right" },
+    params: { panelType: "Main Canvas", isPrimary: false },
+    initialWidth: 400,
   });
 
   primaryCanvas.focus();

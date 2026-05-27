@@ -31,7 +31,9 @@ export function ViewSettingsOverlay() {
   }
 
   if (canvasState.xyDisplacementScale !== 1 || canvasState.zDisplacementScale !== 1) {
-    lines.push(`Disp XY:${canvasState.xyDisplacementScale.toFixed(1)} Z:${canvasState.zDisplacementScale.toFixed(1)}`);
+    lines.push(
+      `Disp XY x${canvasState.xyDisplacementScale.toFixed(1)}, Z x${canvasState.zDisplacementScale.toFixed(1)}`
+    );
   }
 
   if (visibleFloors !== totalFloors && hiddenFloors.length > 0) {

@@ -76,11 +76,12 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
     requiredDatasets: [],
     getOverrides: () => ({
       _currentMetric: "displacementMag",
-      nodeScale: 1.5,
+      nodeScale: 1,
       renderFloorSlabs: true,
-      floorOpacity: 0.2,
+      floorOpacity: 1,
       renderHorizontalConnections: true,
       renderVerticalConnections: true,
+      showCornersOnly: true,
     }),
     defaultPanelStates: {
       "main-canvas-primary": {
@@ -89,7 +90,6 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
         state: {
           orthographic: false,
           spin: false,
-          cameraPosition: [0, 0, 200],
           cameraZoom: undefined,
         },
       },
@@ -97,10 +97,13 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
         panelId: "main-canvas-secondary",
         type: "Main Canvas",
         state: {
-          orthographic: false,
+          orthographic: true,
           spin: false,
-          cameraPosition: [200, 0, 0],
-          cameraZoom: undefined,
+          cameraPosition: [0, 0, 200],
+          cameraZoom: 3.5,
+          displacementEnabled: true,
+          xyDisplacementScale: 4,
+          zDisplacementScale: 1,
         },
       },
       "floor-displacement": {

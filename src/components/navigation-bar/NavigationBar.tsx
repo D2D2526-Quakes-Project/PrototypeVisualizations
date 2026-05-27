@@ -84,9 +84,9 @@ export function NavigationBar() {
   }, [setHelpDrawerOpen]);
 
   return (
-    <div className="border-border bg-background grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b">
+    <div className="border-border px-app-inset grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b">
       <div className="flex h-full min-w-0 items-center justify-start gap-3">
-        <Menubar className="h-full rounded-none border-none" value={activeMenu} onValueChange={setActiveMenu}>
+        <Menubar className="h-full border-none" value={activeMenu} onValueChange={setActiveMenu}>
           <MenubarMenu>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
@@ -155,7 +155,7 @@ export function NavigationBar() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex items-center justify-center gap-2 py-1 text-sm whitespace-nowrap">
+      <div className="flex items-center justify-center gap-2 text-sm whitespace-nowrap">
         <span className="font-medium">Frame:</span>
         <span className="font-mono">{frameIndex + 1}</span>
         <span className="text-neutral-300">|</span>
@@ -163,7 +163,7 @@ export function NavigationBar() {
         <span className="font-mono">{formatNumber(frameIndex * animationData.metadata.dt)} s</span>
       </div>
 
-      <div className="flex min-w-0 items-center justify-end py-1 pr-2">
+      <div className="flex min-w-0 items-center justify-end">
         <div className="flex items-center gap-1 text-xs text-neutral-500">
           <div className="truncate">
             {currentBuilding?.name} / {currentSimulation?.name}

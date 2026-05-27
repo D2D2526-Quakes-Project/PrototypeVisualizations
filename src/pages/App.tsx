@@ -83,8 +83,6 @@ function DockviewContainer() {
       onLayoutChange={handleLayoutChange}
       initialLayout={dockviewLayout ?? undefined}
       createDefaultLayout={createDefaultLayout}
-      className="flex-1"
-      singleTabMode="fullwidth"
     />
   );
 }

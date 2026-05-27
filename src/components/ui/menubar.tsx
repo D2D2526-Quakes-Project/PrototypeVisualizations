@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Menubar as MenubarPrimitive } from "radix-ui"
 
@@ -56,7 +54,7 @@ function MenubarTrigger({
     <MenubarPrimitive.Trigger
       data-slot="menubar-trigger"
       className={cn(
-        "flex items-center rounded-sm px-1.5 py-[2px] text-sm font-medium outline-hidden select-none hover:bg-muted aria-expanded:bg-muted",
+        "flex items-center rounded-sm px-1.5 py-[2px] text-sm font-medium outline-hidden select-none border border-transparent hover:bg-background hover:border-border aria-expanded:bg-background aria-expanded:border-border transition-colors",
         className
       )}
       {...props}

@@ -16,7 +16,7 @@ export function CanvasMetricSelector() {
 
   return (
     <div
-      className="bg-background flex w-58 flex-col rounded-lg p-1.5 pb-1"
+      className="flex w-58 flex-col rounded-lg border border-neutral-200 bg-white/90 p-1.25 pb-1 shadow-lg backdrop-blur-sm select-none"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}>
       <motion.div

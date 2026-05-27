@@ -296,9 +296,12 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const { frameIndex, setFrameIndex } = usePlayback();
   const { setTimeRange } = useProfileActions();
   const chartRef = useRef<ReactECharts>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const dotsRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
   const isDraggingRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
@@ -349,7 +352,8 @@ export function Timeline({ api }: IDockviewPanelProps) {
     const titles: EChartsOption["title"] = [];
 
     const LEFT_MARGIN = 45;
-    const AVAILABLE_HEIGHT_PCT = 82;
+    const ZOOM_BAR_HEIGHT = isHovered ? 45 : 0;
+    const AVAILABLE_HEIGHT_PCT = containerHeight > 0 ? 100 - (ZOOM_BAR_HEIGHT / containerHeight) * 100 : 100;
 
     seriesData.forEach((item, index) => {
       const isLast = index === count - 1;
@@ -444,19 +448,24 @@ export function Timeline({ api }: IDockviewPanelProps) {
       dataZoom: [
         {
           type: "slider",
+          show: isHovered,
           xAxisIndex: xAxisIndices,
           height: 20,
           bottom: 10,
           borderColor: "#e5e7eb",
           fillerColor: "rgba(0,0,0,0.06)",
           handleStyle: { color: "#9ca3af" },
-          moveHandleStyle: { color: "#9ca3af" },
+
           selectedDataBackground: {
             lineStyle: { color: "#9ca3af" },
             areaStyle: { color: "#f3f4f6" },
           },
           textStyle: { color: "#6b7280", fontSize: 10 },
           labelFormatter: (value: number) => `${formatNumber(value)}s`,
+          moveHandleSize: 0,
+          moveHandleStyle: {
+            opacity: 0,
+          },
         },
         {
           type: "inside",
@@ -519,7 +528,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       },
       animation: false,
     };
-  }, [seriesData, maxFrame, metricPaletteOverrides, animationData]);
+  }, [seriesData, maxFrame, metricPaletteOverrides, animationData, containerHeight, isHovered]);
 
   useEffect(() => {
     if (isCurrentMetricStatic) return;
@@ -627,6 +636,18 @@ export function Timeline({ api }: IDockviewPanelProps) {
   }, [isCurrentMetricStatic, setFrameIndex, dt, maxFrame, setTimeRange]);
 
   useEffect(() => {
+    const el = chartContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (isCurrentMetricStatic || selectedKeys.length === 0) return;
 
     const applyFrameToChart = () => {
@@ -676,10 +697,10 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
     const rafId = requestAnimationFrame(() => applyFrameToChart());
     return () => cancelAnimationFrame(rafId);
-  }, [frameIndex, seriesData, animationData, isCurrentMetricStatic, chartReadyVersion, selectedKeys]);
+  }, [frameIndex, seriesData, animationData, isCurrentMetricStatic, chartReadyVersion, selectedKeys, isHovered]);
 
   return (
-    <div className="relative flex h-full w-full flex-col border-t-2 border-neutral-300 bg-white">
+    <div className="relative flex h-full w-full flex-col bg-white">
       <div className="relative z-20 shrink-0 border-b border-neutral-100 bg-white px-2 pb-1">
         {exportRenderMode.showTransientUi && (
           <div className="float-right mt-0.5 ml-2">
@@ -715,7 +736,12 @@ export function Timeline({ api }: IDockviewPanelProps) {
       </div>
 
       {/* Chart Area */}
-      <div className="relative min-h-0 w-full flex-1" style={{ cursor: isDragging ? "grabbing" : "default" }}>
+      <div
+        ref={chartContainerRef}
+        className="relative min-h-0 w-full flex-1"
+        style={{ cursor: isDragging ? "grabbing" : "default" }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}>
         {selectedKeys.length > 0 ? (
           <>
             <ReactECharts
@@ -730,7 +756,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             {/* HTML Overlay Playhead */}
             <div
               ref={playheadRef}
-              className="pointer-events-none absolute top-0 bottom-10 left-0 z-10 w-px bg-neutral-400"
+              className={`pointer-events-none absolute top-0 ${isHovered ? "bottom-10" : "bottom-3"} left-0 z-10 w-px bg-neutral-400`}
               style={{ display: "none" }}>
               {seriesData.map((item, index) => {
                 const config = GROUND_CHANNEL_CONFIG[item.key];

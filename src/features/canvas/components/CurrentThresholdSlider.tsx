@@ -15,7 +15,7 @@ export function CurrentThresholdSlider() {
   const value = thresholds[currentMetricConfig.thresholdKey];
 
   return (
-    <div className="bg-background flex flex-col rounded-lg p-1 px-2">
+    <div className="flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 px-1.5 py-1 shadow-lg backdrop-blur-sm select-none">
       <div className="grid grid-cols-[1fr_auto] gap-1">
         {/* <ThresholdSlider
           label=""

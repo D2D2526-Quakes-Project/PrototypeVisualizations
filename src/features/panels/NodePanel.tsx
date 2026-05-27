@@ -370,7 +370,7 @@ export function NodeTab(props: IDockviewPanelHeaderProps<{ nodeId: number }>) {
 
   return (
     <div
-      className="flex cursor-grab items-center justify-between border-b px-3 py-2 transition-colors active:cursor-grabbing"
+      className="flex h-full cursor-grab items-center justify-between border-b px-3 py-2 transition-colors active:cursor-grabbing"
       style={{ backgroundColor: lightColor, borderColor: color }}>
       <div className="pointer-events-none flex items-center gap-2">
         <span className="text-sm font-semibold" style={{ color }}>

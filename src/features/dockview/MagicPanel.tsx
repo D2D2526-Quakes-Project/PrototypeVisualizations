@@ -317,38 +317,30 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
 
   return (
     <div
-      className={`group z-10 flex h-full w-full cursor-grab items-center gap-1 bg-neutral-200/80 p-3 py-0 transition-colors`}>
-      <span className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
-        <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />
-        {panelTitle}
-      </span>
-      {isSaving && (
-        <span className="flex items-center gap-0.5" title="Saving...">
-          <LoaderCircleIcon className="size-3 animate-spin text-neutral-400" />
+      className={`group h-full w-full cursor-grab p-1 pr-0 active:cursor-grabbing ${isTabGroup && "cursor-pointer"}`}>
+      <div className="group-hover:bg-muted flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors">
+        <span
+          className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
+          <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />
+          {panelTitle}
         </span>
-      )}
-      {isTabGroup && (
-        // <Button
-        //   variant="secondary"
-        //   size="icon-xs"
-        //   className="absolute right-1 mr-1 h-5 w-5 opacity-0 group-hover:opacity-100"
-        //   onClick={(e) => {
-        //     e.stopPropagation();
-        //     props.api.close();
-        //   }}>
-        //   <X />
-        // </Button>
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            props.api.close();
-          }}
-          className="rounded p-1 transition-colors hover:bg-white/50"
-          title="Close">
-          <XIcon className="size-3" />
-        </button>
-      )}
+        {isSaving && (
+          <span className="flex items-center gap-0.5" title="Saving...">
+            <LoaderCircleIcon className="size-3 animate-spin text-neutral-400" />
+          </span>
+        )}
+        {isTabGroup && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              props.api.close();
+            }}
+            className="rounded p-1 transition-colors hover:bg-white/50"
+            title="Close">
+            <XIcon className="size-3" />
+          </button>
+        )}
+      </div>
     </div>
   );
 };

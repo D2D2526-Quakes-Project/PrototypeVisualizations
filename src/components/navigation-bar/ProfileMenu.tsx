@@ -14,6 +14,7 @@ export function ProfileMenu() {
     <MenubarMenu>
       <MenubarTrigger>
         Profiles
+        <span className="ml-1 text-xs font-normal text-neutral-400">({PROFILE_LABELS[profileId] ?? profileId})</span>
         {storeSaving && (
           <span className="ml-1 text-neutral-400" title="Saving...">
             <LoaderCircleIcon className="size-3 animate-spin" />

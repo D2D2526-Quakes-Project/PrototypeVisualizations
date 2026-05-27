@@ -220,20 +220,18 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   }, [animationData, effectiveSelectedMetrics, frameIndex, storyIds]);
 
   const option = useMemo((): EChartsOption => {
-    const unitGroups = Array.from(
-      new Map(
-        effectiveSelectedMetrics.map((metric) => {
-          const config = getMetricConfig(metric);
-          return [config.unit.abbr, { metric, config }];
-        })
-      ).entries()
-    ).map(([unit, { metric, config }]) => {
+    const anyHasNegative = effectiveSelectedMetrics.some((metric) => getMetricConfig(metric).hasNegative);
+    const anyHasPositive = effectiveSelectedMetrics.some((metric) => getMetricConfig(metric).hasPositive);
+
+    const unitGroups = effectiveSelectedMetrics.map((metric) => {
+      const config = getMetricConfig(metric);
       const max = config.getPrecomputedMax(animationData);
+
       return {
-        unit,
+        unit: config.unit.abbr,
         metric,
-        paddedMin: -Math.max(max * 1.15, MIN_X_AXIS_MAX),
-        paddedMax: Math.max(max * 1.15, MIN_X_AXIS_MAX),
+        paddedMin: anyHasNegative ? -Math.max(max * 1.15, MIN_X_AXIS_MAX) : 0,
+        paddedMax: anyHasPositive ? Math.max(max * 1.15, MIN_X_AXIS_MAX) : 0,
       };
     });
 
@@ -303,15 +301,6 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     // const axisSplitColors = ["#e0e7ff", "#e0f2fe", "#d1fae5", "#fef3c7"];
 
     return {
-      title: {
-        text: "Floor Response by Story",
-        subtext: `Average value across floor at the current frame.\n${effectiveSelectedMetrics.map((metric) => getMetricConfig(metric).label).join(", ")}`,
-        left: 0,
-        top: 0,
-        itemGap: 3,
-        textStyle: { fontSize: 13, fontWeight: 600, color: "#111827" },
-        subtextStyle: { fontSize: 10, color: "#6b7280" },
-      },
       legend: {
         data: (series as Array<{ name?: string; markLine?: unknown }>)
           .filter((s): s is { name: string } => !!s.name && !s.name.startsWith("Threshold"))
@@ -321,7 +310,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
               .filter((s): s is { name: string } => !!s.name?.startsWith("Threshold") && !!s.markLine)
               .map((s) => s.name)
           ) as string[],
-        top: 52,
+        top: 35,
         right: 0,
         orient: "vertical",
         itemGap: 8,
@@ -371,7 +360,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       grid: {
         left: 0,
         right: 0,
-        top: 62,
+        top: 0,
         bottom: unitGroups.length * 30,
         containLabel: false,
       },
@@ -445,20 +434,19 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
 
   return (
     <div className="relative flex h-full w-full flex-col bg-white">
-      <div className="absolute right-0 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-[10px] text-neutral-500">
+      <div className="absolute top-0 right-0 z-10 flex flex-wrap items-center justify-center p-1">
         <MetricSelect
           options={metricOptions}
           selected={effectiveSelectedMetrics}
           onChange={(selectedMetrics) => setPanelState({ selectedMetrics })}
         />
       </div>
-
       <div className="min-h-0 w-full flex-1">
         <ReactECharts
           option={option}
           replaceMerge={["series", "legend", "xAxis"]}
           style={{ height: "100%", width: "100%" }}
-          opts={{ renderer: "svg" }}
+          opts={{ renderer: "canvas" }}
           onEvents={{
             mouseover: (params: { dataIndex?: number }) => {
               if (params.dataIndex !== undefined && params.dataIndex >= 0) {

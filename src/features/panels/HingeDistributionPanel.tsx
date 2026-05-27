@@ -289,7 +289,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
                     <ReactECharts
                       option={option}
                       style={{ height: "100%", width: "100%" }}
-                      opts={{ renderer: "svg" }}
+                      opts={{ renderer: "canvas" }}
                     />
                   </div>
                 </div>

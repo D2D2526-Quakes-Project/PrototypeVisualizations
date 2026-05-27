@@ -5,7 +5,7 @@ import { usePanelState } from "@/features/dockview/usePanelState";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber, formatStoryLabel } from "@/lib/utils";
 import type { DockviewPanelApi } from "dockview-react";
-import type { EChartsOption } from "echarts";
+import type { EChartsOption, LegendComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
@@ -249,25 +249,6 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
 
   const baseOption = useMemo((): EChartsOption => {
     return {
-      title: {
-        text: `Corner ${metricConfig.label} by Story`,
-        subtext:
-          displayMode === "line"
-            ? "Current & peak values per floor corner"
-            : "Current frame vs. peak for each floor corner",
-        left: 0,
-        top: 0,
-        itemGap: 3,
-        textStyle: {
-          fontSize: 13,
-          fontWeight: 600,
-          color: "#111827",
-        },
-        subtextStyle: {
-          fontSize: 10,
-          color: "#6b7280",
-        },
-      },
       tooltip: {
         trigger: "axis",
         axisPointer: {
@@ -305,31 +286,42 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
           );
         },
       },
-      legend: {
-        data: corners.flatMap((corner) =>
-          displayMode === "line"
-            ? [
-                { name: corner, itemStyle: { color: cornerColors[corner] } },
-                { name: `${corner} Peak`, itemStyle: { color: cornerColors[corner], opacity: 0.5 } },
-              ]
-            : [{ name: corner, itemStyle: { color: cornerColors[corner] } }]
-        ),
-        right: 0,
-        top: 52,
-        orient: "vertical",
-        itemGap: 8,
-        textStyle: {
-          fontSize: 11,
-          color: "#374151",
+      legend: [
+        {
+          data: corners.map((corner) =>
+            displayMode === "line"
+              ? { name: corner, itemStyle: { color: cornerColors[corner] } }
+              : { name: corner, itemStyle: { color: cornerColors[corner] } }
+          ),
+          right: displayMode === "line" ? 12 : 0,
+          top: -5,
+          orient: "horizontal",
+          itemWidth: 14,
+          itemHeight: 14,
+          itemGap: displayMode === "line" ? 16.5 : 8,
         },
-        itemWidth: 14,
-        itemHeight: 14,
-      },
+        ...(displayMode === "line"
+          ? [
+              {
+                data: corners.map((corner) => ({
+                  name: `${corner} Peak`,
+                  itemStyle: { color: cornerColors[corner], opacity: 0.5 },
+                })),
+                formatter: () => "Peak",
+                right: 0,
+                top: 8,
+                orient: "horizontal",
+                itemWidth: 14,
+                itemHeight: 14,
+              } as LegendComponentOption,
+            ]
+          : []),
+      ],
       grid: {
         left: 0,
         right: 0,
         bottom: 0,
-        top: 52,
+        top: 0,
         containLabel: false,
       },
       yAxis: {
@@ -364,7 +356,6 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     animationData.precomputed.storyElevations,
     currentValues,
     displayMode,
-    metricConfig.label,
     metricConfig.unit.abbr,
     peakValues,
     storyIds,
@@ -503,20 +494,12 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
 
     return {
       ...baseOption,
-      legend: {
-        ...baseOption.legend,
+      legend: (baseOption.legend as Array<LegendComponentOption>).map((leg) => ({
+        ...leg,
         selected,
-      },
+      })),
       xAxis: {
         type: "value",
-        name: `${metricConfig.label} (${metricConfig.unit.abbr})`,
-        nameLocation: "middle",
-        nameGap: 28,
-        nameTextStyle: {
-          fontSize: 11,
-          color: "#4b5563",
-          fontWeight: 500,
-        },
         min: xAxisExtent.min,
         max: xAxisExtent.max,
         axisLine: {
@@ -538,19 +521,34 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       },
       series: seriesData,
     } satisfies EChartsOption;
-  }, [
-    baseOption,
-    metricConfig.label,
-    metricConfig.unit.abbr,
-    panelState.visibleCorners,
-    seriesData,
-    xAxisExtent.min,
-    xAxisExtent.max,
-  ]);
+  }, [baseOption, panelState.visibleCorners, seriesData, xAxisExtent.min, xAxisExtent.max]);
 
   return (
     <div className="relative flex h-full w-full flex-col gap-2 bg-white">
-      <div className="absolute right-0 z-10 flex items-start gap-2 px-1 pt-1">
+      <div className="min-h-0 flex-1">
+        <ReactECharts
+          ref={chartRef}
+          option={option}
+          style={{ height: "100%", width: "100%" }}
+          opts={{ renderer: "canvas" }}
+          onChartReady={() => setChartReadyVersion((v) => v + 1)}
+          onEvents={{
+            mouseover: (params: { dataIndex?: number }) => {
+              if (params.dataIndex !== undefined && params.dataIndex >= 0) {
+                const storyId = storyIds[params.dataIndex];
+                if (storyId) {
+                  setHoveredItem({ type: "floor", storyId });
+                }
+              }
+            },
+            mouseout: () => {
+              setHoveredItem(null);
+            },
+          }}
+        />
+      </div>
+      <div className="grid grid-cols-[1fr_auto_1fr] justify-items-end gap-2 px-1 pb-1">
+        <div></div>
         <NativeSelect
           id={`${api.id}-metric`}
           size="sm"
@@ -561,13 +559,15 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
               metric: event.target.value as Metric,
               displayMode: panelState.displayMode,
             })
-          }
-          className="h-8 min-w-0 flex-1 text-xs">
-          {selectableMetrics.map((metric) => (
-            <NativeSelectOption key={metric} value={metric}>
-              {getMetricConfig(metric).label}
-            </NativeSelectOption>
-          ))}
+          }>
+          {selectableMetrics.map((metric) => {
+            const thisMetricConfig = getMetricConfig(metric);
+            return (
+              <NativeSelectOption key={metric} value={metric} className="text-center">
+                {thisMetricConfig.label} {thisMetricConfig.unit.abbr}
+              </NativeSelectOption>
+            );
+          })}
         </NativeSelect>
         <ToggleGroup
           type="single"
@@ -585,29 +585,6 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
           <ToggleGroupItem value="bar">Bar</ToggleGroupItem>
           <ToggleGroupItem value="line">Line</ToggleGroupItem>
         </ToggleGroup>
-      </div>
-
-      <div className="min-h-0 flex-1">
-        <ReactECharts
-          ref={chartRef}
-          option={option}
-          style={{ height: "100%", width: "100%" }}
-          opts={{ renderer: "svg" }}
-          onChartReady={() => setChartReadyVersion((v) => v + 1)}
-          onEvents={{
-            mouseover: (params: { dataIndex?: number }) => {
-              if (params.dataIndex !== undefined && params.dataIndex >= 0) {
-                const storyId = storyIds[params.dataIndex];
-                if (storyId) {
-                  setHoveredItem({ type: "floor", storyId });
-                }
-              }
-            },
-            mouseout: () => {
-              setHoveredItem(null);
-            },
-          }}
-        />
       </div>
     </div>
   );

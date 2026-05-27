@@ -89,5 +89,5 @@ export function StaticHingeHistogram({ maxHistogram, minHistogram, height = 180 
     };
   }, [maxHistogram, minHistogram]);
 
-  return <ReactECharts option={option} style={{ height, width: "100%" }} opts={{ renderer: "svg" }} />;
+  return <ReactECharts option={option} style={{ height, width: "100%" }} opts={{ renderer: "canvas" }} />;
 }

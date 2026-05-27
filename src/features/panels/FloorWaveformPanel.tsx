@@ -461,6 +461,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
               ref={echartsRef}
               option={option}
               style={{ height: "100%", width: "100%" }}
+              opts={{ renderer: "canvas" }}
               onChartReady={handleChartReady}
             />
 

@@ -36,8 +36,8 @@ export function SlicesSection() {
             <div className="flex items-center justify-between px-0.5">
               <span className="text-xs text-neutral-500">X</span>
               <span className="text-xs text-neutral-500">
-                <UnitTooltip value={sliceXRange[0]} unit="inches" decimals={0} /> ↔{" "}
-                <UnitTooltip value={sliceXRange[1]} unit="inches" decimals={0} />
+                <UnitTooltip value={sliceXRange[0] / 12} unit="feet" decimals={0} /> ↔{" "}
+                <UnitTooltip value={sliceXRange[1] / 12} unit="feet" decimals={0} />
               </span>
             </div>
             <Slider
@@ -51,8 +51,8 @@ export function SlicesSection() {
             <div className="flex items-center justify-between px-0.5">
               <span className="text-xs text-neutral-500">Y</span>
               <span className="text-xs text-neutral-500">
-                <UnitTooltip value={sliceYRange[0]} unit="inches" decimals={0} /> ↔{" "}
-                <UnitTooltip value={sliceYRange[1]} unit="inches" decimals={0} />
+                <UnitTooltip value={sliceYRange[0] / 12} unit="feet" decimals={0} /> ↔{" "}
+                <UnitTooltip value={sliceYRange[1] / 12} unit="feet" decimals={0} />
               </span>
             </div>
             <Slider
@@ -66,8 +66,8 @@ export function SlicesSection() {
             <div className="flex items-center justify-between px-0.5">
               <span className="text-xs text-neutral-500">Z</span>
               <span className="text-xs text-neutral-500">
-                <UnitTooltip value={sliceZRange[0]} unit="inches" decimals={0} /> ↔{" "}
-                <UnitTooltip value={sliceZRange[1]} unit="inches" decimals={0} />
+                <UnitTooltip value={sliceZRange[0] / 12} unit="feet" decimals={0} /> ↔{" "}
+                <UnitTooltip value={sliceZRange[1] / 12} unit="feet" decimals={0} />
               </span>
             </div>
             <Slider

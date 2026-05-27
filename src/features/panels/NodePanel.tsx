@@ -168,13 +168,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <div>
               <span className="font-medium text-neutral-700">Elevation:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.elevation} unit="inches" decimals={0} />
+                <UnitTooltip value={storyInfo.elevation / 12} unit="feet" decimals={0} />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Story Height:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.height} unit="inches" decimals={0} />
+                <UnitTooltip value={storyInfo.height / 12} unit="feet" decimals={0} />
               </div>
             </div>
             <div>

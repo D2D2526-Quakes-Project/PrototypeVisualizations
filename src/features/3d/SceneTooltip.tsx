@@ -47,7 +47,7 @@ export function SceneTooltip({ children }: { children: React.ReactNode }) {
       return (
         <div className="flex flex-col gap-1">
           <div className="font-semibold">Floor {storyId}</div>
-          <div className="text-muted-foreground">Elevation: {formatNumber(storyElevation, 2)} in</div>
+          <div className="text-muted-foreground">Elevation: {formatNumber(storyElevation / 12, 2)} ft</div>
           <div className="text-muted-foreground">Click to open panel</div>
         </div>
       );

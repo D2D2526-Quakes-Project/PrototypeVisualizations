@@ -143,13 +143,13 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
             <div>
               <span className="font-medium text-neutral-700">Elevation:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.elevation} unit="inches" decimals={1} />
+                <UnitTooltip value={storyInfo.elevation / 12} unit="feet" decimals={1} />
               </div>
             </div>
             <div>
               <span className="font-medium text-neutral-700">Story Height:</span>
               <div className="text-neutral-600">
-                <UnitTooltip value={storyInfo.height} unit="inches" decimals={1} />
+                <UnitTooltip value={storyInfo.height / 12} unit="feet" decimals={1} />
               </div>
             </div>
           </div>

@@ -294,12 +294,12 @@ export function StatisticsPanel() {
         </StatGroup>
 
         <StatGroup title="Bounding Box" scope="static">
-          <StatRow label="Span X" value={stats.precomputed.boundingBox.span[0]} unit="inches" />
-          <StatRow label="Span Y" value={stats.precomputed.boundingBox.span[1]} unit="inches" />
-          <StatRow label="Span Z" value={stats.precomputed.boundingBox.span[2]} unit="inches" />
-          <StatRow label="Center X" value={stats.precomputed.boundingBox.center[0]} unit="inches" />
-          <StatRow label="Center Y" value={stats.precomputed.boundingBox.center[1]} unit="inches" />
-          <StatRow label="Center Z" value={stats.precomputed.boundingBox.center[2]} unit="inches" />
+          <StatRow label="Span X" value={stats.precomputed.boundingBox.span[0] / 12} unit="feet" />
+          <StatRow label="Span Y" value={stats.precomputed.boundingBox.span[1] / 12} unit="feet" />
+          <StatRow label="Span Z" value={stats.precomputed.boundingBox.span[2] / 12} unit="feet" />
+          <StatRow label="Center X" value={stats.precomputed.boundingBox.center[0] / 12} unit="feet" />
+          <StatRow label="Center Y" value={stats.precomputed.boundingBox.center[1] / 12} unit="feet" />
+          <StatRow label="Center Z" value={stats.precomputed.boundingBox.center[2] / 12} unit="feet" />
         </StatGroup>
 
         <StatGroup title="Maximum Displacement" scope="static">

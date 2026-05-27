@@ -348,20 +348,21 @@ export function Timeline({ api }: IDockviewPanelProps) {
     const titles: EChartsOption["title"] = [];
 
     const LEFT_MARGIN = 45;
-    const AVAILABLE_HEIGHT_PCT = 92;
+    const AVAILABLE_HEIGHT_PCT = 82;
 
     seriesData.forEach((item, index) => {
       const isLast = index === count - 1;
 
       const rowHeight = AVAILABLE_HEIGHT_PCT / count;
       const topPct = 2 + index * rowHeight;
-      const heightPct = rowHeight - 6;
+      const heightPct = rowHeight - 4;
 
       grids.push({
         left: 0,
         right: 15,
         top: `${topPct}%`,
         height: `${heightPct}%`,
+        bottom: undefined,
         containLabel: false,
       });
 
@@ -431,12 +432,38 @@ export function Timeline({ api }: IDockviewPanelProps) {
       });
     });
 
+    const xAxisIndices = Array.from({ length: count }, (_, i) => i);
+
     return {
       grid: grids,
       title: titles,
       xAxis: xAxes,
       yAxis: yAxes,
       series,
+      dataZoom: [
+        {
+          type: "slider",
+          xAxisIndex: xAxisIndices,
+          height: 20,
+          bottom: 10,
+          borderColor: "#e5e7eb",
+          fillerColor: "rgba(0,0,0,0.06)",
+          handleStyle: { color: "#9ca3af" },
+          moveHandleStyle: { color: "#9ca3af" },
+          selectedDataBackground: {
+            lineStyle: { color: "#9ca3af" },
+            areaStyle: { color: "#f3f4f6" },
+          },
+          textStyle: { color: "#6b7280", fontSize: 10 },
+          labelFormatter: (value: number) => `${formatNumber(value)}s`,
+        },
+        {
+          type: "inside",
+          xAxisIndex: xAxisIndices,
+          zoomOnMouseWheel: true,
+          moveOnMouseMove: false,
+        },
+      ],
       axisPointer: {
         label: { backgroundColor: "#777" },
         link: [{ xAxisIndex: "all" }],
@@ -517,6 +544,12 @@ export function Timeline({ api }: IDockviewPanelProps) {
       if (!e.event) return;
       const chart = chartRef.current?.getEchartsInstance();
       if (!chart) return;
+
+      const chartDom = chart.getDom();
+      const rect = chartDom.getBoundingClientRect();
+      const relativeY = e.event.clientY - rect.top;
+      if (relativeY > rect.height - 34) return;
+
       const newFrame = convertToFrame(e.event.clientX, chart);
       if (newFrame !== null) {
         isDraggingRef.current = true;
@@ -679,7 +712,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             {/* HTML Overlay Playhead */}
             <div
               ref={playheadRef}
-              className="pointer-events-none absolute top-0 bottom-4 left-0 z-10 w-px bg-neutral-400"
+              className="pointer-events-none absolute top-0 bottom-10 left-0 z-10 w-px bg-neutral-400"
               style={{ display: "none" }}>
               {seriesData.map((item, index) => {
                 const config = GROUND_CHANNEL_CONFIG[item.key];

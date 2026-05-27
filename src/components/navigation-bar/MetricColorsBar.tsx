@@ -108,6 +108,19 @@ function MetricRow({
   );
 }
 
+const FALLBACK_MAX_THRESHOLD: Record<string, number> = {
+  displacement: 100,
+  velocity: 100,
+  acceleration: 100,
+  rotation: 0.1,
+  rotationVelocity: 0.5,
+  rotationAcceleration: 2,
+  interstoryDrift: 10,
+  hingeRotation: 0.3,
+  shear: 5000,
+  inf: 100,
+};
+
 function ThresholdSection({
   thresholdKey,
   metricPaletteOverrides,
@@ -122,6 +135,11 @@ function ThresholdSection({
   const config = THRESHOLD_CONFIGS[thresholdKey];
   const { thresholds, setThreshold } = useThresholds();
   const metrics = getMetricsForThreshold(thresholdKey);
+  const max = Math.max(
+    config.getPrecomputedMax(animationData),
+    thresholds[thresholdKey] || FALLBACK_MAX_THRESHOLD[thresholdKey],
+    FALLBACK_MAX_THRESHOLD[thresholdKey]
+  );
 
   const visibleMetrics = metrics.filter((m) => {
     const c = METRIC_CONFIGS[m];
@@ -142,6 +160,7 @@ function ThresholdSection({
           label={config.label}
           value={thresholds[thresholdKey]}
           unit={config.unit}
+          max={max}
           currentlyUsed={true}
           onChange={(v) => setThreshold(thresholdKey, v)}
         />

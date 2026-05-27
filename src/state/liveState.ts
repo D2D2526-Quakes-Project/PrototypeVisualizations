@@ -27,6 +27,12 @@ export interface LiveState {
   selectCrossSection: (crossSection: CrossSectionSelectionState) => void;
   deselectCrossSection: () => void;
   setHoveredCrossSection: (crossSection: CrossSectionSelectionState | null) => void;
+
+  // Drawers
+  helpDrawerOpen: boolean;
+  setHelpDrawerOpen: (open: boolean) => void;
+  metricColorsDrawerOpen: boolean;
+  setMetricColorsDrawerOpen: (open: boolean) => void;
 }
 
 export const createLiveSlice: StateCreator<AppState, [], [], LiveState> = (set) => ({
@@ -61,6 +67,11 @@ export const createLiveSlice: StateCreator<AppState, [], [], LiveState> = (set) 
   selectCrossSection: (selectedCrossSection) => set({ selectedCrossSection }),
   deselectCrossSection: () => set({ selectedCrossSection: null }),
   setHoveredCrossSection: (hoveredCrossSection) => set({ hoveredCrossSection }),
+
+  helpDrawerOpen: false,
+  setHelpDrawerOpen: (helpDrawerOpen) => set({ helpDrawerOpen }),
+  metricColorsDrawerOpen: false,
+  setMetricColorsDrawerOpen: (metricColorsDrawerOpen) => set({ metricColorsDrawerOpen }),
 });
 
 export type SliceType = "X" | "Y" | "Z";
@@ -109,6 +120,10 @@ export const LIVE_STATE_KEYS = [
   "selectCrossSection",
   "deselectCrossSection",
   "setHoveredCrossSection",
+  "helpDrawerOpen",
+  "setHelpDrawerOpen",
+  "metricColorsDrawerOpen",
+  "setMetricColorsDrawerOpen",
 ] as const;
 
 type ValidateExactTuple<T extends readonly string[], U extends string> =

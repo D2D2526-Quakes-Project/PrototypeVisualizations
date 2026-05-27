@@ -73,7 +73,7 @@ function UnitTooltipComponent({
     <span className={interactive ? "cursor-help" : undefined}>
       {children || (
         <span className="whitespace-nowrap">
-          {formattedValue} {unit.abbr}
+          <span className="inline-block min-w-7">{formattedValue}</span> {unit.abbr}
         </span>
       )}
     </span>

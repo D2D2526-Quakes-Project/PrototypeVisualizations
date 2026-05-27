@@ -103,7 +103,7 @@ export function ThresholdSlider({
       <div className="border-border flex min-w-32 items-center border-x px-2 py-1">
         <Slider value={[value, max]} onValueChange={(val) => onChange(val[0])} max={max} step={0.01} />
       </div>
-      <span className="min-w-10 text-right text-xs text-neutral-500">
+      <span className="text-right text-xs text-neutral-500">
         <UnitTooltip value={value} unit={unit.label} decimals={2} />
       </span>
     </div>

@@ -16,7 +16,7 @@ import { OPTIONAL_DATASET_KEYS } from "@/features/animation-data/data-loading/lo
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber } from "@/lib/utils";
-import { useGlobalStore, useProfileActions, useProfileData } from "@/state";
+import { useGlobalStore, useLiveStore, useProfileActions, useProfileData } from "@/state";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { DataMenu } from "./DataMenu";
@@ -48,8 +48,10 @@ export function NavigationBar() {
 
   const [activeMenu, setActiveMenu] = useState("");
   // const [isCopyingLink, setIsCopyingLink] = useState(false);
-  const [helpDrawerOpen, setHelpDrawerOpen] = useState(false);
-  const [metricColorsDrawerOpen, setMetricColorsDrawerOpen] = useState(false);
+  const helpDrawerOpen = useLiveStore((s) => s.helpDrawerOpen);
+  const setHelpDrawerOpen = useLiveStore((s) => s.setHelpDrawerOpen);
+  const metricColorsDrawerOpen = useLiveStore((s) => s.metricColorsDrawerOpen);
+  const setMetricColorsDrawerOpen = useLiveStore((s) => s.setMetricColorsDrawerOpen);
 
   const backToHome = () => {
     clearSelection();

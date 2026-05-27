@@ -60,6 +60,14 @@ const GROUND_CHANNEL_CONFIG: Record<string, ChannelOption> = {
     enabled: (animationData) => animationData.precomputed.groundMotion.magnitude.length > 0,
     accessor: (idx, animationData) => animationData.precomputed.groundMotion.magnitude[idx],
   },
+  interstoryDrift: {
+    label: "Story Drift",
+    shortName: "ISD",
+    metric: "interstoryDrift",
+    unit: UNITS.percent,
+    enabled: (animationData) => animationData.precomputed.avgStoryDriftPerFrame.length > 0,
+    accessor: (idx, animationData) => animationData.precomputed.avgStoryDriftPerFrame[idx],
+  },
   avgDisplacementMag: {
     label: "Avg Displacement Mag",
     shortName: "Disp. Mag",

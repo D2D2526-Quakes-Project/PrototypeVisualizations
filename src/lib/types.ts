@@ -427,6 +427,8 @@ export interface ComputedStats {
     z: Float32Array;
     mag: Float32Array;
   };
+  /** Average story drift per frame */
+  avgStoryDriftPerFrame: Float32Array;
 
   /**
    * Average displacement per story.

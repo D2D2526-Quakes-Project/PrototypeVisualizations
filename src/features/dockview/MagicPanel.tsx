@@ -330,7 +330,6 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
             <div className="border-border absolute right-[calc(100%-2px)] bottom-0 h-4 w-4 rounded-br-md border-r-2 border-b-2"></div>
           </>
         )}
-        {props.api.width},{props.api.height}
         <span
           className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
           <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />

@@ -66,6 +66,7 @@ export interface SerializedComputedStatsCore {
   peakNodeDisplacementZ: Float32Array;
   peakStoryDrift: Float32Array;
   peakStoryDriftFrame: Float32Array;
+  avgStoryDriftPerFrame: Float32Array;
   avgDisplacementPerFrame: {
     x: Float32Array;
     y: Float32Array;
@@ -531,6 +532,7 @@ function serializeRequiredComputedStats(
 
   const peakStoryDrift = new Float32Array(metadata.nodeCount);
   const peakStoryDriftFrame = new Float32Array(metadata.nodeCount);
+  const avgStoryDriftPerFrame = new Float32Array(frameCount);
   let maxStoryDrift = 0;
 
   const storyNodeIndices = metadata.storyOrder.map((storyId) => metadata.stories[storyId] ?? []);
@@ -540,6 +542,7 @@ function serializeRequiredComputedStats(
     let sumX = 0;
     let sumY = 0;
     let sumZ = 0;
+    let sumDrift = 0;
 
     for (let nodeIdx = 0; nodeIdx < metadata.nodeCount; nodeIdx++) {
       const offset = frameOffset + nodeIdx * 3;
@@ -559,6 +562,7 @@ function serializeRequiredComputedStats(
       sumZ += dz;
 
       const drift = nodeStoryDrift[frameIdx * metadata.nodeCount + nodeIdx];
+      sumDrift += drift;
       if (drift > peakStoryDrift[nodeIdx]) {
         peakStoryDrift[nodeIdx] = drift;
         peakStoryDriftFrame[nodeIdx] = frameIdx;
@@ -576,6 +580,7 @@ function serializeRequiredComputedStats(
       avgDisplacementPerFrame.y[frameIdx],
       avgDisplacementPerFrame.z[frameIdx]
     );
+    avgStoryDriftPerFrame[frameIdx] = sumDrift / metadata.nodeCount;
 
     for (let storyIdx = 0; storyIdx < storyCount; storyIdx++) {
       const nodes = storyNodeIndices[storyIdx];
@@ -637,6 +642,7 @@ function serializeRequiredComputedStats(
     },
     peakStoryDrift,
     peakStoryDriftFrame,
+    avgStoryDriftPerFrame,
     peakNodeDisplacement,
     peakNodeDisplacementFrame,
     peakNodeDisplacementX,

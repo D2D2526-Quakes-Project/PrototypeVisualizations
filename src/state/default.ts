@@ -42,20 +42,20 @@ export function getDefaultProfileData(
   };
 }
 
-export const BUILT_IN_PROFILES = ["default", "displacements", "hinges-preview", "shear", "story-drifts"] as const;
+export const BUILT_IN_PROFILES = ["default", "displacements", "hinges", "shear", "story-drifts"] as const;
 
 export type BuiltInProfileId = (typeof BUILT_IN_PROFILES)[number];
 
-export const PROFILE_LABELS: Record<string, string> = {
+export const PROFILE_LABELS: Record<BuiltInProfileId, string> = {
   default: "Default",
   displacements: "Displacements",
-  "hinges-preview": "Hinges Preview",
+  hinges: "Hinges",
   shear: "Shear",
   "story-drifts": "Story Drifts",
 };
 
 export interface BuiltInProfileDefinition {
-  profileId: string;
+  profileId: BuiltInProfileId;
   label: string;
   requiredDatasets: OptionalDatasetKey[];
   getOverrides: (defaultHiddenFloors?: string[]) => Partial<ProfileData>;
@@ -113,17 +113,25 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
           selectedMetrics: ["displacementX", "displacementY"],
         },
       },
+      "floor-waveforms": {
+        panelId: "floor-waveforms",
+        type: "Floor Waveforms",
+        state: {
+          metric: "displacementMag",
+        },
+      },
     },
   },
   {
-    profileId: "hinges-preview",
-    label: "Hinges Preview",
+    profileId: "hinges",
+    label: "Hinges",
     requiredDatasets: ["hingeData"],
     getOverrides: () => ({
       _currentMetric: "hingeRotationAbs",
       renderNodes: true,
-      nodeScale: 0.7,
-      hingeNodeScale: 1.5,
+      nodeScale: 0.5,
+      hingeNodeScale: 2.5,
+      belowThresholdHingeScale: 0.8,
       renderFloorSlabs: false,
       renderHorizontalConnections: false,
       renderVerticalConnections: false,
@@ -135,8 +143,7 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
         state: {
           orthographic: true,
           spin: true,
-          cameraPosition: [-100, -100, 100],
-          cameraZoom: undefined,
+          cameraZoom: 5,
         },
       },
     },
@@ -152,18 +159,9 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
       floorOpacity: 1,
       renderHorizontalConnections: false,
       renderVerticalConnections: false,
+      _thresholdHighlighting: false,
     }),
     defaultPanelStates: {
-      "main-canvas-primary": {
-        panelId: "main-canvas-primary",
-        type: "Main Canvas",
-        state: {
-          orthographic: false,
-          spin: false,
-          cameraPosition: [100, 100, 100],
-          cameraZoom: undefined,
-        },
-      },
       "floor-average": {
         panelId: "floor-average",
         type: "Floor Average Metric",
@@ -176,26 +174,17 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
   {
     profileId: "story-drifts",
     label: "Story Drifts",
-    requiredDatasets: [],
+    requiredDatasets: ["hingeData"],
     getOverrides: () => ({
       _currentMetric: "interstoryDrift",
       renderNodes: true,
       renderFloorSlabs: true,
+      showCornersOnly: true,
       floorOpacity: 0.7,
-      renderHorizontalConnections: false,
-      renderVerticalConnections: false,
+      renderHorizontalConnections: true,
+      renderVerticalConnections: true,
     }),
     defaultPanelStates: {
-      "main-canvas-primary": {
-        panelId: "main-canvas-primary",
-        type: "Main Canvas",
-        state: {
-          orthographic: false,
-          spin: false,
-          cameraPosition: [100, 100, 100],
-          cameraZoom: undefined,
-        },
-      },
       "corner-metric-chart": {
         panelId: "corner-metric-chart",
         type: "Corner Metric Chart",
@@ -203,6 +192,20 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
           visibleCorners: ["NW", "NE", "SW", "SE"],
           metric: "interstoryDrift",
           displayMode: "bar",
+        },
+      },
+      "floor-average": {
+        panelId: "floor-average",
+        type: "Floor Average Metric",
+        state: {
+          selectedMetrics: ["displacementX", "displacementY"],
+        },
+      },
+      timeline: {
+        panelId: "timeline",
+        type: "Timeline",
+        state: {
+          selectedKeys: ["groundMotionX", "groundMotionY", "interstoryDrift"],
         },
       },
     },
@@ -219,7 +222,7 @@ export function getBuiltInProfileData(profileId: BuiltInProfileId, defaultHidden
   return base;
 }
 
-export const DEFAULT_PROFILE = "default";
+export const DEFAULT_PROFILE = "default" as BuiltInProfileId;
 
 export function createDefaultProfiles(defaultHiddenFloors?: string[]): Record<string, ProfileData> {
   return Object.fromEntries(

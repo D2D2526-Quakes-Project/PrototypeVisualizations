@@ -7,7 +7,7 @@ import { useShallow } from "zustand/react/shallow";
 import { createGlobalSlice, type GlobalState } from "./globalState";
 import { createLiveSlice, LIVE_STATE_KEYS, type LiveState } from "./liveState";
 import { createProfileSlice, type ProfileData, type ProfileState, type ProfileStateSetters } from "./profileState";
-import { createDefaultProfiles, DEFAULT_PROFILE } from "./default";
+import { createDefaultProfiles, DEFAULT_PROFILE, type BuiltInProfileId } from "./default";
 import { createDebouncedJSONStorage } from "zustand-debounce";
 import { flushAllPanels } from "@/features/dockview/panelSavingStore";
 
@@ -72,7 +72,7 @@ export function profileStoreStateForBuilding(buildingId: string): ProfileData {
   return createDefaultProfiles()[DEFAULT_PROFILE];
 }
 
-export function useProfileIds(): string[] {
+export function useProfileIds(): BuiltInProfileId[] {
   const { currentBuilding, loading } = useAnimationData();
   const currentBuildingId = currentBuilding?.folder; // Optional chaining for safety
 
@@ -82,7 +82,7 @@ export function useProfileIds(): string[] {
       const buildingProfiles = state.profiles[currentBuildingId];
 
       // FIX: Prevent Object.keys crash if buildingProfiles is undefined
-      return buildingProfiles ? Object.keys(buildingProfiles) : [DEFAULT_PROFILE];
+      return buildingProfiles ? (Object.keys(buildingProfiles) as BuiltInProfileId[]) : [DEFAULT_PROFILE];
     })
   );
 }

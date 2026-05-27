@@ -562,6 +562,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
           groundMotion: animationData.precomputed.groundMotion,
           peakStoryDrift: animationData.precomputed.peakStoryDrift,
           peakStoryDriftFrame: animationData.precomputed.peakStoryDriftFrame,
+          avgStoryDriftPerFrame: animationData.precomputed.avgStoryDriftPerFrame,
           peakNodeDisplacement: animationData.precomputed.peakNodeDisplacement,
           peakNodeDisplacementFrame: animationData.precomputed.peakNodeDisplacementFrame,
           peakNodeDisplacementX: animationData.precomputed.peakNodeDisplacementX,

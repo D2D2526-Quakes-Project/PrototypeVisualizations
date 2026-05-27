@@ -67,7 +67,7 @@ function buildHingeHistogramOption(metric: MetricHistogram, clipPercentile: numb
   return {
     animation: false,
     title: {
-      text: `Hinge Distribution: ${metricLabelWithUnit}`,
+      text: metricLabelWithUnit,
       left: 0,
       top: -5,
       textStyle: { color: "#374151", fontSize: 11 },
@@ -234,7 +234,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   return (
     <div className="flex h-full w-full flex-col bg-white">
       <div className="grid grid-cols-3 gap-2 border-b border-neutral-100 px-3 py-2">
-        <Label className="flex flex-col gap-1 text-xs text-neutral-600">
+        <Label className="flex flex-col gap-1 text-xs font-normal whitespace-nowrap">
           Number of bins: {binCount}
           <Slider
             className="h-7"
@@ -245,19 +245,19 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
             onValueChange={(value) => setSavedState({ binCount: Number(value[0]), logScale, clipPercentile })}
           />
         </Label>
-        <Label className="flex flex-col gap-1 text-xs text-neutral-600">
+        <Label className="flex flex-col gap-1 text-xs font-normal whitespace-nowrap">
           Clip bins above: {clipPercentile} %
           <Slider
             className="h-7"
             min={60}
             max={100}
-            step={1}
+            step={0.1}
             value={[clipPercentile]}
             onValueChange={(value) => setSavedState({ binCount, logScale, clipPercentile: Number(value[0]) })}
           />
         </Label>
 
-        <label className="flex items-center gap-2 pt-4 text-xs text-neutral-600">
+        <Label className="flex items-center gap-2 pt-4 text-xs font-normal whitespace-nowrap">
           <Checkbox
             checked={logScale}
             onCheckedChange={(value) =>
@@ -269,7 +269,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
             }
           />
           <span>Log scale (Y-axis)</span>
-        </label>
+        </Label>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">

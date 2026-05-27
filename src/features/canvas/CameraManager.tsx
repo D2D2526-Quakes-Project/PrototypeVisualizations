@@ -187,5 +187,15 @@ function CameraControls({ pendingCameraCommandRef }: { pendingCameraCommandRef: 
     }, 300);
   }, [orbitControlsRef, pendingCameraCommandRef]);
 
-  return <OrbitControls ref={orbitControlsRef} enableDamping={false} autoRotate={spin} onChange={handleChange} />;
+  const initTarget = panelState.cameraTarget;
+
+  return (
+    <OrbitControls
+      ref={orbitControlsRef}
+      enableDamping={false}
+      autoRotate={spin}
+      onChange={handleChange}
+      target={initTarget}
+    />
+  );
 }

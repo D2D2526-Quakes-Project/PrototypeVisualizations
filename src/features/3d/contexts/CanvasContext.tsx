@@ -99,8 +99,7 @@ export function CanvasPanelProvider({
 }) {
   const { animationData } = useAnimationData();
   const boundingBox = animationData.precomputed.boundingBox;
-  const buildingVerticalCenter =
-    (boundingBox.center[2] - boundingBox.min[2]) * UNIT_SCALE;
+  const buildingVerticalCenter = (boundingBox.center[2] - boundingBox.min[2]) * UNIT_SCALE;
   const defaultState: CanvasPanelState = {
     ...DEFAULT_CANVAS_PANEL_STATE,
     cameraTarget: [0, 0, buildingVerticalCenter],

@@ -139,20 +139,21 @@ export function useFlushOnUnload() {
     function flush() {
       flushAllPanels();
       const state = useAppStore.getState();
-      const partialized = partializeState(state);
+      const partialized = {
+        state: partializeState(state),
+        version: 0,
+      };
       localStorage.setItem("app-storage", JSON.stringify(partialized));
     }
 
     window.addEventListener("beforeunload", flush);
     window.addEventListener("pagehide", flush);
-
     function onVisibilityChange() {
       if (document.visibilityState === "hidden") {
         flush();
       }
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
-
     return () => {
       window.removeEventListener("beforeunload", flush);
       window.removeEventListener("pagehide", flush);

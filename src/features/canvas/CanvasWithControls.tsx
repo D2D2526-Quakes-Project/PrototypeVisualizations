@@ -1,7 +1,7 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { useGlobalStore } from "@/state";
+import { Canvas, useThree } from "@react-three/fiber";
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ViewControls } from "./ViewControls";
 
 interface CanvasWithControlsProps {
@@ -81,7 +81,11 @@ export function CanvasWithControls({ children, overlays }: CanvasWithControlsPro
           setIsExpanded={handleSetIsViewControlsExpanded}
         />
       )}
-      <div className="relative min-h-0 min-w-0 flex-[1_1_auto]">
+      <div
+        className="relative min-h-0 min-w-0 flex-[1_1_auto]"
+        style={{
+          backgroundColor: colorTheme.background,
+        }}>
         {overlays}
         <Canvas
           frameloop="demand"
@@ -91,7 +95,6 @@ export function CanvasWithControls({ children, overlays }: CanvasWithControlsPro
             scene.fog = null;
           }}>
           <LayoutSizeSync />
-          <color attach="background" args={[colorTheme.background]} />
           {children}
         </Canvas>
       </div>

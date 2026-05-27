@@ -62,3 +62,7 @@ createRoot(document.getElementById("root")!).render(
     </div>
   </StrictMode>
 );
+
+setTimeout(() => {
+  debugger;
+}, 30000);

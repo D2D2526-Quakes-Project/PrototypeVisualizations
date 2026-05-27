@@ -1,6 +1,6 @@
 import { useProfileActions, useProfileData } from "@/state";
-import { useCallback, useMemo, useState } from "react";
-import { setPanelSaving } from "./panelSavingStore";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { registerPanelFlush, setPanelSaving, unregisterPanelFlush } from "./panelSavingStore";
 import type { PanelType } from "./MagicPanel";
 import { useDebouncedCallback } from "@/lib/utils";
 
@@ -31,13 +31,18 @@ export function usePanelState<T extends Record<keyof T, unknown>>(params: {
   const { setPanelState: setGlobalPanelState } = useProfileActions();
   const savedPanelState = useProfileData((store) => store.panelStates[panelId]);
 
-  const { call: debouncedSave, isPending: isSaving } = useDebouncedCallback(
+  const { call: debouncedSave, flush: flushSave, isPending: isSaving } = useDebouncedCallback(
     (id: string, type: string, state: unknown) => {
       setPanelSaving(id, false);
       setGlobalPanelState(id, type, state);
     },
     1000
   );
+
+  useEffect(() => {
+    registerPanelFlush(panelId, flushSave);
+    return () => unregisterPanelFlush(panelId);
+  }, [panelId, flushSave]);
 
   const [localState, setLocalState] = useState<T>(() => {
     if (savedPanelState?.type !== panelType) {

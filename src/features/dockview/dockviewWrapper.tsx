@@ -187,6 +187,9 @@ export function DockviewWrapper({
         .dv-split-view-container .dv-sash-container .dv-sash {
           z-index: 1;
         }
+        .dv-drop-target-container {
+          --dv-transition-duration: 100ms;
+        }
       `}</style>
       <DockviewReact
         className={className}

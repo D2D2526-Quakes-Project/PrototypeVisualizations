@@ -10,7 +10,7 @@ import { CrossSectionPanel, CrossSectionTab } from "@/features/panels/CrossSecti
 import { FloorPanel, FloorTab } from "@/features/panels/FloorPanel";
 import { NodePanel, NodeTab } from "@/features/panels/NodePanel";
 import { debounce } from "@/lib/utils";
-import { useProfileActions, useProfileData } from "@/state";
+import { useFlushOnUnload, useProfileActions, useProfileData } from "@/state";
 import { type DockviewApi, type SerializedDockview } from "dockview-react";
 import { useCallback, useEffect, useMemo } from "react";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
@@ -30,6 +30,8 @@ const tabComponents = {
 };
 
 export function App() {
+  useFlushOnUnload();
+
   return (
     <div className={"flex min-h-0 flex-1 flex-col"}>
       <DockviewContainer />

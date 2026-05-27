@@ -149,8 +149,8 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         <div className="animate-fade-in">
           <h3 className="mb-2 text-sm font-bold">Displacement Path</h3>
           <MiniRibbon path={ribbonPath} dt={dt} frameIndex={frameIndex} />
-          <div className="mt-1 flex gap-1 text-[10px] text-neutral-400 italic">
-            <InfoIcon className="size-3" /> Number of points reduced for performance
+          <div className="mt-1 flex items-center gap-1 text-[10px] text-neutral-400 italic">
+            <InfoIcon className="size-2.5" /> Number of points reduced
           </div>
         </div>
 

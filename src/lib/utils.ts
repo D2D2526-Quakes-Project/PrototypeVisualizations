@@ -194,6 +194,7 @@ export function useDebouncedCallback<T extends Procedure>(
 ): {
   call: (...args: Parameters<T>) => void;
   cancel: () => void;
+  flush: () => void;
   isPending: boolean;
 } {
   const [isPending, setIsPending] = useState(false);
@@ -220,13 +221,18 @@ export function useDebouncedCallback<T extends Procedure>(
     debouncedFn.cancel();
   }, [debouncedFn]);
 
+  const flush = useCallback(() => {
+    debouncedFn.flush();
+    setIsPending(false);
+  }, [debouncedFn]);
+
   useEffect(() => {
     return () => {
       debouncedFn.cancel();
     };
   }, [debouncedFn]);
 
-  return { call, cancel, isPending };
+  return { call, cancel, flush, isPending };
 }
 
 export function slidingWindow3<T>(arr: T[]): [T | undefined, T, T | undefined][] {

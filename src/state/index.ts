@@ -9,6 +9,7 @@ import { createLiveSlice, LIVE_STATE_KEYS, type LiveState } from "./liveState";
 import { createProfileSlice, type ProfileData, type ProfileState, type ProfileStateSetters } from "./profileState";
 import { createDefaultProfiles, DEFAULT_PROFILE } from "./default";
 import { createDebouncedJSONStorage } from "zustand-debounce";
+import { flushAllPanels } from "@/features/dockview/panelSavingStore";
 
 export type AppState = ProfileStateSetters & LiveState & GlobalState;
 
@@ -41,13 +42,7 @@ const useAppStore = create<AppState>()(
     })),
     {
       name: "app-storage",
-      partialize: (state) =>
-        Object.fromEntries(
-          Object.entries(state).filter(([key]) => {
-            if (key === "profileActions") return false;
-            return !LIVE_STATE_KEYS.includes(key as keyof LiveState);
-          })
-        ),
+      partialize: partializeState,
       storage: createDebouncedJSONStorage("localStorage", {
         debounceTime: 1000,
         onWrite: () => setStoreSaving(true),
@@ -128,6 +123,42 @@ export function useProfileData<T>(selector: (state: ProfileData) => T): T {
 
     return selector(activeProfile);
   });
+}
+
+function partializeState(state: AppState): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(state).filter(([key]) => {
+      if (key === "profileActions") return false;
+      return !LIVE_STATE_KEYS.includes(key as keyof LiveState);
+    })
+  );
+}
+
+export function useFlushOnUnload() {
+  useEffect(() => {
+    function flush() {
+      flushAllPanels();
+      const state = useAppStore.getState();
+      const partialized = partializeState(state);
+      localStorage.setItem("app-storage", JSON.stringify(partialized));
+    }
+
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        flush();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
 }
 
 export function useProfileActions(): ProfileState["profileActions"] {

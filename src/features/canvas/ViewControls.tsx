@@ -313,7 +313,7 @@ export const ViewControls = forwardRef<
                         key={preset.label}
                         onClick={() => setColorTheme(preset)}
                         className={`h-6 w-full rounded border-2 transition-all ${
-                          colorTheme.background === preset.background
+                          colorTheme.label === preset.label
                             ? "scale-110 border-black"
                             : "border-neutral-300 hover:border-neutral-500"
                         }`}

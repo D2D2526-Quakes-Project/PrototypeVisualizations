@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 
 const savingMap = new Map<string, boolean>();
 const listeners = new Set<() => void>();
+const pendingFlushes = new Map<string, () => void>();
 
 function notify() {
   listeners.forEach((l) => l());
@@ -15,6 +16,19 @@ export function setPanelSaving(panelId: string, saving: boolean) {
     savingMap.delete(panelId);
   }
   notify();
+}
+
+export function registerPanelFlush(panelId: string, flush: () => void) {
+  pendingFlushes.set(panelId, flush);
+}
+
+export function unregisterPanelFlush(panelId: string) {
+  pendingFlushes.delete(panelId);
+}
+
+export function flushAllPanels() {
+  pendingFlushes.forEach((flush) => flush());
+  pendingFlushes.clear();
 }
 
 function subscribe(cb: () => void) {

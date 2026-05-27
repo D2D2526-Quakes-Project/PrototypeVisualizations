@@ -7,6 +7,7 @@ import {
   CircleDashed,
   Keyboard,
   MousePointer2,
+  Palette,
   Play,
   MousePointerClick,
   ZoomIn,
@@ -14,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { MetricColorsBar } from "./MetricColorsBar";
 
 type Shortcut = {
   icon: React.ReactNode;
@@ -226,6 +228,10 @@ export function ShortcutsBar() {
             ))}
           </motion.div>
         </AnimatePresence>
+
+        <div className="h-8" />
+        <SectionHeader icon={<Palette size={11} />} label="Thresholds & Colors" />
+        <MetricColorsBar />
       </div>
     </div>
   );

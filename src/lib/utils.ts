@@ -319,3 +319,14 @@ export function threeColorToCSS(color: THREE.Color): string {
   const rgb = color.toArray();
   return `rgb(${Math.round(rgb[0] * 255)}, ${Math.round(rgb[1] * 255)}, ${Math.round(rgb[2] * 255)})`;
 }
+
+export function getResizeCursor(angle: number) {
+  const deg = ((THREE.MathUtils.radToDeg(angle) % 180) + 180) % 180;
+
+  if (deg < 22.5) return "ew-resize";
+  if (deg < 67.5) return "nesw-resize";
+  if (deg < 112.5) return "ns-resize";
+  if (deg < 157.5) return "nwse-resize";
+
+  return "ew-resize";
+}

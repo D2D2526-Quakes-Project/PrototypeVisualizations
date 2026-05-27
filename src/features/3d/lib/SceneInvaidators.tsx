@@ -8,6 +8,7 @@ import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useThresholds } from "@/features/metrics/useThresholds";
 import { useHover } from "./useHover";
+import { useCanvasState } from "../contexts/CanvasContext";
 
 export function SceneInvalidators() {
   const { invalidate } = useThree();
@@ -42,6 +43,16 @@ export function SceneInvalidators() {
 
   const { hoveredItem } = useHover();
 
+  const {
+    sliceEnabled,
+    sliceXRange,
+    sliceYRange,
+    sliceZRange,
+    displacementEnabled,
+    xyDisplacementScale,
+    zDisplacementScale,
+  } = useCanvasState(true);
+
   useEffect(() => {
     invalidate();
   }, [
@@ -69,6 +80,13 @@ export function SceneInvalidators() {
     thresholds,
     metricPaletteOverrides,
     hoveredItem,
+    sliceEnabled,
+    sliceXRange,
+    sliceYRange,
+    sliceZRange,
+    displacementEnabled,
+    xyDisplacementScale,
+    zDisplacementScale,
   ]);
 
   return null;

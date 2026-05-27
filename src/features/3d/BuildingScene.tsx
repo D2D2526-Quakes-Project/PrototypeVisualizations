@@ -4,6 +4,7 @@ import { SceneInvalidators } from "./lib/SceneInvaidators";
 import { useRenderModes } from "./lib/useRenderModes";
 import { XCrossSectionSlabsRenderer, YCrossSectionSlabsRenderer } from "./renderers/CrossSectionSlabsRenderer";
 import { FloorSlabsRenderer } from "./renderers/FloorSlabsRenderer";
+import { FloorSliceRangeSliders } from "./renderers/FloorSliceRangeSliders";
 import { FloorTickMarks } from "./renderers/FloorTickMarks";
 import { HingeNodesRenderer } from "./renderers/HingeNodeRenderer";
 import { HorizontalConnectionsRenderer } from "./renderers/HorizontalConnectionsRenderer";
@@ -47,6 +48,8 @@ export function BuildingScene() {
 
       <FloorTickMarks />
       {/* <FloorDirectionLabels /> */}
+
+      <FloorSliceRangeSliders />
     </>
   );
 }

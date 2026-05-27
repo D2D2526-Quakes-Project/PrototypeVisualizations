@@ -1,12 +1,12 @@
-import { Switch } from "@/components/ui/switch";
-import { motion } from "motion/react";
-import { ColorScaleBar } from "../components/ColorScaleBar";
-import { useMetrics } from "@/features/metrics/useMetrics";
-import { METRIC_CONFIGS, type Metric } from "@/features/metrics/metrics";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { PaletteIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Switch } from "@/components/ui/switch";
+import { METRIC_CONFIGS, type Metric } from "@/features/metrics/metrics";
+import { useMetrics } from "@/features/metrics/useMetrics";
+import { PaletteIcon } from "lucide-react";
+import { motion } from "motion/react";
 import { useState } from "react";
+import { ColorScaleBar } from "../components/ColorScaleBar";
 
 export function CanvasMetricSelector() {
   const { currentMetric, setCurrentMetric, availableMetrics, thresholdHighlighting, setThresholdHighlighting } =
@@ -16,7 +16,7 @@ export function CanvasMetricSelector() {
 
   return (
     <div
-      className="flex w-58 flex-col rounded-lg border border-neutral-200 bg-white/90 p-1.25 pb-1 shadow-lg backdrop-blur-sm select-none"
+      className="pointer-events-auto flex w-58 flex-col rounded-lg border border-neutral-200 bg-white/90 p-1.25 pb-1 shadow-lg backdrop-blur-sm select-none"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}>
       <motion.div

@@ -196,6 +196,7 @@ function CameraControls({ pendingCameraCommandRef }: { pendingCameraCommandRef: 
       autoRotate={spin}
       onChange={handleChange}
       target={initTarget}
+      makeDefault
     />
   );
 }

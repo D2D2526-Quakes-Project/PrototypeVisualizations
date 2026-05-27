@@ -15,18 +15,8 @@ export function CurrentThresholdSlider() {
   const value = thresholds[currentMetricConfig.thresholdKey];
 
   return (
-    <div className="flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 px-1.5 py-1 shadow-lg backdrop-blur-sm select-none">
+    <div className="pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 px-1.5 py-1 shadow-lg backdrop-blur-sm select-none">
       <div className="grid grid-cols-[1fr_auto] gap-1">
-        {/* <ThresholdSlider
-          label=""
-          value={thresholds[currentMetricConfig.thresholdKey]}
-          unit={config.unit}
-          onChange={(value) => setThreshold(currentMetricConfig.thresholdKey, value)}
-          max={max}
-          tooltip={tooltip}
-          currentlyUsed={true}
-        /> */}
-
         <div className="border-border flex w-full min-w-32 items-center border-r py-1 pr-2">
           <Slider
             value={[value, max]}

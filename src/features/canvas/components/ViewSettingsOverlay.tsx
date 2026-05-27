@@ -21,12 +21,7 @@ export function ViewSettingsOverlay() {
   }
 
   if (canvasState.sliceEnabled) {
-    const x = canvasState.sliceXRange;
-    const y = canvasState.sliceYRange;
-    const z = canvasState.sliceZRange;
-    lines.push(
-      `Slice X:[${x[0].toFixed(0)},${x[1].toFixed(0)}] Y:[${y[0].toFixed(0)},${y[1].toFixed(0)}] Z:[${z[0].toFixed(0)},${z[1].toFixed(0)}]`
-    );
+    lines.push(`Slicing Enabled`);
   }
 
   if (canvasState.xExpansion !== 1 || canvasState.yExpansion !== 0 || canvasState.zExpansion !== 0) {
@@ -46,7 +41,9 @@ export function ViewSettingsOverlay() {
   if (lines.length === 0) return null;
 
   return (
-    <div className="flex flex-col items-end px-1 text-[10px]" style={{ color: colorTheme.canvasText }}>
+    <div
+      className="pointer-events-auto flex flex-col items-end px-1 text-[10px]"
+      style={{ color: colorTheme.canvasText }}>
       {lines.map((line, i) => (
         <span key={i} className="font-mono whitespace-nowrap">
           {line}

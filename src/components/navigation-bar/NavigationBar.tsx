@@ -1,4 +1,4 @@
-import { AlertTriangleIcon, Keyboard, LogOutIcon } from "lucide-react";
+import { AlertTriangleIcon, Keyboard, LogOutIcon, Palette } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
@@ -22,6 +22,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { DataMenu } from "./DataMenu";
 import { OptionalDatasetLoader } from "./OptionalDatasetLoader";
 import { ProfileMenu } from "./ProfileMenu";
+import { MetricColorsBar } from "./MetricColorsBar";
 import { ShortcutsBar } from "./ShortcutsBar";
 
 export function NavigationBar() {
@@ -48,6 +49,7 @@ export function NavigationBar() {
   const [activeMenu, setActiveMenu] = useState("");
   // const [isCopyingLink, setIsCopyingLink] = useState(false);
   const [helpDrawerOpen, setHelpDrawerOpen] = useState(false);
+  const [metricColorsDrawerOpen, setMetricColorsDrawerOpen] = useState(false);
 
   const backToHome = () => {
     clearSelection();
@@ -134,6 +136,10 @@ export function NavigationBar() {
                 <Keyboard />
                 Help
               </MenubarItem>
+              <MenubarItem onClick={() => setMetricColorsDrawerOpen(true)}>
+                <Palette />
+                Metric Colors
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <DataMenu />
@@ -151,6 +157,20 @@ export function NavigationBar() {
           </SheetHeader>
           <div className="flex h-full flex-col overflow-y-auto">
             <ShortcutsBar />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={metricColorsDrawerOpen} onOpenChange={setMetricColorsDrawerOpen}>
+        <SheetContent className="h-[35vh] max-h-[50vh]" side="bottom">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Palette size={13} className="text-neutral-400" />
+              Metric Colors
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex h-full flex-col overflow-y-auto">
+            <MetricColorsBar />
           </div>
         </SheetContent>
       </Sheet>

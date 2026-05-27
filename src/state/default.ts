@@ -13,7 +13,7 @@ export function getDefaultProfileData(
     renderYCrossSectionSlabs: false,
     showCornersOnly: false,
     visualInterpolationEnabled: true,
-    renderVerticalConnections: false,
+    renderVerticalConnections: true,
     renderHorizontalConnections: false,
     coloredConnectionLines: false,
     _thresholds: { ...DEFAULT_THRESHOLDS },
@@ -32,9 +32,9 @@ export function getDefaultProfileData(
     nodeScale: 1,
     nodeOpacity: 1,
     hingeNodeScale: 1,
-    belowThresholdNodeScale: 0.5,
+    belowThresholdNodeScale: 1,
     belowThresholdNodeOpacity: 0.3,
-    belowThresholdHingeScale: 0.5,
+    belowThresholdHingeScale: 1,
     floorOpacity: 1,
     connectionLineWidth: 1,
     connectionLineOpacity: 1,
@@ -42,13 +42,7 @@ export function getDefaultProfileData(
   };
 }
 
-export const BUILT_IN_PROFILES = [
-  "default",
-  "displacements",
-  "hinges-preview",
-  "shear",
-  "story-drifts",
-] as const;
+export const BUILT_IN_PROFILES = ["default", "displacements", "hinges-preview", "shear", "story-drifts"] as const;
 
 export type BuiltInProfileId = (typeof BUILT_IN_PROFILES)[number];
 
@@ -212,10 +206,7 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
   },
 ];
 
-export function getBuiltInProfileData(
-  profileId: string,
-  defaultHiddenFloors?: string[]
-): ProfileData {
+export function getBuiltInProfileData(profileId: BuiltInProfileId, defaultHiddenFloors?: string[]): ProfileData {
   const def = BUILT_IN_PROFILE_DEFINITIONS.find((d) => d.profileId === profileId);
   const overrides = def ? def.getOverrides(defaultHiddenFloors) : {};
   const base = getDefaultProfileData({ profileId, ...overrides }, defaultHiddenFloors);

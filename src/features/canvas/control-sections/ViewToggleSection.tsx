@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRenderModes } from "@/features/3d/lib/useRenderModes";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
@@ -14,6 +15,7 @@ import {
   Share2Icon,
   WorkflowIcon,
 } from "lucide-react";
+import { useMemo } from "react";
 
 export function ViewToggleSection() {
   const { animationData } = useAnimationData();
@@ -93,6 +95,11 @@ export function ViewToggleSection() {
     },
   ];
 
+  const { datasetStates: dataDatasetStates, requestDatasetLoad, retryDatasetLoad } = useAnimationData();
+
+  const hingeDataAvailable = useMemo(() => dataDatasetStates["hingeData"].available, [dataDatasetStates]);
+  const hingeDataState = useMemo(() => dataDatasetStates["hingeData"], [dataDatasetStates]);
+
   return (
     <>
       <div className="mb-1 flex items-center gap-1">
@@ -103,7 +110,7 @@ export function ViewToggleSection() {
         {options.map(
           ({ label, checked, setter, icon: Icon, disabled, hidden }) =>
             !hidden && (
-              <Tooltip key={label} disableHoverableContent>
+              <Tooltip key={label}>
                 <TooltipTrigger asChild>
                   <button
                     className={disabled ? "cursor-not-allowed opacity-50" : "group"}
@@ -127,8 +134,61 @@ export function ViewToggleSection() {
                   </button>
                 </TooltipTrigger>
                 {disabled && (
-                  <TooltipContent side="bottom" sideOffset={8}>
-                    You need to load beam data to use this view mode.
+                  <TooltipContent side="bottom" sideOffset={8} className="flex flex-col">
+                    {hingeDataAvailable ? (
+                      <>
+                        You need to load hinge data to use this view mode.
+                        <div className="w-full">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="flex items-center gap-2">
+                              {hingeDataState.stage === "ready" ? (
+                                <>
+                                  <CheckIcon size={11} /> Loaded
+                                </>
+                              ) : hingeDataState.stage === "error" ? (
+                                "Failed"
+                              ) : hingeDataState.selected ? (
+                                hingeDataState.message
+                              ) : (
+                                "Available"
+                              )}
+                            </span>
+                            <div className="inline-block items-center justify-between gap-2 text-[10px]">
+                              {hingeDataState.stage === "error" ? (
+                                <Button
+                                  variant="outline"
+                                  size="xs"
+                                  className="dark"
+                                  onClick={() => retryDatasetLoad("hingeData")}>
+                                  <span className="text-xs leading-tight">Retry</span>
+                                </Button>
+                              ) : hingeDataState.stage === "idle" || !hingeDataState.selected ? (
+                                <Button
+                                  variant="outline"
+                                  size="xs"
+                                  className="dark"
+                                  onClick={() => (requestDatasetLoad("hingeData"), setter?.(!checked))}>
+                                  <span className="text-xs leading-tight">Load hinge data</span>
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                          <span className="flex items-center gap-2">{hingeDataState.error}</span>
+                          {hingeDataState.stage === "fetching" ||
+                          hingeDataState.stage === "parsing" ||
+                          hingeDataState.stage === "queued" ? (
+                            <div className="mt-1 mb-1 h-1.5 overflow-hidden rounded-full bg-neutral-200">
+                              <div
+                                className="h-full rounded-full bg-amber-500 transition-all"
+                                style={{ width: `${hingeDataState.progress}%` }}
+                              />
+                            </div>
+                          ) : null}
+                        </div>
+                      </>
+                    ) : (
+                      <>Hinge data is not available for this building</>
+                    )}
                   </TooltipContent>
                 )}
               </Tooltip>

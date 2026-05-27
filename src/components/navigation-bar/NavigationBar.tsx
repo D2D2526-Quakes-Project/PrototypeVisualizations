@@ -1,5 +1,5 @@
 import { AlertTriangleIcon, Keyboard, LogOutIcon, Palette } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import {
@@ -12,7 +12,6 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { useVisibilityWarnings } from "@/features/3d/contexts/useVisibilityWarnings";
-import { OPTIONAL_DATASET_KEYS } from "@/features/animation-data/data-loading/loadingTypes";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber } from "@/lib/utils";
@@ -20,9 +19,9 @@ import { useGlobalStore, useLiveStore, useProfileActions, useProfileData } from 
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { DataMenu } from "./DataMenu";
+import { MetricColorsBar } from "./MetricColorsBar";
 import { OptionalDatasetLoader } from "./OptionalDatasetLoader";
 import { ProfileMenu } from "./ProfileMenu";
-import { MetricColorsBar } from "./MetricColorsBar";
 import { ShortcutsBar } from "./ShortcutsBar";
 
 export function NavigationBar() {
@@ -36,15 +35,7 @@ export function NavigationBar() {
 
   const { allVisibilityHiddenWarning, mostNodesHiddenWarning, allFloorsHiddenWarning } = useVisibilityWarnings();
 
-  const {
-    animationData,
-    clearSelection,
-    currentBuilding,
-    currentSimulation,
-    datasetStates,
-    requestDatasetLoad,
-    retryDatasetLoad,
-  } = useAnimationData();
+  const { animationData, clearSelection, currentBuilding, currentSimulation } = useAnimationData();
 
   const [activeMenu, setActiveMenu] = useState("");
   // const [isCopyingLink, setIsCopyingLink] = useState(false);
@@ -70,11 +61,6 @@ export function NavigationBar() {
   // const clearCurrentSelection = () => {
   //   store.getState().setSelectedNodes([]);
   // };
-
-  const optionalDatasetStates = useMemo(
-    () => OPTIONAL_DATASET_KEYS.map((key) => datasetStates[key]).filter((state) => state.available),
-    [datasetStates]
-  );
 
   useEffect(() => {
     // Ctrl+? for help
@@ -223,11 +209,7 @@ export function NavigationBar() {
               <span className="font-bold">Show</span>
             </Button>
           )}
-          <OptionalDatasetLoader
-            datasetStates={optionalDatasetStates}
-            onRetry={retryDatasetLoad}
-            onRequestLoad={requestDatasetLoad}
-          />
+          <OptionalDatasetLoader />
         </div>
       </div>
     </div>

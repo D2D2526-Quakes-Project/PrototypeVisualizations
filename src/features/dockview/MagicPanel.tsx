@@ -319,16 +319,18 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
     <div
       className={`group h-full w-full cursor-grab p-1 pr-0 active:cursor-grabbing ${isTabGroup && "cursor-pointer"}`}>
       <div
-        className={`group-hover:bg-muted flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors relative ${isTabGroup && isActive && `
-
-        box-content
-        
-          before:absolute before:inset-x-0 before:rounded-t-md before:border-border before:border-2 before:border-b-0 before:top-0 before:h-3/4
-        
-        `}`}>
-          {isTabGroup && isActive && (<>
-          <div className="w-4 h-4 rounded-bl-md border-border absolute bottom-0 left-[calc(100%-2px)] border-b-2 border-l-2"></div>
-          <div className="w-4 h-4 rounded-br-md border-border absolute bottom-0 right-[calc(100%-2px)] border-b-2 border-r-2"></div></>)}
+        className={`group-hover:bg-muted relative flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors ${
+          isTabGroup &&
+          isActive &&
+          `before:border-border box-content before:absolute before:inset-x-0 before:top-0 before:h-3/4 before:rounded-t-md before:border-2 before:border-b-0`
+        }`}>
+        {isTabGroup && isActive && (
+          <>
+            <div className="border-border absolute bottom-0 left-[calc(100%-2px)] h-4 w-4 rounded-bl-md border-b-2 border-l-2"></div>
+            <div className="border-border absolute right-[calc(100%-2px)] bottom-0 h-4 w-4 rounded-br-md border-r-2 border-b-2"></div>
+          </>
+        )}
+        {props.api.width},{props.api.height}
         <span
           className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
           <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />

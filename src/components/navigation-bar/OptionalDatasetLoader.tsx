@@ -2,17 +2,18 @@ import { AlertTriangle, Check } from "lucide-react";
 import { useMemo } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
-import type { DatasetLoadState } from "@/features/animation-data/data-loading/loadingTypes";
+import { OPTIONAL_DATASET_KEYS, type OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
 import { Button } from "../ui/button";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 
-interface OptionalDatasetLoaderProps {
-  datasetStates: DatasetLoadState[];
-  onRetry: (key: OptionalDatasetKey) => void;
-  onRequestLoad: (key: OptionalDatasetKey) => void;
-}
+export function OptionalDatasetLoader() {
+  const { datasetStates: dataDatasetStates, requestDatasetLoad, retryDatasetLoad } = useAnimationData();
 
-export function OptionalDatasetLoader({ datasetStates, onRetry, onRequestLoad }: OptionalDatasetLoaderProps) {
+  const datasetStates = useMemo(
+    () => OPTIONAL_DATASET_KEYS.map((key) => dataDatasetStates[key]).filter((state) => state.available),
+    [dataDatasetStates]
+  );
+
   const backgroundLoadingCount = useMemo(
     () => datasetStates.filter((state) => state.stage === "fetching" || state.stage === "parsing").length,
     [datasetStates]
@@ -95,12 +96,15 @@ export function OptionalDatasetLoader({ datasetStates, onRetry, onRequestLoad }:
                   )}
                   <div className="inline-block items-center justify-between gap-2 text-[10px]">
                     {state.stage === "error" ? (
-                      <Button onClick={() => onRetry(state.key as OptionalDatasetKey)} variant="outline" size="sm">
+                      <Button
+                        onClick={() => retryDatasetLoad(state.key as OptionalDatasetKey)}
+                        variant="outline"
+                        size="sm">
                         Retry
                       </Button>
                     ) : state.stage === "idle" || !state.selected ? (
                       <Button
-                        onClick={() => onRequestLoad(state.key as OptionalDatasetKey)}
+                        onClick={() => requestDatasetLoad(state.key as OptionalDatasetKey)}
                         variant="outline"
                         size="sm">
                         Load

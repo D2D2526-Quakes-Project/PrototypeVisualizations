@@ -114,32 +114,40 @@ function createDefaultLayout_(api: DockviewApi) {
     component: "magicPanel",
     tabComponent: "magicPanelTab",
     params: { panelType: "Main Canvas", isPrimary: true },
-    initialHeight: 760,
   });
 
-  api.addPanel<MagicPanelParams>({
+  const timelinePanel = api.addPanel<MagicPanelParams>({
     id: "timeline",
     component: "magicPanel",
     tabComponent: "magicPanelTab",
     position: { referencePanel: mainCanvas, direction: "below" },
     params: { panelType: "Timeline" },
-    initialHeight: 200,
+    initialHeight: 220,
   });
 
-  const interstoryDriftPanel = api.addPanel<MagicPanelParams>({
+  api.addPanel<MagicPanelParams>({
+    id: "statistic-panel",
+    component: "magicPanel",
+    tabComponent: "magicPanelTab",
+    position: { referencePanel: timelinePanel, direction: "right" },
+    params: { panelType: "Statistics" },
+    initialWidth: 500,
+  });
+
+  const cornerMetricPanel = api.addPanel<MagicPanelParams>({
     id: "corner-metric-chart",
     component: "magicPanel",
     tabComponent: "magicPanelTab",
     position: { referencePanel: mainCanvas, direction: "left" },
     params: { panelType: "Corner Metric Chart" },
-    initialWidth: 300,
+    initialWidth: 500,
   });
 
   api.addPanel<MagicPanelParams>({
     id: "floor-displacement",
     component: "magicPanel",
     tabComponent: "magicPanelTab",
-    position: { referencePanel: interstoryDriftPanel, direction: "within" },
+    position: { referencePanel: cornerMetricPanel, direction: "within" },
     params: { panelType: "Floor Average Metric" },
   });
 
@@ -147,11 +155,11 @@ function createDefaultLayout_(api: DockviewApi) {
     id: "floor-waveforms",
     component: "magicPanel",
     tabComponent: "magicPanelTab",
-    position: { referencePanel: interstoryDriftPanel, direction: "within" },
+    position: { referencePanel: cornerMetricPanel, direction: "within" },
     params: { panelType: "Floor Waveforms" },
   });
 
-  interstoryDriftPanel.focus();
+  cornerMetricPanel.focus();
 }
 
 function createDisplacementsLayout(api: DockviewApi) {

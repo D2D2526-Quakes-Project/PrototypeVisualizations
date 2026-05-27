@@ -7,12 +7,13 @@ import {
   createDefaultProfiles,
   DEFAULT_PROFILE,
   getBuiltInProfileData,
+  type BuiltInProfileId,
 } from "./default";
 
 export type ThresholdState = Record<ThresholdKey, number>;
 
 export interface ProfileData {
-  profileId: string;
+  profileId: BuiltInProfileId;
 
   // Playback
   frameIndex: number;
@@ -70,11 +71,11 @@ export interface ProfileData {
 export interface ProfileState {
   // Profiles
   profiles: Record<string, Record<string, ProfileData>>;
-  activeProfileIds: Record<string, string>;
+  activeProfileIds: Record<string, BuiltInProfileId>;
 
   profileActions: {
-    setActiveProfile: (profId: string) => void;
-    resetProfile: (profId: string) => void;
+    setActiveProfile: (profId: BuiltInProfileId) => void;
+    resetProfile: (profId: BuiltInProfileId) => void;
 
     // Playback
     setFrameIndex: (frame: number) => void;
@@ -153,7 +154,7 @@ export type ProfileStateAPI = ProfileData & ProfileState["profileActions"];
 export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never]], [], ProfileStateSetters> = (
   set
 ) => {
-  const ensureProfilesInitialized = (state: AppState, buildingId: string, profId?: string) => {
+  const ensureProfilesInitialized = (state: AppState, buildingId: string, profId?: BuiltInProfileId) => {
     if (!state.profiles[buildingId]) {
       state.profiles[buildingId] = createDefaultProfiles();
     }

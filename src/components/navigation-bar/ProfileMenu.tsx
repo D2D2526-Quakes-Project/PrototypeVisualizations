@@ -5,13 +5,12 @@ import { LoaderCircleIcon } from "lucide-react";
 
 export function ProfileMenu() {
   const profileId = useProfileData((s) => s.profileId);
-  const { setActiveProfile, resetProfile } = useProfileActions();
+  const { setActiveProfile } = useProfileActions();
   const availableProfileIds = useProfileIds();
 
   const storeSaving = useStoreSaving();
 
   function pickProfile(profileId: BuiltInProfileId) {
-    resetProfile(profileId);
     setActiveProfile(profileId);
   }
 

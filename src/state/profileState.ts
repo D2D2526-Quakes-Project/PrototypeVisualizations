@@ -2,6 +2,7 @@ import type { SerializedDockview } from "dockview-react";
 import { type StateCreator } from "zustand";
 import type { AppState } from ".";
 import type { Metric, ThresholdKey } from "@/features/metrics/metrics";
+import { isStaticMetric } from "@/features/metrics/metrics";
 import {
   BUILT_IN_PROFILES,
   createDefaultProfiles,
@@ -253,6 +254,9 @@ export const createProfileSlice: StateCreator<AppState, [["zustand/immer", never
       // Color
       _setCurrentMetric: mutateProfile((profile, currentMetric) => {
         profile._currentMetric = currentMetric;
+        if (isStaticMetric(currentMetric)) {
+          profile.frameIndex = 0;
+        }
       }),
 
       _setThresholdHighlighting: mutateProfile((profile, thresholdHighlighting) => {

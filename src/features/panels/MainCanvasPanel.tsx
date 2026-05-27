@@ -14,12 +14,14 @@ import { SmallPlaybackControls } from "../playback/PlaybackControls";
 import { ViewSettingsOverlay } from "../canvas/components/ViewSettingsOverlay";
 import { CurrentThresholdSlider } from "../canvas/components/CurrentThresholdSlider";
 import { CanvasMetricSelector } from "../canvas/components/CanvasMetricSelector";
+import { useMetrics } from "@/features/metrics/useMetrics";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const panelId = props.api.id;
   const exportRenderMode = useExportRenderMode();
   const isActive = props.api.isActive;
   const isPrimary = props.params.isPrimary ?? false;
+  const { isCurrentMetricStatic } = useMetrics();
 
   const [isHoveringPanel, setIsHoveringPanel] = useState(false);
 
@@ -44,7 +46,7 @@ export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) =>
             <BuildingScene />
           </CanvasWithControls>
           <BoxSelectionOverlay />
-          {isPrimary && exportRenderMode.showTransientUi && (
+          {isPrimary && exportRenderMode.showTransientUi && !isCurrentMetricStatic && (
             <div className="absolute bottom-1 left-1 z-50">
               <SmallPlaybackControls />
             </div>

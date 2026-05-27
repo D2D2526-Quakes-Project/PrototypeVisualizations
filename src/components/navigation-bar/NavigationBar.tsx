@@ -14,6 +14,7 @@ import {
 import { useVisibilityWarnings } from "@/features/3d/contexts/useVisibilityWarnings";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePlayback } from "@/features/playback/usePlayback";
+import { useMetrics } from "@/features/metrics/useMetrics";
 import { formatNumber } from "@/lib/utils";
 import { useGlobalStore, useLiveStore, useProfileActions, useProfileData } from "@/state";
 import { Button } from "../ui/button";
@@ -36,6 +37,7 @@ export function NavigationBar() {
   const { allVisibilityHiddenWarning, mostNodesHiddenWarning, allFloorsHiddenWarning } = useVisibilityWarnings();
 
   const { animationData, clearSelection, currentBuilding, currentSimulation } = useAnimationData();
+  const { isCurrentMetricStatic } = useMetrics();
 
   const [activeMenu, setActiveMenu] = useState("");
   // const [isCopyingLink, setIsCopyingLink] = useState(false);
@@ -164,11 +166,19 @@ export function NavigationBar() {
       </Sheet>
 
       <div className="flex items-center justify-center gap-2 text-sm whitespace-nowrap">
-        <span className="font-medium">Frame:</span>
-        <span className="font-mono">{frameIndex + 1}</span>
-        <span className="text-neutral-300">|</span>
-        <span className="font-medium">Time:</span>
-        <span className="font-mono">{formatNumber(frameIndex * animationData.metadata.dt)} s</span>
+        {isCurrentMetricStatic ? (
+          <>
+            <AnimatedTitle />
+          </>
+        ) : (
+          <>
+            <span className="font-medium">Frame:</span>
+            <span className="font-mono">{frameIndex + 1}</span>
+            <span className="text-neutral-300">|</span>
+            <span className="font-medium">Time:</span>
+            <span className="font-mono">{formatNumber(frameIndex * animationData.metadata.dt)} s</span>
+          </>
+        )}
       </div>
 
       <div className="flex min-w-0 items-center justify-end">

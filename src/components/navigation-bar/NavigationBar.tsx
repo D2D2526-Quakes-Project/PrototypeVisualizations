@@ -24,6 +24,7 @@ import { MetricColorsBar } from "./MetricColorsBar";
 import { OptionalDatasetLoader } from "./OptionalDatasetLoader";
 import { ProfileMenu } from "./ProfileMenu";
 import { ShortcutsBar } from "./ShortcutsBar";
+import { ModeToggle } from "../ui/mode-toggle";
 
 export function NavigationBar() {
   const location = useLocation();
@@ -112,6 +113,8 @@ export function NavigationBar() {
               </MenubarCheckboxItem>
 
               <MenubarSeparator />
+              <ModeToggle />
+              <MenubarSeparator />
 
               {/* <MenubarItem
                 disabled={isCopyingLink}
@@ -141,7 +144,7 @@ export function NavigationBar() {
         <SheetContent className="h-[35vh] max-h-[50vh]" side="bottom">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              <Keyboard size={13} className="text-neutral-400" />
+              <Keyboard size={13} className="text-muted-foreground" />
               Shortcuts
             </SheetTitle>
           </SheetHeader>
@@ -155,7 +158,7 @@ export function NavigationBar() {
         <SheetContent className="h-[35vh] max-h-[50vh]" side="bottom">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              <Palette size={13} className="text-neutral-400" />
+              <Palette size={13} className="text-muted-foreground" />
               Metric Colors
             </SheetTitle>
           </SheetHeader>
@@ -179,41 +182,41 @@ export function NavigationBar() {
       </div>
 
       <div className="flex min-w-0 items-center justify-end">
-        <div className="flex items-center gap-1 text-xs text-neutral-500">
+        <div className="text-muted-foreground flex items-center gap-1 text-xs">
           <div className="truncate">
             {currentBuilding?.name} / {currentSimulation?.name}
           </div>
           {allFloorsHiddenWarning && (
             <Button
               variant="ghost"
-              className="border-amber-300 bg-amber-50 text-amber-800"
+              className="border-warning bg-warning/20 text-foreground"
               size="xs"
               onClick={allFloorsHiddenWarning}>
               <AlertTriangleIcon size={11} />
               All floors hidden
-              <span className="font-bold">Show</span>
+              <span className="font-bold underline">Show</span>
             </Button>
           )}
           {mostNodesHiddenWarning && (
             <Button
               variant="ghost"
-              className="border-amber-300 bg-amber-50 text-amber-800"
+              className="border-warning bg-warning/20 text-foreground"
               size="xs"
               onClick={mostNodesHiddenWarning}>
               <AlertTriangleIcon size={11} />
               All nodes hidden
-              <span className="font-bold">Show</span>
+              <span className="font-bold underline">Show</span>
             </Button>
           )}
           {allVisibilityHiddenWarning && (
             <Button
               variant="ghost"
-              className="border-amber-300 bg-amber-50 text-amber-800"
+              className="border-warning bg-warning/20 text-foreground"
               size="xs"
               onClick={allVisibilityHiddenWarning}>
               <AlertTriangleIcon size={11} />
               All views hidden
-              <span className="font-bold">Show</span>
+              <span className="font-bold underline">Show</span>
             </Button>
           )}
           <OptionalDatasetLoader />
@@ -239,7 +242,7 @@ function AnimatedTitle() {
         <span
           key={index}
           data-letter
-          className="animate-wiggle inline-block text-2xl font-bold text-neutral-800"
+          className="animate-wiggle text-foreground inline-block text-2xl font-bold"
           style={{ animationDelay: `${index * 50}ms` }}>
           {letter}
         </span>

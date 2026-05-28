@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLiveStore, useProfileActions, useProfileData } from "@/state";
 
+import { ButtonGroupSeparator } from "@/components/ui/button-group";
 import { useCanvasState } from "@/features/3d/contexts/CanvasContext";
 import { BoxSelect, Home, RotateCw, ScanEye } from "lucide-react";
 import { COLLAPSED_VIEW_PRESET_OPTIONS } from "../viewPresets";
@@ -20,16 +21,18 @@ function ViewButtons() {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.15 }}
-      className="flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm select-none">
+      className="border-border bg-background/90 pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg backdrop-blur-sm select-none">
       {COLLAPSED_VIEW_PRESET_OPTIONS.map(({ view, label }) => (
         <Tooltip key={view} disableHoverableContent>
           <TooltipTrigger asChild>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => resetView(view)}
-              className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none hover:bg-neutral-200">
+              className="text-[10px]">
               {label}
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={8}>
             {label} View
@@ -38,65 +41,47 @@ function ViewButtons() {
       ))}
       <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
-          <button
-            type="button"
-            onClick={resetHomeView}
-            className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200"
-            title="Home View">
+          <Button type="button" onClick={resetHomeView} variant="ghost" size="icon-sm" title="Home View">
             <Home size={14} />
-          </button>
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={8}>
           Home View
         </TooltipContent>
       </Tooltip>
-      <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+      <ButtonGroupSeparator />
       <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setOrthographic(!orthographic)}
-            className={`rounded p-1 transition-colors ${
-              orthographic ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
-            }`}>
+            className={orthographic ? "bg-primary/10 text-primary" : ""}>
             {orthographic ? <BoxSelect size={14} /> : <ScanEye size={14} />}
-          </button>
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={8}>
           {orthographic ? "Orthographic" : "Perspective"}
         </TooltipContent>
       </Tooltip>
-      <div className="mx-0.5 h-4 w-px bg-neutral-300" />
+      <ButtonGroupSeparator />
       <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setSpin(!spin)}
-            className={`rounded p-1 transition-colors ${
-              spin ? "bg-blue-100 text-blue-700" : "text-neutral-700 hover:bg-neutral-200"
-            }`}
+            className={spin ? "bg-primary/10 text-primary" : ""}
             title="Auto Rotate">
             <RotateCw size={14} className={spin ? "animate-spin" : undefined} />
-          </button>
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={8}>
           Auto Rotate
         </TooltipContent>
       </Tooltip>
-      {/* <div className="mx-0.5 h-4 w-px bg-neutral-300" /> */}
-      {/* <Tooltip disableHoverableContent>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="rounded p-1 text-neutral-700 transition-colors hover:bg-neutral-200">
-            <ChevronLeftIcon size={14} className={isExpanded ? "rotate-180" : undefined} />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" sideOffset={8}>
-          {isExpanded ? "Hide sidebar" : "More options"}
-        </TooltipContent>
-      </Tooltip> */}
     </motion.div>
   );
 }
@@ -128,7 +113,7 @@ export function QuickControls() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.15 }}
-            className="pointer-events-auto origin-top">
+            className="origin-top">
             <ViewButtons />
           </motion.div>
         )}
@@ -140,13 +125,13 @@ export function QuickControls() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -4 }}
             transition={{ duration: 0.15, delay: 0.05 }}
-            className="border-border bg-background pointer-events-auto flex origin-top items-center gap-0.5 rounded-lg border p-1 shadow-lg backdrop-blur-sm select-none">
+            className="border-border bg-background/90 pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg backdrop-blur-sm select-none">
             {visibleSelectedCount > 0 && (
               <>
-                <span className="font-mono text-[10px]">
+                <span className="p-1 font-mono text-[10px]">
                   {visibleSelectedCount} <span className="font-normal">Selected</span>
                 </span>
-                <div className="mx-0.5 inline-block h-4 w-px bg-neutral-300" />
+                <ButtonGroupSeparator />
               </>
             )}
             {hiddenCount > 0 && (
@@ -154,14 +139,14 @@ export function QuickControls() {
                 <span className="font-mono text-[10px]">
                   {hiddenCount} <span className="font-normal">Hidden</span>
                 </span>
-                <div className="mx-0.5 inline-block h-4 w-px bg-neutral-300" />
+                <ButtonGroupSeparator />
               </>
             )}
             <Tooltip disableHoverableContent>
               <TooltipTrigger asChild>
                 <Button
                   variant={"ghost"}
-                  size={"icon-xs"}
+                  size={"icon-sm"}
                   onClick={() => hideNodes(selectedNodeIds)}
                   disabled={visibleSelectedCount === 0}>
                   <EyeOffIcon />
@@ -175,7 +160,7 @@ export function QuickControls() {
               <TooltipTrigger asChild>
                 <Button
                   variant={"ghost"}
-                  size={"icon-xs"}
+                  size={"icon-sm"}
                   onClick={() => showNodes(selectedNodeIds)}
                   disabled={hiddenSelectedCount === 0}>
                   <EyeIcon />
@@ -187,7 +172,7 @@ export function QuickControls() {
             </Tooltip>
             <Tooltip disableHoverableContent>
               <TooltipTrigger asChild>
-                <Button variant={"ghost"} size={"icon-xs"} onClick={showAllNodes} disabled={hiddenCount === 0}>
+                <Button variant={"ghost"} size={"icon-sm"} onClick={showAllNodes} disabled={hiddenCount === 0}>
                   <RotateCwIcon />
                 </Button>
               </TooltipTrigger>
@@ -199,7 +184,7 @@ export function QuickControls() {
               <TooltipTrigger asChild>
                 <Button
                   variant={"destructive"}
-                  size={"icon-xs"}
+                  size={"icon-sm"}
                   onClick={clearSelection}
                   disabled={selectedCount === 0}>
                   <XCircleIcon />

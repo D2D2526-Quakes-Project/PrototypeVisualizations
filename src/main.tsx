@@ -11,6 +11,7 @@ import "./index.css";
 import { App } from "./pages/App";
 import { ExportRenderModeContext } from "./features/export/renderMode";
 import { AnimationDataProvider } from "./features/animation-data/AnimationDataProvider";
+import { ThemeProvider } from "./components/ThemeProvider";
 
 const routes = [
   {
@@ -25,21 +26,23 @@ const router = createBrowserRouter([
   {
     element: (
       <>
-        <TooltipProvider>
-          <AnimationDataProvider>
-            {/* <ExportProvider> */}
-            <ExportRenderModeContext.Provider
-              value={{
-                showPanelHeaders: true,
-                showTransientUi: true,
-              }}>
-              <NavigationBar />
-              <PlaybackKeyboardEvents />
-              <Outlet />
-            </ExportRenderModeContext.Provider>
-            {/*  </ExportProvider> */}
-          </AnimationDataProvider>
-        </TooltipProvider>
+        <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+          <TooltipProvider>
+            <AnimationDataProvider>
+              {/* <ExportProvider> */}
+              <ExportRenderModeContext.Provider
+                value={{
+                  showPanelHeaders: true,
+                  showTransientUi: true,
+                }}>
+                <NavigationBar />
+                <PlaybackKeyboardEvents />
+                <Outlet />
+              </ExportRenderModeContext.Provider>
+              {/*  </ExportProvider> */}
+            </AnimationDataProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </>
     ),
     errorElement: <ErrorPage />,

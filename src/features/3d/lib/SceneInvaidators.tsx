@@ -2,7 +2,7 @@ import { useMetrics } from "@/features/metrics/useMetrics";
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 import { useRenderModes } from "./useRenderModes";
-import { useGlobalStore } from "@/state";
+import { useGlobalStore, useLiveStore } from "@/state";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useNodePositions } from "../contexts/useNodePositions";
@@ -40,6 +40,8 @@ export function SceneInvalidators() {
 
   const { thresholds } = useThresholds();
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
+
+  const selectedNodeIds = useLiveStore((s) => s.selectedNodeIds);
 
   const { hoveredItem } = useHover();
 
@@ -87,6 +89,7 @@ export function SceneInvalidators() {
     displacementEnabled,
     xyDisplacementScale,
     zDisplacementScale,
+    selectedNodeIds,
   ]);
 
   return null;

@@ -256,9 +256,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
       .map(([id, config]) => ({
         value: id,
         label: config.label,
-        color: config.metric
-          ? getMetricKeyColor(config.metric, metricPaletteOverrides)
-          : GROUND_MOTION_COLOR,
+        color: config.metric ? getMetricKeyColor(config.metric, metricPaletteOverrides) : GROUND_MOTION_COLOR,
       }));
   }, [animationData, metricPaletteOverrides]);
 
@@ -643,8 +641,8 @@ export function Timeline({ api }: IDockviewPanelProps) {
   }, [frameIndex, seriesData, animationData, isCurrentMetricStatic, chartReadyVersion, selectedKeys, isHovered]);
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-white">
-      <div className="relative z-20 shrink-0 border-b border-neutral-100 px-2 pb-1">
+    <div className="relative flex h-full w-full flex-col">
+      <div className="border-border relative z-20 shrink-0 border-b px-2 pb-1">
         {exportRenderMode.showTransientUi && (
           <div className="float-right mt-0.5 ml-2">
             <CheckboxSelectPopover
@@ -670,7 +668,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             />
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-1 pt-1 text-xs text-neutral-700">
+        <div className="text-foreground flex flex-wrap items-center gap-1 pt-1 text-xs">
           <span className="font-medium">Time:</span>
           <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
           <div className="flex flex-wrap items-center gap-2">
@@ -684,7 +682,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
                   key={item.key}
                   className="flex items-center gap-1 border-l-2 pl-1.5 text-xs"
                   style={{ borderLeftColor: color }}>
-                  <span className="font-medium text-neutral-500">{config.shortName}:</span>
+                  <span className="text-muted-foreground font-medium">{config.shortName}:</span>
                   <span className="font-mono">
                     {formatFixed3(config.accessor(frameIndex, animationData) ?? 0)} {config.unit.abbr}
                   </span>
@@ -729,7 +727,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
                     ref={(el) => {
                       dotsRefs.current[index] = el;
                     }}
-                    className="absolute top-0 left-0 h-2 w-2 rounded-full border-[1.5px] border-white shadow-sm"
+                    className="border-background absolute top-0 left-0 h-2 w-2 rounded-full border-[1.5px] shadow-sm"
                     style={{
                       backgroundColor: color,
                       display: "none",
@@ -741,9 +739,9 @@ export function Timeline({ api }: IDockviewPanelProps) {
 
             {isCurrentMetricStatic && (
               <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-                <div className="rounded border border-neutral-200 bg-white/95 px-3 py-2 text-center text-xs text-neutral-600 shadow-sm">
+                <div className="border-border bg-background/95 text-muted-foreground rounded border px-3 py-2 text-center text-xs shadow-sm">
                   This metric is static.
-                  <div className="mt-1 text-[10px] text-neutral-500">
+                  <div className="text-muted-foreground mt-1 text-[10px]">
                     Playback and scrubbing are disabled in this mode.
                   </div>
                 </div>
@@ -751,7 +749,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             )}
           </>
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
+          <div className="text-muted-foreground flex h-full w-full items-center justify-center text-sm">
             Select a data channel to view
           </div>
         )}

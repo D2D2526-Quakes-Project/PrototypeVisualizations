@@ -23,8 +23,8 @@ function StatRow({
   if (isNumeric && unit) {
     const numVal = typeof value === "number" ? value : numericValue;
     return (
-      <div className="flex justify-between border-b border-neutral-100 py-1">
-        <span className="text-xs text-neutral-500">{label}</span>
+      <div className="flex justify-between py-1">
+        <span className="text-foreground text-xs">{label}</span>
         <span className="font-mono text-xs">
           <UnitTooltip side="left" value={numVal} unit={unit} decimals={decimals} />
         </span>
@@ -33,11 +33,11 @@ function StatRow({
   }
 
   return (
-    <div className="flex justify-between border-b border-neutral-100 py-1">
-      <span className="text-xs text-neutral-500">{label}</span>
+    <div className="flex justify-between py-1">
+      <span className="text-foreground text-xs">{label}</span>
       <span className="font-mono text-xs">
         {value}
-        {unit && <span className="ml-1 text-neutral-400">{unit}</span>}
+        {unit && <span className="text-foreground ml-1">{unit}</span>}
       </span>
     </div>
   );
@@ -45,9 +45,7 @@ function StatRow({
 
 function ScopeBadge({ scope }: { scope: StatScope }) {
   return (
-    <span className={`text-[10px] font-medium ${scope === "current" ? "text-blue-700" : "text-neutral-600"}`}>
-      {scope === "current" ? "Frame" : "Static"}
-    </span>
+    <span className={`text-muted-foreground text-[10px] font-medium`}>{scope === "current" ? "Frame" : "Static"}</span>
   );
 }
 
@@ -55,10 +53,10 @@ function StatGroup({ title, scope, children }: { title: string; scope: StatScope
   return (
     <div className="mb-3">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <div className="text-xs font-semibold tracking-wide text-neutral-700 uppercase">{title}</div>
+        <div className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{title}</div>
         <ScopeBadge scope={scope} />
       </div>
-      <div className="rounded bg-neutral-50 px-2 py-1">{children}</div>
+      <div className="bg-muted divide-border divide-y rounded px-2 py-1">{children}</div>
     </div>
   );
 }
@@ -133,7 +131,7 @@ export function StatisticsPanel() {
   }, [animationData, frameIndex]);
 
   return (
-    <div className="flex h-full w-full flex-col overflow-auto bg-white">
+    <div className="flex h-full w-full flex-col overflow-auto">
       <div className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-2 overflow-auto p-3">
         <StatGroup title="Simulation" scope="static">
           <StatRow label="Nodes" value={stats.nodeCount} />

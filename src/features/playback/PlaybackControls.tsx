@@ -3,44 +3,7 @@ import { useExportRenderMode } from "@/features/export/renderMode";
 
 import { usePlayback } from "./usePlayback";
 import { useMetrics } from "../metrics/useMetrics";
-
-export function PlaybackControls() {
-  const { playing, togglePlaying, skipToStart, skipToEnd } = usePlayback();
-  const { isCurrentMetricStatic } = useMetrics();
-
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
-        onClick={skipToStart}
-        disabled={isCurrentMetricStatic}
-        title="Skip to Start">
-        <SkipBackIcon />
-      </button>
-
-      <div className="h-6 w-px bg-neutral-300" />
-
-      <button
-        className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
-        onClick={togglePlaying}
-        disabled={isCurrentMetricStatic}
-        title={isCurrentMetricStatic ? "Static metrics do not support playback" : playing ? "Pause" : "Play"}>
-        {playing ? <PauseIcon /> : <PlayIcon />}
-      </button>
-
-      <div className="h-6 w-px bg-neutral-300" />
-
-      <button
-        className="cursor-pointer p-2 transition-transform hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
-        onClick={skipToEnd}
-        disabled={isCurrentMetricStatic}
-        title="Skip to End">
-        <SkipForwardIcon />
-      </button>
-      {isCurrentMetricStatic && <span className="text-xs text-neutral-500">Static</span>}
-    </div>
-  );
-}
+import { Button } from "@/components/ui/button";
 
 export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) {
   const { playing, togglePlaying, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
@@ -54,39 +17,37 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
       className={
         inline
           ? "flex items-center gap-0.5"
-          : "flex origin-right items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/90 p-1 shadow-lg backdrop-blur-sm"
+          : "border-border bg-background/90 pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg backdrop-blur-sm select-none"
       }>
-      <button
+      <Button
         onClick={skipToStart}
         disabled={isCurrentMetricStatic}
-        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+        variant="ghost"
+        size="icon-xs"
         title="Skip to Start">
         <SkipBackIcon />
-      </button>
-      <button
+      </Button>
+      <Button
         onClick={togglePlaying}
         disabled={isCurrentMetricStatic}
-        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+        variant="ghost"
+        size="icon-xs"
         title={isCurrentMetricStatic ? "Static metrics do not support playback" : playing ? "Pause" : "Play"}>
         {playing ? <PauseIcon /> : <PlayIcon />}
-      </button>
-      <button
-        onClick={skipToEnd}
-        disabled={isCurrentMetricStatic}
-        className="flex h-5 w-5 items-center justify-center rounded p-1 text-[10px] font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
-        title="Skip to End">
+      </Button>
+      <Button onClick={skipToEnd} disabled={isCurrentMetricStatic} variant="ghost" size="icon-xs" title="Skip to End">
         <SkipForwardIcon />
-      </button>
+      </Button>
       {isCurrentMetricStatic && (
-        <span className="border-l border-neutral-300 pl-1 text-[10px] text-neutral-500">Static</span>
+        <span className="border-border text-muted-foreground border-l pl-1 text-[10px]">Static</span>
       )}
       {playing && (
-        <div className="flex items-center gap-1 border-l border-neutral-300 pl-1">
-          <span className="text-[10px] font-medium text-neutral-700" title="Frames per second">
+        <div className="border-border flex items-center gap-1 border-l pl-1">
+          <span className="text-foreground text-[10px] font-medium" title="Frames per second">
             {fps} fps
           </span>
           {skippedPerFrame > 0 && (
-            <span className="text-[10px] text-red-600" title="Frames skipped this update">
+            <span className="text-destructive text-[10px]" title="Frames skipped this update">
               +{skippedPerFrame}
             </span>
           )}

@@ -91,27 +91,13 @@
     scrollbar-gutter: stable;
   }
 
-  .skinny-scrollbar::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  .skinny-scrollbar::-webkit-scrollbar-track {
-    background: var(--background);
-  }
-  .skinny-scrollbar::-webkit-scrollbar-thumb {
-    background: var(--muted);
-    border-radius: 4px;
-  }
-  .skinny-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
-  }
-
   .incomplete-warning {
     background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffe7a9' fill-opacity='0.94' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
   }
 }
 
 :root {
+  color-scheme: light;
   font-family: "Atkinson Hyperlegible Next", sans-serif;
   background: oklch(92.2% 0 0);
   --radius: 0.625rem;
@@ -147,6 +133,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 body {

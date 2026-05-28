@@ -53,7 +53,7 @@ function SortHeader({
 }) {
   return (
     <th
-      className={`sticky top-0 z-10 cursor-pointer border-b border-neutral-200 bg-neutral-100 px-2 py-1.5 select-none hover:bg-neutral-200 ${
+      className={`border-border bg-muted hover:bg-muted/50 sticky top-0 z-10 cursor-pointer border-b px-2 py-1.5 transition-colors select-none ${
         align === "right" ? "text-right" : "text-left"
       }`}
       onClick={() => onToggle(sortKey)}>
@@ -185,15 +185,15 @@ export function DataExplorerPanel({ api }: IDockviewPanelProps) {
     virtualRows.length > 0 ? rowVirtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end || 0) : 0;
 
   return (
-    <div className="flex h-full w-full flex-col bg-white">
-      <div className="flex items-center border-b border-neutral-100 p-2">
+    <div className="bg-background flex h-full w-full flex-col">
+      <div className="border-border flex items-center border-b p-2">
         <label className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-neutral-400" />
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter by node id or story"
-            className="w-full rounded-md border border-neutral-300 bg-white py-1 pr-2 pl-8 text-xs text-neutral-700 outline-none focus:border-neutral-400"
+            className="border-border bg-background text-foreground focus:border-foreground w-full rounded-md border py-1 pr-2 pl-8 text-xs outline-none"
           />
         </label>
       </div>
@@ -202,7 +202,7 @@ export function DataExplorerPanel({ api }: IDockviewPanelProps) {
       <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto">
         <table className="w-full min-w-max text-[11px] whitespace-nowrap">
           <thead>
-            <tr className="font-medium text-neutral-600">
+            <tr className="text-foreground font-medium">
               <SortHeader label="Node" sortKey="node" activeSortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
               <SortHeader
                 label="Story"
@@ -259,19 +259,19 @@ export function DataExplorerPanel({ api }: IDockviewPanelProps) {
               const { currentDispMag, currentDrift } = getDynamicData(node, frameIndex);
 
               return (
-                <tr key={node} className="border-b border-neutral-100 transition-colors hover:bg-neutral-50">
-                  <td className="px-2 py-1 font-mono text-neutral-500">{node}</td>
-                  <td className="px-2 py-1 text-neutral-700">{story}</td>
+                <tr key={node} className="border-border hover:bg-muted border-b transition-colors">
+                  <td className="text-foreground px-2 py-1 font-mono">{node}</td>
+                  <td className="text-foreground px-2 py-1">{story}</td>
                   <td className="px-2 py-1 text-right font-mono font-medium">
                     <UnitTooltip value={currentDispMag} unit="inches" />
                   </td>
-                  <td className="px-2 py-1 text-right font-mono text-neutral-500">
+                  <td className="text-muted-foreground px-2 py-1 text-right font-mono">
                     <UnitTooltip value={peakDispMag} unit="inches" />
                   </td>
                   <td className="px-2 py-1 text-right font-mono font-medium">
                     <UnitTooltip value={currentDrift} unit="percent" />
                   </td>
-                  <td className="px-2 py-1 text-right font-mono text-neutral-500">
+                  <td className="text-muted-foreground px-2 py-1 text-right font-mono">
                     <UnitTooltip value={peakDrift} unit="percent" />
                   </td>
                 </tr>
@@ -287,7 +287,7 @@ export function DataExplorerPanel({ api }: IDockviewPanelProps) {
         </table>
 
         {sortedNodes.length === 0 && (
-          <div className="py-8 text-center text-xs text-neutral-400">No nodes match the given filter.</div>
+          <div className="text-foreground py-8 text-center text-xs">No nodes match the given filter.</div>
         )}
       </div>
     </div>

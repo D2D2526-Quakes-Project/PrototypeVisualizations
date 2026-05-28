@@ -8,6 +8,7 @@ import type { IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview-re
 import { XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SectionVisualization } from "../3d/renderers/SectionVisualization";
+import { Button } from "@/components/ui/button";
 
 export interface CrossSectionParams {
   crossSectionType: "X" | "Y";
@@ -41,7 +42,7 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex-1 space-y-2 overflow-y-scroll p-3 text-xs scrollbar-gutter-stable">
+      <div className="scrollbar-gutter-stable flex-1 space-y-2 overflow-y-scroll p-3 text-xs">
         {/* LOCATION INFO */}
         <div className="animate-fade-in w-full" ref={containerRef}>
           <SectionVisualization nodeIds={nodeIds} width={dimensions} viewMode={crossSectionType === "X" ? "x" : "y"} />
@@ -49,14 +50,14 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
         <div className="animate-fade-in grid grid-cols-2 gap-2">
           {/* LOCATION INFO */}
           <div>
-            <span className="font-medium text-neutral-700">{crossSectionType} Position:</span>
-            <div className="text-neutral-600">
+            <span className="text-foreground font-medium">{crossSectionType} Position:</span>
+            <div className="text-muted-foreground">
               <UnitTooltip value={positionNumber} unit="inches" decimals={1} />
             </div>
           </div>
           <div>
-            <span className="font-medium text-neutral-700">Nodes:</span>
-            <div className="text-neutral-600">{nodeIds.length}</div>
+            <span className="text-foreground font-medium">Nodes:</span>
+            <div className="text-muted-foreground">{nodeIds.length}</div>
           </div>
         </div>
         {animationData.precomputed.hingeNodeMetrics && (
@@ -88,9 +89,11 @@ export function CrossSectionPanel(props: IDockviewPanelProps<CrossSectionParams>
           nodeIds={nodeIds}
           accessor={animationData.accelerationLin}
         />
-        {!animationData.velocityLin && <div className="text-[10px] text-neutral-400 italic">Velocities not loaded</div>}
+        {!animationData.velocityLin && (
+          <div className="text-muted-foreground text-[10px] italic">Velocities not loaded</div>
+        )}
         {!animationData.accelerationLin && (
-          <div className="text-[10px] text-neutral-400 italic">Accelerations not loaded</div>
+          <div className="text-muted-foreground text-[10px] italic">Accelerations not loaded</div>
         )}
       </div>
     </div>
@@ -129,13 +132,9 @@ export function CrossSectionTab(props: IDockviewPanelHeaderProps<CrossSectionPar
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <button
-          onClick={handleClose}
-          className="rounded p-1 transition-colors hover:bg-white/50"
-          style={{ color }}
-          title="Close">
+        <Button onClick={handleClose} variant="ghost" size="icon-sm" style={{ color }} title="Close">
           <XIcon className="size-3" />
-        </button>
+        </Button>
       </div>
     </div>
   );

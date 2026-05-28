@@ -1,7 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CheckboxSelectPopover } from "@/components/ui/checkbox-select-popover";
 import { usePanelState } from "@/features/dockview/usePanelState";
 import { useExportRenderMode } from "@/features/export/renderMode";
 import { usePlayback } from "@/features/playback/usePlayback";
@@ -9,8 +6,6 @@ import { formatFixed3, formatNumber } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview-react";
 import { type ECharts, type EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { ChevronDown } from "lucide-react";
-import { useDraftSelection } from "@/lib/useDraftSelection";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 
@@ -230,63 +225,6 @@ function TooltipContent({
   );
 }
 
-function CheckSelect({
-  options,
-  selected,
-  onChange,
-}: {
-  options: [string, ChannelOption][];
-  selected: string[];
-  onChange: (keys: string[]) => void;
-}) {
-  const { open, draft, handleOpenChange, toggleOption } = useDraftSelection(selected, onChange);
-  const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
-
-  const labelText = useMemo(() => {
-    if (selected.length === 0) return "Select Channels";
-    return selected.map((key) => GROUND_CHANNEL_CONFIG[key]?.shortName).join(", ");
-  }, [selected]);
-
-  return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button title={labelText} variant={"outline"} size="xs" className="min-w-16">
-          <span className="flex-1 truncate">{labelText}</span>
-          <ChevronDown
-            className={`h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
-          />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-56 p-1">
-        <div className="flex flex-col gap-0.5">
-          {options.map(([id, option]) => {
-            const isChecked = draft.includes(id);
-            const config = GROUND_CHANNEL_CONFIG[id];
-            const color = config.metric
-              ? getMetricKeyColor(config.metric, metricPaletteOverrides)
-              : GROUND_MOTION_COLOR;
-            return (
-              <Label
-                key={id}
-                htmlFor={`channel-${id}`}
-                className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
-                <Checkbox
-                  id={`channel-${id}`}
-                  checked={isChecked}
-                  onCheckedChange={() => toggleOption(id)}
-                  className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
-                />
-                <span className="flex-1">{option.label}</span>
-                <span className="h-3 w-3 rounded-full border border-black/10" style={{ backgroundColor: color }} />
-              </Label>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 export function Timeline({ api }: IDockviewPanelProps) {
   const exportRenderMode = useExportRenderMode();
   const { animationData } = useAnimationData();
@@ -313,8 +251,16 @@ export function Timeline({ api }: IDockviewPanelProps) {
   const dt = animationData.metadata.dt;
 
   const availableChannelOptions = useMemo(() => {
-    return Object.entries(GROUND_CHANNEL_CONFIG).filter(([, option]) => option.enabled(animationData));
-  }, [animationData]);
+    return Object.entries(GROUND_CHANNEL_CONFIG)
+      .filter(([, option]) => option.enabled(animationData))
+      .map(([id, config]) => ({
+        value: id,
+        label: config.label,
+        color: config.metric
+          ? getMetricKeyColor(config.metric, metricPaletteOverrides)
+          : GROUND_MOTION_COLOR,
+      }));
+  }, [animationData, metricPaletteOverrides]);
 
   const times = useMemo(() => {
     const times: number[] = [];
@@ -701,7 +647,27 @@ export function Timeline({ api }: IDockviewPanelProps) {
       <div className="relative z-20 shrink-0 border-b border-neutral-100 px-2 pb-1">
         {exportRenderMode.showTransientUi && (
           <div className="float-right mt-0.5 ml-2">
-            <CheckSelect options={availableChannelOptions} selected={selectedKeys} onChange={setSelectedKeys} />
+            <CheckboxSelectPopover
+              options={availableChannelOptions}
+              selected={selectedKeys}
+              onChange={setSelectedKeys}
+              triggerLabel={
+                selectedKeys.length === 0
+                  ? "Select Channels"
+                  : selectedKeys.map((key) => GROUND_CHANNEL_CONFIG[key]?.shortName).join(", ")
+              }
+              triggerTitle={
+                selectedKeys.length === 0
+                  ? "Select Channels"
+                  : selectedKeys.map((key) => GROUND_CHANNEL_CONFIG[key]?.shortName).join(", ")
+              }
+              align="end"
+              buttonSize="xs"
+              popoverWidth="w-56"
+              scrollable={false}
+              idPrefix="channel"
+              className="min-w-16"
+            />
           </div>
         )}
         <div className="flex flex-wrap items-center gap-1 pt-1 text-xs text-neutral-700">

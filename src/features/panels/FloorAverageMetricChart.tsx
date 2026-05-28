@@ -1,31 +1,19 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CheckboxSelectPopover } from "@/components/ui/checkbox-select-popover";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePanelState } from "@/features/dockview/usePanelState";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber, formatStoryLabel } from "@/lib/utils";
 
-import { useDraftSelection } from "@/lib/useDraftSelection";
 import { useGlobalStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview-react";
 import type { EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
 import { useHover } from "../3d/lib/useHover";
 import { getMetricConfig, getMetricKeyColor, type Metric } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
-
-type MetricOption = {
-  metric: Metric;
-  label: string;
-  shortName: string;
-  color: string;
-};
 
 const MIN_X_AXIS_MAX = 0.01;
 type FloorDisplacementChartPanelState = {
@@ -53,56 +41,6 @@ function sanitizeSelectedMetrics(value: unknown, availableMetrics: Metric[]): Me
   return availableMetrics.slice(0, Math.min(2, availableMetrics.length));
 }
 
-function MetricSelect({
-  options,
-  selected,
-  onChange,
-}: {
-  options: MetricOption[];
-  selected: Metric[];
-  onChange: (metrics: Metric[]) => void;
-}) {
-  const { open, draft, handleOpenChange, toggleOption } = useDraftSelection(selected, onChange);
-
-  const labelText = selected.length + " selected";
-
-  return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="max-w-full min-w-20">
-          <span className="text-foreground flex-1 truncate">{labelText || "Select Metrics"}</span>
-          <ChevronDown
-            className={`h-3 w-3 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
-          />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 p-1">
-        <div className="flex max-h-80 flex-col gap-0.5 overflow-auto">
-          {options.map((option) => {
-            const isChecked = draft.includes(option.metric);
-            return (
-              <Label
-                key={option.metric}
-                className="text-foreground hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
-                <Checkbox
-                  checked={isChecked}
-                  onCheckedChange={() => toggleOption(option.metric)}
-                  className="data-[state=checked]:border-blue-500 data-[state=checked]:bg-blue-500"
-                />
-                <span className="flex-1">{option.label}</span>
-                <span
-                  className="h-3 w-3 rounded-full border border-black/10"
-                  style={{ backgroundColor: option.color }}
-                />
-              </Label>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
@@ -119,15 +57,14 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
 
   const { setHoveredFloor } = useHover();
 
-  const metricOptions = useMemo<MetricOption[]>(() => {
+  const metricOptions = useMemo(() => {
     const metrics =
       availableMetrics.length > 0 ? availableMetrics : DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE.selectedMetrics;
     return metrics.map((metric: Metric) => {
       const config = getMetricConfig(metric);
       return {
-        metric,
+        value: metric,
         label: config.label,
-        shortName: config.shortLabel,
         color: getMetricKeyColor(metric, metricPaletteOverrides),
       };
     });
@@ -137,7 +74,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     () =>
       sanitizeSelectedMetrics(
         panelState.selectedMetrics,
-        metricOptions.map((option) => option.metric)
+        metricOptions.map((option) => option.value)
       ),
     [metricOptions, panelState.selectedMetrics]
   );
@@ -228,7 +165,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     const seriesMetricMap: (Metric | null)[] = [];
     const series: SeriesOption[] = effectiveSelectedMetrics.flatMap((metric) => {
       const metricConfig = getMetricConfig(metric);
-      const metricColor = metricOptions.find((option) => option.metric === metric)?.color ?? "#6b7280";
+      const metricColor = metricOptions.find((option) => option.value === metric)?.color ?? "#6b7280";
       const xAxisIndex = unitGroups.findIndex((g) => g.unit === metricConfig.unit.abbr);
       const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
 
@@ -425,10 +362,12 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   return (
     <div className="relative flex h-full w-full flex-col bg-white">
       <div className="absolute top-0 right-0 z-10 flex flex-wrap items-center justify-center p-1">
-        <MetricSelect
+        <CheckboxSelectPopover
           options={metricOptions}
           selected={effectiveSelectedMetrics}
           onChange={(selectedMetrics) => setPanelState({ selectedMetrics })}
+          triggerLabel={`${effectiveSelectedMetrics.length} selected`}
+          className="max-w-full min-w-20"
         />
       </div>
       <div className="min-h-0 w-full flex-1">

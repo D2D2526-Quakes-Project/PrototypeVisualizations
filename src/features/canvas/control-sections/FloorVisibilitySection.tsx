@@ -71,12 +71,10 @@ export function FloorVisibilitySection() {
       if (draftHiddenFloors) return !draftHiddenFloors.has(storyId);
       return isFloorVisible(storyId);
     },
-    [draftHiddenFloors, isFloorVisible],
+    [draftHiddenFloors, isFloorVisible]
   );
 
-  const noFloorsVisibleLocal = draftHiddenFloors
-    ? draftHiddenFloors.size === storyOrder.length
-    : noFloorsVisible;
+  const noFloorsVisibleLocal = draftHiddenFloors ? draftHiddenFloors.size === storyOrder.length : noFloorsVisible;
 
   const orderedStories = [...storyOrder].reverse();
 
@@ -89,8 +87,8 @@ export function FloorVisibilitySection() {
     <>
       <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-1">
-          <LayersIcon size={12} className="text-neutral-500" />
-          <span className="text-xs font-medium text-neutral-700">Floors</span>
+          <LayersIcon size={12} className="text-muted-foreground" />
+          <span className="text-foreground text-xs font-medium">Floors</span>
         </div>
         <div className="flex items-center gap-1">
           {noFloorsVisibleLocal && (
@@ -98,7 +96,7 @@ export function FloorVisibilitySection() {
               onClick={showDefaultFloors}
               variant={"outline"}
               size="xs"
-              className="border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+              className="border-warning bg-warning/20"
               title="All floors are hidden. Show all floors.">
               <AlertTriangleIcon size={9} />
               None visible

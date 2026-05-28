@@ -27,10 +27,7 @@ export interface TimeSeriesData {
 
 function getPeakTime(values: number[], times: number[]): number {
   if (values.length === 0) return 0;
-  const maxIdx = values.reduce(
-    (maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx),
-    0,
-  );
+  const maxIdx = values.reduce((maxIdx, val, idx, arr) => (val > arr[maxIdx] ? idx : maxIdx), 0);
   return times[maxIdx];
 }
 
@@ -38,7 +35,7 @@ export function useNodeTimeSeries(
   accessor: TimeIndexAccessor | undefined,
   nodeId: number,
   frameCount: number,
-  dt: number,
+  dt: number
 ): TimeSeriesData | null {
   return useMemo(() => {
     if (!accessor) return null;

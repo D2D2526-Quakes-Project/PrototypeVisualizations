@@ -5,9 +5,10 @@ import { usePlayback } from "@/features/playback/usePlayback";
 import { MetricSection } from "@/components/MetricSection";
 import { MiniRibbon } from "@/components/MiniRibbon";
 import { MiniTimeSeries } from "@/components/MiniTimeSeries";
+import { Toggle } from "@/components/ui/toggle";
+import { getMetricKeyColor } from "@/features/metrics/metrics";
 import { numberToColor, numberToColorLight, threeColorToCSS } from "@/lib/utils";
 import { useGlobalStore, useProfileActions, useProfileData } from "@/state";
-import { getMetricKeyColor } from "@/features/metrics/metrics";
 import { type IDockviewPanelHeaderProps, type IDockviewPanelProps } from "dockview-react";
 import { ChartNoAxesCombinedIcon, InfoIcon, TriangleIcon, XIcon } from "lucide-react";
 import { useMemo } from "react";
@@ -149,7 +150,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         <div className="animate-fade-in">
           <h3 className="mb-2 text-sm font-bold">Displacement Path</h3>
           <MiniRibbon path={ribbonPath} dt={dt} frameIndex={frameIndex} />
-          <div className="mt-1 flex items-center gap-1 text-[10px] text-neutral-400 italic">
+          <div className="text-muted-foreground mt-1 flex items-center gap-1 text-[10px] italic">
             <InfoIcon className="size-2.5" /> Number of points reduced
           </div>
         </div>
@@ -158,28 +159,28 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         <div className="animate-fade-in">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <span className="font-medium text-neutral-700">Story ID:</span>
-              <div className="font-mono text-neutral-600">{storyInfo.story}</div>
+              <span className="text-foreground font-medium">Story ID:</span>
+              <div className="text-muted-foreground font-mono">{storyInfo.story}</div>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">Corner:</span>
-              <div className="text-neutral-600">{cornerInfo}</div>
+              <span className="text-foreground font-medium">Corner:</span>
+              <div className="text-muted-foreground">{cornerInfo}</div>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">Elevation:</span>
-              <div className="text-neutral-600">
+              <span className="text-foreground font-medium">Elevation:</span>
+              <div className="text-muted-foreground">
                 <UnitTooltip value={storyInfo.elevation / 12} unit="feet" decimals={0} />
               </div>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">Story Height:</span>
-              <div className="text-neutral-600">
+              <span className="text-foreground font-medium">Story Height:</span>
+              <div className="text-muted-foreground">
                 <UnitTooltip value={storyInfo.height / 12} unit="feet" decimals={0} />
               </div>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">Node below:</span>
-              <div className="text-neutral-600">{animationData.metadata.nodeToBelow[nodeId]}</div>
+              <span className="text-foreground font-medium">Node below:</span>
+              <div className="text-muted-foreground">{animationData.metadata.nodeToBelow[nodeId]}</div>
             </div>
           </div>
         </div>
@@ -188,25 +189,25 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         <div className="animate-fade-in">
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <span className="font-medium text-neutral-700">
+              <span className="text-foreground font-medium">
                 X:{" "}
-                <span className="font-mono text-neutral-600">
+                <span className="text-muted-foreground font-mono">
                   <UnitTooltip value={currentPos[0]} unit="inches" />
                 </span>
               </span>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">
+              <span className="text-foreground font-medium">
                 Y:{" "}
-                <span className="font-mono text-neutral-600">
+                <span className="text-muted-foreground font-mono">
                   <UnitTooltip value={currentPos[1]} unit="inches" />
                 </span>
               </span>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">
+              <span className="text-foreground font-medium">
                 Z:{" "}
-                <span className="font-mono text-neutral-600">
+                <span className="text-muted-foreground font-mono">
                   <UnitTooltip value={currentPos[2]} unit="inches" />
                 </span>
               </span>
@@ -222,25 +223,25 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
               <div className="mb-0 grid grid-cols-3 items-center gap-2">
                 <div className="flex items-center gap-1" />
                 <div className="text-right">
-                  <div className="text-[10px] text-neutral-500">Max</div>
+                  <div className="text-muted-foreground text-[10px]">Max</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] text-neutral-500">Min</div>
+                  <div className="text-muted-foreground text-[10px]">Min</div>
                 </div>
               </div>
               {hingeEntries.map((entry) => (
                 <div key={entry.hingeIdx} className="grid grid-cols-3 items-center gap-2">
                   <div className="flex items-center gap-1">
                     <TriangleIcon className="text-border size-4" style={{ fill: entry.color }} />
-                    <span className="text-neutral-700">{entry.endCap === 1 ? "I" : "J"}</span>
+                    <span className="text-foreground">{entry.endCap === 1 ? "I" : "J"}</span>
                   </div>
                   <div className="text-right">
-                    <div className="font-mono text-neutral-900">
+                    <div className="text-foreground font-mono">
                       <UnitTooltip value={entry.maxValue} unit="radians" decimals={4} showConversions={false} />
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-mono text-neutral-900">
+                    <div className="text-foreground font-mono">
                       <UnitTooltip value={entry.minValue} unit="radians" decimals={4} showConversions={false} />
                     </div>
                   </div>
@@ -297,24 +298,25 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
             <h3 className="mb-2 text-sm font-bold">Story Drift Ratio</h3>
             <div className="mt-2 space-y-1">
               <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Current:</span>
-                <span className="flex items-end justify-between font-mono text-neutral-800">
+                <span className="text-muted-foreground">Current:</span>
+                <span className="text-foreground flex items-end justify-between font-mono">
                   <UnitTooltip value={storyDrift.current} unit="percent" />
-                  <button
-                    onClick={() => toggleNodePanelGraph("drift")}
-                    className="rounded p-0.5 transition-colors hover:bg-neutral-200"
+                  <Toggle
+                    size="icon-xs"
+                    pressed={nodePanelGraphVisibility["drift"]}
+                    onPressedChange={() => toggleNodePanelGraph("drift")}
                     title={nodePanelGraphVisibility["drift"] ? "Hide graph" : "Show graph"}>
                     <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility["drift"] ? "text-blue-500" : "text-neutral-300"}`}
+                      className={`size-4 ${nodePanelGraphVisibility["drift"] ? "text-foreground" : "text-muted-foreground"}`}
                     />
-                  </button>
+                  </Toggle>
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-1">
-                <span className="text-neutral-600">Peak:</span>
-                <span className="flex items-baseline justify-between font-mono text-neutral-800">
+                <span className="text-muted-foreground">Peak:</span>
+                <span className="text-foreground flex items-baseline justify-between font-mono">
                   <UnitTooltip value={storyDrift.peak} unit="percent" />
-                  <span className="text-[9px] text-neutral-500"> @ {storyDrift.peakTime.toFixed(2)} s</span>
+                  <span className="text-muted-foreground text-[9px]"> @ {storyDrift.peakTime.toFixed(2)} s</span>
                 </span>
               </div>
             </div>
@@ -337,7 +339,7 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         {/* CUMULATIVE STATS */}
         <div className="animate-fade-in">
           <h3 className="mb-2 text-sm font-bold">Total Distance Traveled</h3>
-          <div className="font-mono text-neutral-600">
+          <div className="text-muted-foreground font-mono">
             <UnitTooltip value={totalDistanceTraveled} unit="inches" />
           </div>
         </div>
@@ -381,7 +383,7 @@ export function NodeTab(props: IDockviewPanelHeaderProps<{ nodeId: number }>) {
       <div className="flex items-center gap-1">
         <button
           onClick={handleClose}
-          className="rounded p-1 transition-colors hover:bg-white/50"
+          className="hover:bg-background/50 rounded p-1 transition-colors"
           style={{ color }}
           title="Close">
           <XIcon className="size-3" />

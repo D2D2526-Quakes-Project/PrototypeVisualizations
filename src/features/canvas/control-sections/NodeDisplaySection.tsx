@@ -36,8 +36,8 @@ export function NodeDisplaySection() {
   return (
     <>
       <div className="mb-1 flex items-center gap-1">
-        <Sliders size={12} className="text-neutral-500" />
-        <span className="text-xs font-medium text-neutral-700">Node Display</span>
+        <Sliders size={12} className="text-muted-foreground" />
+        <span className="text-foreground text-xs font-medium">Node Display</span>
       </div>
 
       <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-1">
@@ -106,8 +106,8 @@ export function NodeDisplaySection() {
         )}
 
         <Label className="col-span-4 grid grid-cols-subgrid items-center gap-2 font-normal">
-          <SquaresIntersectIcon size={12} className="text-neutral-400" />
-          <span className="text-xs text-neutral-500">Visual Fill</span>
+          <SquaresIntersectIcon size={12} className="text-muted-foreground" />
+          <span className="text-muted-foreground text-xs">Visual Fill</span>
           <div className="border-border flex min-w-32 items-center border-x px-2">
             <Checkbox
               checked={visualInterpolationEnabled}
@@ -117,7 +117,7 @@ export function NodeDisplaySection() {
         </Label>
 
         <div className="col-span-4">
-          <span className="text-xs font-medium text-neutral-700">Below Threshold</span>
+          <span className="text-foreground text-xs font-medium">Below Threshold</span>
         </div>
 
         <AdjustmentSlider
@@ -169,8 +169,8 @@ function AdjustmentSlider({
 }) {
   return (
     <div className="col-span-4 grid grid-cols-subgrid items-center gap-2">
-      <Icon size={12} className="text-neutral-400" />
-      <span className="text-xs text-neutral-500">{label}</span>
+      <Icon size={12} className="text-muted-foreground" />
+      <span className="text-muted-foreground text-xs">{label}</span>
       <div className="border-border flex min-w-32 items-center border-x px-2 py-1">
         <Slider
           value={[value]}
@@ -181,7 +181,7 @@ function AdjustmentSlider({
           className="flex-1"
         />
       </div>
-      <span className="min-w-10 text-right text-xs text-neutral-500">
+      <span className="text-muted-foreground min-w-10 text-right text-xs">
         {suffix == "%" ? (value * 100).toFixed(0) : value.toFixed(1)}
         {suffix}
       </span>

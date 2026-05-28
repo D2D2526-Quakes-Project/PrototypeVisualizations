@@ -14,10 +14,10 @@ export function MetricSelectSection() {
   return (
     <>
       <div className="mb-1 flex items-center gap-1">
-        <PaletteIcon size={12} className="text-neutral-500" />
-        <span className="text-xs font-medium text-neutral-700">Color By</span>
+        <PaletteIcon size={12} className="text-muted-foreground" />
+        <span className="text-foreground text-xs font-medium">Color By</span>
         <div className="flex flex-1 items-center justify-end gap-2">
-          <Label className="text-xs font-normal text-neutral-500">
+          <Label className="text-muted-foreground text-xs font-normal">
             Show Threshold
             <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />
           </Label>

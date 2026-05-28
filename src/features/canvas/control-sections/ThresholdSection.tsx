@@ -42,8 +42,8 @@ export function ThresholdSection() {
     <div className="space-y-1">
       <div className="mb-1 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
-          <Sliders size={12} className="text-neutral-500" />
-          <span className="text-xs font-medium text-neutral-700">Thresholds</span>
+          <Sliders size={12} className="text-muted-foreground" />
+          <span className="text-foreground text-xs font-medium">Thresholds</span>
         </div>
         <Button onClick={resetThresholds} variant="outline" title="Reset all thresholds to default values" size="xs">
           <RotateCcw size={10} />
@@ -91,7 +91,7 @@ export function ThresholdSlider({
     <div className={`col-span-3 grid grid-cols-subgrid items-center gap-2 ${currentlyUsed ? "" : "opacity-50"}`}>
       <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
-          <span className="text-xs text-neutral-500">{label}</span>
+          <span className="text-muted-foreground text-xs">{label}</span>
         </TooltipTrigger>
         <TooltipContent side="left" className="max-w-xs">
           {tooltip}
@@ -103,7 +103,7 @@ export function ThresholdSlider({
       <div className="border-border flex min-w-32 items-center border-x px-2 py-1">
         <Slider value={[value, max]} onValueChange={(val) => onChange(val[0])} max={max} step={0.01} />
       </div>
-      <span className="text-right text-xs text-neutral-500">
+      <span className="text-muted-foreground text-right text-xs">
         <UnitTooltip value={value} unit={unit.label} decimals={2} />
       </span>
     </div>

@@ -74,7 +74,7 @@ const StaticRibbonSegments = memo(function StaticRibbonSegments({ segments }: { 
 
 function CurrentPositionMarker({ point }: { point: RibbonPoint | null }) {
   if (!point) return null;
-  return <circle cx={point.x} cy={point.z} r="2" className="fill-amber-500 stroke-white" strokeWidth="0.5" />;
+  return <circle cx={point.x} cy={point.z} r="2" className="stroke-primary fill-amber-500" strokeWidth="0.5" />;
 }
 
 export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
@@ -210,7 +210,7 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
 
   return (
     <div ref={containerRef} className="h-20 w-full">
-      <svg className="h-full w-full rounded border border-neutral-200" viewBox={`0 0 100 ${viewBoxHeight}`}>
+      <svg className="border-border h-full w-full rounded border" viewBox={`0 0 100 ${viewBoxHeight}`}>
         <StaticRibbonSegments segments={segments} />
         <CurrentPositionMarker point={currentPos} />
       </svg>

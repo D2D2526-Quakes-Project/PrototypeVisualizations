@@ -25,8 +25,8 @@ export function SlicesSection() {
   return (
     <>
       <Label className="flex items-center gap-1">
-        <SquareSplitHorizontalIcon size={12} className="text-neutral-500" />
-        <span className="flex-1 text-xs font-medium text-neutral-700">Slice View</span>
+        <SquareSplitHorizontalIcon size={12} className="text-muted-foreground" />
+        <span className="text-foreground flex-1 text-xs font-medium">Slice View</span>
         <Switch size="sm" checked={sliceEnabled} onCheckedChange={setSliceEnabled} />
       </Label>
 
@@ -34,8 +34,8 @@ export function SlicesSection() {
         <div className="space-y-2">
           <div className="space-y-1">
             <div className="flex items-center justify-between px-0.5">
-              <span className="text-xs text-neutral-500">X</span>
-              <span className="text-xs text-neutral-500">
+              <span className="text-muted-foreground text-xs">X</span>
+              <span className="text-muted-foreground text-xs">
                 <UnitTooltip value={sliceXRange[0] / 12} unit="feet" decimals={0} /> ↔{" "}
                 <UnitTooltip value={sliceXRange[1] / 12} unit="feet" decimals={0} />
               </span>
@@ -49,8 +49,8 @@ export function SlicesSection() {
           </div>
           <div className="space-y-1">
             <div className="flex items-center justify-between px-0.5">
-              <span className="text-xs text-neutral-500">Y</span>
-              <span className="text-xs text-neutral-500">
+              <span className="text-muted-foreground text-xs">Y</span>
+              <span className="text-muted-foreground text-xs">
                 <UnitTooltip value={sliceYRange[0] / 12} unit="feet" decimals={0} /> ↔{" "}
                 <UnitTooltip value={sliceYRange[1] / 12} unit="feet" decimals={0} />
               </span>
@@ -64,8 +64,8 @@ export function SlicesSection() {
           </div>
           <div className="space-y-1">
             <div className="flex items-center justify-between px-0.5">
-              <span className="text-xs text-neutral-500">Z</span>
-              <span className="text-xs text-neutral-500">
+              <span className="text-muted-foreground text-xs">Z</span>
+              <span className="text-muted-foreground text-xs">
                 <UnitTooltip value={sliceZRange[0] / 12} unit="feet" decimals={0} /> ↔{" "}
                 <UnitTooltip value={sliceZRange[1] / 12} unit="feet" decimals={0} />
               </span>

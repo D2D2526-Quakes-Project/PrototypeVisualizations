@@ -163,8 +163,8 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label, 
   return (
     <div className="relative w-full">
       <div className="flex justify-between">
-        <div className="mb-1 text-neutral-600">{label}</div>
-        <div className="font-mono text-[9px] text-neutral-600">
+        <div className="text-muted-foreground mb-1">{label}</div>
+        <div className="text-muted-foreground font-mono text-[9px]">
           {currentValue.toFixed(2)} {unit}
         </div>
       </div>
@@ -178,7 +178,7 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label, 
         />
         <div
           ref={playheadRef}
-          className="pointer-events-none absolute top-0 bottom-5 w-0.5 bg-black"
+          className="bg-foreground pointer-events-none absolute top-0 bottom-5 w-0.5"
           style={{
             left: "0%",
           }}

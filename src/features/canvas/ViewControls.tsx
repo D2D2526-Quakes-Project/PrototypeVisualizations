@@ -101,7 +101,7 @@ export const ViewControls = forwardRef<
             transition={{ duration: 0.15 }}
             className="group border-border bg-background pointer-events-auto absolute -right-1 flex origin-right items-center rounded-l-lg border border-r-0 p-1 shadow-lg backdrop-blur-sm select-none"
             onClick={() => setIsExpanded(true)}>
-            <div className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none group-hover:bg-neutral-200">
+            <div className="text-foreground group-hover:bg-accent flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium transition-colors select-none">
               <SettingsIcon size={14} />
             </div>
           </motion.button>
@@ -121,10 +121,8 @@ export const ViewControls = forwardRef<
               animate="animate"
               exit="exit"
               transition={{ duration: 0.15, delayChildren: stagger(0.05) }}
-              className={`border-sidebar-border pointer-events-auto flex max-h-full min-h-0 min-w-40 flex-col gap-2 pt-2 ${
-                docked
-                  ? "bg-sidebar h-full origin-top-right border-l"
-                  : "bg-sidebar/90 origin-top-right rounded-md border shadow-lg backdrop-blur-sm"
+              className={`border-sidebar-border bg-sidebar pointer-events-auto flex max-h-full min-h-0 min-w-40 flex-col gap-2 pt-2 ${
+                docked ? "h-full origin-top-right border-l" : "origin-top-right rounded-md border shadow-lg"
               }`}>
               <div className="flex items-center justify-between px-2">
                 <div className="font-semibold">View Settings</div>
@@ -140,11 +138,11 @@ export const ViewControls = forwardRef<
                 )}
                 {showNodeVisibilityMenu && (
                   <>
-                    <div className="my-1 h-px w-full bg-neutral-200" />
+                    <div className="bg-border my-1 h-px w-full" />
                     <motion.div className="" variants={childVariants}>
                       <div className="mb-1 flex items-center gap-1">
-                        <SquareDashedMousePointerIcon size={12} className="text-neutral-500" />
-                        <span className="text-xs font-medium text-neutral-700">Selected Nodes</span>
+                        <SquareDashedMousePointerIcon size={12} className="text-muted-foreground" />
+                        <span className="text-foreground text-xs font-medium">Selected Nodes</span>
                       </div>
                       <div className="grid grid-cols-2 gap-1">
                         <Button
@@ -176,53 +174,53 @@ export const ViewControls = forwardRef<
 
                 {showCanvasSpecificControls && (
                   <>
-                    <div className="my-1 h-px w-full bg-neutral-200" />
+                    <div className="bg-border my-1 h-px w-full" />
                     <motion.div className="flex items-center gap-2" variants={childVariants}>
-                      <Label className="flex-1 text-xs font-medium text-neutral-700">
+                      <Label className="text-foreground flex-1 text-xs font-medium">
                         Orthographic
                         <Switch checked={orthographic} onCheckedChange={setOrthographic} />
                       </Label>
-                      <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-                      <Label className="flex-1 text-xs font-medium text-neutral-700">
+                      <div className="bg-border mx-0.5 h-4 w-px" />
+                      <Label className="text-foreground flex-1 text-xs font-medium">
                         Spin
                         <Switch checked={spin} onCheckedChange={setSpin} />
                       </Label>
                     </motion.div>
                   </>
                 )}
-                <div className="my-1 h-px w-full bg-neutral-200" />
+                <div className="bg-border my-1 h-px w-full" />
                 <motion.div className="" variants={childVariants}>
                   <ViewToggleSection />
                 </motion.div>
-                <div className="my-1 h-px w-full bg-neutral-200" />
+                <div className="bg-border my-1 h-px w-full" />
                 <motion.div className="" variants={childVariants}>
                   <MetricSelectSection />
                 </motion.div>
-                <div className="my-1 h-px w-full bg-neutral-200" />
+                <div className="bg-border my-1 h-px w-full" />
                 <motion.div className="" variants={childVariants}>
                   <ThresholdSection />
                 </motion.div>
-                {showCanvasSpecificControls && <div className="my-1 h-px w-full bg-neutral-200" />}
+                {showCanvasSpecificControls && <div className="bg-border my-1 h-px w-full" />}
                 {showCanvasSpecificControls && (
                   <motion.div className="" variants={childVariants}>
                     <SlicesSection />
                   </motion.div>
                 )}
-                {showCanvasSpecificControls && <div className="my-1 h-px w-full bg-neutral-200" />}
+                {showCanvasSpecificControls && <div className="bg-border my-1 h-px w-full" />}
                 {showCanvasSpecificControls && (
                   <motion.div className="" variants={childVariants}>
                     <ScaleSection />
                   </motion.div>
                 )}
-                <div className="my-1 h-px w-full bg-neutral-200" />
+                <div className="bg-border my-1 h-px w-full" />
                 <motion.div className="" variants={childVariants}>
                   <NodeDisplaySection />
                 </motion.div>
-                <div className="my-1 h-px w-full bg-neutral-200" />
+                <div className="bg-border my-1 h-px w-full" />
                 <motion.div className="" variants={childVariants}>
                   <div className="mb-1 flex items-center gap-1">
-                    <SwatchBookIcon size={12} className="text-neutral-500" />
-                    <span className="text-xs font-medium text-neutral-700">Theme</span>
+                    <SwatchBookIcon size={12} className="text-muted-foreground" />
+                    <span className="text-foreground text-xs font-medium">Theme</span>
                   </div>
                   <div className="flex gap-1 px-1">
                     {DEFAULT_COLOR_THEMES.map((preset) => (
@@ -231,8 +229,8 @@ export const ViewControls = forwardRef<
                         onClick={() => setColorTheme(preset)}
                         className={`h-6 w-full rounded border-2 transition-all ${
                           colorTheme.label === preset.label
-                            ? "scale-110 border-black"
-                            : "border-neutral-300 hover:border-neutral-500"
+                            ? "border-primary scale-110"
+                            : "border-border hover:border-foreground"
                         }`}
                         style={{ backgroundColor: preset.background }}
                         title={preset.label}
@@ -240,7 +238,7 @@ export const ViewControls = forwardRef<
                     ))}
                   </div>
                 </motion.div>
-                <div className="my-1 h-px w-full bg-neutral-200" />
+                <div className="bg-border my-1 h-px w-full" />
                 <motion.div className="" variants={childVariants}>
                   <FloorVisibilitySection />
                 </motion.div>

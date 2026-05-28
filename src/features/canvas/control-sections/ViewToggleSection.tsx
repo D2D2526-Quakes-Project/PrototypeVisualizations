@@ -103,8 +103,8 @@ export function ViewToggleSection() {
   return (
     <>
       <div className="mb-1 flex items-center gap-1">
-        <GridIcon size={12} className="text-neutral-500" />
-        <span className="text-xs font-medium text-neutral-700">Viewable Parts</span>
+        <GridIcon size={12} className="text-muted-foreground" />
+        <span className="text-foreground text-xs font-medium">Viewable Parts</span>
       </div>
       <div className="gap-y- grid grid-cols-4 justify-items-center gap-x-2">
         {options.map(
@@ -126,7 +126,7 @@ export function ViewToggleSection() {
                       {setter != null && (
                         <span
                           className={`bg-background absolute flex items-center justify-center rounded border transition-colors ${checked ? "border-primary-foreground bg-primary -right-2.5 -bottom-2.5 size-5" : "bg-input -right-2 -bottom-2 size-4"} `}>
-                          {checked && <CheckIcon className="size-3.5 text-white" />}
+                          {checked && <CheckIcon className="text-background size-3.5" />}
                         </span>
                       )}
                     </div>
@@ -177,9 +177,9 @@ export function ViewToggleSection() {
                           {hingeDataState.stage === "fetching" ||
                           hingeDataState.stage === "parsing" ||
                           hingeDataState.stage === "queued" ? (
-                            <div className="mt-1 mb-1 h-1.5 overflow-hidden rounded-full bg-neutral-200">
+                            <div className="bg-muted mt-1 mb-1 h-1.5 overflow-hidden rounded-full">
                               <div
-                                className="h-full rounded-full bg-amber-500 transition-all"
+                                className="bg-warning h-full rounded-full transition-all"
                                 style={{ width: `${hingeDataState.progress}%` }}
                               />
                             </div>

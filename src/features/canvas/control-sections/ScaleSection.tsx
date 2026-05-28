@@ -77,8 +77,8 @@ export function ScaleSection() {
   return (
     <>
       <div className="flex items-center gap-1">
-        <ListChevronsUpDownIcon size={12} className="text-neutral-500" />
-        <Label htmlFor={"expandedscaleid"} className="flex-1 cursor-pointer text-xs font-medium text-neutral-700">
+        <ListChevronsUpDownIcon size={12} className="text-muted-foreground" />
+        <Label htmlFor={"expandedscaleid"} className="text-foreground flex-1 cursor-pointer text-xs font-medium">
           Expanded Scale
         </Label>
         {expansionEnabled && (
@@ -99,7 +99,7 @@ export function ScaleSection() {
       {expansionEnabled && (
         <div className="mt-1 space-y-1">
           <div className="flex items-center gap-1">
-            <span className="w-4 text-xs text-neutral-500">X</span>
+            <span className="text-muted-foreground w-4 text-xs">X</span>
             <Slider
               value={[xExpansion]}
               onValueChange={(val) => handleExpansionChange("x", val[0])}
@@ -108,10 +108,10 @@ export function ScaleSection() {
               step={0.1}
               className="flex-1"
             />
-            <span className="w-8 text-right text-xs text-neutral-500">{xExpansion.toFixed(1)}</span>
+            <span className="text-muted-foreground w-8 text-right text-xs">{xExpansion.toFixed(1)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-4 text-xs text-neutral-500">Y</span>
+            <span className="text-muted-foreground w-4 text-xs">Y</span>
             <Slider
               value={[yExpansion]}
               onValueChange={(val) => handleExpansionChange("y", val[0])}
@@ -120,10 +120,10 @@ export function ScaleSection() {
               step={0.1}
               className="flex-1"
             />
-            <span className="w-8 text-right text-xs text-neutral-500">{yExpansion.toFixed(1)}</span>
+            <span className="text-muted-foreground w-8 text-right text-xs">{yExpansion.toFixed(1)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-4 text-xs text-neutral-500">Z</span>
+            <span className="text-muted-foreground w-4 text-xs">Z</span>
             <Slider
               value={[zExpansion]}
               onValueChange={(val) => handleExpansionChange("z", val[0])}
@@ -132,16 +132,16 @@ export function ScaleSection() {
               step={0.1}
               className="flex-1"
             />
-            <span className="w-8 text-right text-xs text-neutral-500">{zExpansion.toFixed(1)}</span>
+            <span className="text-muted-foreground w-8 text-right text-xs">{zExpansion.toFixed(1)}</span>
           </div>
         </div>
       )}
 
-      <div className="my-2 h-px w-full bg-neutral-200" />
+      <div className="bg-border my-2 h-px w-full" />
 
       <div className="flex items-center gap-1">
-        <ImageUpscaleIcon size={12} className="text-neutral-500" />
-        <Label htmlFor={"displacementscaleid"} className="flex-1 cursor-pointer text-xs font-medium text-neutral-700">
+        <ImageUpscaleIcon size={12} className="text-muted-foreground" />
+        <Label htmlFor={"displacementscaleid"} className="text-foreground flex-1 cursor-pointer text-xs font-medium">
           Displacement Scale
         </Label>
         {displacementEnabled && (
@@ -167,7 +167,7 @@ export function ScaleSection() {
       {displacementEnabled && (
         <div className="mt-1 space-y-1">
           <div className="flex items-center gap-1">
-            <span className="w-6 text-xs text-neutral-500">XY</span>
+            <span className="text-muted-foreground w-6 text-xs">XY</span>
             <Slider
               value={[xzDisplacementScale]}
               onValueChange={(val) => handleDisplacementChange("xz", val[0])}
@@ -176,10 +176,10 @@ export function ScaleSection() {
               step={0.1}
               className="flex-1"
             />
-            <span className="w-8 text-right text-xs text-neutral-500">{xzDisplacementScale.toFixed(1)}</span>
+            <span className="text-muted-foreground w-8 text-right text-xs">{xzDisplacementScale.toFixed(1)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-6 text-xs text-neutral-500">Z</span>
+            <span className="text-muted-foreground w-6 text-xs">Z</span>
             <Slider
               value={[zDisplacementScale]}
               onValueChange={(val) => handleDisplacementChange("z", val[0])}
@@ -188,7 +188,7 @@ export function ScaleSection() {
               step={0.1}
               className="flex-1"
             />
-            <span className="w-8 text-right text-xs text-neutral-500">{zDisplacementScale.toFixed(1)}</span>
+            <span className="text-muted-foreground w-8 text-right text-xs">{zDisplacementScale.toFixed(1)}</span>
           </div>
         </div>
       )}

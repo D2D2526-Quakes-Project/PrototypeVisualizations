@@ -438,6 +438,54 @@ export interface ComputedStats {
    */
   avgDisplacementPerStory: TimeIndexAccessor;
 
+  /**
+   * Average velocity per story (if velocity data available).
+   * Layout: Frame -> Story -> [x, y, z]
+   * Size: frameCount * storyCount * 3
+   * Units: Inches/s
+   */
+  avgVelocityPerStory?: TimeIndexAccessor;
+
+  /**
+   * Average acceleration per story (if acceleration data available).
+   * Layout: Frame -> Story -> [x, y, z]
+   * Size: frameCount * storyCount * 3
+   * Units: Inches/s²
+   */
+  avgAccelerationPerStory?: TimeIndexAccessor;
+
+  /**
+   * Average rotation per story (if displacementRot data available).
+   * Layout: Frame -> Story -> [x, y, z]
+   * Size: frameCount * storyCount * 3
+   * Units: Radians
+   */
+  avgRotationPerStory?: TimeIndexAccessor;
+
+  /**
+   * Average rotation velocity per story (if velocityRot data available).
+   * Layout: Frame -> Story -> [x, y, z]
+   * Size: frameCount * storyCount * 3
+   * Units: Radians/s
+   */
+  avgRotationVelocityPerStory?: TimeIndexAccessor;
+
+  /**
+   * Average rotation acceleration per story (if accelerationRot data available).
+   * Layout: Frame -> Story -> [x, y, z]
+   * Size: frameCount * storyCount * 3
+   * Units: Radians/s²
+   */
+  avgRotationAccelerationPerStory?: TimeIndexAccessor;
+
+  /**
+   * Average story drift per story.
+   * Layout: Frame -> Story -> [value]
+   * Size: frameCount * storyCount
+   * Units: Percent
+   */
+  avgStoryDriftPerStory: Float32Array;
+
   // HINGE SUMMARY (if hinge data exists)
   hinge?: HingeComputedStats;
   hingeNodeMetrics?: HingeNodeMetrics;

@@ -150,13 +150,18 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
   const visibleStoryIds = useMemo(() => visibleFloors, [visibleFloors]);
 
+  const storyOrder = animationData.metadata.storyOrder;
+
   const baseStorySeries = useMemo(() => {
     const frameCount = animationData.metadata.frameCount;
     const series: StorySeries[] = [];
+    const getStoryValue = metricConfig.getStoryValue;
+
+    if (!getStoryValue) return series;
 
     visibleStoryIds.forEach((storyId) => {
-      const nodeIds = animationData.metadata.stories[storyId] ?? [];
-      if (nodeIds.length === 0) return;
+      const storyIndex = storyOrder.indexOf(storyId);
+      if (storyIndex === -1) return;
 
       const values = new Float32Array(frameCount);
       let peakValue = 0;
@@ -164,23 +169,15 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       let peakFrame = 0;
 
       for (let frame = 0; frame < frameCount; frame++) {
-        let sum = 0;
-        let count = 0;
+        const value = getStoryValue(animationData, storyIndex, frame);
+        if (value === undefined || !Number.isFinite(value)) continue;
 
-        for (const nodeId of nodeIds) {
-          const value = metricConfig.getValue(animationData, frame, nodeId);
-          if (value === undefined || !Number.isFinite(value)) continue;
-          sum += value;
-          count += 1;
-        }
+        values[frame] = value;
 
-        const averageValue = count > 0 ? sum / count : 0;
-        values[frame] = averageValue;
-
-        const candidatePeak = metricConfig.hasNegative ? Math.abs(averageValue) : averageValue;
+        const candidatePeak = metricConfig.hasNegative ? Math.abs(value) : value;
         if (candidatePeak > peakAbsValue) {
           peakAbsValue = candidatePeak;
-          peakValue = averageValue;
+          peakValue = value;
           peakFrame = frame;
         }
       }
@@ -197,7 +194,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     });
 
     return series;
-  }, [animationData, metricConfig, visibleStoryIds]);
+  }, [animationData, metricConfig, visibleStoryIds, storyOrder]);
 
   const storySeries: StorySeries[] = baseStorySeries;
 

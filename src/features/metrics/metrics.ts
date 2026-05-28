@@ -1,4 +1,4 @@
-import type { BuildingAnimationData, ComputedStats } from "@/lib/types";
+import type { BuildingAnimationData, ComputedStats, TimeIndexAccessor } from "@/lib/types";
 import { MATPLOTLIB_PALETTES, type MatplotlibPaletteKey } from "./colors/matplotlibColors";
 import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
 
@@ -314,6 +314,13 @@ export type MetricConfig = {
   getPrecomputedMax: (stats: BuildingAnimationData) => number;
   /** Undefined means the data for this metrics not available. Does insinuate meaning behind values. */
   getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => number | undefined;
+  /** Read a precomputed story-averaged value. storyIndex is the index in metadata.storyOrder.
+   * Undefined for metrics that don't have per-story time-series data (hinge, shear). */
+  getStoryValue?: (
+    animationData: BuildingAnimationData,
+    storyIndex: number,
+    frameIndex: number
+  ) => number | undefined;
   isAvailable: (animationData: BuildingAnimationData) => boolean;
   hasPositive: boolean;
   hasNegative: boolean;
@@ -523,6 +530,41 @@ function get<T extends NumericKeys<ComputedStats> & keyof ComputedStats>(
   return (animationData) => animationData.precomputed[stat] ?? 0;
 }
 
+function getStoryComponent(
+  _animationData: BuildingAnimationData,
+  storyIndex: number,
+  frameIndex: number,
+  accessor: TimeIndexAccessor | undefined,
+  component: 0 | 1 | 2
+): number | undefined {
+  if (!accessor) return undefined;
+  const frameData = accessor.atFrame(frameIndex);
+  return frameData.at(storyIndex)[component] ?? 0;
+}
+
+function getStoryMag(
+  _animationData: BuildingAnimationData,
+  storyIndex: number,
+  frameIndex: number,
+  accessor: TimeIndexAccessor | undefined
+): number | undefined {
+  if (!accessor) return undefined;
+  const frameData = accessor.atFrame(frameIndex);
+  const v = frameData.at(storyIndex);
+  return Math.hypot(v[0], v[1], v[2]);
+}
+
+function getStoryDriftValue(
+  animationData: BuildingAnimationData,
+  storyIndex: number,
+  frameIndex: number
+): number | undefined {
+  const data = animationData.precomputed.avgStoryDriftPerStory;
+  if (!data) return undefined;
+  const storyCount = animationData.metadata.storyOrder.length;
+  return data[frameIndex * storyCount + storyIndex] ?? 0;
+}
+
 function getShearValue(
   animationData: BuildingAnimationData,
   nodeId: number,
@@ -647,6 +689,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const drifts = animationData.storyDrift.get(frameIndex, nodeId);
       return drifts;
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryDriftValue(animationData, storyIndex, frameIndex),
   },
   displacementMag: {
     metric: "displacementMag",
@@ -664,6 +708,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryMag(animationData, storyIndex, frameIndex, animationData.precomputed.avgDisplacementPerStory),
   },
   displacementX: {
     metric: "displacementX",
@@ -680,6 +726,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[0];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgDisplacementPerStory, 0),
   },
   displacementY: {
     metric: "displacementY",
@@ -696,6 +744,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[1];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgDisplacementPerStory, 1),
   },
   displacementZ: {
     metric: "displacementZ",
@@ -712,6 +762,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
       return animationData.displacementLin.atFrame(frameIndex).at(nodeId)[2];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgDisplacementPerStory, 2),
   },
   velocityMag: {
     metric: "velocityMag",
@@ -730,6 +782,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.velocityLin.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryMag(animationData, storyIndex, frameIndex, animationData.precomputed.avgVelocityPerStory),
   },
   velocityX: {
     metric: "velocityX",
@@ -747,6 +801,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.velocityLin) return undefined;
       return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[0];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgVelocityPerStory, 0),
   },
   velocityY: {
     metric: "velocityY",
@@ -764,6 +820,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.velocityLin) return undefined;
       return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[1];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgVelocityPerStory, 1),
   },
   velocityZ: {
     metric: "velocityZ",
@@ -781,6 +839,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.velocityLin) return undefined;
       return animationData.velocityLin.atFrame(frameIndex).at(nodeId)[2];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgVelocityPerStory, 2),
   },
   accelerationMag: {
     metric: "accelerationMag",
@@ -799,6 +859,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.accelerationLin.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryMag(animationData, storyIndex, frameIndex, animationData.precomputed.avgAccelerationPerStory),
   },
   accelerationX: {
     metric: "accelerationX",
@@ -816,6 +878,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.accelerationLin) return undefined;
       return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[0];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgAccelerationPerStory, 0),
   },
   accelerationY: {
     metric: "accelerationY",
@@ -833,6 +897,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.accelerationLin) return undefined;
       return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[1];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgAccelerationPerStory, 1),
   },
   accelerationZ: {
     metric: "accelerationZ",
@@ -850,6 +916,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.accelerationLin) return undefined;
       return animationData.accelerationLin.atFrame(frameIndex).at(nodeId)[2];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgAccelerationPerStory, 2),
   },
   rotationMag: {
     metric: "rotationMag",
@@ -868,6 +936,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.displacementRot.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryMag(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationPerStory),
   },
   rotationX: {
     metric: "rotationX",
@@ -885,6 +955,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.displacementRot) return undefined;
       return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[0];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationPerStory, 0),
   },
   rotationY: {
     metric: "rotationY",
@@ -902,6 +974,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.displacementRot) return undefined;
       return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[1];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationPerStory, 1),
   },
   rotationZ: {
     metric: "rotationZ",
@@ -919,6 +993,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.displacementRot) return undefined;
       return animationData.displacementRot.atFrame(frameIndex).at(nodeId)[2];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationPerStory, 2),
   },
   rotationVelocityMag: {
     metric: "rotationVelocityMag",
@@ -937,6 +1013,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.velocityRot.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryMag(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationVelocityPerStory),
   },
   rotationVelocityX: {
     metric: "rotationVelocityX",
@@ -954,6 +1032,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.velocityRot) return undefined;
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[0];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationVelocityPerStory, 0),
   },
   rotationVelocityY: {
     metric: "rotationVelocityY",
@@ -971,6 +1051,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.velocityRot) return undefined;
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[1];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationVelocityPerStory, 1),
   },
   rotationVelocityZ: {
     metric: "rotationVelocityZ",
@@ -988,6 +1070,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.velocityRot) return undefined;
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[2];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationVelocityPerStory, 2),
   },
   rotationAccelerationMag: {
     metric: "rotationAccelerationMag",
@@ -1006,6 +1090,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const disp = animationData.accelerationRot.atFrame(frameIndex).at(nodeId);
       return Math.hypot(disp[0], disp[1], disp[2]);
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryMag(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationAccelerationPerStory),
   },
   rotationAccelerationX: {
     metric: "rotationAccelerationX",
@@ -1023,6 +1109,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.accelerationRot) return undefined;
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[0];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationAccelerationPerStory, 0),
   },
   rotationAccelerationY: {
     metric: "rotationAccelerationY",
@@ -1040,6 +1128,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.accelerationRot) return undefined;
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[1];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationAccelerationPerStory, 1),
   },
   rotationAccelerationZ: {
     metric: "rotationAccelerationZ",
@@ -1057,6 +1147,8 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       if (!animationData.accelerationRot) return undefined;
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
     },
+    getStoryValue: (animationData, storyIndex, frameIndex) =>
+      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationAccelerationPerStory, 2),
   },
   hingeRotationAbs: {
     metric: "hingeRotationAbs",

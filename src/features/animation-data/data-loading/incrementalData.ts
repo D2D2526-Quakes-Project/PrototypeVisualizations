@@ -24,7 +24,7 @@ import type {
 } from "@/lib/types";
 import Delaunay from "delaunator";
 
-export const PROCESSED_CACHE_VERSION = 5;
+export const PROCESSED_CACHE_VERSION = 6;
 
 export interface SerializedStoryDrift {
   data: Float32Array;
@@ -67,6 +67,7 @@ export interface SerializedComputedStatsCore {
   peakStoryDrift: Float32Array;
   peakStoryDriftFrame: Float32Array;
   avgStoryDriftPerFrame: Float32Array;
+  avgStoryDriftPerStory: Float32Array;
   avgDisplacementPerFrame: {
     x: Float32Array;
     y: Float32Array;
@@ -125,6 +126,9 @@ export interface OptionalStatsDelta {
   };
   avgVelocityPerStory?: Float32Array;
   avgAccelerationPerStory?: Float32Array;
+  avgRotationPerStory?: Float32Array;
+  avgRotationVelocityPerStory?: Float32Array;
+  avgRotationAccelerationPerStory?: Float32Array;
   hinge?: undefined; // TODO: Compute this summary (less values)
   maxshearXMax?: number;
   maxShearXMin?: number;
@@ -533,6 +537,7 @@ function serializeRequiredComputedStats(
   const peakStoryDrift = new Float32Array(metadata.nodeCount);
   const peakStoryDriftFrame = new Float32Array(metadata.nodeCount);
   const avgStoryDriftPerFrame = new Float32Array(frameCount);
+  const avgStoryDriftPerStory = new Float32Array(frameCount * storyCount);
   let maxStoryDrift = 0;
 
   const storyNodeIndices = metadata.storyOrder.map((storyId) => metadata.stories[storyId] ?? []);
@@ -602,6 +607,16 @@ function serializeRequiredComputedStats(
       avgDisplacementPerStory[avgIdx + 1] = storyY / count;
       avgDisplacementPerStory[avgIdx + 2] = storyZ / count;
     }
+
+    for (let storyIdx = 0; storyIdx < storyCount; storyIdx++) {
+      const nodes = storyNodeIndices[storyIdx];
+      if (nodes.length === 0) continue;
+      let driftSum = 0;
+      nodes.forEach((nodeId) => {
+        driftSum += nodeStoryDrift[frameIdx * metadata.nodeCount + nodeId];
+      });
+      avgStoryDriftPerStory[frameIdx * storyCount + storyIdx] = driftSum / nodes.length;
+    }
   }
 
   const [maxDisplacementX, maxDisplacementY, maxDisplacementZ] = getMaxComp(dispLin);
@@ -643,6 +658,7 @@ function serializeRequiredComputedStats(
     peakStoryDrift,
     peakStoryDriftFrame,
     avgStoryDriftPerFrame,
+    avgStoryDriftPerStory,
     peakNodeDisplacement,
     peakNodeDisplacementFrame,
     peakNodeDisplacementX,
@@ -803,9 +819,13 @@ export function mergeOptionalDatasetIntoAnimationData(
   animationData: BuildingAnimationData,
   result: SerializedOptionalDatasetResult
 ): BuildingAnimationData {
+  const storyCount = animationData.metadata.storyOrder.length;
   const {
     avgVelocityPerStory: rawAvgVelocityPerStory,
     avgAccelerationPerStory: rawAvgAccelerationPerStory,
+    avgRotationPerStory: rawAvgRotationPerStory,
+    avgRotationVelocityPerStory: rawAvgRotationVelocityPerStory,
+    avgRotationAccelerationPerStory: rawAvgRotationAccelerationPerStory,
     ...restStatsDelta
   } = result.statsDelta;
 
@@ -813,6 +833,21 @@ export function mergeOptionalDatasetIntoAnimationData(
     ...animationData.precomputed,
     ...restStatsDelta,
   };
+  if (rawAvgVelocityPerStory) {
+    nextPrecomputed.avgVelocityPerStory = makeTimeAccessor(rawAvgVelocityPerStory, storyCount);
+  }
+  if (rawAvgAccelerationPerStory) {
+    nextPrecomputed.avgAccelerationPerStory = makeTimeAccessor(rawAvgAccelerationPerStory, storyCount);
+  }
+  if (rawAvgRotationPerStory) {
+    nextPrecomputed.avgRotationPerStory = makeTimeAccessor(rawAvgRotationPerStory, storyCount);
+  }
+  if (rawAvgRotationVelocityPerStory) {
+    nextPrecomputed.avgRotationVelocityPerStory = makeTimeAccessor(rawAvgRotationVelocityPerStory, storyCount);
+  }
+  if (rawAvgRotationAccelerationPerStory) {
+    nextPrecomputed.avgRotationAccelerationPerStory = makeTimeAccessor(rawAvgRotationAccelerationPerStory, storyCount);
+  }
 
   const nextAnimationData: BuildingAnimationData = {
     ...animationData,
@@ -983,34 +1018,71 @@ function calculateOptionalTimeSeriesStats(
     return Math.sqrt(maxSq);
   };
 
-  if (key === "displacementRot") {
+  const computeRotationStats = (
+    magKey: "maxRotation" | "maxRotationVelocity" | "maxRotationAcceleration",
+    compX: "maxRotationX" | "maxRotationVelocityX" | "maxRotationAccelerationX",
+    compY: "maxRotationY" | "maxRotationVelocityY" | "maxRotationAccelerationY",
+    compZ: "maxRotationZ" | "maxRotationVelocityZ" | "maxRotationAccelerationZ",
+    storyKey: "avgRotationPerStory" | "avgRotationVelocityPerStory" | "avgRotationAccelerationPerStory"
+  ): OptionalStatsDelta => {
     const [x, y, z] = getMaxComp(body);
+    const storyCount = metadata.storyOrder.length;
+    const frameCount = metadata.frameCount;
+    const storyNodeIndices = metadata.storyOrder.map((storyId) => metadata.stories[storyId] ?? []);
+    const avgPerStory = new Float32Array(storyCount * frameCount * 3);
+
+    for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
+      const frameOffset = frameIdx * metadata.nodeCount * 3;
+      for (let storyIdx = 0; storyIdx < storyCount; storyIdx++) {
+        const nodes = storyNodeIndices[storyIdx];
+        if (nodes.length === 0) continue;
+        let sumX = 0;
+        let sumY = 0;
+        let sumZ = 0;
+        nodes.forEach((nodeId) => {
+          const offset = frameOffset + nodeId * 3;
+          sumX += body[offset] ?? 0;
+          sumY += body[offset + 1] ?? 0;
+          sumZ += body[offset + 2] ?? 0;
+        });
+        const avgIdx = (frameIdx * storyCount + storyIdx) * 3;
+        avgPerStory[avgIdx] = sumX / nodes.length;
+        avgPerStory[avgIdx + 1] = sumY / nodes.length;
+        avgPerStory[avgIdx + 2] = sumZ / nodes.length;
+      }
+    }
+
     return {
-      maxRotation: getMaxMag(body),
-      maxRotationX: x,
-      maxRotationY: y,
-      maxRotationZ: z,
-    };
+      [magKey]: getMaxMag(body),
+      [compX]: x,
+      [compY]: y,
+      [compZ]: z,
+      [storyKey]: avgPerStory,
+    } as OptionalStatsDelta;
+  };
+
+  if (key === "displacementRot") {
+    return computeRotationStats("maxRotation", "maxRotationX", "maxRotationY", "maxRotationZ", "avgRotationPerStory");
   }
 
   if (key === "velocityRot") {
-    const [x, y, z] = getMaxComp(body);
-    return {
-      maxRotationVelocity: getMaxMag(body),
-      maxRotationVelocityX: x,
-      maxRotationVelocityY: y,
-      maxRotationVelocityZ: z,
-    };
+    return computeRotationStats(
+      "maxRotationVelocity",
+      "maxRotationVelocityX",
+      "maxRotationVelocityY",
+      "maxRotationVelocityZ",
+      "avgRotationVelocityPerStory"
+    );
   }
 
   if (key === "accelerationRot") {
-    const [x, y, z] = getMaxComp(body);
-    return {
-      maxRotationAcceleration: getMaxMag(body),
-      maxRotationAccelerationX: x,
-      maxRotationAccelerationY: y,
-      maxRotationAccelerationZ: z,
-    };
+    return computeRotationStats(
+      "maxRotationAcceleration",
+      "maxRotationAccelerationX",
+      "maxRotationAccelerationY",
+      "maxRotationAccelerationZ",
+      "avgRotationAccelerationPerStory"
+    );
   }
 
   const frameCount = metadata.frameCount;
@@ -1025,7 +1097,7 @@ function calculateOptionalTimeSeriesStats(
     z: new Float32Array(frameCount),
     mag: new Float32Array(frameCount),
   };
-  const avgPerStory = new Float32Array(storyCount * frameCount);
+  const avgPerStory = new Float32Array(storyCount * frameCount * 3);
   const peakNode = new Float32Array(nodeCount);
   const magnitudes: number[] = [];
 
@@ -1068,11 +1140,10 @@ function calculateOptionalTimeSeriesStats(
         storyY += body[offset + 1] ?? 0;
         storyZ += body[offset + 2] ?? 0;
       });
-      avgPerStory[frameIdx * storyCount + storyIdx] = Math.hypot(
-        storyX / nodes.length,
-        storyY / nodes.length,
-        storyZ / nodes.length
-      );
+      const avgIdx = (frameIdx * storyCount + storyIdx) * 3;
+      avgPerStory[avgIdx] = storyX / nodes.length;
+      avgPerStory[avgIdx + 1] = storyY / nodes.length;
+      avgPerStory[avgIdx + 2] = storyZ / nodes.length;
     }
   }
 

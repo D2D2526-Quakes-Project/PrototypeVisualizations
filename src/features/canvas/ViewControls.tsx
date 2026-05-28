@@ -2,8 +2,8 @@ import { forwardRef, useEffect, useMemo, useRef } from "react";
 
 import {
   ChevronRightIcon,
-  EyeIcon,
   EyeOffIcon,
+  ListIndentDecreaseIcon,
   RotateCwIcon,
   SquareDashedMousePointerIcon,
   SwatchBookIcon,
@@ -12,14 +12,12 @@ import {
 import { AnimatePresence, motion, stagger } from "motion/react";
 
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Label } from "@/components/ui/label";
 import { isEditableTarget } from "@/lib/utils";
 import { useGlobalStore, useLiveStore, useProfileActions, useProfileData } from "@/state";
 import { DEFAULT_COLOR_THEMES } from "@/state/globalState";
 import { useCanvasState } from "../3d/contexts/CanvasContext";
-import { QuickControls } from "./components/QuickControls";
 import { FloorVisibilitySection } from "./control-sections/FloorVisibilitySection";
 import { MetricSelectSection } from "./control-sections/MetricSelectSection";
 import { NodeDisplaySection } from "./control-sections/NodeDisplaySection";
@@ -43,8 +41,7 @@ export const ViewControls = forwardRef<
     showCanvasSpecificControls?: boolean;
   }
 >(function ViewControls({ isExpanded, setIsExpanded, docked, showCanvasSpecificControls = true }, ref) {
-  const { resetView, resetHomeView, orthographic, setOrthographic, isHoveringPanel, isPrimaryPanel, spin, setSpin } =
-    useCanvasState();
+  const { resetView, resetHomeView, orthographic, setOrthographic, spin, setSpin } = useCanvasState();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
   const setColorTheme = useGlobalStore((s) => s.setColorTheme);
   const clearSelection = useLiveStore((s) => s.clearSelection);
@@ -52,7 +49,7 @@ export const ViewControls = forwardRef<
 
   const selectedNodeIds = useLiveStore((s) => s.selectedNodeIds);
   const hiddenNodeIds = useProfileData((s) => s._hiddenNodeIds);
-  const { showAllNodes, hideNodes, showNodes } = useProfileActions();
+  const { showAllNodes, hideNodes } = useProfileActions();
 
   const selectedCount = selectedNodeIds.length;
   const hiddenCount = hiddenNodeIds.length;
@@ -93,103 +90,16 @@ export const ViewControls = forwardRef<
     <div
       ref={ref}
       className={`pointer-events-none z-5 w-fit flex-[0_0] ${docked ? "h-full" : "absolute top-1 right-1 bottom-1"}`}>
-      <div className="flex h-full max-h-full min-h-0 items-start gap-2">
-        {!isExpanded && (
-          <div className={`pointer-events-auto relative flex flex-col items-end gap-2`}>
-            <AnimatePresence>
-              {(isHoveringPanel || isPrimaryPanel) && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.15 }}
-                  style={{ transformOrigin: "center right" }}>
-                  <QuickControls isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {showNodeVisibilityMenu && (
-              <motion.div
-                key="node-visibility-menu"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.15 }}
-                className="border-border bg-background flex items-center gap-0.5 rounded-lg border p-1 shadow-lg backdrop-blur-sm select-none">
-                {visibleSelectedCount > 0 && (
-                  <>
-                    <span className="font-mono text-[10px]">
-                      {visibleSelectedCount} <span className="font-normal">Selected</span>
-                    </span>
-                    <div className="mx-0.5 inline-block h-4 w-px bg-neutral-300" />
-                  </>
-                )}
-                {hiddenCount > 0 && (
-                  <>
-                    <span className="font-mono text-[10px]">
-                      {hiddenCount} <span className="font-normal">Hidden</span>
-                    </span>
-                    <div className="mx-0.5 inline-block h-4 w-px bg-neutral-300" />
-                  </>
-                )}
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={"ghost"}
-                      size={"icon-xs"}
-                      onClick={() => hideNodes(selectedNodeIds)}
-                      disabled={visibleSelectedCount === 0}>
-                      <EyeOffIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8}>
-                    Hide Selected ({selectedCount})
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={"ghost"}
-                      size={"icon-xs"}
-                      onClick={() => showNodes(selectedNodeIds)}
-                      disabled={hiddenSelectedCount === 0}>
-                      <EyeIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8}>
-                    Show Selected ({hiddenSelectedCount})
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <Button variant={"ghost"} size={"icon-xs"} onClick={showAllNodes} disabled={hiddenCount === 0}>
-                      <RotateCwIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8}>
-                    Show All Nodes ({hiddenCount})
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={"destructive"}
-                      size={"icon-xs"}
-                      onClick={clearSelection}
-                      disabled={selectedCount === 0}>
-                      <XCircleIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8}>
-                    Clear Selection ({selectedCount})
-                  </TooltipContent>
-                </Tooltip>
-              </motion.div>
-            )}
+      {!isExpanded && (
+        <button
+          className="group border-border bg-background pointer-events-auto -mr-1 flex items-center rounded-l-lg border border-r-0 p-1 shadow-lg backdrop-blur-sm select-none"
+          onClick={() => setIsExpanded(true)}>
+          <div className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none group-hover:bg-neutral-200">
+            <ListIndentDecreaseIcon size={14} />
           </div>
-        )}
-
+        </button>
+      )}
+      <div className="flex h-full max-h-full min-h-0 items-start gap-2">
         <AnimatePresence mode="popLayout">
           {isExpanded && (
             <motion.div

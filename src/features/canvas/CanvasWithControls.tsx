@@ -3,6 +3,7 @@ import { useGlobalStore } from "@/state";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ViewControls } from "./ViewControls";
+import { useCanvasState } from "../3d/contexts/CanvasContext";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
@@ -14,10 +15,10 @@ export function CanvasWithControls({ children, overlays }: CanvasWithControlsPro
   const sideControlsRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [controlsWidth, setControlsWidth] = useState(0);
-  const [isViewControlsExpanded, setIsViewControlsExpanded] = useState(false);
   const [isControlsDocked, setIsControlsDocked] = useState(false);
   const exportRenderMode = useExportRenderMode();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
+  const { isViewControlsExpanded, setIsViewControlsExpanded } = useCanvasState();
 
   const getDockedState = useCallback((nextContainerWidth: number, nextControlsWidth: number, expanded: boolean) => {
     setIsControlsDocked((current) => {
@@ -68,7 +69,7 @@ export function CanvasWithControls({ children, overlays }: CanvasWithControlsPro
       setIsViewControlsExpanded(expanded);
       getDockedState(containerWidth, controlsWidth, expanded);
     },
-    [containerWidth, controlsWidth, getDockedState]
+    [containerWidth, controlsWidth, getDockedState, setIsViewControlsExpanded]
   );
 
   return (

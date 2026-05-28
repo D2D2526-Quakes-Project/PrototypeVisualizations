@@ -115,6 +115,7 @@ function createDefaultLayout_(api: DockviewApi) {
     tabComponent: "magicPanelTab",
     params: { panelType: "Main Canvas", isPrimary: true },
   });
+  mainCanvas.group.locked = true;
 
   const timelinePanel = api.addPanel<MagicPanelParams>({
     id: "timeline",
@@ -169,6 +170,7 @@ function createDisplacementsLayout(api: DockviewApi) {
     tabComponent: "magicPanelTab",
     params: { panelType: "Main Canvas", isPrimary: true },
   });
+  primaryCanvas.group.locked = true;
 
   api.addPanel<MagicPanelParams>({
     id: "timeline",
@@ -217,6 +219,7 @@ function createHingesPreviewLayout(api: DockviewApi, storyOrder: string[]) {
     params: { panelType: "Main Canvas", isPrimary: true },
     initialHeight: 760,
   });
+  primaryCanvas.group.locked = true;
 
   api.addPanel<MagicPanelParams>({
     id: "hinge-distribution",
@@ -260,6 +263,7 @@ function createShearLayout(api: DockviewApi) {
     tabComponent: "magicPanelTab",
     params: { panelType: "Main Canvas", isPrimary: true },
   });
+  primaryCanvas.group.locked = true;
 
   api.addPanel<MagicPanelParams>({
     id: "floor-average",
@@ -279,6 +283,7 @@ function createStoryDriftsLayout(api: DockviewApi) {
     tabComponent: "magicPanelTab",
     params: { panelType: "Main Canvas", isPrimary: true },
   });
+  primaryCanvas.group.locked = true;
 
   const cornerMetricPanel = api.addPanel<MagicPanelParams>({
     id: "corner-metric-chart",

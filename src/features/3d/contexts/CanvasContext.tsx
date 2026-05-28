@@ -54,6 +54,8 @@ export interface BoxSelection {
 export interface CameraContextType extends UsePanelStateReturn<CanvasPanelState> {
   orbitControlsRef: React.RefObject<OrbitControlsImpl | null>;
   panelId: string;
+  isViewControlsExpanded: boolean;
+  setIsViewControlsExpanded: (expanded: boolean) => void;
 
   isHoveringPanel: boolean;
   isPrimaryPanel: boolean;
@@ -113,6 +115,7 @@ export function CanvasPanelProvider({
     defaultState,
   });
   const [nodeInteractionEnabled, setNodeInteractionEnabled] = useState(true);
+  const [isViewControlsExpanded, setIsViewControlsExpanded] = useState(false);
   const orbitControlsRef = useRef<OrbitControlsImpl>(null);
 
   const [boxSelection, setBoxSelection] = useState<BoxSelection | null>(null);
@@ -233,6 +236,8 @@ export function CanvasPanelProvider({
   return (
     <CameraContext.Provider
       value={{
+        isViewControlsExpanded,
+        setIsViewControlsExpanded,
         orbitControlsRef,
         focusOnPosition,
         setPanEnabled,

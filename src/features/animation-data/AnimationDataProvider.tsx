@@ -41,6 +41,8 @@ import {
   getEffectiveOptionalDataLoadOptions,
   normalizeOptionalDataLoadOptions,
 } from "./data-loading/util";
+import { useAppStore } from "@/state";
+import { BUILT_IN_PROFILE_DEFINITIONS } from "@/state/default";
 
 function resolveDataUrl(pathOrUrl: string, folder: string): string {
   if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
@@ -90,6 +92,13 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
   const [optionalLoadOptions, setOptionalLoadOptions] = useState<OptionalDataLoadOptions>(
     DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS
   );
+
+  const activeProfileId = useAppStore((state) => {
+    const buildingId = currentBuilding?.folder;
+    if (!buildingId) return null;
+    return state.activeProfileIds[buildingId];
+  });
+
   const initializedRef = useRef(false);
   const sessionIdRef = useRef(0);
   const workerRef = useRef<Worker | null>(null);
@@ -493,10 +502,20 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     [cancelOutstandingLoads, optionalLoadOptions, startLoadingSelection]
   );
 
+  const profileRequiredDatasetsReady =
+    activeProfileId && datasetStates
+      ? (() => {
+          const profileDef = BUILT_IN_PROFILE_DEFINITIONS.find((d) => d.profileId === activeProfileId);
+          if (!profileDef || profileDef.requiredDatasets.length === 0) return true;
+          return profileDef.requiredDatasets.every((key) => datasetStates[key]?.stage === "ready");
+        })()
+      : true;
+
   const dismissStartupOverlay = useCallback(() => {
     if (!startupReady) return;
+    if (!profileRequiredDatasetsReady) return;
     setStartupDismissed(true);
-  }, [startupReady]);
+  }, [startupReady, profileRequiredDatasetsReady]);
 
   useEffect(() => {
     if (!startupReady || startupDismissed || !datasetStates) return;
@@ -629,6 +648,25 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     [requestDatasetLoad]
   );
 
+  useEffect(() => {
+    if (!activeProfileId || !datasetStates || !startupReady) return;
+
+    const profileDef = BUILT_IN_PROFILE_DEFINITIONS.find((d) => d.profileId === activeProfileId);
+    if (!profileDef || profileDef.requiredDatasets.length === 0) return;
+
+    const allRequiredReady = profileDef.requiredDatasets.every((key) => datasetStates[key]?.stage === "ready");
+
+    if (!allRequiredReady) {
+      setStartupDismissed(false);
+      for (const key of profileDef.requiredDatasets) {
+        const state = datasetStates[key];
+        if (state?.available && state.stage !== "fetching" && state.stage !== "parsing" && state.stage !== "ready") {
+          requestDatasetLoad(key);
+        }
+      }
+    }
+  }, [activeProfileId, datasetStates, startupReady, requestDatasetLoad]);
+
   const clearSelection = useCallback(() => {
     cancelOutstandingLoads();
     sessionIdRef.current += 1;
@@ -712,6 +750,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
             datasetStates={datasetStates}
             startupReady={startupReady}
             startupError={startupError}
+            canContinue={profileRequiredDatasetsReady}
             onContinue={dismissStartupOverlay}
             onReturnToMenu={clearSelection}
           />

@@ -6,6 +6,8 @@ Run before committing.
 
 The `.ottotime` file is used to track time. Unrelated to the project. You may commit it during git commits.
 
+When running `rg` or `grep` do not use the `-r` flag.
+
 All plots and visualizations must include: Titles, Axis Labels, Legends, Color Bars, Tooltips
 
 Check existing code and look at similar files for patterns before writing new code

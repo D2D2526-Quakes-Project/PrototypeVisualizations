@@ -14,12 +14,14 @@ export function LoadingOverlay({
   startupError,
   onContinue,
   onReturnToMenu,
+  canContinue = true,
 }: {
   datasetStates: Record<DatasetKey, DatasetLoadState>;
   startupReady: boolean;
   startupError: string | null;
   onContinue: () => void;
   onReturnToMenu: () => void;
+  canContinue?: boolean;
 }) {
   const requiredStates = REQUIRED_DATASET_KEYS.map((key) => datasetStates[key]);
   const optionalStates = OPTIONAL_DATASET_KEYS.map((key) => datasetStates[key]).filter((state) => state.selected);
@@ -140,7 +142,7 @@ export function LoadingOverlay({
           </div>
         ) : null}
 
-        {startupReady ? (
+        {startupReady && canContinue ? (
           <div className="mt-4 flex items-center justify-between gap-3">
             <Button variant="outline" onClick={onReturnToMenu}>
               Return to menu

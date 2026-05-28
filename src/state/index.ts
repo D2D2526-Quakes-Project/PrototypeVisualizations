@@ -33,7 +33,7 @@ export function useStoreSaving(): boolean {
   );
 }
 
-const useAppStore = create<AppState>()(
+export const useAppStore = create<AppState>()(
   persist(
     immer((...a) => ({
       ...createGlobalSlice(...a),

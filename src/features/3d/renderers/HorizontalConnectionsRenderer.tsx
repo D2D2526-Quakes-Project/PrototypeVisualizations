@@ -6,6 +6,7 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
+import { useRenderModes } from "../lib/useRenderModes";
 
 export function HorizontalConnectionsRenderer({ nodeIds: overrideNodeIds }: { nodeIds?: number[] }) {
   const linesRef = useRef<THREE.LineSegments>(null);
@@ -16,6 +17,7 @@ export function HorizontalConnectionsRenderer({ nodeIds: overrideNodeIds }: { no
   const { frameIndex } = usePlayback();
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { getNodeColorForCurrentMetric } = useMetrics();
+  const { showCornersOnly } = useRenderModes();
 
   const themeColor = useMemo(() => new THREE.Color(connectionLinesColor), [connectionLinesColor]);
 
@@ -38,8 +40,30 @@ export function HorizontalConnectionsRenderer({ nodeIds: overrideNodeIds }: { no
       }
     }
 
+    if (showCornersOnly) {
+      const { cornerNodes, storyOrder } = animationData.metadata;
+      if (cornerNodes && storyOrder) {
+        const existing = new Set(result.map(([a, b]) => `${Math.min(a, b)}-${Math.max(a, b)}`));
+        for (const storyId of storyOrder) {
+          const c = cornerNodes[storyId];
+          if (!c) continue;
+          const { NW, NE, SW, SE } = c;
+          const perimeter: [number, number][] = [[NW, NE], [NE, SE], [SE, SW], [SW, NW]];
+          for (const [a, b] of perimeter) {
+            if (a === -1 || b === -1) continue;
+            if (!visibleNodeSet.has(a) || !visibleNodeSet.has(b)) continue;
+            const key = `${Math.min(a, b)}-${Math.max(a, b)}`;
+            if (!existing.has(key)) {
+              existing.add(key);
+              result.push([a, b]);
+            }
+          }
+        }
+      }
+    }
+
     return result;
-  }, [animationData, nodeIds]);
+  }, [animationData, nodeIds, showCornersOnly]);
 
   const maxVertices = connections.length * 2;
   const positions = useMemo(() => new Float32Array(maxVertices * 3), [maxVertices]);

@@ -56,7 +56,7 @@ export function summarizeHingeNodes(nodeIds: number[], hingeNodeMetrics: HingeNo
   const minHistogram: number[] = [];
   let maxAbsRotation = 0;
 
-  nodeIds.forEach((nodeId) => {
+  for (const nodeId of nodeIds) {
     const maxRotation = hingeNodeMetrics.maxRotationByNode[nodeId];
     const minRotation = hingeNodeMetrics.minRotationByNode[nodeId];
     if (isFinite(maxRotation)) {
@@ -67,8 +67,7 @@ export function summarizeHingeNodes(nodeIds: number[], hingeNodeMetrics: HingeNo
       maxAbsRotation = Math.max(maxAbsRotation, Math.abs(minRotation));
       minHistogram.push(minRotation);
     }
-  });
-
+  }
   return {
     maxAbsRotation,
     maxHistogram: computeHingeHistogram(maxHistogram, 12),

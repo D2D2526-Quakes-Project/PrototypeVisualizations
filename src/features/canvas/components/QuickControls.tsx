@@ -1,16 +1,17 @@
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { BoxSelect, ScanEye, Home, RotateCw, ChevronLeftIcon } from "lucide-react";
-import { motion } from "motion/react";
-import { COLLAPSED_VIEW_PRESET_OPTIONS } from "../viewPresets";
-import { useCanvasState } from "@/features/3d/contexts/CanvasContext";
+import { useMemo } from "react";
 
-export function QuickControls({
-  isExpanded,
-  setIsExpanded,
-}: {
-  isExpanded: boolean;
-  setIsExpanded: (expanded: boolean) => void;
-}) {
+import { EyeIcon, EyeOffIcon, RotateCwIcon, XCircleIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useLiveStore, useProfileActions, useProfileData } from "@/state";
+
+import { useCanvasState } from "@/features/3d/contexts/CanvasContext";
+import { BoxSelect, Home, RotateCw, ScanEye } from "lucide-react";
+import { COLLAPSED_VIEW_PRESET_OPTIONS } from "../viewPresets";
+
+function ViewButtons() {
   const { resetView, resetHomeView, orthographic, setOrthographic, spin, setSpin } = useCanvasState();
 
   return (
@@ -82,8 +83,8 @@ export function QuickControls({
           Auto Rotate
         </TooltipContent>
       </Tooltip>
-      <div className="mx-0.5 h-4 w-px bg-neutral-300" />
-      <Tooltip disableHoverableContent>
+      {/* <div className="mx-0.5 h-4 w-px bg-neutral-300" /> */}
+      {/* <Tooltip disableHoverableContent>
         <TooltipTrigger asChild>
           <button
             type="button"
@@ -95,7 +96,118 @@ export function QuickControls({
         <TooltipContent side="bottom" sideOffset={8}>
           {isExpanded ? "Hide sidebar" : "More options"}
         </TooltipContent>
-      </Tooltip>
+      </Tooltip> */}
     </motion.div>
+  );
+}
+
+export function QuickControls() {
+  const { isHoveringPanel, isPrimaryPanel, isViewControlsExpanded } = useCanvasState();
+
+  const clearSelection = useLiveStore((s) => s.clearSelection);
+  const selectedNodeIds = useLiveStore((s) => s.selectedNodeIds);
+  const hiddenNodeIds = useProfileData((s) => s._hiddenNodeIds);
+  const { showAllNodes, hideNodes, showNodes } = useProfileActions();
+
+  const selectedCount = selectedNodeIds.length;
+  const hiddenCount = hiddenNodeIds.length;
+  const hiddenSelectedCount = useMemo(
+    () => selectedNodeIds.filter((nodeId) => hiddenNodeIds.includes(nodeId)).length,
+    [hiddenNodeIds, selectedNodeIds]
+  );
+  const visibleSelectedCount = selectedCount - hiddenSelectedCount;
+  const showNodeVisibilityMenu = selectedCount > 0 || hiddenCount > 0;
+
+  return (
+    <div
+      className={`absolute inset-x-1 top-1 z-1 flex flex-col items-center gap-1 ${isViewControlsExpanded && "items-end"}`}>
+      <AnimatePresence>
+        {(isHoveringPanel || isPrimaryPanel) && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.15 }}
+            className="pointer-events-auto origin-top">
+            <ViewButtons />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {showNodeVisibilityMenu && (
+        <motion.div
+          key="node-visibility-menu"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 4 }}
+          transition={{ duration: 0.15 }}
+          className="border-border bg-background pointer-events-auto flex items-center gap-0.5 rounded-lg border p-1 shadow-lg backdrop-blur-sm select-none">
+          {visibleSelectedCount > 0 && (
+            <>
+              <span className="font-mono text-[10px]">
+                {visibleSelectedCount} <span className="font-normal">Selected</span>
+              </span>
+              <div className="mx-0.5 inline-block h-4 w-px bg-neutral-300" />
+            </>
+          )}
+          {hiddenCount > 0 && (
+            <>
+              <span className="font-mono text-[10px]">
+                {hiddenCount} <span className="font-normal">Hidden</span>
+              </span>
+              <div className="mx-0.5 inline-block h-4 w-px bg-neutral-300" />
+            </>
+          )}
+          <Tooltip disableHoverableContent>
+            <TooltipTrigger asChild>
+              <Button
+                variant={"ghost"}
+                size={"icon-xs"}
+                onClick={() => hideNodes(selectedNodeIds)}
+                disabled={visibleSelectedCount === 0}>
+                <EyeOffIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={8}>
+              Hide Selected ({selectedCount})
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip disableHoverableContent>
+            <TooltipTrigger asChild>
+              <Button
+                variant={"ghost"}
+                size={"icon-xs"}
+                onClick={() => showNodes(selectedNodeIds)}
+                disabled={hiddenSelectedCount === 0}>
+                <EyeIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={8}>
+              Show Selected ({hiddenSelectedCount})
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip disableHoverableContent>
+            <TooltipTrigger asChild>
+              <Button variant={"ghost"} size={"icon-xs"} onClick={showAllNodes} disabled={hiddenCount === 0}>
+                <RotateCwIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={8}>
+              Show All Nodes ({hiddenCount})
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip disableHoverableContent>
+            <TooltipTrigger asChild>
+              <Button variant={"destructive"} size={"icon-xs"} onClick={clearSelection} disabled={selectedCount === 0}>
+                <XCircleIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={8}>
+              Clear Selection ({selectedCount})
+            </TooltipContent>
+          </Tooltip>
+        </motion.div>
+      )}
+    </div>
   );
 }

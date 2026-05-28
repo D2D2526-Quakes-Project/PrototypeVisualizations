@@ -19,18 +19,7 @@ export function HingeLocalizedSummary({ nodeIds }: HingeLocalizedSummaryProps) {
     [animationData.precomputed.hingeNodeMetrics, nodeIds]
   );
 
-  if (!summary) {
-    return (
-      <section>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-sm font-bold text-neutral-800">Hinges</div>
-          </div>
-        </div>
-        <div className="mt-2 text-xs text-neutral-500">No hinge-bearing nodes fall inside this selection.</div>
-      </section>
-    );
-  }
+  if (!summary || !summary.maxHistogram || !summary.minHistogram) return null;
 
   return (
     <section>

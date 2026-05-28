@@ -15,6 +15,7 @@ import { ViewSettingsOverlay } from "../canvas/components/ViewSettingsOverlay";
 import { CurrentThresholdSlider } from "../canvas/components/CurrentThresholdSlider";
 import { CanvasMetricSelector } from "../canvas/components/CanvasMetricSelector";
 import { useMetrics } from "@/features/metrics/useMetrics";
+import { QuickControls } from "../canvas/components/QuickControls";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const panelId = props.api.id;
@@ -35,22 +36,25 @@ export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) =>
           <KeyboardZoomHandler isActive={isActive} />
           <CanvasWithControls
             overlays={
-              <div className="pointer-events-none absolute right-1 bottom-1 z-1 flex flex-col items-end gap-1">
-                <ViewSettingsOverlay />
-                {isPrimary && <CurrentThresholdSlider />}
-                {isPrimary && <CanvasMetricSelector />}
-              </div>
+              <>
+                <div className="pointer-events-none absolute right-1 bottom-1 z-1 flex flex-col items-end gap-1">
+                  <ViewSettingsOverlay />
+                  {isPrimary && <CurrentThresholdSlider />}
+                  {isPrimary && <CanvasMetricSelector />}
+                </div>
+                {isPrimary && exportRenderMode.showTransientUi && !isCurrentMetricStatic && (
+                  <div className="absolute bottom-1 left-1 z-50">
+                    <SmallPlaybackControls />
+                  </div>
+                )}
+                <QuickControls />
+              </>
             }>
             <CameraManager />
             <OrientationArrows />
             <BuildingScene />
           </CanvasWithControls>
           <BoxSelectionOverlay />
-          {isPrimary && exportRenderMode.showTransientUi && !isCurrentMetricStatic && (
-            <div className="absolute bottom-1 left-1 z-50">
-              <SmallPlaybackControls />
-            </div>
-          )}
         </CanvasPanelProvider>
       </SceneTooltip>
     </div>

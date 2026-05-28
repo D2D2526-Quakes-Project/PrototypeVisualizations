@@ -18,16 +18,18 @@ export function ProfileMenu() {
     <MenubarMenu>
       <MenubarTrigger>
         Profiles
-        <span className="ml-1 text-xs font-normal text-neutral-400">({PROFILE_LABELS[profileId] ?? profileId})</span>
+        <span className="text-muted-foreground ml-1 text-xs font-normal">
+          ({PROFILE_LABELS[profileId] ?? profileId})
+        </span>
         {storeSaving && (
-          <span className="ml-1 text-neutral-400" title="Saving...">
+          <span className="text-muted-foreground ml-1" title="Saving...">
             <LoaderCircleIcon className="size-3 animate-spin" />
           </span>
         )}
       </MenubarTrigger>
       <MenubarContent>
         <div className="flex flex-col gap-2">
-          <div className="px-2 text-[10px] text-neutral-500">Autosaved per building.</div>
+          <div className="text-muted-foreground px-2 text-[10px]">Autosaved per building.</div>
           <MenubarRadioGroup
             value={profileId}
             onValueChange={(profileId) => pickProfile(profileId as BuiltInProfileId)}>

@@ -331,13 +331,13 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
           </>
         )}
         <span
-          className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-black" : "text-neutral-700"}`}>
-          <Icon className={`size-3.5 ${isActive ? "text-black" : "text-neutral-500"}`} />
+          className={`flex items-center gap-1.5 text-sm font-medium ${isActive ? "text-foreground" : "text-foreground"}`}>
+          <Icon className={`size-3.5 ${isActive ? "text-foreground" : "text-muted-foreground"}`} />
           {panelTitle}
         </span>
         {isSaving && (
           <span className="flex items-center gap-0.5" title="Saving...">
-            <LoaderCircleIcon className="size-3 animate-spin text-neutral-400" />
+            <LoaderCircleIcon className="text-muted-foreground size-3 animate-spin" />
           </span>
         )}
         {isTabGroup && (
@@ -346,7 +346,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
               e.stopPropagation();
               props.api.close();
             }}
-            className="rounded p-1 transition-colors hover:bg-white/50"
+            className="hover:bg-background/50 rounded p-1 transition-colors"
             title="Close">
             <XIcon className="size-3" />
           </button>
@@ -375,7 +375,7 @@ export function PanelTypePickerMenu({
         {groupedPanels.map((group) => (
           <div key={group.category} className="">
             {group.items.length > 1 && (
-              <div className="px-1 py-0.5 text-[10px] font-semibold tracking-wide text-neutral-500 uppercase">
+              <div className="text-muted-foreground px-1 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
                 {group.category}
               </div>
             )}
@@ -400,7 +400,7 @@ export function PanelTypePickerMenu({
                     key={panelType}
                     variant="ghost"
                     size="sm"
-                    className={`flex w-full justify-start ${isActive ? "bg-linear-90 from-amber-100 via-amber-50" : !availability.isAvailable && "opacity-45"}`}
+                    className={`flex w-full justify-start ${isActive ? "bg-linear-90 from-amber-200 via-amber-100 dark:from-amber-900 dark:via-amber-950" : !availability.isAvailable && "opacity-45"}`}
                     onClick={() => {
                       if (!availability.isAvailable) return;
                       onChange(panelType);
@@ -408,10 +408,10 @@ export function PanelTypePickerMenu({
                     }}
                     disabled={!availability.isAvailable}
                     title={availability.isAvailable ? buttonTitle : undefined}>
-                    <Icon className={isActive ? "text-amber-600" : "text-neutral-500"} />
+                    <Icon className={isActive ? "text-amber-500" : "text-muted-foreground"} />
                     <div className={"min-w-0 flex-1 text-left"}>{panelType}</div>
                     {hasMissingOptionalEnhancements ? (
-                      <CircleDotDashed className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                      <CircleDotDashed className="text-warning mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                     ) : null}
                   </Button>
                 );
@@ -583,7 +583,7 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
               </div>
               {showPanelPicker ? (
                 <>
-                  <div className="mx-1 my-1 h-px bg-neutral-200" />
+                  <div className="bg-border mx-1 my-1 h-px" />
                   <PanelTypePickerMenu
                     value={activePanelType}
                     onChange={(newPanelType) => {
@@ -617,26 +617,26 @@ function PanelUnavailableState({
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
       <div className="w-full max-w-md">
-        <div className="mb-2 text-center text-base font-semibold text-neutral-900">{panelType}</div>
-        <div className="mb-5 text-center text-sm text-neutral-600">{disabledReason}</div>
+        <div className="text-foreground mb-2 text-center text-base font-semibold">{panelType}</div>
+        <div className="text-muted-foreground mb-5 text-center text-sm">{disabledReason}</div>
         <div className="space-y-4">
           {missingStates.map((state) => {
             const isBusy = state.stage === "queued" || state.stage === "fetching" || state.stage === "parsing";
             return (
               <div key={state.key}>
                 <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-neutral-800">{state.label}</span>
-                  <span className="text-[10px] text-neutral-500">{state.message}</span>
+                  <span className="text-foreground text-xs font-medium">{state.label}</span>
+                  <span className="text-muted-foreground text-[10px]">{state.message}</span>
                 </div>
                 {isBusy ? (
-                  <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-neutral-200">
+                  <div className="bg-muted mb-2 h-1.5 overflow-hidden rounded-full">
                     <div
-                      className="h-full rounded-full bg-amber-500 transition-all"
+                      className="bg-warning h-full rounded-full transition-all"
                       style={{ width: `${state.progress}%` }}
                     />
                   </div>
                 ) : null}
-                <div className="flex items-center justify-between gap-2 text-[10px] text-neutral-500">
+                <div className="text-muted-foreground flex items-center justify-between gap-2 text-[10px]">
                   <span>{state.error ?? (state.selected ? "Background load active" : "Dataset not selected yet")}</span>
                   {state.stage === "error" ? (
                     <Button size="xs" variant="outline" onClick={() => onRetry(state.key as PanelDataKey)}>

@@ -34,7 +34,7 @@ export function ErrorPage() {
 
   return (
     <div className="bg-background flex h-screen w-full flex-col items-center justify-center gap-6 px-4">
-      <div className="mb-8 text-6xl font-bold text-neutral-800">Quakes</div>
+      <div className="text-foreground mb-8 text-6xl font-bold">Quakes</div>
       <div className="flex flex-col items-center gap-2 text-center">
         {code && (
           <span className="text-muted-foreground text-[8rem] leading-none font-bold opacity-20 select-none">

@@ -316,11 +316,7 @@ export type MetricConfig = {
   getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => number | undefined;
   /** Read a precomputed story-averaged value. storyIndex is the index in metadata.storyOrder.
    * Undefined for metrics that don't have per-story time-series data (hinge, shear). */
-  getStoryValue?: (
-    animationData: BuildingAnimationData,
-    storyIndex: number,
-    frameIndex: number
-  ) => number | undefined;
+  getStoryValue?: (animationData: BuildingAnimationData, storyIndex: number, frameIndex: number) => number | undefined;
   isAvailable: (animationData: BuildingAnimationData) => boolean;
   hasPositive: boolean;
   hasNegative: boolean;
@@ -689,8 +685,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       const drifts = animationData.storyDrift.get(frameIndex, nodeId);
       return drifts;
     },
-    getStoryValue: (animationData, storyIndex, frameIndex) =>
-      getStoryDriftValue(animationData, storyIndex, frameIndex),
+    getStoryValue: (animationData, storyIndex, frameIndex) => getStoryDriftValue(animationData, storyIndex, frameIndex),
   },
   displacementMag: {
     metric: "displacementMag",
@@ -1033,7 +1028,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[0];
     },
     getStoryValue: (animationData, storyIndex, frameIndex) =>
-      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationVelocityPerStory, 0),
+      getStoryComponent(
+        animationData,
+        storyIndex,
+        frameIndex,
+        animationData.precomputed.avgRotationVelocityPerStory,
+        0
+      ),
   },
   rotationVelocityY: {
     metric: "rotationVelocityY",
@@ -1052,7 +1053,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[1];
     },
     getStoryValue: (animationData, storyIndex, frameIndex) =>
-      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationVelocityPerStory, 1),
+      getStoryComponent(
+        animationData,
+        storyIndex,
+        frameIndex,
+        animationData.precomputed.avgRotationVelocityPerStory,
+        1
+      ),
   },
   rotationVelocityZ: {
     metric: "rotationVelocityZ",
@@ -1071,7 +1078,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.velocityRot.atFrame(frameIndex).at(nodeId)[2];
     },
     getStoryValue: (animationData, storyIndex, frameIndex) =>
-      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationVelocityPerStory, 2),
+      getStoryComponent(
+        animationData,
+        storyIndex,
+        frameIndex,
+        animationData.precomputed.avgRotationVelocityPerStory,
+        2
+      ),
   },
   rotationAccelerationMag: {
     metric: "rotationAccelerationMag",
@@ -1110,7 +1123,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[0];
     },
     getStoryValue: (animationData, storyIndex, frameIndex) =>
-      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationAccelerationPerStory, 0),
+      getStoryComponent(
+        animationData,
+        storyIndex,
+        frameIndex,
+        animationData.precomputed.avgRotationAccelerationPerStory,
+        0
+      ),
   },
   rotationAccelerationY: {
     metric: "rotationAccelerationY",
@@ -1129,7 +1148,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[1];
     },
     getStoryValue: (animationData, storyIndex, frameIndex) =>
-      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationAccelerationPerStory, 1),
+      getStoryComponent(
+        animationData,
+        storyIndex,
+        frameIndex,
+        animationData.precomputed.avgRotationAccelerationPerStory,
+        1
+      ),
   },
   rotationAccelerationZ: {
     metric: "rotationAccelerationZ",
@@ -1148,7 +1173,13 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return animationData.accelerationRot.atFrame(frameIndex).at(nodeId)[2];
     },
     getStoryValue: (animationData, storyIndex, frameIndex) =>
-      getStoryComponent(animationData, storyIndex, frameIndex, animationData.precomputed.avgRotationAccelerationPerStory, 2),
+      getStoryComponent(
+        animationData,
+        storyIndex,
+        frameIndex,
+        animationData.precomputed.avgRotationAccelerationPerStory,
+        2
+      ),
   },
   hingeRotationAbs: {
     metric: "hingeRotationAbs",

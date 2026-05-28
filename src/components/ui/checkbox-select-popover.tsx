@@ -62,33 +62,33 @@ export function CheckboxSelectPopover<T extends string>({
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button title={triggerTitle} variant="outline" size={buttonSize} className={className}>
-          <span data-slot="checkbox-select-trigger-label" className="flex-1 truncate">{triggerLabel}</span>
+          <span data-slot="checkbox-select-trigger-label" className="flex-1 truncate">
+            {triggerLabel}
+          </span>
           <ChevronDown
             data-slot="checkbox-select-chevron"
-            className={cn("h-3 w-3 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+            className={cn("text-muted-foreground h-3 w-3 shrink-0 transition-transform", open && "rotate-180")}
           />
         </Button>
       </PopoverTrigger>
       <PopoverContent align={align} className={cn(popoverWidth)}>
-        <div data-slot="checkbox-select-options" className={cn("flex flex-col gap-0.5", scrollable && "max-h-80 overflow-auto")}>
+        <div
+          data-slot="checkbox-select-options"
+          className={cn("flex flex-col gap-0.5", scrollable && "max-h-80 overflow-auto")}>
           {options.map((option) => {
             const isChecked = draft.includes(option.value);
             return (
               <Label
                 key={option.value}
                 htmlFor={idPrefix ? `${idPrefix}-${option.value}` : undefined}
-                className="hover:bg-accent focus:bg-accent flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors dark:hover:bg-accent/50 dark:focus:bg-accent/50"
-              >
+                className="hover:bg-accent focus:bg-accent dark:hover:bg-accent/50 dark:focus:bg-accent/50 flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors">
                 <Checkbox
                   id={idPrefix ? `${idPrefix}-${option.value}` : undefined}
                   checked={isChecked}
                   onCheckedChange={() => toggleOption(option.value)}
                 />
                 <span className="flex-1">{option.label}</span>
-                <span
-                  className="h-3 w-3 rounded-full border border-border"
-                  style={{ backgroundColor: option.color }}
-                />
+                <span className="border-border h-3 w-3 rounded-full border" style={{ backgroundColor: option.color }} />
               </Label>
             );
           })}

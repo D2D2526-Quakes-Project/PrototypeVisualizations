@@ -174,22 +174,22 @@ function ShortcutRow({ shortcut, index }: { shortcut: Shortcut; index: number })
       initial={{ opacity: 0, x: -6 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.15, delay: index * 0.04 }}
-      className="flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-neutral-200/60">
+      className="hover:bg-border/60 flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors">
       {/* Icon */}
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-500 shadow-sm">
+      <span className="border-border bg-background text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-md border shadow-sm">
         {shortcut.icon}
       </span>
 
       {/* Label + description */}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs leading-tight font-medium text-neutral-700">{shortcut.label}</span>
+        <span className="text-foreground block truncate text-xs leading-tight font-medium">{shortcut.label}</span>
         {shortcut.description && (
-          <span className="block truncate text-[10px] leading-tight text-neutral-400">{shortcut.description}</span>
+          <span className="text-muted-foreground block truncate text-[10px] leading-tight">{shortcut.description}</span>
         )}
       </span>
 
       {/* Key badge */}
-      <kbd className="ml-auto shrink-0 rounded-md border border-neutral-300 bg-neutral-100 px-2 py-1 font-mono text-[10px] leading-none font-medium text-neutral-600 shadow-sm shadow-neutral-300">
+      <kbd className="border-border bg-muted text-muted-foreground ml-auto shrink-0 rounded-md border px-2 py-1 font-mono text-[10px] leading-none font-medium shadow-sm">
         {shortcut.key}
       </kbd>
     </motion.div>
@@ -199,15 +199,15 @@ function ShortcutRow({ shortcut, index }: { shortcut: Shortcut; index: number })
 function SectionHeader({ icon, label }: { icon?: React.ReactNode; label: string }) {
   return (
     <div className="flex items-center gap-1.5 px-2 pt-0.5 pb-1">
-      {icon && <span className="text-neutral-400">{icon}</span>}
-      <span className="text-[10px] font-semibold tracking-widest text-neutral-400 uppercase">{label}</span>
+      {icon && <span className="text-muted-foreground">{icon}</span>}
+      <span className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">{label}</span>
     </div>
   );
 }
 
 export function ShortcutsBar() {
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden border-t border-neutral-200 bg-neutral-50">
+    <div className="border-border bg-muted flex h-full w-full flex-col overflow-hidden border-t">
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         <AnimatePresence mode="wait">
           <motion.div

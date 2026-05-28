@@ -60,7 +60,7 @@ THREE.ColorManagement.enabled = true;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <div className="bg-muted flex h-screen flex-col">
+    <div className="bg-muted dark:bg-background flex h-screen flex-col">
       <RouterProvider router={router} />
     </div>
   </StrictMode>

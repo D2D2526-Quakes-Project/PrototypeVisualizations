@@ -55,13 +55,13 @@ export function OptionalDatasetLoader() {
           size="xs"
           className={
             backgroundLoadingCount > 0
-              ? "border-amber-300 bg-amber-50 text-amber-800"
-              : "border-neutral-300 bg-white text-neutral-700"
+              ? "border-warning bg-warning/20 text-primary"
+              : "border-border bg-background text-foreground"
           }>
           {backgroundLoadingCount > 0 ? <AlertTriangle size={11} /> : <Check size={11} />}
           <span>{loadingSummaryLabel}</span>
           {backgroundLoadingCount > 0 ? (
-            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-amber-100">
+            <div className="bg-warning h-1.5 w-16 overflow-hidden rounded-full">
               <div
                 className="h-full rounded-full bg-amber-500 transition-all"
                 style={{ width: `${optionalSummaryProgress}%` }}
@@ -72,17 +72,17 @@ export function OptionalDatasetLoader() {
       </PopoverTrigger>
       <PopoverContent side="bottom" align="end" className="w-sm space-y-2 p-3">
         <div className="space-y-1">
-          <div className="text-sm font-medium text-neutral-800">Optional dataset loading</div>
-          <div className="text-xs text-neutral-500">
+          <div className="text-foreground text-sm font-medium">Optional dataset loading</div>
+          <div className="text-muted-foreground text-xs">
             Selected datasets continue loading in the background. Unselected datasets can be queued on demand.
           </div>
         </div>
         <div className="space-y-1.5">
           {datasetStates.map((state) => (
-            <div key={state.key} className="rounded border border-neutral-200 bg-white px-2 py-1.5">
+            <div key={state.key} className="border-border bg-background rounded border px-2 py-1.5">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-neutral-800">{state.label}</span>
-                <span className="flex items-center gap-2 text-[10px] text-neutral-500">
+                <span className="text-foreground text-xs font-medium">{state.label}</span>
+                <span className="text-muted-foreground flex items-center gap-2 text-[10px]">
                   {state.stage === "ready" ? (
                     <>
                       <Check size={11} /> Loaded
@@ -113,9 +113,9 @@ export function OptionalDatasetLoader() {
                   </div>
                 </span>
               </div>
-              <span className="flex items-center gap-2 text-[10px] text-neutral-500">{state.error}</span>
+              <span className="text-muted-foreground flex items-center gap-2 text-[10px]">{state.error}</span>
               {state.stage === "fetching" || state.stage === "parsing" || state.stage === "queued" ? (
-                <div className="mt-1 mb-1 h-1.5 overflow-hidden rounded-full bg-neutral-200">
+                <div className="bg-muted mt-1 mb-1 h-1.5 overflow-hidden rounded-full">
                   <div
                     className="h-full rounded-full bg-amber-500 transition-all"
                     style={{ width: `${state.progress}%` }}

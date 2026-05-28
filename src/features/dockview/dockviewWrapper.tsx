@@ -114,9 +114,9 @@ export function DockviewWrapper({
     <div className="relative flex-1">
       <style>{`
         .dockview-theme-light-spaced {
-          --dv-sash-color: rgba(0, 0, 0, 0.1);
-          --dv-active-sash-color: rgba(0, 0, 0, 0.25);
-          --dv-drag-over-background-color: rgba(0, 0, 0, 0.25);
+          --dv-sash-color: var(--border);
+          --dv-active-sash-color: var(--primary);
+          --dv-drag-over-background-color: color-mix(in srgb, var(--primary) 10%, transparent);
           --dv-active-sash-transition-delay: 0s;
           --dv-border-radius: var(--radius);
           --dv-activegroup-visiblepanel-tab-background-color: transparent;
@@ -124,8 +124,10 @@ export function DockviewWrapper({
           --dv-activegroup-hiddenpanel-tab-background-color: transparent;
           --dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
           --dv-tabs-and-actions-container-height: fit-content;
-          --dv-group-view-background-color: var(--muted)
+          --dv-group-view-background-color: var(--card)
           --dv-spacing-padding: var(--radius);
+          --dv-tabs-and-actions-container-background-color: var(--card);
+          --dv-tabs-and-actions-container-font-size: 12px;
         }
         .dv-tab {
           margin: 0;

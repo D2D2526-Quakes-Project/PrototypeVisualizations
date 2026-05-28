@@ -29,7 +29,7 @@ function ColorPalettePicker({ metric, currentPaletteKey }: { metric: Metric; cur
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="h-4 flex-1 cursor-pointer rounded-sm border border-border transition-opacity hover:opacity-80"
+          className="border-border h-4 flex-1 cursor-pointer rounded-sm border transition-opacity hover:opacity-80"
           style={{
             background: `linear-gradient(to right, ${[...METRIC_PALETTES[currentPaletteKey].positiveColorStops, ...METRIC_PALETTES[currentPaletteKey].positiveThresholdColorStops].join(", ")})`,
           }}
@@ -51,7 +51,7 @@ function ColorPalettePicker({ metric, currentPaletteKey }: { metric: Metric; cur
                   setOpen(false);
                 }}
                 className={`flex rounded border p-1 transition-colors ${
-                  isActive ? "border-neutral-900 bg-muted" : "border-border hover:bg-accent"
+                  isActive ? "bg-muted border-neutral-900" : "border-border hover:bg-accent"
                 }`}
                 title={`Use ${palette.label.toLowerCase()} palette`}>
                 <div
@@ -101,7 +101,7 @@ function MetricRow({
           {config.shortLabel}
         </span>
         {!available && (
-          <span className="block truncate text-[10px] leading-tight text-muted-foreground italic">Requires data</span>
+          <span className="text-muted-foreground block truncate text-[10px] leading-tight italic">Requires data</span>
         )}
       </span>
     </motion.div>
@@ -192,7 +192,7 @@ export function MetricColorsBar() {
   const allThresholdKeys: ThresholdKey[] = [...THRESHOLD_KEY_ORDER, "inf"];
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden border-t border-border bg-muted">
+    <div className="border-border bg-muted flex h-full w-full flex-col overflow-hidden border-t">
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         <AnimatePresence mode="wait">
           <motion.div

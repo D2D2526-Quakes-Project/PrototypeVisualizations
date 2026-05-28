@@ -44,13 +44,13 @@ export function LoadingOverlay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-49 flex flex-col items-center justify-center bg-neutral-200">
+      className="bg-muted fixed inset-0 z-49 flex flex-col items-center justify-center">
       <div className="mx-auto flex min-h-full w-full max-w-xl flex-col items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="mb-6 cursor-pointer text-6xl font-bold text-neutral-800 select-none"
+          className="text-foreground mb-6 cursor-pointer text-6xl font-bold select-none"
           onClick={() => {
             const letters = document.querySelectorAll("[data-loader-letter]");
             letters.forEach((el, i) => {
@@ -70,7 +70,7 @@ export function LoadingOverlay({
           ))}
         </motion.div>
 
-        <div className="mb-5 text-center text-neutral-500">
+        <div className="text-muted-foreground mb-5 text-center">
           {startupReady
             ? "Required data is ready. Optional datasets continue loading in the background."
             : "Loading required data for the app..."}
@@ -82,8 +82,8 @@ export function LoadingOverlay({
           transition={{ delay: 0.15 }}
           className="flex w-full flex-col gap-1.5">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-neutral-800">Required startup datasets</span>
-            <span className="text-neutral-500">{Math.round(requiredProgress)}%</span>
+            <span className="text-foreground font-medium">Required startup datasets</span>
+            <span className="text-muted-foreground">{Math.round(requiredProgress)}%</span>
           </div>
           <div className="space-y-2">
             {requiredStates.map((state) => (
@@ -94,8 +94,8 @@ export function LoadingOverlay({
           {optionalStates.length > 0 ? (
             <>
               <div className="mt-4 mb-2 flex items-center justify-between text-sm">
-                <span className="font-medium text-neutral-800">Selected optional datasets</span>
-                <span className="text-neutral-500">
+                <span className="text-foreground font-medium">Selected optional datasets</span>
+                <span className="text-muted-foreground">
                   {optionalActiveCount === 0 ? "All ready" : `${optionalActiveCount} still loading`}
                 </span>
               </div>
@@ -108,11 +108,11 @@ export function LoadingOverlay({
           ) : null}
 
           {memory && (
-            <div className="mt-1 flex items-center gap-2 border-t border-neutral-300 pt-1">
-              <span className="w-28 shrink-0 text-[10px] text-neutral-400">
+            <div className="border-border mt-1 flex items-center gap-2 border-t pt-1">
+              <span className="text-muted-foreground w-28 shrink-0 text-[10px]">
                 Memory — {Math.round(memory.used / 1024 / 1024)}MB
               </span>
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-300/50">
+              <div className="bg-border h-1 flex-1 overflow-hidden rounded-full">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${(memory.used / memory.limit) * 100}%` }}
@@ -125,7 +125,7 @@ export function LoadingOverlay({
         </motion.div>
 
         {startupReady && optionalStates.length > 0 ? (
-          <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <div className="border-warning bg-warning/20 text-foreground mt-4 rounded-lg border p-3 text-sm">
             <div className="flex items-start gap-2">
               <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
               <div>
@@ -137,7 +137,7 @@ export function LoadingOverlay({
         ) : null}
 
         {startupError ? (
-          <div className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="border-destructive bg-destructive text-destructive mt-4 rounded border px-3 py-2 text-sm">
             Failed to load required data: {startupError}
           </div>
         ) : null}
@@ -167,18 +167,18 @@ function DatasetProgressRow({ state }: { state: DatasetLoadState }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="w-full max-w-52 shrink-0 truncate text-sm text-neutral-700">{state.label}</span>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-300">
+      <span className="text-foreground w-full max-w-52 shrink-0 truncate text-sm">{state.label}</span>
+      <div className="bg-border h-2 flex-1 overflow-hidden rounded-full">
         <div
           style={{ width: `${state.progress}%` }}
           className={`h-full rounded-full transition-all duration-150 ${
-            isError ? "bg-red-400" : state.stage === "ready" ? "bg-green-400" : "bg-amber-400"
+            isError ? "bg-destructive" : state.stage === "ready" ? "bg-green-400" : "bg-warning"
           }`}
         />
       </div>
-      <span className="flex w-full max-w-24 shrink-0 justify-end gap-1 text-right text-xs text-neutral-500">
+      <span className="text-muted-foreground flex w-full max-w-24 shrink-0 justify-end gap-1 text-right text-xs">
         {isBusy ? state.message : isError ? "Failed" : state.stage === "ready" ? "Ready" : state.message}
-        {isBusy ? <LoaderCircleIcon className="size-3.5 animate-spin text-neutral-400" /> : null}
+        {isBusy ? <LoaderCircleIcon className="text-muted-foreground size-3.5 animate-spin" /> : null}
       </span>
     </div>
   );

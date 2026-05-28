@@ -56,13 +56,13 @@ export function SimulationPickerOverlay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-49 overflow-y-auto bg-neutral-200">
+      className="bg-muted fixed inset-0 z-49 overflow-y-auto">
       <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="mb-1 cursor-pointer text-center text-6xl font-bold text-neutral-800 select-none"
+          className="text-foreground mb-1 cursor-pointer text-center text-6xl font-bold select-none"
           onClick={() => {
             const letters = document.querySelectorAll("[data-picker-letter]");
             letters.forEach((el, i) => {
@@ -81,7 +81,7 @@ export function SimulationPickerOverlay({
             </span>
           ))}
         </motion.div>
-        <div className="mb-6 text-center text-sm text-neutral-400">Select a building and simulation</div>
+        <div className="text-muted-foreground mb-6 text-center text-sm">Select a building and simulation</div>
 
         <div className="flex flex-1 items-start gap-3">
           <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -95,21 +95,21 @@ export function SimulationPickerOverlay({
                 <div
                   key={b.folder}
                   className={`rounded-lg border transition-colors ${
-                    selectedInBuilding ? "border-amber-400/70" : "border-neutral-300"
+                    selectedInBuilding ? "border-warning/70" : "border-border"
                   } ${incompleteWarning ? "incomplete-warning" : ""}`}>
                   <button
                     onClick={() => toggleBuilding(b.folder)}
-                    className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg bg-neutral-100/60 px-3 py-2.5 text-left transition-colors hover:bg-neutral-100 ${incompleteWarning ? "incomplete-warning" : ""}`}>
+                    className={`bg-background/60 hover:bg-accent flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:shadow ${incompleteWarning ? "incomplete-warning" : ""}`}>
                     <div className="flex min-w-0 items-baseline gap-2">
-                      <span className="text-base font-medium text-neutral-800">{b.name}</span>
-                      <span className="text-xs text-neutral-400">
+                      <span className="text-foreground text-base font-medium">{b.name}</span>
+                      <span className="text-muted-foreground text-xs">
                         {b.simulations.length} sims · {formatBytes(totalSimBytes)}
                       </span>
                     </div>
                     <motion.span
                       animate={{ rotate: buildingIsExpanded ? 90 : 0 }}
                       transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="shrink-0 text-neutral-400">
+                      className="text-muted-foreground shrink-0">
                       <ChevronRightIcon className="size-4" />
                     </motion.span>
                   </button>
@@ -148,20 +148,20 @@ export function SimulationPickerOverlay({
                               }}
                               className={`cursor-pointer rounded-md border px-3 py-2 text-left transition-colors ${
                                 isSelected
-                                  ? "border-amber-400 bg-amber-50/90"
-                                  : "border-neutral-300 bg-white/50 hover:border-amber-300/70 hover:bg-white/80"
+                                  ? "bg-warning/90 border-amber-400"
+                                  : "border-border bg-background/50 hover:bg-background/80 hover:border-amber-300/70"
                               } ${simIncomplete ? "incomplete-warning" : ""}`}>
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex min-w-0 items-center gap-1.5">
                                   <span
                                     className={`inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border ${
-                                      isSelected ? "border-amber-500 bg-amber-400" : "border-neutral-300 bg-white"
+                                      isSelected ? "bg-warning border-amber-500" : "border-border bg-background"
                                     }`}>
                                     {isSelected ? <CheckIcon className="size-2.5" /> : null}
                                   </span>
-                                  <span className="truncate text-sm font-medium text-neutral-800">{s.name}</span>
+                                  <span className="text-foreground truncate text-sm font-medium">{s.name}</span>
                                 </div>
-                                <span className="shrink-0 text-xs text-neutral-400">{formatBytes(s.size)}</span>
+                                <span className="text-muted-foreground shrink-0 text-xs">{formatBytes(s.size)}</span>
                               </div>
                             </motion.button>
                           );
@@ -174,30 +174,30 @@ export function SimulationPickerOverlay({
             })}
           </div>
 
-          <div className="sticky top-4 w-80 shrink-0 rounded-lg border border-neutral-300 bg-neutral-100/60 p-2 pb-1">
+          <div className="border-border bg-background/60 sticky top-4 w-80 shrink-0 rounded-lg border p-2 pb-1">
             <div className="relative">
               <img
                 className="border-border overflow-hidden rounded-sm border bg-contain"
                 src="/stations-map.png"
                 alt="Station map"
               />
-              <div className="absolute bottom-0 w-full rounded-b-sm border border-neutral-200 bg-neutral-100 p-1 text-xs">
+              <div className="border-border bg-muted absolute bottom-0 w-full rounded-b-sm border p-1 text-xs">
                 <div className="flex w-full items-center *:shrink-0">
-                  <div className="h-4 w-0.5 rounded bg-neutral-400"></div>
-                  <div className="h-0.5 flex-1 bg-neutral-400"></div>
+                  <div className="bg-foreground/60 h-4 w-0.5 rounded"></div>
+                  <div className="bg-foreground/60 h-0.5 flex-1"></div>
                   <span className="px-1 whitespace-nowrap">380 km</span>
-                  <div className="h-0.5 flex-1 bg-neutral-400"></div>
-                  <div className="h-4 w-0.5 rounded bg-neutral-400"></div>
+                  <div className="bg-foreground/60 h-0.5 flex-1"></div>
+                  <div className="bg-foreground/60 h-4 w-0.5 rounded"></div>
                 </div>
               </div>
-              <div className="absolute top-1 left-1 grid grid-cols-[1fr_auto] items-center justify-items-end gap-1 rounded-sm border border-neutral-200 bg-neutral-100 p-1 text-xs">
+              <div className="border-border bg-muted absolute top-1 left-1 grid grid-cols-[1fr_auto] items-center justify-items-end gap-1 rounded-sm border p-1 text-xs">
                 <div className="h-1 w-4 bg-linear-90 from-red-400 via-yellow-300 to-green-400"></div>
                 <span className="whitespace-nowrap">Intensity Contour</span>
-                <TriangleIcon className="h-3 w-3 shrink-0 self-center text-neutral-500" />
+                <TriangleIcon className="text-muted-foreground h-3 w-3 shrink-0 self-center" />
                 <span className="w-full whitespace-nowrap">Seismic Station</span>
               </div>
             </div>
-            <span className="text-xs text-neutral-500 italic">U.S. Geological Survey ShakeMap</span>
+            <span className="text-muted-foreground text-xs italic">U.S. Geological Survey ShakeMap</span>
           </div>
         </div>
 
@@ -325,12 +325,12 @@ export function SimulationPickerOverlay({
         <div className="flex justify-end gap-2">
           <button
             onClick={() => clearCache()}
-            className="text-left text-[11px] text-neutral-500 underline transition-colors hover:text-neutral-700">
+            className="text-muted-foreground hover:text-foreground text-left text-[11px] underline transition-colors">
             Clear all cache
           </button>
           <button
             onClick={() => clearProcessedCache()}
-            className="text-left text-[11px] text-neutral-500 underline transition-colors hover:text-neutral-700">
+            className="text-muted-foreground hover:text-foreground text-left text-[11px] underline transition-colors">
             Clear computed cache
           </button>
         </div>

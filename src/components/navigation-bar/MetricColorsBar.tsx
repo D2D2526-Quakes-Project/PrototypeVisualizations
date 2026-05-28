@@ -29,7 +29,7 @@ function ColorPalettePicker({ metric, currentPaletteKey }: { metric: Metric; cur
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="h-4 flex-1 cursor-pointer rounded-sm border border-neutral-300 transition-opacity hover:opacity-80"
+          className="h-4 flex-1 cursor-pointer rounded-sm border border-border transition-opacity hover:opacity-80"
           style={{
             background: `linear-gradient(to right, ${[...METRIC_PALETTES[currentPaletteKey].positiveColorStops, ...METRIC_PALETTES[currentPaletteKey].positiveThresholdColorStops].join(", ")})`,
           }}
@@ -51,7 +51,7 @@ function ColorPalettePicker({ metric, currentPaletteKey }: { metric: Metric; cur
                   setOpen(false);
                 }}
                 className={`flex rounded border p-1 transition-colors ${
-                  isActive ? "border-neutral-900 bg-neutral-50" : "border-neutral-200 hover:bg-neutral-50"
+                  isActive ? "border-neutral-900 bg-muted" : "border-border hover:bg-accent"
                 }`}
                 title={`Use ${palette.label.toLowerCase()} palette`}>
                 <div
@@ -89,7 +89,7 @@ function MetricRow({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.1, delay: index * 0.02 }}
       className={`flex items-center gap-1 rounded-md px-2 py-1 transition-colors ${
-        available ? "hover:bg-neutral-100" : ""
+        available ? "hover:bg-accent" : ""
       }`}>
       <span className="flex h-5 flex-1 shrink-0 items-center gap-0.5 rounded-sm">
         <ColorPalettePicker metric={metric} currentPaletteKey={colorScale.paletteKey} />
@@ -97,11 +97,11 @@ function MetricRow({
 
       <span className={`min-w-0 ${!available ? "opacity-40" : ""}`}>
         <span
-          className={`block truncate text-xs leading-tight font-medium ${available ? "text-neutral-700" : "text-neutral-400"}`}>
+          className={`block truncate text-xs leading-tight font-medium ${available ? "text-foreground" : "text-muted-foreground"}`}>
           {config.shortLabel}
         </span>
         {!available && (
-          <span className="block truncate text-[10px] leading-tight text-neutral-400 italic">Requires data</span>
+          <span className="block truncate text-[10px] leading-tight text-muted-foreground italic">Requires data</span>
         )}
       </span>
     </motion.div>
@@ -192,7 +192,7 @@ export function MetricColorsBar() {
   const allThresholdKeys: ThresholdKey[] = [...THRESHOLD_KEY_ORDER, "inf"];
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden border-t border-neutral-200 bg-neutral-50">
+    <div className="flex h-full w-full flex-col overflow-hidden border-t border-border bg-muted">
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         <AnimatePresence mode="wait">
           <motion.div

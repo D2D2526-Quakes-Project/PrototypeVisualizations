@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
+type EchartsTheme = "my_light_theme" | "my_dark_theme";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -13,11 +14,13 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  echartsTheme: EchartsTheme;
 };
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
+  echartsTheme: "my_light_theme",
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -28,7 +31,10 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) || defaultTheme);
+  const queryParam = new URLSearchParams(window.location.search).get("theme") as Theme | null;
+  const [theme, setTheme] = useState<Theme>(
+    () => queryParam || (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  );
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -51,6 +57,7 @@ export function ThemeProvider({
       localStorage.setItem(storageKey, theme);
       setTheme(theme);
     },
+    echartsTheme: theme === "dark" ? "my_dark_theme" : ("my_light_theme" as EchartsTheme),
   };
 
   return (

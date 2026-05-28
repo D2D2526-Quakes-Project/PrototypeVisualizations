@@ -8,6 +8,7 @@ import { computeHingeHistogram } from "../metrics/hingeMetrics";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useTheme } from "@/components/ThemeProvider";
 
 type HingeDistributionPanelState = {
   binCount: number;
@@ -151,6 +152,7 @@ type MetricHistogram = {
 export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const hingeData = animationData.hingeData;
+  const { echartsTheme } = useTheme();
 
   const { state: savedState, setState: setSavedState } = usePanelState<HingeDistributionPanelState>({
     panelId: api.id,
@@ -287,6 +289,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
                 <div key={key} className="border-border bg-background rounded border p-2">
                   <div className="h-56">
                     <ReactECharts
+                      theme={echartsTheme}
                       option={option}
                       style={{ height: "100%", width: "100%" }}
                       opts={{ renderer: "canvas" }}

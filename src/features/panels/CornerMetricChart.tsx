@@ -14,6 +14,7 @@ import { useHover } from "../3d/lib/useHover";
 import { getMetricConfig, isHingeMetric, type Metric } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface CornerMetricChartProps {
   api: DockviewPanelApi;
@@ -133,6 +134,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   const { availableMetrics } = useMetrics();
   const chartRef = useRef<ReactECharts>(null);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
+  const { echartsTheme } = useTheme();
 
   const defaultState = DEFAULT_CORNER_METRIC_CHART_PANEL_STATE;
   const { state: panelState, setState: setPanelState } = usePanelState<CornerMetricChartPanelState>({
@@ -527,6 +529,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     <div className="bg-background relative flex h-full w-full flex-col gap-2">
       <div className="min-h-0 flex-1">
         <ReactECharts
+          theme={echartsTheme}
           ref={chartRef}
           option={option}
           style={{ height: "100%", width: "100%" }}

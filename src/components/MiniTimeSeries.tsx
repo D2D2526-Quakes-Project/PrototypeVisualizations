@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { usePlayback } from "@/features/playback/usePlayback";
 import type { EChartsOption } from "echarts";
+import { useTheme } from "./ThemeProvider";
 
 interface MiniTimeSeriesProps {
   data: number[];
@@ -19,6 +20,7 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label, 
   const containerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
+  const { echartsTheme } = useTheme();
 
   const chartData = useMemo(() => {
     if (data.length <= 1) return { seriesData: [], min: 0, max: 0, timeRange: 1 };
@@ -170,6 +172,7 @@ export function MiniTimeSeries({ data, times, color, currentValue, unit, label, 
       </div>
       <div ref={containerRef} className="relative">
         <ReactECharts
+          theme={echartsTheme}
           ref={chartRef}
           option={option}
           style={{ height: "80px", width: "100%" }}

@@ -14,6 +14,7 @@ import { useHover } from "../3d/lib/useHover";
 import { getMetricConfig, getMetricKeyColor, type Metric } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
+import { useTheme } from "@/components/ThemeProvider";
 
 const MIN_X_AXIS_MAX = 0.01;
 type FloorDisplacementChartPanelState = {
@@ -48,6 +49,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   const { availableMetrics } = useMetrics();
   const { thresholds } = useThresholds();
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
+  const { echartsTheme } = useTheme();
 
   const { state: panelState, setState: setPanelState } = usePanelState<FloorDisplacementChartPanelState>({
     panelId: api.id,
@@ -372,6 +374,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       </div>
       <div className="min-h-0 w-full flex-1">
         <ReactECharts
+          theme={echartsTheme}
           option={option}
           replaceMerge={["series", "legend", "xAxis"]}
           style={{ height: "100%", width: "100%" }}

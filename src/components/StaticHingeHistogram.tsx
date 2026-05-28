@@ -2,6 +2,7 @@ import type { HingeHistogramResult } from "@/features/metrics/hingeMetrics";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useMemo } from "react";
+import { useTheme } from "./ThemeProvider";
 
 interface StaticHingeHistogramProps {
   maxHistogram: HingeHistogramResult | null;
@@ -14,6 +15,7 @@ function getCenter(bin: { x0: number; x1: number }) {
 }
 
 export function StaticHingeHistogram({ maxHistogram, minHistogram, height = 180 }: StaticHingeHistogramProps) {
+  const { echartsTheme } = useTheme();
   const option = useMemo((): EChartsOption => {
     const xValues = Array.from(
       new Set(
@@ -89,5 +91,12 @@ export function StaticHingeHistogram({ maxHistogram, minHistogram, height = 180 
     };
   }, [maxHistogram, minHistogram]);
 
-  return <ReactECharts option={option} style={{ height, width: "100%" }} opts={{ renderer: "canvas" }} />;
+  return (
+    <ReactECharts
+      theme={echartsTheme}
+      option={option}
+      style={{ height, width: "100%" }}
+      opts={{ renderer: "canvas" }}
+    />
+  );
 }

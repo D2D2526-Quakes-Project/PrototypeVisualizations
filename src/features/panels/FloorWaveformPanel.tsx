@@ -13,6 +13,7 @@ import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHover } from "../3d/lib/useHover";
 import type { ECharts } from "echarts";
+import { useTheme } from "@/components/ThemeProvider";
 
 type PlacementMode = "elevation" | "floor";
 
@@ -109,6 +110,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   const { visibleFloors } = useFloorVisibility();
   const { availableMetrics } = useMetrics();
   const { setHoveredFloor } = useHover();
+  const { echartsTheme } = useTheme();
 
   const echartsRef = useRef<ReactECharts>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
@@ -239,7 +241,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         animation: false,
         clip: false,
         lineStyle: {
-          color: "#000000",
+          color: echartsTheme == "my_dark_theme" ? "#ffffff" : "#000000",
           width: 1.5,
         },
         markLine: {
@@ -252,10 +254,14 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
             distance: 12,
             formatter:
               panelState.placementMode === "elevation" ? `${Math.round(story.elevationIn)} in` : story.floorLabel,
-            color: "#374151",
+            color: echartsTheme == "my_dark_theme" ? "#A1A1A1" : "#737373",
             fontSize: 10,
           },
-          lineStyle: { color: "#e5e7eb", width: 1, type: "solid" },
+          lineStyle: {
+            color: echartsTheme == "my_dark_theme" ? "#2E2E2E" : "#E5E5E5",
+            width: 1,
+            type: "solid",
+          },
           data: [{ yAxis: baselineY }],
         },
       };
@@ -274,13 +280,16 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         name: "Time (s)",
         nameLocation: "middle",
         nameGap: 25,
-        nameTextStyle: { color: "#374151", fontSize: 11 },
+        // nameTextStyle: {
+        //   // color: "#374151",
+        //   fontSize: 11,
+        // },
         min: timeRange?.start ?? 0,
         max: timeRange?.end ?? (totalDuration > 0 ? totalDuration : 1),
         splitLine: { show: false },
         axisLabel: {
           formatter: (value: number) => `${value.toFixed(1)} s`,
-          color: "#6b7280",
+          // color: "#6b7280",
           fontSize: 10,
         },
         axisLine: { show: false },
@@ -291,7 +300,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         name: panelState.placementMode === "elevation" ? "Story Elevation (in)" : "Floor",
         nameLocation: "middle",
         nameGap: 50,
-        nameTextStyle: { color: "#374151", fontSize: 11 },
+        // nameTextStyle: { color: "#374151", fontSize: 11 },
         min: "dataMin",
         max: "dataMax",
         axisLabel: { show: false },
@@ -311,6 +320,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     amplitudeMultiplier,
     maxAbsValue,
     timeRange,
+    echartsTheme,
   ]);
 
   // Handle Playhead visually without React state cycles forcing heavy redraws
@@ -402,7 +412,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   const hoveredStory = hoverState ? storySeries[hoverState.storyIndex] : null;
 
   return (
-    <div className="bg-background flex h-full min-h-0 w-full flex-col">
+    <div className="flex h-full min-h-0 w-full flex-col">
       <div className="border-border flex shrink-0 flex-wrap gap-1 border-b px-2 pb-1">
         {/* Metric select */}
         <label className="text-muted-foreground flex flex-col items-start text-[11px]">
@@ -457,6 +467,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         {storySeries.length > 0 ? (
           <div className="relative h-full w-full touch-none">
             <ReactECharts
+              theme={echartsTheme}
               ref={echartsRef}
               option={option}
               style={{ height: "100%", width: "100%" }}

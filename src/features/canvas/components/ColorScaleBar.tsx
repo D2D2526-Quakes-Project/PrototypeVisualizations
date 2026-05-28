@@ -29,7 +29,7 @@ function LabelBox({
     <span
       className={`shrink-0 font-mono text-[9px] leading-none whitespace-nowrap ${
         underlined ? "border-b border-current pb-0" : ""
-      } ${boxed ? "bg-muted/50 text-foreground px-0.5 py-px" : underlined ? "text-neutral-500" : "text-neutral-400"}`}>
+      } ${boxed ? "bg-muted/50 text-foreground px-0.5 py-px" : "text-foreground"}`}>
       {value}
     </span>
   );

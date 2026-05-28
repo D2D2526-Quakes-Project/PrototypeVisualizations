@@ -14,6 +14,7 @@ import { useGlobalStore, useProfileActions } from "@/state";
 import { useAnimationData } from "../animation-data/useAnimationData";
 import { getMetricKeyColor, UNITS, type Metric, type UnitConfig } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
+import { useTheme } from "@/components/ThemeProvider";
 
 type ChannelOption = {
   label: string;
@@ -182,40 +183,19 @@ function TooltipContent({
 }) {
   return (
     <div style={{ minWidth: "180px" }}>
-      <div
-        style={{
-          fontWeight: 600,
-          marginBottom: "6px",
-          borderBottom: "1px solid #e5e7eb",
-          paddingBottom: "4px",
-          fontSize: "13px",
-        }}>
+      <div style={{}} className="border-border text-primary mb-1 border-b text-sm font-semibold">
         {formatNumber(time)} s
       </div>
       {values.map((item) => (
-        <div
-          key={item.name}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            marginTop: "2px",
-          }}>
+        <div key={item.name} className="text-primary flex items-center gap-2 text-xs">
           <span
             style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
               background: item.color,
             }}
+            className="h-2 w-2 rounded-full"
           />
-          <span style={{ color: "#6b7280", fontSize: "10px" }}>{item.name}:</span>
-          <span
-            style={{
-              fontWeight: 500,
-              marginLeft: "auto",
-              fontFamily: "monospace",
-            }}>
+          <span>{item.name}:</span>
+          <span className="ml-auto font-mono">
             {formatNumber(item.value)}
             {item.unit ? ` ${item.unit.abbr}` : ""}
           </span>
@@ -246,6 +226,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
     defaultState: DEFAULT_TIMELINE_PANEL_STATE,
   });
   const { isCurrentMetricStatic } = useMetrics();
+  const { echartsTheme } = useTheme();
 
   const maxFrame = animationData.metadata.frameCount - 1;
   const dt = animationData.metadata.dt;
@@ -323,7 +304,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
           fontSize: 11,
           fontWeight: "bold",
           color,
-          textShadowColor: "#fff",
           textShadowBlur: 2,
           textShadowOffsetX: 0,
           textShadowOffsetY: 0,
@@ -335,18 +315,32 @@ export function Timeline({ api }: IDockviewPanelProps) {
         type: "value",
         min: 0,
         max: maxFrame * animationData.metadata.dt,
-        axisLine: { show: isLast, lineStyle: { color: "#d1d5db" } },
-        axisLabel: { show: isLast, color: "#6b7280", fontSize: 10, margin: 8 },
-        axisTick: { show: isLast },
-        splitLine: { show: true, lineStyle: { color: "#f3f4f6" } },
+        axisLine: {
+          show: isLast,
+        },
+        axisLabel: {
+          show: isLast,
+          fontSize: 10,
+          margin: 8,
+        },
+        axisTick: {
+          show: isLast,
+        },
+        splitLine: {
+          show: true,
+        },
       });
 
       yAxes.push({
         gridIndex: index,
         type: "value",
-        axisLine: { show: true, lineStyle: { color: "#d1d5db" } },
-        axisLabel: { color: "#6b7280", fontSize: 10, margin: 8 },
-        splitLine: { lineStyle: { color: "#f3f4f6" } },
+        axisLine: {
+          show: true,
+        },
+        axisLabel: {
+          fontSize: 10,
+          margin: 8,
+        },
       });
 
       series.push({
@@ -393,15 +387,18 @@ export function Timeline({ api }: IDockviewPanelProps) {
           xAxisIndex: xAxisIndices,
           height: 20,
           bottom: 10,
-          borderColor: "#e5e7eb",
+          borderColor: "#E5E5E5",
           fillerColor: "rgba(0,0,0,0.06)",
-          handleStyle: { color: "#9ca3af" },
+          handleStyle: { color: "#E5E5E5" },
 
           selectedDataBackground: {
-            lineStyle: { color: "#9ca3af" },
+            lineStyle: { color: "#171717" },
             areaStyle: { color: "#f3f4f6" },
           },
-          textStyle: { color: "#6b7280", fontSize: 10 },
+          dataBackground: {
+            lineStyle: { color: "#171717" },
+            areaStyle: { color: "#f3f4f6" },
+          },
           labelFormatter: (value: number) => `${formatNumber(value)}s`,
           moveHandleSize: 0,
           moveHandleStyle: {
@@ -416,20 +413,12 @@ export function Timeline({ api }: IDockviewPanelProps) {
         },
       ],
       axisPointer: {
-        label: { backgroundColor: "#777" },
         link: [{ xAxisIndex: "all" }],
       },
       tooltip: {
         trigger: "axis",
-        backgroundColor: "rgba(255, 255, 255, 0.98)",
-        borderColor: "#d1d5db",
-        borderWidth: 1,
-        padding: 10,
-        textStyle: { color: "#374151", fontSize: 11 },
-        transitionDuration: 0,
         axisPointer: {
           type: "line",
-          lineStyle: { color: "#9ca3af", width: 1, type: "dashed" },
         },
         formatter: (params) => {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
@@ -704,6 +693,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
           <>
             <ReactECharts
               ref={chartRef}
+              theme={echartsTheme}
               option={option}
               style={{ height: "100%", width: "100%", opacity: isCurrentMetricStatic ? 0.65 : 1 }}
               replaceMerge={["series"]}

@@ -5,13 +5,14 @@ import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 import * as THREE from "three";
 import { ErrorPage } from "./components/ErrorPage";
 import { NavigationBar } from "./components/navigation-bar/NavigationBar";
+import { ThemeProvider } from "./components/ThemeProvider";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { AnimationDataProvider } from "./features/animation-data/AnimationDataProvider";
+import { ExportRenderModeContext } from "./features/export/renderMode";
 import { PlaybackKeyboardEvents } from "./features/playback/PlaybackKeyboardEvents";
 import "./index.css";
 import { App } from "./pages/App";
-import { ExportRenderModeContext } from "./features/export/renderMode";
-import { AnimationDataProvider } from "./features/animation-data/AnimationDataProvider";
-import { ThemeProvider } from "./components/ThemeProvider";
+import "@/lib/echartsTheme";
 
 const routes = [
   {

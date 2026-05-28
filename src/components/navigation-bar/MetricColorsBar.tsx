@@ -51,7 +51,7 @@ function ColorPalettePicker({ metric, currentPaletteKey }: { metric: Metric; cur
                   setOpen(false);
                 }}
                 className={`flex rounded border p-1 transition-colors ${
-                  isActive ? "bg-muted border-neutral-900" : "border-border hover:bg-accent"
+                  isActive ? "bg-muted border-primary" : "border-border hover:bg-accent"
                 }`}
                 title={`Use ${palette.label.toLowerCase()} palette`}>
                 <div

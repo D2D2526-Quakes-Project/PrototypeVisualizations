@@ -347,13 +347,13 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         {/* NOT-LOADED NOTICES */}
         <div>
           {!animationData.displacementRot && (
-            <div className="text-[10px] text-neutral-400 italic">Rotations not loaded</div>
+            <div className="text-muted-foreground text-[10px] italic">Rotations not loaded</div>
           )}
           {!animationData.velocityLin && (
-            <div className="text-[10px] text-neutral-400 italic">Velocities not loaded</div>
+            <div className="text-muted-foreground text-[10px] italic">Velocities not loaded</div>
           )}
           {!animationData.accelerationLin && (
-            <div className="text-[10px] text-neutral-400 italic">Accelerations not loaded</div>
+            <div className="text-muted-foreground text-[10px] italic">Accelerations not loaded</div>
           )}
         </div>
       </div>

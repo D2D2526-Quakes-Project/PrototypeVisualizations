@@ -252,10 +252,10 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                     <div className="text-muted-foreground font-mono text-[10px]">
                       <span className="mr-1">Current:</span>
                       <UnitTooltip value={current} unit="percent" />
-                      <span className="mx-2 text-neutral-300">|</span>
+                      <span className="text-muted mx-2">|</span>
                       <span className="mr-1">Peak:</span>
                       <UnitTooltip value={peaks.peak} unit="percent" />
-                      <span className="text-[9px] text-neutral-500">@ {peaks.peakTime.toFixed(2)} s</span>
+                      <span className="text-muted-foreground text-[9px]">@ {peaks.peakTime.toFixed(2)} s</span>
                     </div>
                   </div>
                 );

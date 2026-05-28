@@ -148,14 +148,14 @@ export function SimulationPickerOverlay({
                               }}
                               className={`cursor-pointer rounded-md border px-3 py-2 text-left transition-colors ${
                                 isSelected
-                                  ? "bg-warning/90 border-amber-400"
-                                  : "border-border bg-background/50 hover:bg-background/80 hover:border-amber-300/70"
+                                  ? "bg-warning/90 border-warning"
+                                  : "border-border bg-background/50 hover:bg-background/80 hover:border-warning/70"
                               } ${simIncomplete ? "incomplete-warning" : ""}`}>
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex min-w-0 items-center gap-1.5">
                                   <span
                                     className={`inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border ${
-                                      isSelected ? "bg-warning border-amber-500" : "border-border bg-background"
+                                      isSelected ? "bg-warning border-warning" : "border-border bg-background"
                                     }`}>
                                     {isSelected ? <CheckIcon className="size-2.5" /> : null}
                                   </span>

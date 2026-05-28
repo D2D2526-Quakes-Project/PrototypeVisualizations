@@ -193,7 +193,7 @@ function ColorScaleBarPopover({ children }: { children: React.ReactNode }) {
                   setMetricPalette(currentMetric, paletteKey === metricConfig.defaultPalette ? null : paletteKey)
                 }
                 className={`flex rounded border p-1 transition-colors ${
-                  isActive ? "bg-muted border-neutral-900" : "border-border hover:bg-accent"
+                  isActive ? "bg-muted border-primary" : "border-border hover:bg-accent"
                 }`}
                 title={`Use ${palette.label.toLowerCase()} palette`}>
                 <div

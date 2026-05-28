@@ -172,9 +172,6 @@ export function NavigationBar() {
           </>
         ) : (
           <>
-            <span className="font-medium">Frame:</span>
-            <span className="font-mono">{frameIndex + 1}</span>
-            <span className="text-neutral-300">|</span>
             <span className="font-medium">Time:</span>
             <span className="font-mono">{formatNumber(frameIndex * animationData.metadata.dt)} s</span>
           </>

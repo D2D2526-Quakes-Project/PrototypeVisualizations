@@ -174,11 +174,9 @@ const DEFAULT_TIMELINE_PANEL_STATE: TimelinePanelState = {
 };
 
 function TooltipContent({
-  frame,
   time,
   values,
 }: {
-  frame: number;
   time: number;
   values: Array<{
     name: string;
@@ -197,7 +195,7 @@ function TooltipContent({
           paddingBottom: "4px",
           fontSize: "13px",
         }}>
-        Frame {frame} <span style={{ fontWeight: 400, color: "#9ca3af" }}>|</span> {formatNumber(time)} s
+        {formatNumber(time)} s
       </div>
       {values.map((item) => (
         <div
@@ -522,7 +520,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
             });
           });
 
-          return renderToString(<TooltipContent frame={frame} time={time} values={values} />);
+          return renderToString(<TooltipContent time={time} values={values} />);
         },
       },
       animation: false,
@@ -707,9 +705,6 @@ export function Timeline({ api }: IDockviewPanelProps) {
           </div>
         )}
         <div className="flex flex-wrap items-center gap-1 pt-1 text-xs text-neutral-700">
-          <span className="font-medium">Frame:</span>
-          <span className="font-mono">{frameIndex + 1}</span>
-          <span className="text-neutral-300">|</span>
           <span className="font-medium">Time:</span>
           <span className="font-mono">{formatFixed3(frameIndex * animationData.metadata.dt)} s</span>
           <div className="flex flex-wrap items-center gap-2">

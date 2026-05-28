@@ -225,15 +225,15 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
 
   if (!hingeData) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-white p-4 text-sm text-neutral-500">
+      <div className="bg-background text-muted-foreground flex h-full w-full items-center justify-center p-4 text-sm">
         Hinge data not loaded for this simulation.
       </div>
     );
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-white">
-      <div className="grid grid-cols-3 gap-2 border-b border-neutral-100 px-3 py-2">
+    <div className="bg-background flex h-full w-full flex-col">
+      <div className="border-border grid grid-cols-3 gap-2 border-b px-3 py-2">
         <Label className="flex flex-col gap-1 text-xs font-normal whitespace-nowrap">
           Number of bins: {binCount}
           <Slider
@@ -284,7 +284,7 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
               const option = buildHingeHistogramOption(metric, clipPercentile, logScale);
 
               return (
-                <div key={key} className="rounded border border-neutral-200 bg-white p-2">
+                <div key={key} className="border-border bg-background rounded border p-2">
                   <div className="h-56">
                     <ReactECharts
                       option={option}

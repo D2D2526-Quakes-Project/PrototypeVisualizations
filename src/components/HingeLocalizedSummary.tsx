@@ -25,14 +25,14 @@ export function HingeLocalizedSummary({ nodeIds }: HingeLocalizedSummaryProps) {
     <section>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-bold text-neutral-800">Hinges</div>
+          <div className="text-foreground text-sm font-bold">Hinges</div>
         </div>
       </div>
 
       <div className="mt-2 space-y-1">
         <div className="flex items-center justify-between gap-2 py-1 text-xs">
-          <span className="text-neutral-500">Max Abs Rotation</span>
-          <span className="font-mono text-neutral-900">
+          <span className="text-muted-foreground">Max Abs Rotation</span>
+          <span className="text-foreground font-mono">
             <UnitTooltip value={summary.maxAbsRotation} unit="radians" decimals={3} showConversions={false} />
           </span>
         </div>

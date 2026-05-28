@@ -360,7 +360,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   ]);
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-white">
+    <div className="bg-background relative flex h-full w-full flex-col">
       <div className="absolute top-0 right-0 z-10 flex flex-wrap items-center justify-center p-1">
         <CheckboxSelectPopover
           options={metricOptions}

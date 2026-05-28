@@ -48,7 +48,12 @@ export function HorizontalConnectionsRenderer({ nodeIds: overrideNodeIds }: { no
           const c = cornerNodes[storyId];
           if (!c) continue;
           const { NW, NE, SW, SE } = c;
-          const perimeter: [number, number][] = [[NW, NE], [NE, SE], [SE, SW], [SW, NW]];
+          const perimeter: [number, number][] = [
+            [NW, NE],
+            [NE, SE],
+            [SE, SW],
+            [SW, NW],
+          ];
           for (const [a, b] of perimeter) {
             if (a === -1 || b === -1) continue;
             if (!visibleNodeSet.has(a) || !visibleNodeSet.has(b)) continue;
@@ -83,9 +88,7 @@ export function HorizontalConnectionsRenderer({ nodeIds: overrideNodeIds }: { no
 
       const posA = getNodeVisualPosition(nodeA, frameIndex);
       const posB = getNodeVisualPosition(nodeB, frameIndex);
-      const color = coloredConnectionLines
-        ? getNodeColorForCurrentMetric(nodeA, frameIndex).color
-        : themeColor;
+      const color = coloredConnectionLines ? getNodeColorForCurrentMetric(nodeA, frameIndex).color : themeColor;
 
       const baseIdx = vertexCount * 3;
 

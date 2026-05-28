@@ -402,14 +402,15 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   const hoveredStory = hoverState ? storySeries[hoverState.storyIndex] : null;
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col bg-white">
-      <div className="flex shrink-0 flex-wrap gap-1 border-b border-neutral-200 px-2 pb-1">
+    <div className="bg-background flex h-full min-h-0 w-full flex-col">
+      <div className="border-border flex shrink-0 flex-wrap gap-1 border-b px-2 pb-1">
         {/* Metric select */}
-        <label className="flex flex-col items-start text-[11px] text-neutral-500">
+        <label className="text-muted-foreground flex flex-col items-start text-[11px]">
           Metric
           <NativeSelect
             size="sm"
             value={selectedMetric}
+            className="text-foreground"
             onChange={(event) => setPanelState({ metric: event.target.value as Metric })}>
             {selectableMetrics.map((metric) => {
               const config = getMetricConfig(metric);
@@ -423,11 +424,12 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         </label>
 
         {/* Placement mode select */}
-        <label className="flex flex-col items-start text-[11px] text-neutral-500">
+        <label className="text-muted-foreground flex flex-col items-start text-[11px]">
           Spacing
           <NativeSelect
             size="sm"
             value={panelState.placementMode}
+            className="text-foreground"
             onChange={(event) => setPanelState({ placementMode: event.target.value as PlacementMode })}>
             <NativeSelectOption value="elevation">By elevation</NativeSelectOption>
             <NativeSelectOption value="floor">Equal floors</NativeSelectOption>
@@ -435,7 +437,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         </label>
 
         {/* Amplitude scale slider */}
-        <label className="flex flex-col items-start text-[11px] text-neutral-500">
+        <label className="text-muted-foreground flex flex-col items-start text-[11px]">
           Amplitude
           <div className="flex items-center gap-1">
             <Slider
@@ -444,9 +446,9 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
               step={1}
               value={[amplitudeToSlider(amplitudeMultiplier)]}
               onValueChange={(value) => setPanelState({ amplitudeScale: sliderToAmplitude(value[0]) })}
-              className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-neutral-200 accent-neutral-700"
+              className="text-foreground h-1 w-20 cursor-pointer appearance-none rounded-full"
             />
-            <span className="w-8 font-mono text-[10px] text-neutral-400">{amplitudeMultiplier.toFixed(1)}×</span>
+            <span className="text-foreground w-8 font-mono text-[10px]">{amplitudeMultiplier.toFixed(1)}×</span>
           </div>
         </label>
       </div>
@@ -476,7 +478,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
             {hoverState && hoveredStory ? (
               <div
-                className="pointer-events-none absolute z-20 rounded-md border border-neutral-200 bg-white px-3 py-2 text-neutral-900 shadow-lg"
+                className="border-border bg-background text-foreground pointer-events-none absolute z-20 rounded-md border px-3 py-2 shadow-lg"
                 style={{
                   left: clamp(hoverState.x + 12, 16, Math.max(16, hoverState.containerWidth - 220)),
                   top: clamp(hoverState.y - 12, 16, Math.max(16, hoverState.containerHeight - 140)),
@@ -486,7 +488,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
             ) : null}
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-neutral-400">
+          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
             No visible floors available for this panel
           </div>
         )}

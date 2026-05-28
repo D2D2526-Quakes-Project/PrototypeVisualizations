@@ -44,9 +44,7 @@ export function VerticalConnectionsRenderer({ nodeIds: overrideNodeIds }: { node
 
       const posA = getNodeVisualPosition(nodeId, frameIndex);
       const posB = getNodeVisualPosition(nodeBelow, frameIndex);
-      const color = coloredConnectionLines
-        ? getNodeColorForCurrentMetric(nodeId, frameIndex).color
-        : themeColor;
+      const color = coloredConnectionLines ? getNodeColorForCurrentMetric(nodeId, frameIndex).color : themeColor;
 
       const baseIdx = vertexCount * 3;
 

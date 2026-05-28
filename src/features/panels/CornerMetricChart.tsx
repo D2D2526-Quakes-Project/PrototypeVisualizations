@@ -524,7 +524,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   }, [baseOption, panelState.visibleCorners, seriesData, xAxisExtent.min, xAxisExtent.max]);
 
   return (
-    <div className="relative flex h-full w-full flex-col gap-2 bg-white">
+    <div className="bg-background relative flex h-full w-full flex-col gap-2">
       <div className="min-h-0 flex-1">
         <ReactECharts
           ref={chartRef}

@@ -44,7 +44,7 @@ const FloorSlab = memo(function FloorSlab({
   const colAttrRef = useRef<THREE.BufferAttribute>(null);
 
   const { animationData, currentBuilding } = useAnimationData();
-  const { stories } = animationData.metadata;
+  const { stories, displacementMissingNodeIndices } = animationData.metadata;
 
   const { getValueColorForCurrentMetric, getNodeColorForCurrentMetric, getNodeValueForCurrentMetric } = useMetrics();
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
@@ -100,7 +100,7 @@ const FloorSlab = memo(function FloorSlab({
     let count = 0;
     for (const nodeId of floorNodes) {
       const value = getNodeValueForCurrentMetric(nodeId, frameIndex);
-      if (value == undefined || !isFinite(value)) continue;
+      if (value == undefined || displacementMissingNodeIndices.includes(nodeId)) continue;
       total += value;
       count++;
     }

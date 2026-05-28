@@ -3,8 +3,8 @@ import { forwardRef, useEffect, useMemo, useRef } from "react";
 import {
   ChevronRightIcon,
   EyeOffIcon,
-  ListIndentDecreaseIcon,
   RotateCwIcon,
+  SettingsIcon,
   SquareDashedMousePointerIcon,
   SwatchBookIcon,
   XCircleIcon,
@@ -12,8 +12,8 @@ import {
 import { AnimatePresence, motion, stagger } from "motion/react";
 
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { isEditableTarget } from "@/lib/utils";
 import { useGlobalStore, useLiveStore, useProfileActions, useProfileData } from "@/state";
 import { DEFAULT_COLOR_THEMES } from "@/state/globalState";
@@ -41,7 +41,8 @@ export const ViewControls = forwardRef<
     showCanvasSpecificControls?: boolean;
   }
 >(function ViewControls({ isExpanded, setIsExpanded, docked, showCanvasSpecificControls = true }, ref) {
-  const { resetView, resetHomeView, orthographic, setOrthographic, spin, setSpin } = useCanvasState();
+  const { resetView, resetHomeView, orthographic, setOrthographic, spin, setSpin, isHoveringPanel, isPrimaryPanel } =
+    useCanvasState();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
   const setColorTheme = useGlobalStore((s) => s.setColorTheme);
   const clearSelection = useLiveStore((s) => s.clearSelection);
@@ -90,18 +91,24 @@ export const ViewControls = forwardRef<
     <div
       ref={ref}
       className={`pointer-events-none z-5 w-fit flex-[0_0] ${docked ? "h-full" : "absolute top-1 right-1 bottom-1"}`}>
-      {!isExpanded && (
-        <button
-          className="group border-border bg-background pointer-events-auto -mr-1 flex items-center rounded-l-lg border border-r-0 p-1 shadow-lg backdrop-blur-sm select-none"
-          onClick={() => setIsExpanded(true)}>
-          <div className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none group-hover:bg-neutral-200">
-            <ListIndentDecreaseIcon size={14} />
-          </div>
-        </button>
-      )}
-      <div className="flex h-full max-h-full min-h-0 items-start gap-2">
-        <AnimatePresence mode="popLayout">
-          {isExpanded && (
+      <AnimatePresence mode="popLayout">
+        {!isExpanded && (isHoveringPanel || isPrimaryPanel) && (
+          <motion.button
+            key="view-controls-button"
+            initial={{ opacity: 0, scale: 0.9, x: 4 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.9, x: 4 }}
+            transition={{ duration: 0.15 }}
+            className="group border-border bg-background pointer-events-auto absolute -right-1 flex origin-right items-center rounded-l-lg border border-r-0 p-1 shadow-lg backdrop-blur-sm select-none"
+            onClick={() => setIsExpanded(true)}>
+            <div className="flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium text-neutral-700 transition-colors select-none group-hover:bg-neutral-200">
+              <SettingsIcon size={14} />
+            </div>
+          </motion.button>
+        )}
+
+        {isExpanded && (
+          <motion.div className="flex h-full max-h-full min-h-0 items-start gap-2">
             <motion.div
               ref={expandedLayoutRef}
               key="expanded"
@@ -239,9 +246,9 @@ export const ViewControls = forwardRef<
                 </motion.div>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });

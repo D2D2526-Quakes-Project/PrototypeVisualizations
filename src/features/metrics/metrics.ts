@@ -312,6 +312,7 @@ export type MetricConfig = {
   unit: UnitConfig;
   defaultPalette: MetricPaletteKey;
   getPrecomputedMax: (stats: BuildingAnimationData) => number;
+  /** Undefined means the data for this metrics not available. Does insinuate meaning behind values. */
   getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => number | undefined;
   isAvailable: (animationData: BuildingAnimationData) => boolean;
   hasPositive: boolean;

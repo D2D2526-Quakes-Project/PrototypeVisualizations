@@ -322,7 +322,7 @@ export const MagicPanelTab = (props: IDockviewPanelHeaderProps<MagicPanelParams>
         className={`group-hover:bg-muted relative flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors ${
           isTabGroup &&
           isActive &&
-          `before:border-border box-content before:absolute before:inset-x-0 before:top-0 before:h-3/4 before:rounded-t-md before:border-2 before:border-b-0`
+          `before:border-border box-content before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-3/4 before:rounded-t-md before:border-2 before:border-b-0`
         }`}>
         {isTabGroup && isActive && (
           <>

@@ -17,7 +17,7 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
       className={
         inline
           ? "flex items-center gap-0.5"
-          : "border-border bg-background/90 pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg backdrop-blur-sm select-none"
+          : "border-border bg-background pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg select-none"
       }>
       <Button
         onClick={skipToStart}

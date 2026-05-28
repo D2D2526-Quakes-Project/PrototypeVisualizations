@@ -4,20 +4,7 @@
 
 ---
 
-- [x] Refactor view-3d persistence into building-scoped profile sets with profile-owned workspace state
-  - Replaced the old split autosave/profile flow with building-level profile buckets that each track an active profile and workspace snapshot.
-  - Moved `showHiddenMetrics` into app-level preferences so it no longer rides along with profile/workspace restores.
-  - URL-loaded workspace state now activates as an ephemeral shared-session profile instead of overwriting the user's saved workspace.
-- [x] Finish panel-local persistence hooks and profile management UI for view-3d
-  - Panel state defaults and saved-state types now live alongside the panel implementations instead of in central persistence helpers.
-  - Canvas camera/slice/expanded-scale state now persists under the canvas panel state rather than top-level workspace persistence.
-  - Added profile switching, reset, rename, delete, and save-as-new controls in the navigation bar for building-scoped workspaces.
-
-- [ ] Create presets for different visualization modes (hinges, displacement, story drift, shears)
-  - Allows quick switching between common analysis views without reconfiguring settings each time
-
-- [ ] Rename “15Story” and “52Story” to “15-story” and “52-storys”
-  - Aligns naming with desired formatting conventions for identifiers
+- [ ] Floor panels story drift section should use the metric row graph vis component. Same for the node panel and cross section panels.
 
 ### 3.1 Time Context Sync
 

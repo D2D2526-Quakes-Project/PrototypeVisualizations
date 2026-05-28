@@ -99,7 +99,7 @@ export const ViewControls = forwardRef<
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.9, x: 4 }}
             transition={{ duration: 0.15 }}
-            className="group border-border bg-background pointer-events-auto absolute -right-1 flex origin-right items-center rounded-l-lg border border-r-0 p-1 shadow-lg backdrop-blur-sm select-none"
+            className="group border-border bg-background pointer-events-auto absolute -right-1 flex origin-right items-center rounded-l-lg border border-r-0 p-1 shadow-lg select-none"
             onClick={() => setIsExpanded(true)}>
             <div className="text-foreground group-hover:bg-accent flex min-w-6 items-center justify-center rounded px-1 py-1 text-[10px] font-medium transition-colors select-none">
               <SettingsIcon size={14} />

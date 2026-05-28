@@ -14,6 +14,7 @@ import { numberToColor, numberToColorLight, stringToNumber } from "@/lib/utils";
 import { useGlobalStore, useProfileData } from "@/state";
 import { getMetricKeyColor } from "@/features/metrics/metrics";
 import { SectionVisualization } from "../3d/renderers/SectionVisualization";
+import { Button } from "@/components/ui/button";
 
 export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
   const storyId = props.params.storyId;
@@ -133,22 +134,22 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
         <div className="animate-fade-in">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <span className="font-medium text-neutral-700">Story:</span>
-              <div className="font-mono text-neutral-600">{storyInfo.story}</div>
+              <span className="text-foreground font-medium">Story:</span>
+              <div className="text-muted-foreground font-mono">{storyInfo.story}</div>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">Nodes:</span>
-              <div className="text-neutral-600">{nodeIds.length}</div>
+              <span className="text-foreground font-medium">Nodes:</span>
+              <div className="text-muted-foreground">{nodeIds.length}</div>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">Elevation:</span>
-              <div className="text-neutral-600">
+              <span className="text-foreground font-medium">Elevation:</span>
+              <div className="text-muted-foreground">
                 <UnitTooltip value={storyInfo.elevation / 12} unit="feet" decimals={1} />
               </div>
             </div>
             <div>
-              <span className="font-medium text-neutral-700">Story Height:</span>
-              <div className="text-neutral-600">
+              <span className="text-foreground font-medium">Story Height:</span>
+              <div className="text-muted-foreground">
                 <UnitTooltip value={storyInfo.height / 12} unit="feet" decimals={1} />
               </div>
             </div>
@@ -170,19 +171,19 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: shearXColor }} />
-                  <span className="text-xs font-medium text-neutral-700">X Direction</span>
+                  <span className="text-foreground text-xs font-medium">X Direction</span>
                 </div>
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  <span className="text-neutral-600">Max</span>
-                  <span className="font-mono text-neutral-800">
+                <div className="grid grid-cols-[auto_1fr] gap-1 text-xs">
+                  <span className="text-muted-foreground">Max</span>
+                  <span className="text-foreground text-right font-mono">
                     <UnitTooltip value={shearSummary.xMax} unit="kips" />
                   </span>
-                  <span className="text-neutral-600">Min</span>
-                  <span className="font-mono text-neutral-800">
+                  <span className="text-muted-foreground">Min</span>
+                  <span className="text-foreground text-right font-mono">
                     <UnitTooltip value={shearSummary.xMin} unit="kips" />
                   </span>
-                  <span className="text-neutral-600">Abs</span>
-                  <span className="font-mono text-neutral-800">
+                  <span className="text-muted-foreground">Abs</span>
+                  <span className="text-foreground text-right font-mono">
                     <UnitTooltip value={shearSummary.xAbs} unit="kips" />
                   </span>
                 </div>
@@ -190,19 +191,19 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: shearYColor }} />
-                  <span className="text-xs font-medium text-neutral-700">Y Direction</span>
+                  <span className="text-foreground text-xs font-medium">Y Direction</span>
                 </div>
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  <span className="text-neutral-600">Max</span>
-                  <span className="font-mono text-neutral-800">
+                <div className="grid grid-cols-[auto_1fr] gap-1 text-xs">
+                  <span className="text-muted-foreground">Max</span>
+                  <span className="text-foreground text-right font-mono">
                     <UnitTooltip value={shearSummary.yMax} unit="kips" />
                   </span>
-                  <span className="text-neutral-600">Min</span>
-                  <span className="font-mono text-neutral-800">
+                  <span className="text-muted-foreground">Min</span>
+                  <span className="text-foreground text-right font-mono">
                     <UnitTooltip value={shearSummary.yMin} unit="kips" />
                   </span>
-                  <span className="text-neutral-600">Abs</span>
-                  <span className="font-mono text-neutral-800">
+                  <span className="text-muted-foreground">Abs</span>
+                  <span className="text-foreground text-right font-mono">
                     <UnitTooltip value={shearSummary.yAbs} unit="kips" />
                   </span>
                 </div>
@@ -247,8 +248,8 @@ export function FloorPanel(props: IDockviewPanelProps<{ storyId: string }>) {
                 const peaks = cornerDriftPeaks[corner];
                 return (
                   <div key={corner} className="flex items-center gap-2">
-                    <span className="w-8 font-medium text-neutral-700">{corner}:</span>
-                    <div className="font-mono text-[10px] text-neutral-600">
+                    <span className="text-foreground w-8 font-medium">{corner}:</span>
+                    <div className="text-muted-foreground font-mono text-[10px]">
                       <span className="mr-1">Current:</span>
                       <UnitTooltip value={current} unit="percent" />
                       <span className="mx-2 text-neutral-300">|</span>
@@ -333,7 +334,7 @@ export function FloorTab(props: IDockviewPanelHeaderProps<{ storyId: string }>) 
 
   return (
     <div
-      className="flex cursor-grab items-center justify-between border-b px-3 py-2 transition-colors active:cursor-grabbing"
+      className="flex cursor-grab items-center justify-between border-b px-3 py-1 transition-colors active:cursor-grabbing"
       style={{ backgroundColor: lightColor, borderColor: color }}>
       <div className="pointer-events-none flex items-center gap-2">
         <span className="text-sm font-semibold" style={{ color }}>
@@ -344,13 +345,9 @@ export function FloorTab(props: IDockviewPanelHeaderProps<{ storyId: string }>) 
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <button
-          onClick={handleClose}
-          className="rounded p-1 transition-colors hover:bg-white/50"
-          style={{ color }}
-          title="Close">
+        <Button onClick={handleClose} variant="ghost" size="icon-sm" style={{ color }} title="Close">
           <XIcon className="size-3" />
-        </button>
+        </Button>
       </div>
     </div>
   );

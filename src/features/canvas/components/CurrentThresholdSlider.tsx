@@ -35,7 +35,7 @@ export function CurrentThresholdSlider() {
           View All
         </Button>
       </motion.div>
-      <div className="grid grid-cols-[1fr_auto] gap-1 rounded-lg border border-neutral-200 bg-white/90 px-1.5 py-1 shadow-lg backdrop-blur-sm select-none">
+      <div className="border-border bg-background grid grid-cols-[1fr_auto] gap-1 rounded-lg border px-1.5 py-1 shadow-lg select-none">
         <div className="border-border flex w-full min-w-32 items-center border-r py-1 pr-2">
           <Slider
             value={[value, max]}
@@ -44,7 +44,7 @@ export function CurrentThresholdSlider() {
             step={0.01}
           />
         </div>
-        <span className="min-w-10 text-right text-xs text-neutral-500">
+        <span className="text-muted-foreground min-w-10 text-right text-xs">
           <UnitTooltip value={value} unit={config.unit.label} decimals={2} />
         </span>
       </div>

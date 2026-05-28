@@ -29,7 +29,7 @@ function LabelBox({
     <span
       className={`shrink-0 font-mono text-[9px] leading-none whitespace-nowrap ${
         underlined ? "border-b border-current pb-0" : ""
-      } ${boxed ? "bg-neutral-50/50 px-0.5 py-px text-black" : underlined ? "text-neutral-500" : "text-neutral-400"}`}>
+      } ${boxed ? "bg-muted/50 text-foreground px-0.5 py-px" : underlined ? "text-neutral-500" : "text-neutral-400"}`}>
       {value}
     </span>
   );
@@ -139,18 +139,18 @@ export function ColorScaleBarTooltip({ noLabel, insideLabel }: ColorScaleBarProp
       <TooltipContent side="bottom" sideOffset={8} className="flex-col">
         <div className="font-semibold">{config.label}</div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-          <span className="text-neutral-400">Max:</span>
+          <span className="text-muted-foreground">Max:</span>
           <span>
             {config.hasPositive ? (config.hasNegative ? `+${maxValue.toFixed(2)}` : maxValue.toFixed(2)) : "0"}{" "}
             {unit.abbr}
           </span>
-          <span className="text-neutral-400">Min:</span>
+          <span className="text-muted-foreground">Min:</span>
           <span>
             {config.hasNegative ? `-${maxValue.toFixed(2)}` : "0"} {unit.abbr}
           </span>
           {thresholdHighlighting && currentMetricThreshold > 0 && (
             <>
-              <span className="text-neutral-400">Threshold:</span>
+              <span className="text-muted-foreground">Threshold:</span>
               <span>
                 {currentMetricThreshold.toFixed(2)} {unit.abbr}
               </span>
@@ -193,7 +193,7 @@ function ColorScaleBarPopover({ children }: { children: React.ReactNode }) {
                   setMetricPalette(currentMetric, paletteKey === metricConfig.defaultPalette ? null : paletteKey)
                 }
                 className={`flex rounded border p-1 transition-colors ${
-                  isActive ? "border-neutral-900 bg-neutral-50" : "border-neutral-200 hover:bg-neutral-50"
+                  isActive ? "bg-muted border-neutral-900" : "border-border hover:bg-accent"
                 }`}
                 title={`Use ${palette.label.toLowerCase()} palette`}>
                 <div

@@ -262,9 +262,7 @@ export function SectionVisualization({ nodeIds, width, viewMode }: SectionVisual
   }, [viewMode, widthSpan, verticalSpan]);
 
   return (
-    <div
-      style={{ width: width, height: height }}
-      className="overflow-hidden rounded border border-neutral-300 bg-neutral-900">
+    <div style={{ width: width, height: height }} className="border-border bg-card overflow-hidden rounded border">
       <Canvas
         frameloop="demand"
         orthographic

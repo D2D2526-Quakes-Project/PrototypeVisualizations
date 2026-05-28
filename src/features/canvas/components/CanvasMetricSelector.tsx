@@ -16,7 +16,7 @@ export function CanvasMetricSelector() {
 
   return (
     <div
-      className="pointer-events-auto flex w-58 flex-col rounded-lg border border-neutral-200 bg-white/90 p-1.25 pb-1 shadow-lg backdrop-blur-sm select-none"
+      className="border-border bg-background pointer-events-auto flex w-58 flex-col rounded-lg border p-1.25 pb-1 shadow-lg select-none"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}>
       <motion.div
@@ -24,10 +24,10 @@ export function CanvasMetricSelector() {
         initial={{ height: 0, opacity: 0 }}
         animate={{ height: hovering ? "auto" : 0, opacity: hovering ? 1 : 0 }}
         exit={{ height: 0, opacity: 0 }}>
-        <PaletteIcon size={12} className="text-neutral-500" />
-        <span className="text-xs font-medium text-neutral-700">Color By</span>
+        <PaletteIcon size={12} className="text-muted-foreground" />
+        <span className="text-foreground text-xs font-medium">Color By</span>
         <div className="mb-1 flex flex-1 items-center justify-end gap-2">
-          <Label className="text-xs font-normal text-neutral-500">
+          <Label className="text-muted-foreground text-xs font-normal">
             Show Threshold
             <Switch size="sm" checked={thresholdHighlighting} onCheckedChange={setThresholdHighlighting} />
           </Label>
@@ -50,7 +50,7 @@ export function CanvasMetricSelector() {
       </motion.div>
 
       <motion.span
-        className="px-1 text-xs text-neutral-500"
+        className="text-muted-foreground px-1 text-xs"
         initial={{ height: "auto", opacity: 1 }}
         animate={{ height: hovering ? 0 : "auto", opacity: hovering ? 0 : 1 }}
         exit={{ height: "auto", opacity: 1 }}>

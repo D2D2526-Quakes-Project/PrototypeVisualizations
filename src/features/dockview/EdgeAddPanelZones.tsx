@@ -73,7 +73,7 @@ function EdgeZone({ edge, api }: { edge: Edge; api: DockviewApi }) {
           <Button
             variant="secondary"
             size="icon-lg"
-            className={`bg-background rounded-full shadow-sm ring-1 ring-black/10 transition-all duration-200 hover:bg-neutral-100 hover:shadow-md ${hovered || open ? `scale-100 opacity-100 ${slide}` : `${hiddenSlide} scale-75 opacity-0`}`}
+            className={`bg-background ring-foreground/10 hover:bg-accent rounded-full shadow-sm ring-1 transition-all duration-200 hover:shadow-md ${hovered || open ? `scale-100 opacity-100 ${slide}` : `${hiddenSlide} scale-75 opacity-0`}`}
             aria-label={`Add panel to the ${edge}`}>
             <Plus className="size-3.5" />
           </Button>

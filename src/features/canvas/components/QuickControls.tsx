@@ -21,7 +21,7 @@ function ViewButtons() {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.15 }}
-      className="border-border bg-background/90 pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg backdrop-blur-sm select-none">
+      className="border-border bg-background pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg select-none">
       {COLLAPSED_VIEW_PRESET_OPTIONS.map(({ view, label }) => (
         <Tooltip key={view} disableHoverableContent>
           <TooltipTrigger asChild>
@@ -125,7 +125,7 @@ export function QuickControls() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -4 }}
             transition={{ duration: 0.15, delay: 0.05 }}
-            className="border-border bg-background/90 pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg backdrop-blur-sm select-none">
+            className="border-border bg-background pointer-events-auto flex origin-right items-center gap-0.5 rounded-lg border p-0.5 shadow-lg select-none">
             {visibleSelectedCount > 0 && (
               <>
                 <span className="p-1 font-mono text-[10px]">

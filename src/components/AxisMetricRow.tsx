@@ -26,7 +26,7 @@ export function AxisMetricRow({
 }: AxisMetricRowProps) {
   return (
     <>
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 items-end gap-1">
         <span className="text-muted-foreground">Current {axis}:</span>
         <span className="text-foreground flex items-end justify-between font-mono">
           <UnitTooltip value={currentValue} unit={unit} />

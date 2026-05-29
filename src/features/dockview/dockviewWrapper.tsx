@@ -94,24 +94,12 @@ export function DockviewWrapper({
     onReady?.(event);
   };
 
-  //   .dockview-theme-overrides {
-  //   /* --dv-sash-border-radius: "0px"; */
-  //   /* --dv-tab-border-radius: "5px"; */
-  //   /* --dv-border-radius: "9px"; */
-  //   /* --dv-tabs-and-actions-container-font-size: "10px"; */
-  //   /* --dv-tabs-and-actions-container-height: "36px"; */
-  //   /* --dv-spacing-padding: "5px"; */
-  //   /* --dv-sash-color: "#ededed"; */
-  //   --dv-active-sash-color: "#000000";
-  //   --dv-drag-over-background-color: "#000000";
-  // }
-
   const theme: DockviewTheme = {
     ...themeLightSpaced,
   };
 
   return (
-    <div className="relative flex-1">
+    <div className="p-app-inset relative flex-1">
       <style>{`
         .dockview-theme-light-spaced {
           --dv-sash-color: var(--border);
@@ -124,8 +112,7 @@ export function DockviewWrapper({
           --dv-activegroup-hiddenpanel-tab-background-color: transparent;
           --dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
           --dv-tabs-and-actions-container-height: fit-content;
-          --dv-group-view-background-color: var(--card)
-          --dv-spacing-padding: var(--radius);
+          --dv-spacing-padding: 0;
           --dv-tabs-and-actions-container-background-color: var(--card);
           --dv-tabs-and-actions-container-font-size: 12px;
         }

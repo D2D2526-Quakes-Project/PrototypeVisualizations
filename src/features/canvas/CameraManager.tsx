@@ -194,6 +194,7 @@ function CameraControls({ pendingCameraCommandRef }: { pendingCameraCommandRef: 
       ref={orbitControlsRef}
       enableDamping={false}
       autoRotate={spin}
+      autoRotateSpeed={1}
       onChange={handleChange}
       target={initTarget}
       makeDefault

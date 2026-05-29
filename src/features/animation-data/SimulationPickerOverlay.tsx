@@ -190,9 +190,9 @@ export function SimulationPickerOverlay({
                   <div className="bg-foreground/60 h-4 w-0.5 rounded"></div>
                 </div>
               </div>
-              <div className="border-border bg-muted absolute top-1 left-1 grid grid-cols-[1fr_auto] items-center justify-items-end gap-1 rounded-sm border p-1 text-xs">
-                <div className="h-1 w-4 bg-linear-90 from-red-400 via-yellow-300 to-green-400"></div>
-                <span className="whitespace-nowrap">Intensity Contour</span>
+              <div className="border-border bg-muted absolute top-1 left-1 grid grid-cols-[1fr_auto] items-center gap-1 rounded-sm border p-1 text-xs">
+                <div className="h-1 w-3 bg-linear-90 from-red-400 via-yellow-300 to-green-400"></div>
+                <span className="whitespace-nowrap">PGA</span>
                 <TriangleIcon className="text-muted-foreground h-3 w-3 shrink-0 self-center" />
                 <span className="w-full whitespace-nowrap">Seismic Station</span>
               </div>

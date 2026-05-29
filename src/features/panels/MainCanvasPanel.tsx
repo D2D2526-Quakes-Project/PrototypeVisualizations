@@ -9,7 +9,7 @@ import { BoxSelectionOverlay } from "../canvas/components/BoxSelection";
 import { OrientationArrows } from "../canvas/components/OrientationArrows";
 import { KeyboardZoomHandler } from "../canvas/KeyboardZoomHandler";
 import type { MagicPanelParams } from "../dockview/MagicPanel";
-import { useExportRenderMode } from "../export/renderMode";
+import { useExportVideo } from "../export/ExportProvider";
 import { SmallPlaybackControls } from "../playback/PlaybackControls";
 import { ViewSettingsOverlay } from "../canvas/components/ViewSettingsOverlay";
 import { CurrentThresholdSlider } from "../canvas/components/CurrentThresholdSlider";
@@ -19,7 +19,7 @@ import { QuickControls } from "../canvas/components/QuickControls";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const panelId = props.api.id;
-  const exportRenderMode = useExportRenderMode();
+  const exportRenderMode = useExportVideo();
   const isActive = props.api.isActive;
   const isPrimary = props.params.isPrimary ?? false;
   const { isCurrentMetricStatic } = useMetrics();

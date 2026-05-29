@@ -33,7 +33,7 @@ export function App() {
   useFlushOnUnload();
 
   return (
-    <div className={"flex min-h-0 flex-1 flex-col"}>
+    <div className={"flex min-h-0 flex-1 flex-col"} data-export-workspace>
       <DockviewContainer />
       <ProfileDatasetEffect />
     </div>

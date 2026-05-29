@@ -1,5 +1,5 @@
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from "lucide-react";
-import { useExportRenderMode } from "@/features/export/renderMode";
+import { useExportVideo } from "@/features/export/ExportProvider";
 
 import { usePlayback } from "./usePlayback";
 import { useMetrics } from "../metrics/useMetrics";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) {
   const { playing, togglePlaying, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
-  const exportRenderMode = useExportRenderMode();
+  const exportRenderMode = useExportVideo();
   const { isCurrentMetricStatic } = useMetrics();
 
   if (!exportRenderMode.showTransientUi) return null;

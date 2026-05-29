@@ -8,7 +8,7 @@ import { NavigationBar } from "./components/navigation-bar/NavigationBar";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { AnimationDataProvider } from "./features/animation-data/AnimationDataProvider";
-import { ExportRenderModeContext } from "./features/export/renderMode";
+import { ExportProvider } from "./features/export/ExportProvider";
 import { PlaybackKeyboardEvents } from "./features/playback/PlaybackKeyboardEvents";
 import "./index.css";
 import { App } from "./pages/App";
@@ -30,17 +30,11 @@ const router = createBrowserRouter([
         <ThemeProvider defaultTheme="light" storageKey="ui-theme">
           <TooltipProvider>
             <AnimationDataProvider>
-              {/* <ExportProvider> */}
-              <ExportRenderModeContext.Provider
-                value={{
-                  showPanelHeaders: true,
-                  showTransientUi: true,
-                }}>
+              <ExportProvider>
                 <NavigationBar />
                 <PlaybackKeyboardEvents />
                 <Outlet />
-              </ExportRenderModeContext.Provider>
-              {/*  </ExportProvider> */}
+              </ExportProvider>
             </AnimationDataProvider>
           </TooltipProvider>
         </ThemeProvider>

@@ -1,4 +1,4 @@
-import { AlertTriangleIcon, Keyboard, LogOutIcon, Palette } from "lucide-react";
+import { AlertTriangleIcon, FilmIcon, Keyboard, LogOutIcon, Palette } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
@@ -25,6 +25,7 @@ import { OptionalDatasetLoader } from "./OptionalDatasetLoader";
 import { ProfileMenu } from "./ProfileMenu";
 import { ShortcutsBar } from "./ShortcutsBar";
 import { ModeToggle } from "../ui/mode-toggle";
+import { useExportVideo } from "@/features/export/ExportProvider";
 
 export function NavigationBar() {
   const location = useLocation();
@@ -41,6 +42,7 @@ export function NavigationBar() {
   const { isCurrentMetricStatic } = useMetrics();
 
   const [activeMenu, setActiveMenu] = useState("");
+  const { openExportPanel } = useExportVideo();
   // const [isCopyingLink, setIsCopyingLink] = useState(false);
   const helpDrawerOpen = useLiveStore((s) => s.helpDrawerOpen);
   const setHelpDrawerOpen = useLiveStore((s) => s.setHelpDrawerOpen);
@@ -97,10 +99,10 @@ export function NavigationBar() {
                 Exit to Menu
               </MenubarItem>
 
-              {/* <MenubarItem onSelect={openExportPanel}>
+              <MenubarItem onClick={openExportPanel}>
                 <FilmIcon />
                 Export
-              </MenubarItem> */}
+              </MenubarItem>
 
               <MenubarSeparator />
 
@@ -142,7 +144,7 @@ export function NavigationBar() {
 
       <Sheet open={helpDrawerOpen} onOpenChange={setHelpDrawerOpen}>
         <SheetContent className="h-[35vh] max-h-[50vh]" side="bottom">
-          <SheetHeader>
+          <SheetHeader className="pb-0">
             <SheetTitle className="flex items-center gap-2">
               <Keyboard size={13} className="text-muted-foreground" />
               Shortcuts
@@ -156,7 +158,7 @@ export function NavigationBar() {
 
       <Sheet open={metricColorsDrawerOpen} onOpenChange={setMetricColorsDrawerOpen}>
         <SheetContent className="h-[35vh] max-h-[50vh]" side="bottom">
-          <SheetHeader>
+          <SheetHeader className="pb-0">
             <SheetTitle className="flex items-center gap-2">
               <Palette size={13} className="text-muted-foreground" />
               Metric Colors

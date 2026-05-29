@@ -59,9 +59,9 @@ export const DEFAULT_COLOR_THEMES: ColorTheme[] = [
   },
   {
     label: "White",
-    background: "#f4f4f4",
+    background: "#fff",
     canvasText: "#333333",
-    connectionLines: "#000000",
+    connectionLines: "#bbb",
     tickMarks: "#666666",
     grid: "#888888",
     directionLabels: "#000000",

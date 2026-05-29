@@ -1,4 +1,4 @@
-import { useExportRenderMode } from "@/features/export/renderMode";
+import { useExportVideo } from "@/features/export/ExportProvider";
 import { useGlobalStore } from "@/state";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -16,7 +16,7 @@ export function CanvasWithControls({ children, overlays }: CanvasWithControlsPro
   const [containerWidth, setContainerWidth] = useState(0);
   const [controlsWidth, setControlsWidth] = useState(0);
   const [isControlsDocked, setIsControlsDocked] = useState(false);
-  const exportRenderMode = useExportRenderMode();
+  const exportRenderMode = useExportVideo();
   const colorTheme = useGlobalStore((s) => s.colorTheme);
   const { isViewControlsExpanded, setIsViewControlsExpanded } = useCanvasState();
 

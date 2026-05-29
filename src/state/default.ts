@@ -14,7 +14,7 @@ export function getDefaultProfileData(
     showCornersOnly: false,
     visualInterpolationEnabled: true,
     renderVerticalConnections: true,
-    renderHorizontalConnections: false,
+    renderHorizontalConnections: true,
     coloredConnectionLines: false,
     _thresholds: { ...DEFAULT_THRESHOLDS },
     _currentMetric: "interstoryDrift",

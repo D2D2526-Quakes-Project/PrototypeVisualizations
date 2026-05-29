@@ -152,13 +152,18 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     const anyHasNegative = effectiveSelectedMetrics.some((metric) => getMetricConfig(metric).hasNegative);
     const anyHasPositive = effectiveSelectedMetrics.some((metric) => getMetricConfig(metric).hasPositive);
 
-    const unitGroups = effectiveSelectedMetrics.map((metric) => {
-      const config = getMetricConfig(metric);
-      const max = config.getPrecomputedMax(animationData);
-
+    const unitGroups = Array.from(
+      effectiveSelectedMetrics.reduce((acc, metric) => {
+        const unit = getMetricConfig(metric).unit.abbr;
+        if (!acc.has(unit)) acc.set(unit, []);
+        acc.get(unit)!.push(metric);
+        return acc;
+      }, new Map<string, Metric[]>())
+    ).map(([unit, metrics]) => {
+      const max = Math.max(...metrics.map((m) => getMetricConfig(m).getPrecomputedMax(animationData)));
       return {
-        unit: config.unit.abbr,
-        metric,
+        unit,
+        metrics,
         paddedMin: anyHasNegative ? -Math.max(max * 1.15, MIN_X_AXIS_MAX) : 0,
         paddedMax: anyHasPositive ? Math.max(max * 1.15, MIN_X_AXIS_MAX) : 0,
       };
@@ -305,23 +310,23 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
             nameGap: 18,
             nameTextStyle: {
               fontSize: 10,
-              color: getMetricKeyColor(group.metric, metricPaletteOverrides),
+              color: getMetricKeyColor(group.metrics[0], metricPaletteOverrides),
               fontWeight: 500,
             },
             min: group.paddedMin,
             max: group.paddedMax,
             position: "bottom",
             axisLine: {
-              lineStyle: { color: getMetricKeyColor(group.metric, metricPaletteOverrides) },
+              lineStyle: { color: getMetricKeyColor(group.metrics[0], metricPaletteOverrides) },
             },
             axisLabel: {
-              color: getMetricKeyColor(group.metric, metricPaletteOverrides),
+              color: getMetricKeyColor(group.metrics[0], metricPaletteOverrides),
               fontSize: 10,
               formatter: (value: number) => formatNumber(value, 2),
             },
             splitLine: {
               lineStyle: {
-                color: getMetricKeyColor(group.metric, metricPaletteOverrides) + "40",
+                color: getMetricKeyColor(group.metrics[0], metricPaletteOverrides) + "40",
                 type: "dashed" as const,
               },
             },

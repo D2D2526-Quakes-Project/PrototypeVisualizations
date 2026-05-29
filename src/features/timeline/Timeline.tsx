@@ -1,6 +1,6 @@
 import { CheckboxSelectPopover } from "@/components/ui/checkbox-select-popover";
 import { usePanelState } from "@/features/dockview/usePanelState";
-import { useExportRenderMode } from "@/features/export/renderMode";
+import { useExportVideo } from "@/features/export/ExportProvider";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatFixed3, formatNumber } from "@/lib/utils";
 import type { IDockviewPanelProps } from "dockview-react";
@@ -206,7 +206,7 @@ function TooltipContent({
 }
 
 export function Timeline({ api }: IDockviewPanelProps) {
-  const exportRenderMode = useExportRenderMode();
+  const exportRenderMode = useExportVideo();
   const { animationData } = useAnimationData();
   const { frameIndex, setFrameIndex } = usePlayback();
   const { setTimeRange } = useProfileActions();

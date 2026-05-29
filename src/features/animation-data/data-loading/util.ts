@@ -2,7 +2,7 @@ import type { BinaryBuilding, BinarySimulation } from "@/lib/types";
 import type { OptionalDataLoadOptions } from "./loadingTypes";
 
 export const DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS: OptionalDataLoadOptions = {
-  hingeData: false,
+  hingeData: true,
   shearData: false,
   displacementRot: false,
   velocityLin: false,

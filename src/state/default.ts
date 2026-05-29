@@ -205,7 +205,7 @@ export const BUILT_IN_PROFILE_DEFINITIONS: BuiltInProfileDefinition[] = [
         panelId: "timeline",
         type: "Timeline",
         state: {
-          selectedKeys: ["groundMotionX", "groundMotionY", "interstoryDrift"],
+          selectedKeys: ["groundMotionX", "groundMotionY"],
         },
       },
     },

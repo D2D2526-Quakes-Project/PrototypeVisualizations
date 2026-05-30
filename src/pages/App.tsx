@@ -92,18 +92,28 @@ function DockviewContainer() {
 function ProfileDatasetEffect() {
   const profileId = useProfileData((state) => state.profileId);
   const { datasetStates, requestDatasetLoad } = useAnimationData();
+  const { setActiveProfile } = useProfileActions();
 
   useEffect(() => {
-    const def = BUILT_IN_PROFILE_DEFINITIONS.find((d) => d.profileId === profileId);
-    if (!def || !datasetStates) return;
+    if (!datasetStates) return;
 
+    const def = BUILT_IN_PROFILE_DEFINITIONS.find((d) => d.profileId === profileId);
+    if (def && def.requiredDatasets.length > 0 && def.profileId !== "default") {
+      const hasMissing = def.requiredDatasets.some((key) => datasetStates[key]?.available === false);
+      if (hasMissing) {
+        setActiveProfile("default");
+        return;
+      }
+    }
+
+    if (!def) return;
     for (const key of def.requiredDatasets) {
       const state = datasetStates[key];
       if (state?.available && state.stage !== "fetching" && state.stage !== "parsing" && state.stage !== "ready") {
         requestDatasetLoad(key);
       }
     }
-  }, [profileId, datasetStates, requestDatasetLoad]);
+  }, [profileId, datasetStates, requestDatasetLoad, setActiveProfile]);
 
   return null;
 }

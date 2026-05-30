@@ -11,6 +11,6 @@ When running `rg` or `grep` do not use the `-r` flag.
 All plots and visualizations must include: Titles, Axis Labels, Legends, Color Bars, Tooltips
 
 Check existing code and look at similar files for patterns before writing new code
-Keep todos updated and update TODO.md with new tasks discovered
+Keep todos updated and update TODO.md with new tasks discovered and check off items as they are completed.
 
 This project is under heavy development and doesn't need backwards compatibility.

@@ -17,7 +17,7 @@ import { useExportVideo } from "@/features/export/ExportProvider";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber } from "@/lib/utils";
-import { useGlobalStore, useLiveStore, useProfileActions, useProfileData } from "@/state";
+import { useLiveStore, useProfileActions, useProfileData } from "@/state";
 import { Button } from "../ui/button";
 import { ModeToggle } from "../ui/mode-toggle";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
@@ -31,8 +31,6 @@ export function NavigationBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { frameIndex } = usePlayback();
-  const showHiddenMetrics = useGlobalStore((state) => state.showHiddenMetrics);
-  const setShowHiddenMetrics = useGlobalStore((state) => state.setShowHiddenMetrics);
   const coloredConnectionLines = useProfileData((s) => s.coloredConnectionLines);
   const { setColoredConnectionLines } = useProfileActions();
 
@@ -113,10 +111,6 @@ export function NavigationBar() {
               </MenubarItem>
 
               <MenubarSeparator />
-
-              <MenubarCheckboxItem checked={showHiddenMetrics} onCheckedChange={setShowHiddenMetrics}>
-                Show Hidden Metrics
-              </MenubarCheckboxItem>
 
               <MenubarCheckboxItem checked={coloredConnectionLines} onCheckedChange={setColoredConnectionLines}>
                 Colored Connection Lines

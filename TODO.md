@@ -12,17 +12,17 @@
 
 - [ ] Floor panels story drift section should use the metric row graph vis component. Same for the node panel and cross section panels.
 
-- [ ] Timeline X axis need 's' suffix for seconds
+- [x] Timeline X axis need 's' suffix for seconds
 
-- [ ] Remove X axis label on the Floor Waveform panel
+- [x] Remove X axis label on the Floor Waveform panel
 
-- [ ] Hide "Show Hidden Metrics" button
+- [x] Hide "Show Hidden Metrics" button
 
 - [ ] The camera default position is different from the "home position" from the Home button.
 
-- [ ] Tooltips on small playback controls
+- [x] Tooltips on small playback controls
 
-- [ ] Make the floor tick marks interactable to open floors
+- [x] Make the floor tick marks interactable to open floors
 
 - [ ] Floor panels / Cross section panels visualizations should zoom on hover or click to open popup enlarged
 
@@ -34,11 +34,11 @@
 
 - [ ] Using the precomputed data, show the hovered floor's average value for the current metric in the scene tooltip
 
-- [ ] Profiles nav bar menu can wrap text while spinning and it creates layout shifts
+- [x] Profiles nav bar menu can wrap text while spinning and it creates layout shifts
 
 - [ ] You can open a profile that requires data and the data is not avilable for his simulation. It should show a warning / gray it out with a tooltip
 
-- [ ] Recording pauses when unfocused because playback pauses when unfocues. Add an exception for recording.
+- [x] Recording pauses when the window is unfocused because playback pauses when unfocues. Add an exception for recording.
 
 ---
 

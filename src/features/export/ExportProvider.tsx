@@ -2,10 +2,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Slider } from "@/components/ui/slider";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { rasterizeElementToCanvas } from "@/features/export/domCapture";
 import { canvasToPngBytes, getFfmpegEncoder, type ExportVideoFormat } from "@/features/export/ffmpegEncoder";
@@ -38,6 +38,7 @@ interface ExportContextValue {
   openExportPanel: () => void;
   showTransientUi: boolean;
   showPanelHeaders: boolean;
+  frameloop: "always" | "demand";
 }
 
 const ExportContext = createContext<ExportContextValue | null>(null);
@@ -144,14 +145,23 @@ export function useExportVideo(): ExportContextValue {
   return context;
 }
 
+function frameToTime(frameIndex: number, dt: number) {
+  return frameIndex * dt;
+}
+
+function timeToFrame(seconds: number, dt: number) {
+  return Math.round(seconds / dt);
+}
+
 export function ExportProvider({ children }: { children: ReactNode }) {
   const { animationData, currentBuilding, currentSimulation } = useAnimationData();
   const { frameIndex, totalFrames } = usePlayback();
   const { setFrameIndex: setStoreFrameIndex } = useProfileActions();
   const setStorePlaying = useLiveStore((s) => s._setPlaying);
   const exportStartTimeRef = useRef<number | null>(null);
+  const dt = animationData.metadata.dt;
 
-  const [isSheetOpen, setIsSheetOpen] = useState(true);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [status, setStatus] = useState<ExportStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -167,11 +177,11 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   const [fps, setFps] = useState<ExportFps>(30);
   const [scale, setScale] = useState<ExportScale>(1.5);
   const [outputFormat, setOutputFormat] = useState<ExportVideoFormat>("mp4");
-  const [showTransientUi, setShowTransientUi] = useState(true);
-  const [showPanelHeaders, setShowPanelHeaders] = useState(true);
+  const [showTransientUi, setShowTransientUi] = useState(false);
+  const [showPanelHeaders, setShowPanelHeaders] = useState(false);
 
-  const [startFrameDraft, setStartFrameDraft] = useState("0");
-  const [endFrameDraft, setEndFrameDraft] = useState("0");
+  const [rangeValue, setRangeValue] = useState([0, 0]);
+  const prevRangeRef = useRef(rangeValue[0]);
 
   const [ffmpegReady, setFfmpegReady] = useState(false);
   const [ffmpegLoadProgress, setFfmpegLoadProgress] = useState(0);
@@ -179,7 +189,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
 
   const [panelSelections, setPanelSelections] = useState<ExportPanelSelection[]>([]);
 
-  const sourceFps = useMemo(() => getSourceFrameRate(animationData.metadata.dt), [animationData.metadata.dt]);
+  const sourceFps = useMemo(() => getSourceFrameRate(dt), [dt]);
   const sampledFrames = useMemo(
     () => buildSampledFrameSequence(startFrame, endFrame, sourceFps, fps),
     [startFrame, endFrame, sourceFps, fps]
@@ -188,6 +198,20 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   const baseDownloadName = useMemo(
     () => getBaseDownloadName(currentBuilding?.folder, currentSimulation?.folder),
     [currentBuilding?.folder, currentSimulation?.folder]
+  );
+  const maxTime = useMemo(() => Math.max(0, (totalFrames - 1) * dt), [totalFrames, dt]);
+  const startSeconds = useMemo(() => frameToTime(startFrame, dt), [startFrame, dt]);
+  const endSeconds = useMemo(() => frameToTime(endFrame, dt), [endFrame, dt]);
+
+  const isRecording = status === "recording";
+
+  const renderModeValue = useMemo(
+    () => ({
+      showPanelHeaders: isSheetOpen || isRecording ? showPanelHeaders : true,
+      showTransientUi: isSheetOpen || isRecording ? showTransientUi : true,
+      frameloop: (isRecording ? "always" : "demand") as "always" | "demand",
+    }),
+    [isSheetOpen, isRecording, showPanelHeaders, showTransientUi]
   );
 
   useEffect(() => {
@@ -221,11 +245,10 @@ export function ExportProvider({ children }: { children: ReactNode }) {
 
   const refreshPreview = useCallback(() => {
     const nextStart = frameIndex;
-    const nextEnd = Math.min(totalFrames - 1, frameIndex + 299);
+    const nextEnd = Math.min(totalFrames - 1, frameIndex + 3000);
     setStartFrame(nextStart);
     setEndFrame(nextEnd);
-    setStartFrameDraft(`${nextStart}`);
-    setEndFrameDraft(`${nextEnd}`);
+    setRangeValue([frameToTime(nextStart, dt), frameToTime(nextEnd, dt)]);
     setStatus(ffmpegReady ? "ready" : "loading");
     setStatusLabel(ffmpegReady ? "Preview ready" : "Loading encoder");
     setProgress(0);
@@ -238,7 +261,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       setDownloadUrl(null);
     }
     setDownloadName(getDownloadName(baseDownloadName, mode, outputFormat));
-  }, [frameIndex, totalFrames, ffmpegReady, baseDownloadName, downloadUrl, mode, outputFormat]);
+  }, [frameIndex, totalFrames, ffmpegReady, baseDownloadName, downloadUrl, mode, outputFormat, dt]);
 
   const ensureFfmpegReady = useCallback(async () => {
     if (ffmpegReady) return;
@@ -275,6 +298,17 @@ export function ExportProvider({ children }: { children: ReactNode }) {
     void ensureFfmpegReady();
   }, [ensureFfmpegReady, refreshPreview]);
 
+  const handleSheetOpenChange = useCallback((open: boolean) => {
+    setIsSheetOpen(open);
+    if (!open) {
+      setStatus("idle");
+      setProgress(0);
+      setEtaSeconds(null);
+      setError(null);
+      setAutoDownloaded(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (isSheetOpen && mode === "separate-panels") {
       const timer = window.setTimeout(() => {
@@ -284,37 +318,23 @@ export function ExportProvider({ children }: { children: ReactNode }) {
     }
   }, [isSheetOpen, mode, refreshPanelSelections, showTransientUi, showPanelHeaders]);
 
-  const commitFrameBoundary = useCallback(
-    (key: "start" | "end", draftValue: string) => {
-      const parsedValue = Number.parseInt(draftValue, 10);
-      if (!Number.isFinite(parsedValue)) {
-        if (key === "start") {
-          setStartFrameDraft(`${startFrame}`);
-        } else {
-          setEndFrameDraft(`${endFrame}`);
-        }
-        return;
-      }
+  const handleRangeChange = useCallback(
+    (value: number[]) => {
+      const prevStart = prevRangeRef.current;
+      const [nextStartSec, nextEndSec] = value;
+      prevRangeRef.current = nextStartSec;
+      setRangeValue([nextStartSec, nextEndSec]);
 
-      const clampedValue = clamp(parsedValue, 0, totalFrames - 1);
+      const start = timeToFrame(nextStartSec, dt);
+      const end = timeToFrame(nextEndSec, dt);
+      setStartFrame(clamp(start, 0, totalFrames - 1));
+      setEndFrame(clamp(end, 0, totalFrames - 1));
 
-      if (key === "start") {
-        setStartFrame(clampedValue);
-        setStartFrameDraft(`${clampedValue}`);
-        if (clampedValue > endFrame) {
-          setEndFrame(clampedValue);
-          setEndFrameDraft(`${clampedValue}`);
-        }
-      } else {
-        setEndFrame(clampedValue);
-        setEndFrameDraft(`${clampedValue}`);
-        if (clampedValue < startFrame) {
-          setStartFrame(clampedValue);
-          setStartFrameDraft(`${clampedValue}`);
-        }
-      }
+      const endChanged = nextStartSec === prevStart;
+      const previewFrame = endChanged ? timeToFrame(nextEndSec, dt) : timeToFrame(nextStartSec, dt);
+      setStoreFrameIndex(clamp(previewFrame, 0, totalFrames - 1));
     },
-    [startFrame, endFrame, totalFrames]
+    [dt, totalFrames, setStoreFrameIndex]
   );
 
   const handleDownload = useCallback(() => {
@@ -323,30 +343,34 @@ export function ExportProvider({ children }: { children: ReactNode }) {
     setAutoDownloaded(true);
   }, [downloadName, downloadUrl]);
 
+  function getCaptureElement(): HTMLElement {
+    const dockview = document.querySelector<HTMLElement>(".dockview-theme-container");
+    if (dockview) return dockview;
+    const workspace = document.querySelector<HTMLElement>("[data-export-workspace]");
+    if (workspace) return workspace;
+    throw new Error("Could not find workspace element for capture");
+  }
+
   const encodeWorkspace = useCallback(
-    async (encoder: Awaited<ReturnType<typeof getFfmpegEncoder>>) => {
-      const workspace = document.querySelector<HTMLElement>("[data-export-workspace]");
-      if (!workspace) {
-        throw new Error("Could not find workspace element for capture");
-      }
+    async (encoder: Awaited<ReturnType<typeof getFfmpegEncoder>>, onCaptureDone?: () => void) => {
+      const captureElement = getCaptureElement();
 
       const exportCanvas = document.createElement("canvas");
       const encodedFrames: Uint8Array[] = [];
       const totalFramesToCapture = sampledFrames.length;
 
+      const container = document.querySelector<HTMLElement>("[data-export-workspace]");
+      container?.setAttribute("data-capturing", "true");
+
       setStoreFrameIndex(sampledFrames[0] ?? startFrame);
-      await nextAnimationFrame();
-      await nextAnimationFrame();
       await nextAnimationFrame();
 
       for (let index = 0; index < totalFramesToCapture; index += 1) {
         const frame = sampledFrames[index];
         setStoreFrameIndex(frame);
         await nextAnimationFrame();
-        await nextAnimationFrame();
-        await nextAnimationFrame();
         await rasterizeElementToCanvas({
-          element: workspace,
+          element: captureElement,
           canvas: exportCanvas,
           scale,
         });
@@ -357,6 +381,9 @@ export function ExportProvider({ children }: { children: ReactNode }) {
         );
         await sleep(0);
       }
+
+      container?.removeAttribute("data-capturing");
+      onCaptureDone?.();
 
       const encodedVideo = await encoder.encodeFrames({
         frames: encodedFrames,
@@ -385,7 +412,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   );
 
   const encodeSeparatePanels = useCallback(
-    async (encoder: Awaited<ReturnType<typeof getFfmpegEncoder>>) => {
+    async (encoder: Awaited<ReturnType<typeof getFfmpegEncoder>>, onCaptureDone?: () => void) => {
       const workspace = document.querySelector<HTMLElement>("[data-export-workspace]");
       if (!workspace) {
         throw new Error("Could not find workspace element for capture");
@@ -403,19 +430,18 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       const totalCaptureFrames = targets.length * sampledFrames.length;
       let completedCaptureFrames = 0;
 
+      const container = document.querySelector<HTMLElement>("[data-export-workspace]");
+      container?.setAttribute("data-capturing", "true");
+
       for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
         const target = targets[panelIndex];
         const encodedFrames: Uint8Array[] = [];
         setStoreFrameIndex(sampledFrames[0] ?? startFrame);
         await nextAnimationFrame();
-        await nextAnimationFrame();
-        await nextAnimationFrame();
 
         for (let frameIdx = 0; frameIdx < sampledFrames.length; frameIdx += 1) {
           const frame = sampledFrames[frameIdx];
           setStoreFrameIndex(frame);
-          await nextAnimationFrame();
-          await nextAnimationFrame();
           await nextAnimationFrame();
           await rasterizeElementToCanvas({
             element: target.element,
@@ -430,6 +456,9 @@ export function ExportProvider({ children }: { children: ReactNode }) {
           );
           await sleep(0);
         }
+
+        container?.removeAttribute("data-capturing");
+        onCaptureDone?.();
 
         const encodedVideo = await encoder.encodeFrames({
           frames: encodedFrames,
@@ -507,7 +536,10 @@ export function ExportProvider({ children }: { children: ReactNode }) {
 
     try {
       const encoder = await getFfmpegEncoder();
-      const result = mode === "workspace" ? await encodeWorkspace(encoder) : await encodeSeparatePanels(encoder);
+      const result =
+        mode === "workspace"
+          ? await encodeWorkspace(encoder, () => setIsSheetOpen(true))
+          : await encodeSeparatePanels(encoder, () => setIsSheetOpen(true));
 
       const outputBytes = new Uint8Array(result.bytes.byteLength);
       outputBytes.set(result.bytes);
@@ -527,6 +559,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       setStatus("error");
       setError(message);
       setStatusLabel(message);
+      setIsSheetOpen(true);
     }
   }, [downloadUrl, encodeSeparatePanels, encodeWorkspace, ensureFfmpegReady, ffmpegReady, mode, setStorePlaying]);
 
@@ -538,18 +571,64 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo<ExportContextValue>(
     () => ({
       openExportPanel,
-      showPanelHeaders,
-      showTransientUi,
+      ...renderModeValue,
     }),
-    [openExportPanel, showPanelHeaders, showTransientUi]
+    [openExportPanel, renderModeValue]
   );
 
   return (
     <ExportContext.Provider value={contextValue}>
       {children}
 
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent side="left" className="" showCloseButton>
+      {isRecording && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          style={{ pointerEvents: "auto" }}>
+          <div className="flex items-center gap-3 rounded-lg bg-white px-5 py-3 shadow-lg">
+            <span className="relative flex size-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex size-3 rounded-full bg-red-600" />
+            </span>
+            <span className="text-sm font-medium text-neutral-900">
+              {etaSeconds !== null ? `Recording \u2022 ETA ${formatDuration(etaSeconds)}` : "Recording..."}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        [data-capturing] .dv-sash,
+        [data-capturing] .dv-groupview > .dv-tabs-and-actions-container {
+          display: none !important;
+        }
+        [data-capturing] ::-webkit-scrollbar {
+          width: 0 !important;
+          height: 0 !important;
+        }
+        [data-capturing] {
+          scrollbar-width: none !important;
+        }
+        [data-export-preview="true"] ::-webkit-scrollbar,
+        [data-export-preview="true"] {
+          scrollbar-width: none !important;
+        }
+        ${
+          contextValue.showPanelHeaders
+            ? ""
+            : `[data-export-preview="true"] .dv-groupview > .dv-tabs-and-actions-container {
+          display: none !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          overflow: hidden !important;
+          border: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }`
+        }
+      `}</style>
+
+      <Sheet open={isSheetOpen} onOpenChange={handleSheetOpenChange}>
+        <SheetContent side="left" className="" showCloseButton showOverlay={false}>
           <div className="flex h-full flex-col">
             <SheetHeader className="border-b border-neutral-200">
               <SheetTitle className="flex items-center gap-2">
@@ -622,47 +701,22 @@ export function ExportProvider({ children }: { children: ReactNode }) {
               <div className="text-xs whitespace-nowrap text-neutral-600">
                 {fps} fps output from {sourceFps.toFixed(0)} fps source
                 <br />
-                scale {scale}x, frames {startFrame}-{endFrame}, {outputFormat.toUpperCase()}
+                scale {scale}x, {outputFormat.toUpperCase()}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="export-start-frame">Start frame</Label>
-                  <Input
-                    id="export-start-frame"
-                    type="number"
-                    min={0}
-                    max={totalFrames - 1}
-                    value={startFrameDraft}
-                    onChange={(event) => {
-                      const nextValue = event.target.value;
-                      setStartFrameDraft(nextValue);
-                      const parsedValue = Number.parseInt(nextValue, 10);
-                      if (Number.isFinite(parsedValue)) {
-                        setStoreFrameIndex(clamp(parsedValue, 0, totalFrames - 1));
-                      }
-                    }}
-                    onBlur={() => commitFrameBoundary("start", startFrameDraft)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="export-end-frame">End frame</Label>
-                  <Input
-                    id="export-end-frame"
-                    type="number"
-                    min={0}
-                    max={totalFrames - 1}
-                    value={endFrameDraft}
-                    onChange={(event) => {
-                      const nextValue = event.target.value;
-                      setEndFrameDraft(nextValue);
-                      const parsedValue = Number.parseInt(nextValue, 10);
-                      if (Number.isFinite(parsedValue)) {
-                        setStoreFrameIndex(clamp(parsedValue, 0, totalFrames - 1));
-                      }
-                    }}
-                    onBlur={() => commitFrameBoundary("end", endFrameDraft)}
-                  />
+              <div className="space-y-1">
+                <Label>Time range</Label>
+                <Slider
+                  value={rangeValue}
+                  onValueChange={handleRangeChange}
+                  min={0}
+                  max={Math.max(0.001, maxTime)}
+                  step={dt}
+                  className="py-2"
+                />
+                <div className="flex justify-between text-xs text-neutral-600">
+                  <span>{startSeconds.toFixed(2)} s</span>
+                  <span>{endSeconds.toFixed(2)} s</span>
                 </div>
               </div>
 
@@ -742,7 +796,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                   {status === "loading"
                     ? ffmpegLoadLabel
                     : status === "recording"
-                      ? `${statusLabel}${etaSeconds !== null ? ` • ETA ${formatDuration(etaSeconds)}` : ""}`
+                      ? `${statusLabel}${etaSeconds !== null ? ` \u2022 ETA ${formatDuration(etaSeconds)}` : ""}`
                       : status === "complete"
                         ? "Export downloaded"
                         : status === "error"

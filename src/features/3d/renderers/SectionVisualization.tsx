@@ -1,4 +1,5 @@
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
+import { useExportVideo } from "@/features/export/ExportProvider";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { UNIT_SCALE } from "@/lib/utils";
@@ -261,10 +262,11 @@ export function SectionVisualization({ nodeIds, width, viewMode }: SectionVisual
     }
   }, [viewMode, widthSpan, verticalSpan]);
 
+  const exportRenderMode = useExportVideo();
   return (
     <div style={{ width: width, height: height }} className="border-border bg-card overflow-hidden rounded border">
       <Canvas
-        frameloop="demand"
+        frameloop={exportRenderMode.frameloop}
         orthographic
         linear
         flat

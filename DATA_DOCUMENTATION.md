@@ -1,551 +1,380 @@
-# Data Documentation - Quake Visualization Project
+# Data Processing and Handoff Guide
 
-## Overview
+This guide describes the raw data folders, supported source formats, compiled `.bld` files, index generation, upload flow, and browser loading path for the Quakes visualization app.
 
-This document describes the structure, format, and types of values in the `public/data` folder, which contains seismic simulation data for building response analysis.
+The current data source root is `data/`, not `public/data/`. `public/data/` is generated only for local static serving when `scripts/generate_index.py --local` copies `data/binary` into `public/data`.
 
-## Directory Structure
+## Current Data Inventory
 
 ```
-public/data/
-├── index.json                 # Master index file
-├── index.schema.json          # JSON schema for index
-├── index.ts                   # TypeScript import file
-├── 15story/                   # Main 15-story building data (CSV format)
-│   ├── building_height.csv
-│   ├── building_center.csv
-│   ├── node_mapping.csv
-│   ├── node_data.csv
-│   ├── beam_data.csv
-│   ├── station3138Corners/    # Station 3138 corner data
-│   └── station3138Entire/     # Station 3138 entire structure data
-│   └── station3139Entire/     # Station 3139 entire structure data
-├── Binary15Story/             # Binary format data
-│   ├── building.bld
-│   └── station3139Entire/
-└── old15/                     # Legacy data
+data/
+├── csv/
+│   ├── 15story/
+│   │   ├── node_data.csv
+│   │   ├── building_height.csv
+│   │   ├── beam_data.csv
+│   │   ├── corner_positions.csv
+│   │   ├── hidden_floors.csv
+│   │   ├── name.txt
+│   │   ├── station3138/
+│   │   └── station3139/
+│   ├── 52story/
+│   │   ├── node_data.csv
+│   │   ├── building_height.csv
+│   │   ├── beam_data.csv
+│   │   ├── corner_positions.csv
+│   │   ├── hidden_floors.csv
+│   │   ├── name.txt
+│   │   ├── station3138/
+│   │   └── station3139/
+│   └── 73story/
+│       ├── node_data.csv
+│       ├── building_height.csv
+│       ├── name.txt
+│       ├── station3138/
+│       └── station3139/
+├── binary/
+│   ├── 15story/
+│   ├── 52story/
+│   └── 73story/
+└── old15/
 ```
 
-## Units Reference
+Current compiled coverage:
 
-### Overview
+| Building  | Nodes | Stories | Building-level compiled files   | Simulation coverage                                                                                                 |
+| :-------- | ----: | ------: | :------------------------------ | :------------------------------------------------------------------------------------------------------------------ |
+| `15story` | 4,109 |      19 | `building.bld`, `beam_data.bld` | `station3138` and `station3139`: displacement, velocity, acceleration, rotations, ground motion, hinge, shear       |
+| `52story` | 2,121 |      54 | `building.bld`, `beam_data.bld` | `station3138` and `station3139`: displacement, velocity, acceleration, rotations, ground motion, hinge, shear       |
+| `73story` | 4,650 |      89 | `building.bld`                  | `station3138`: displacement linear/rotation and ground motion; `station3139`: displacement linear and ground motion |
 
-All measurements in the binary format use **inches** for consistency. Source CSV files are mixed-unit by file type and, for some building exports, by dataset as well.
+The app catalog lives in `src/data/index.json`. Local path entries are relative to `/data/{building}` or `/data/{building}/{simulation}`. R2 entries are full public URLs. `src/data/index.local.json` is a local-reference variant.
 
-### Unit Conversions
+## Raw Building Files
 
-| Data Type            | CSV Source Units | Binary Format Units | Conversion Factor               | Notes                             |
-| :------------------- | :--------------- | :------------------ | :------------------------------ | :-------------------------------- |
-| **Node Coordinates** | Inches or Feet   | Inches              | Auto-detected (`× 1` or `× 12`) | `node_data.csv` H1, H2, V columns |
-| **Story Heights**    | Feet             | Inches              | × 12                            | `building_height.csv`             |
-| **Story Elevations** | Feet             | Inches              | × 12                            | Cumulative height calculations    |
-| **Displacements**    | Inches           | Inches              | × 1                             | Already in inches in source files |
-| **Velocity**         | Inches/second    | Inches/second       | × 1                             | Already in correct units          |
-| **Acceleration**     | Inches/second²   | Inches/second²      | × 1                             | Already in correct units          |
-| **Ground Motion**    | G (acceleration) | G (acceleration)    | × 1                             | Acceleration values               |
-| **Time**             | Seconds          | Seconds             | × 1                             | No conversion needed              |
+Every processable building folder in `data/csv/{building}` must contain:
 
-### Coordinate System
+| File                   | Required                             | Purpose                                       | Important columns                                                                       |
+| :--------------------- | :----------------------------------- | :-------------------------------------------- | :-------------------------------------------------------------------------------------- |
+| `node_data.csv`        | Yes                                  | Node IDs, coordinates, and restraint columns. | `Node ID`, `H1`, `H2`, `V`; restraint columns are preserved in source but not compiled. |
+| `building_height.csv`  | Yes                                  | Story labels and per-story heights.           | `Story level`, `Story Height (ft)`                                                      |
+| `name.txt`             | No                                   | Display name used by `generate_index.py`.     | Plain text, first/only line.                                                            |
+| `beam_data.csv`        | No, required for hinge visualization | Member connectivity and group names.          | `Group Name`, `Group ID`, `Element ID`, `I-Node ID`, `J-Node ID`                        |
+| `corner_positions.csv` | No                                   | Overrides auto-detected story corner nodes.   | `Corner`, `X Pos`, `Y Pos`, optional `Story`                                            |
+| `hidden_floors.csv`    | No                                   | Floors hidden by default in the interface.    | `Story` or `Story level`                                                                |
 
-- **H1 (X-axis)**: First horizontal direction
-- **H2 (Y-axis)**: Second horizontal direction
-- **V (Z-axis)**: Vertical direction (Up)
-- **Origin**: Building coordinates use large values (e.g., 5000+ inches) in a global coordinate system
-- **WebGL/Three.js**: Apply root rotation of `-π/2` on X-axis for proper orientation (Y-up convention)
+`node_mapping.csv`, `building_center.csv`, and original `.xlsx` workbooks may exist as references, but the current compiler reads the CSV files listed above.
 
-### Important Notes
+### Units
 
-- `node_data.csv` may store building node coordinates in **inches** or **feet** depending on the building export
-- `building_height.csv` stores story heights in **feet**
-- Simulation response files (Displacements, Velocities, Accelerations) store values in **inch-based units**
-- The binary conversion script (`scripts/generate_binary_data.py`) converts story heights/elevations to inches for binary metadata and auto-detects whether node coordinates need a feet-to-inches conversion
-- Always verify units when working directly with CSV source files vs. binary output
+All compiled building geometry and metadata use inches.
 
-## Data Types
+| Source value                    | Source unit                    | Compiled unit      | Notes                                                                                        |
+| :------------------------------ | :----------------------------- | :----------------- | :------------------------------------------------------------------------------------------- |
+| `node_data.csv` `H1`, `H2`, `V` | Inches or feet                 | Inches             | The compiler auto-detects scale `1` or `12` by matching node elevations to story elevations. |
+| `building_height.csv`           | Feet                           | Inches             | Stored as per-story heights in `building.bld`.                                               |
+| Response translations           | Inches                         | Inches             | Linear displacement, velocity, and acceleration keep source units.                           |
+| Response rotations              | Radians                        | Radians            | Rotation, rotation velocity, and rotation acceleration keep source units.                    |
+| Ground motion                   | Source acceleration components | Same source values | Stored as three float components per frame.                                                  |
+| Shear                           | Kip                            | Kip                | Stored after story alignment and cumulative top-down summing.                                |
 
-### 1. CSV Format Data (15story folder)
+The source coordinate system is H1/H2/V, mapped to X/Y/Z in compiled data. Three.js rendering uses a root rotation to display Z-up model data in a Y-up renderer.
 
-#### Building Metadata Files
+## Raw Simulation Formats
 
-**building_height.csv**
+Each simulation folder is discovered when it contains at least one recognized dataset under `Displacements`, `Velocities`, `Accelerations`, `Hinge results`, or `Shears`.
 
-- **Purpose**: Defines floor heights for the 15-story building
-- **Format**: CSV with header row
-- **Columns**:
-  - `Story level`: Floor name (Ground, 2, 3, ..., 15, Roof, Penthouse, Mezzanine, Helipad)
-  - `Story Height (ft)`: Height of each floor in feet (decimal values)
-- **Sample Values**:
-  - Ground: 0 ft
-  - Floors 3-15: 13 ft each
-  - Floor 2: 28 ft (taller floor)
-  - Roof: 13 ft
-  - Penthouse: 18.3333333333 ft
-  - Mezzanine: 9.1666666667 ft
-  - Helipad: 10.5 ft
+### Entire Response Files
 
-**building_center.csv**
-
-- **Purpose**: Defines center node coordinates for each floor
-- **Format**: CSV with header row
-- **Columns**:
-  - `Node ID`: Unique node identifier (integer)
-  - `Story level`: Floor name
-  - `x-coord.`: X coordinate in decimal
-  - `y-coord.`: Y coordinate in decimal
-  - `z-coord.`: Z coordinate (elevation) in decimal
-
-**node_mapping.csv**
-
-- **Purpose**: Maps nodes to corners and floors
-- **Format**: CSV with header row
-- **Columns**:
-  - `Node`: Node ID (integer, many empty rows in file)
-  - `Story Level`: Floor name
-  - `Corner`: Corner designation (NW, SW, NE, SE)
-- **Usage**: Used for corner-based displacement analysis
-
-**node_data.csv**
-
-- **Purpose**: Complete node coordinate and restraint information
-- **Format**: CSV with header row
-- **Columns**:
-  - `Node Name`: Node identifier
-  - `Node ID`: Numeric node ID
-  - `H1`, `H2`, `V`: 3D coordinates in inches (horizontal 1, horizontal 2, vertical)
-  - `Restraint UH1`, `Restraint UH2`, `Restraint UV`: Translational restraints (Free/Fixed)
-  - `Restraint RH1`, `Restraint RH2`, `Restraint RV`: Rotational restraints (Free/Fixed)
-
-**beam_data.csv**
-
-- **Purpose**: Structural element connectivity and properties
-- **Format**: CSV with header row
-- **Columns**:
-  - `Group Name`: Element group classification
-  - `Group ID`: Group identifier
-  - `Element Name`: Element identifier
-  - `Element ID`: Numeric element ID
-  - `Property Type`: Type of structural property
-  - `Property Name`: Specific property designation
-  - `I-Node Name`, `I-Node ID`: Start node connection
-  - `J-Node Name`, `J-Node ID`: End node connection
-
-#### Simulation Data
-
-**Station 3138 Corners** (`station3138Corners/`)
-
-_File Structure_:
-
-- `ground_motion.txt`: Ground motion acceleration data
-- `Displacements/`: 6 displacement files for different directions and grid points
-
-**ground_motion.txt**
-
-- **Purpose**: Ground acceleration time history
-- **Format**: Space-separated values
-- **Columns**:
-  - Column 1: Time in seconds (0.000 to 59.990, 0.010s intervals)
-  - Columns 2-4: Ground acceleration values (likely X, Y, Z components)
-- **Value Range**: Small decimal values (e.g., -0.000415 to 0.000005)
-
-**Displacement Files** (e.g., `D_H1_Grid_11.txt`, `D_H2_Grid_36.txt`, `D_V_Grid_11.txt`)
-
-_Naming Convention_:
-
-- `D_`: Displacement data
-- `H1`, `H2`, `V`: Horizontal 1, Horizontal 2, Vertical directions
-- `Grid_11`, `Grid_36`: Grid point sets (11: NW/SW corners, 36: NE/SE corners)
-
-_File Structure_:
-
-1. **Header Section** (lines 1-~60): Metadata including:
-   - Analysis description
-   - Structure information
-   - Load case details
-   - Node coordinates for each column
-   - Column mappings to specific nodes and floor levels
-
-2. **Data Section** (lines ~60+): Time history data
-   - **Format**: Time-prefixed lines with comma-separated values
-   - **Column 1**: Time in seconds (e.g., `.22`, `.23`, `.24`)
-   - **Columns 2-N**: Displacement values for each node in inches
-   - **Value Range**: Typically -0.003 to 0.003 inches, with scientific notation for very small values (e.g., `9.2955e-4`)
-
-**Station 3138 Entire & Station 3139 Entire**
-
-_Additional Data Types_:
-
-- `Displacements/`: 6 files (H1R, H1T, H2R, H2T, VR, VT)
-- `Velocities/`: 6 files (same naming pattern with V\_ prefix)
-- `Accelerations/`: 6 files (same naming pattern with A\_ prefix)
-- `Hinge results/`: Element-level hinge response summaries (`hinge_data.csv` or `.xlsx`)
-
-_Naming Convention_:
-
-- `H1`, `H2`: Horizontal directions
-- `V`: Vertical direction
-- `R`, `T`: Likely "Right" and "Left" or different structural orientations
-- `Entire`: Full structure analysis (not just corners)
-
-#### Hinge Results Data (Non-Time-Series)
-
-`Hinge results/` contains element-level summaries used for thresholding and distribution analysis.
-
-- Typical files:
-  - `hinge_data.csv` (preferred and directly parsed)
-  - `.xlsx` exports (parsed when `openpyxl` is installed)
-- This data is **not frame/time indexed**.
-- Primary metrics:
-  - `M3` (moment demand)
-  - `R3` (rotation demand)
-  - `Max Pos Deform DCRatio`
-  - `Max Neg Deform DCRatio`
-- Key dimensions:
-  - `Element ID`
-  - `Component No.`
-  - `Step Type` (usually `Max` / `Min`)
-  - `Performance Level`
-
-#### Shear Results Data (Non-Time-Series)
-
-`Shears/` contains static per-floor column shear force summaries.
-
-- Typical files:
-  - `V_ST3138_H1M.txt` / `V_ST3139_H1M.txt`
-  - `V_ST3138_H2M.txt` / `V_ST3139_H2M.txt`
-- This data is **not frame/time indexed**.
-- Units are `kip`.
-- Parser behavior:
-  - Reads the `Column` header mappings plus the final `Maximum` and `Minimum` rows.
-  - Keeps only exact column-only sections named `Story <floor> Bottom - C`.
-  - Excludes wall, brace, and combined sections such as `- W`, `- B`, `- C+W`, and `- C+B`.
-  - Normalizes source story labels to building metadata labels, including `Int Mezz` → `Mezzanine`.
-  - Emits missing floor values as `NaN`; simulations without a complete H1/H2 file pair do not produce `shear_data.bld`.
-
-### 2. Binary Format Data (Binary15Story folder)
-
-**File Extension**: `.bld` (binary format)
-**Encoding**: Little Endian
-**Compression**: GZIP (all files must be decompressed before reading)
-
-**Structure**:
-
-- `building.bld`: Binary building geometry data (22,677 bytes)
-- `station3139Entire/`: Binary simulation data
-  - `ground_motion.bld`
-  - `acceleration.bld`
-  - `velocity.bld`
-  - `displacement.bld`
-
-#### Global Container Format
-
-All `.bld` files follow a "Header-Body" architecture:
-
-| Byte Offset | Type     | Description                                                                                 |
-| :---------- | :------- | :------------------------------------------------------------------------------------------ |
-| `0x00`      | `uint32` | **Header Length (`L`)**. Size of JSON header in bytes                                       |
-| `0x04`      | `utf-8`  | **JSON Header**. JSON string of length `L` with metadata and offsets                        |
-| `0x04 + L`  | `binary` | **Binary Body**. Tightly packed numerical data. Offsets relative to start of body, not file |
-
-#### File Types
-
-**A. Building Data (`building.bld`)**
-
-- **Purpose**: Static geometry, topology, and semantic grouping
-- **JSON Schema**:
-  ```json
-  {
-    "count_nodes": <integer>,
-    "stories": {"15": [node_indices], "Roof": [...], ...},
-    "corners": {"NW": [...], "NE": [...], "SW": [...], "SE": [...]},
-    "story_heights": {"15": <float>, "Roof": <float>, ...},
-    "story_order": ["Ground", ...],
-    "node_to_below": [<integer>, <integer>, ...],  // nodeIdx -> belowNodeIdx (-1 for ground/no match)
-    "cross_sections_x": {"0.0": [node_indices], "300.0": [...], ...}, // Nodes grouped by matching X-axis plane (6-inch tolerance)
-    "cross_sections_y": {"0.0": [node_indices], "600.0": [...], ...}  // Nodes grouped by matching Y-axis plane (6-inch tolerance)
-  }
-  ```
-- **Binary Body**: `float32` array `[x0, y0, z0, x1, y1, z1, ...]`
-- **Size**: `count_nodes * 3 * 4` bytes
-- **Units**: Inches
-
-**B. Simulation Time Series Data** (`displacement.bld`, `velocity.bld`, `acceleration.bld`)
-
-- **Purpose**: Animation data per timestep
-- **JSON Schema**:
-  ```json
-  {
-    "type": "displacement" | "velocity" | "acceleration",
-    "count_frames": <integer>,
-    "count_nodes": <integer>,
-    "dt": <float>  // Time step in seconds (e.g., 0.01)
-  }
-  ```
-- **Binary Body**: Frame-major ordering
-  ```
-  [Frame 0: Node 0(x,y,z), Node 1(x,y,z), ...]
-  [Frame 1: Node 0(x,y,z), Node 1(x,y,z), ...]
-  ```
-- **Size**: `count_frames * count_nodes * 3 * 4` bytes
-- **Units**:
-  - Displacement: Inches (relative to rest position)
-  - Velocity: Inches/second
-  - Acceleration: Inches/second²
-
-**C. Ground Motion Data (`ground_motion.bld`)**
-
-- **Purpose**: Ground motion time series
-- **JSON Schema**:
-  ```json
-  {
-    "count_frames": <integer>,
-    "dt": <float>  // Time step in seconds
-  }
-  ```
-- **Binary Body**: `float32` array `[x, y, z]` per frame
-- **Size**: `count_frames * 3 * 4` bytes
-- **Units**: Inches
-
-**D. Beam Connectivity Data (`beam_data.bld`)**
-
-- **Purpose**: Building-level member connectivity using dense node indices (for cross-sections / overlays)
-- **JSON Schema (summary)**:
-  ```json
-  {
-    "count_rows": <integer>,
-    "stride": 2,
-  }
-  ```
-- **Binary Body**: `float32` array of `[iNodeIndex, jNodeIndex]` per beam index
-- **Size**: `count_rows * stride` bytes
-
-**E. Hinge Data (`hinge_data.bld`)**
-
-- **Purpose**: Non-time-series hinge demand summaries paired by beam/member (PL1 only)
-- **Source Reduction**:
-  - Keeps only `Performance Level == 1`
-  - Resolves hinge side during generation using each beam's component pattern:
-    - Singleton `2` maps to `I`
-    - Singleton `3`/`4`/`5` maps to `J`
-    - Multi-hinge beams use the paired pattern (`2/3 -> I`, `4/5 -> J`)
-  - Stores one row per beam (`beamIndex`) with both `Max` and `Min` values in the same row
-- **JSON Schema (summary)**:
-  ```json
-  {
-    "count_rows": <integer>,
-    "stride": 10,
-    "fields": [
-      "beamIndex",
-      "endMask",
-      "iM3Max",
-      "iM3Min",
-      "iR3Max",
-      "iR3Min",
-      "jM3Max",
-      "jM3Min",
-      "jR3Max",
-      "jR3Min",
-    ],
-  }
-  ```
-- **Binary Body**: `float32` array of `[beamIndex, endMask, iM3Max, iM3Min, iR3Max, iR3Min, jM3Max, jM3Min, jR3Max, jR3Min]` per row
-- **Size**: `count_rows * stride` bytes
-- **Units**:
-  - `endMask`: Bitmask (`1 = I present`, `2 = J present`, `3 = both`)
-  - `M3`: model output moment units from source export
-  - `R3`: radians (rotation demand)
-
-#### Technical Specifications
-
-- **Byte Alignment**: Little Endian
-- **Float Format**: IEEE 754 single-precision (32-bit)
-- **Integer Format**: Unsigned 32-bit integers
-- **Coordinate System**:
-  - Z-axis: Up
-  - X-axis: H1 (Horizontal 1)
-  - Y-axis: H2 (Horizontal 2)
-- **WebGL Note**: Apply root rotation of `-π/2` on X-axis for Three.js (Y-up default)
-
-#### Data Access Formula
-
-To access data in simulation files:
-
-```javascript
-// Get Y-component of NodeIndex at FrameIndex
-index = FrameIndex * count_nodes * 3 + NodeIndex * 3 + 1;
-value = buffer[index];
-```
-
-#### Node Indexing
-
-- Binary files use dense indexing `0...N` instead of original Node IDs
-- Original Node ID to Index mapping is not stored in binary files
-- Index mapping must be maintained separately if needed
-
-#### Binary Format Specification
-
-**File Structure**:
+The 15-story and 73-story source data use "Entire" files, one per component:
 
 ```
-┌─────────────────┐
-│  Header Length  │  uint32 (4 bytes) - Little Endian
-│    (4 bytes)    │
-├─────────────────┤
-│  JSON Header    │  UTF-8 encoded JSON string
-│    (N bytes)    │  Length specified by Header Length
-├─────────────────┤
-│  Padding        │  Space characters (' ') to align to 4-byte boundary
-│  (0-3 bytes)    │
-├─────────────────┤
-│  Binary Body    │  float32 array - Little Endian IEEE 754
-│   (variable)    │
-└─────────────────┘
+Displacements/D_H1T_Entire.txt
+Displacements/D_H2T_Entire.txt
+Displacements/D_VT_Entire.txt
+Displacements/D_H1R_Entire.txt
+Displacements/D_H2R_Entire.txt
+Displacements/D_VR_Entire.txt
+
+Velocities/V_H1T_Entire.txt
+Velocities/V_H2T_Entire.txt
+Velocities/V_VT_Entire.txt
+Velocities/V_H1R_Entire.txt
+Velocities/V_H2R_Entire.txt
+Velocities/V_VR_Entire.txt
+
+Accelerations/A_H1T_Entire.txt
+Accelerations/A_H2T_Entire.txt
+Accelerations/A_VT_Entire.txt
+Accelerations/A_H1R_Entire.txt
+Accelerations/A_H2R_Entire.txt
+Accelerations/A_VR_Entire.txt
 ```
 
-**Alignment Rules**:
+Only files for datasets present in the source folder are generated. For example, current 73-story simulations compile displacement and ground motion only because velocity, acceleration, hinge, shear, and beam inputs are not present.
 
-- Header Length field: 4-byte aligned
-- JSON Header: No alignment requirement
-- Padding: Added to ensure Binary Body starts at 4-byte boundary
-- Binary Body: 4-byte aligned (each float32 is 4 bytes)
+The compiler reads PERFORM/LADWP text headers of the form `Column, N, = node, NODE_ID` and then reads comma-separated time-history rows. Max/min footer rows are dropped when present. Values are aligned into dense node-index order from `node_data.csv`; nodes not covered by any component are left as zero and listed in the binary metadata as `missing_node_indices`.
 
-**Sample Header**:
+### Grid Response Files
 
-```json
-{
-  "count_nodes": 1737,
-  "stories": {"15": [0, 1, 2, ...], "Roof": [...]},
-  "corners": {"NW": [0, 4, 8, ...], "NE": [...], "SW": [...], "SE": [...]},
-  "story_heights": {"15": 156.0, "Roof": 156.0},
-  "story_order": ["Ground", "2", "3", ..., "Roof"],
-  "cross_sections_x": {"0.0": [0, 5, 12, ...], "300.5": [1, 6, 13, ...]},
-  "cross_sections_y": {"0.0": [0, 1, 2, ...], "120.0": [5, 6, 7, ...]}
-}
+The 52-story source data use "Grid" files split by grid label. The compiler supports both of these patterns:
+
+```
+D_H1T_Grid_6.txt
+D_H1R_Grid_6.txt
+D_H2T_Grid_F.txt
+D_VT_Grid_G.txt
 ```
 
-### 3. Legacy Data (old15 folder)
+and older no-rotation grid names:
 
-Contains older format data with similar structure to main 15story data but with different file naming conventions (prefixed with `*` in index.json).
+```
+D_H1_Grid_11.txt
+D_H2_Grid_36.txt
+D_V_Grid_11.txt
+```
 
-## Index System
+For grid files, all matching grid fragments are loaded, sorted by grid identifier, and merged by node ID into one dense array. Partial coverage is preserved. Current 52-story compiled response files record `1903` missing node indices because only selected grid lines are represented in the raw files.
 
-**index.json**: Master catalog with:
+### Ground Motion
 
-- Building metadata
-- File sizes
-- Simulation configurations
-- Data type indicators (CSV vs Binary)
-- File path mappings
+`ground_motion.txt` is whitespace-delimited with time in column 1 and three components in columns 2-4. The compiler stores only the three components as `ground_motion.bld` with `dt: 0.01`.
 
-**index.schema.json**: JSON schema defining the structure of index.json
+### Hinge Results
 
-## Key Characteristics
+Current hinge parsing supports `Hinge results/hinge_data.csv`. `.xlsx` files may be present as source/reference exports, but `scripts/generate_binary_data.py` currently skips unsupported hinge formats unless a normalized CSV exists.
 
-### Coordinate System
+Required columns:
 
-- **Axes**: H1 (X), H2 (Y), V (Z-vertical)
-- **Origin**: Global coordinate system with large base values (~5000 inches)
-- **Orientation**: Z-up in source data, requires rotation for WebGL/Three.js (Y-up)
+```
+Group ID
+Element ID
+Step Type
+Component No.
+Performance Level
+M3
+R3
+Max Pos Deform DCRatio
+Max Neg Deform DCRatio
+```
 
-### Time Series Data
+Compiler behavior:
 
-- **Duration**: 60 seconds (0.000 to 59.990 seconds)
-- **Interval**: 0.010 seconds (100 Hz sampling rate)
-- **Format**: Decimal seconds with 3 decimal places
+- Keeps only `Group ID == 2`.
+- Keeps only `Performance Level == 1`.
+- Allows only `Step Type` values `Max` and `Min`.
+- Requires unique rows by `Element ID`, `Component No.`, `Step Type`, `Performance Level`.
+- Maps hinge `Element ID` to the corresponding `beam_data.bld` row.
+- Resolves component side per beam. Singleton component `2` maps to the I end; singleton `3`, `4`, or `5` maps to the J end; multi-component beams use `2/3 -> I` and `4/5 -> J`.
+- Stores one row per beam with I/J Max/Min values for `M3` and `R3`. DCR columns are validated and read but are not currently emitted into `hinge_data.bld`.
 
-### Node Organization
+### Shear Results
 
-- **Total Nodes**: Thousands of nodes across the structure
-- **Floor Coverage**: Each floor has 4 corner nodes (NW, NE, SW, SE)
-- **Elevation Range**: Ground (0 ft story height reference) to Helipad (~7806 in node coordinate)
+Current shear parsing expects a pair of files in `Shears/`:
 
-### Data Precision
+```
+*_H1M.txt
+*_H2M.txt
+```
 
-- **Displacements**: High precision (up to 7 decimal places)
-- **Coordinates**: Decimal precision for building geometry
-- **Scientific Notation**: Used for very small values in displacement files
+The parser reads `Column, N, = section ... name = Story <floor> Bottom - C` header mappings and the final `Maximum` and `Minimum` rows. It keeps only exact column-only `- C` sections and excludes wall, brace, and combined sections. Story labels are normalized, including `Int Mezz` and `Int Mezzanine` to `Mezzanine`.
 
-## Data Generation
+The compiler aligns shear rows to `building.bld` `story_order`, fills missing source stories with `NaN`, then performs a top-down cumulative sum for each of `h1Max`, `h1Min`, `h2Max`, and `h2Min`.
 
-### Binary Conversion Script
+## Compiled Binary Files
 
-**Location**: `scripts/generate_binary_data.py`
+All `.bld` files are gzip-compressed containers with a 4-byte little-endian JSON header length, UTF-8 JSON metadata, 0-3 space bytes of padding to align the body, and a little-endian Float32 body. See `binaryformat.md` for the byte-level specification.
 
-**Purpose**: Converts CSV simulation data to optimized binary format for visualization
+Building-level files:
 
-**Features**:
+| File            | Required by app           | Body layout                                       | Notes                                                                                                                 |
+| :-------------- | :------------------------ | :------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------- |
+| `building.bld`  | Yes                       | `[x, y, z]` per node                              | Includes stories, corners, story heights, story order, node-to-below map, cross sections, and optional hidden floors. |
+| `beam_data.bld` | No, required for hinge UI | `[iNodeIndex, jNodeIndex, groupIndex]` per member | `groupNames[groupIndex]` gives the source group name.                                                                 |
 
-- Automatic discovery of buildings and simulations
-- Supports both "Entire" and "Grid" file patterns
-- Parallel processing for faster conversion
-- Handles unit conversions (story heights/elevations in feet → inches for binary metadata)
-- Creates compressed `.bld` files with JSON headers
+Simulation-level files:
 
-**Input Requirements**:
+| File                   | Required by app | Body layout                                                                            | Notes                                   |
+| :--------------------- | :-------------- | :------------------------------------------------------------------------------------- | :-------------------------------------- |
+| `displacement_lin.bld` | Yes             | Frame-major `[x, y, z]` per node                                                       | Main animation and core stats.          |
+| `ground_motion.bld`    | Yes             | `[x, y, z]` per frame                                                                  | Ground motion charts and summary stats. |
+| `displacement_rot.bld` | Optional        | Frame-major `[rx, ry, rz]` per node                                                    | Loaded on demand.                       |
+| `velocity_lin.bld`     | Optional        | Frame-major `[x, y, z]` per node                                                       | Loaded on demand.                       |
+| `velocity_rot.bld`     | Optional        | Frame-major `[rx, ry, rz]` per node                                                    | Loaded on demand.                       |
+| `acceleration_lin.bld` | Optional        | Frame-major `[x, y, z]` per node                                                       | Loaded on demand.                       |
+| `acceleration_rot.bld` | Optional        | Frame-major `[rx, ry, rz]` per node                                                    | Loaded on demand.                       |
+| `hinge_data.bld`       | Optional        | `[beamIndex, endMask, iM3Max, iM3Min, iR3Max, iR3Min, jM3Max, jM3Min, jR3Max, jR3Min]` | Requires `beam_data.bld`.               |
+| `shear_data.bld`       | Optional        | `[h1Max, h1Min, h2Max, h2Min]` per story                                               | Story order is in the file header.      |
 
-- Building folder with `node_data.csv` and `building_height.csv`
-- Simulation folders with response data files
-- Ground motion files (`ground_motion.txt`)
-- Optional hinge summary files in `Hinge results/` (`hinge_data.csv` preferred, `.xlsx` supported with `openpyxl`)
-- Optional shear summary file pairs in `Shears/` (`*_H1M.txt` and `*_H2M.txt`)
+Required app startup data is intentionally small enough to load first: `building.bld`, `displacement_lin.bld`, and `ground_motion.bld`. Other datasets are optional and can be queued by URL state, profiles, or the data loader UI.
 
-**Output**:
+## Generate or Update Data
 
-- `building.bld`: Static geometry with node positions
-- `displacement_lin.bld` / `displacement_rot.bld`: Time-series displacement data
-- `velocity_lin.bld` / `velocity_rot.bld`: Time-series velocity data
-- `acceleration_lin.bld` / `acceleration_rot.bld`: Time-series acceleration data
-- `ground_motion.bld`: Ground motion acceleration data
-- `hinge_data.bld`: Non-time-series hinge summary data with metadata distributions
-- `shear_data.bld`: Non-time-series story-aligned shear summary data (`h1Max`, `h1Min`, `h2Max`, `h2Min`, `kip`)
-
-**Running the Script**:
+Install Python dependencies if needed:
 
 ```bash
-cd scripts
-python generate_binary_data.py
+python3 -m pip install -r scripts/requirements.txt
 ```
 
-If parsing `.xlsx` hinge files, install Python dependencies including `openpyxl`:
+Generate all binary data:
 
 ```bash
-pip install -r requirements.txt
+python3 scripts/generate_binary_data.py
 ```
 
-### File Naming Conventions
+Common targeted runs:
 
-**Source Files (CSV)**:
+```bash
+python3 scripts/generate_binary_data.py --dryrun
+python3 scripts/generate_binary_data.py --building 52story
+python3 scripts/generate_binary_data.py --building 52story --simulation station3139
+python3 scripts/generate_binary_data.py --building 15story --simulation station3138 --metrics displacement velocity
+python3 scripts/generate_binary_data.py --generate-missing-only
+```
 
-- `D_H1T_Entire.txt`: Displacement (D), H1 direction, Translation (T), Entire structure
-- `D_H1R_Entire.txt`: Displacement (D), H1 direction, Rotation (R), Entire structure
-- `V_H2T_Grid_11.txt`: Velocity (V), H2 direction, Translation (T), Grid subset 11
-- `A_VT_Entire.txt`: Acceleration (A), Vertical direction (V), Translation (T), Entire structure
+Supported `--metrics` values are:
 
-**Suffixes**:
+```
+all
+building
+displacement
+velocity
+acceleration
+ground_motion
+hinge
+shear
+```
 
-- `T`: Translation/Linear component
-- `R`: Rotational component
-- `Entire`: Complete structure data
-- `Grid_XX`: Partial grid subset data
+The interactive wrapper is:
 
-**Binary Output Files**:
+```bash
+bash scripts/run-pipeline.sh
+```
 
-- `{type}_lin.bld`: Linear/translation components
-- `{type}_rot.bld`: Rotational components (when available)
+It uses `gum` to choose dry-run mode, buildings, simulations, metric type, upload mode, and index generation.
 
-## File Size Information
+## Index and Upload
 
-- **15story total**: ~15.8 GB
-- **Station 3138 Corners**: ~21.6 MB
-- **Station 3138 Entire**: ~8.4 GB
-- **Station 3139 Entire**: ~7.4 GB
-- **Binary15Story total**: ~2.8 GB
+Generate an index from local compiled files and copy them into `public/data`:
 
-## Usage Notes
+```bash
+python3 scripts/generate_index.py --local
+```
 
-1. **Large Files**: Station 3138/3139 Entire files are extremely large (multi-GB) and should be processed carefully
-2. **Memory Considerations**: Full time series loading requires significant RAM (8+ GB recommended for entire structure files)
-3. **Binary Files**: Require specialized parsers for `.bld` format (see binary format specification below)
-4. **Node Mapping**: Use `node_mapping.csv` to understand corner node assignments
-5. **Coordinate System**: Building uses large coordinate values in a global coordinate system
-6. **Unit Consistency**: Always verify units per CSV file (`node_data.csv` in inches, `building_height.csv` in feet) versus binary output (inches)
-7. **Time Step**: All time series use consistent 0.01s (10ms) time step (100 Hz sampling)
+Generate an index from R2 object listings:
+
+```bash
+python3 scripts/generate_index.py
+```
+
+R2 mode requires these environment variables in `.env` or `scripts/.env`:
+
+```
+R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY
+R2_ENDPOINT
+R2_BUCKET
+R2_PUBLIC_ENDPOINT
+```
+
+Upload compiled binaries to R2:
+
+```bash
+bash scripts/upload-to-r2.sh all
+```
+
+Force re-upload by touching files first:
+
+```bash
+bash scripts/upload-to-r2.sh touch
+```
+
+`upload-to-r2.sh` uses `rclone copy data/binary r2:quakes-binaries/` and includes only `*.bld` files.
+
+After upload, regenerate `src/data/index.json` from R2 so the app points at public URLs. For local handoff/testing, regenerate with `--local` so the app points at `/data/...`.
+
+## Adding a New Building
+
+1. Create `data/csv/{buildingSlug}/`.
+2. Add `node_data.csv` and `building_height.csv`.
+3. Add `name.txt` if the display name should differ from the folder slug.
+4. Add `beam_data.csv` if hinge data or member overlays should be available.
+5. Add `corner_positions.csv` if automatic floor-corner detection is not correct.
+6. Add `hidden_floors.csv` if some floors should be hidden by default.
+7. Add one or more simulation folders under the building folder.
+8. Run `python3 scripts/generate_binary_data.py --building {buildingSlug} --dryrun`.
+9. Run the same command without `--dryrun`.
+10. Generate/upload the index as needed.
+11. Run `pnpm lint` before committing.
+
+## Adding a New Simulation
+
+1. Create `data/csv/{buildingSlug}/{simulationSlug}/`.
+2. Add `name.txt` for the simulation display name.
+3. Add `ground_motion.txt`.
+4. Add `Displacements/` with either Entire files or Grid files. `displacement_lin.bld` is required by the app.
+5. Add optional `Velocities/`, `Accelerations/`, `Hinge results/hinge_data.csv`, and `Shears/*_H1M.txt` plus `*_H2M.txt`.
+6. Run:
+
+```bash
+python3 scripts/generate_binary_data.py --building {buildingSlug} --simulation {simulationSlug} --dryrun
+python3 scripts/generate_binary_data.py --building {buildingSlug} --simulation {simulationSlug}
+```
+
+7. Regenerate the index and verify the simulation appears in the picker.
+8. Run `pnpm lint` before committing.
+
+## Browser Loading Path
+
+The app imports `src/data/index.json` through `src/data/index.ts`. `AnimationDataProvider` owns selection, URL state, fetching, parsing, caching, and optional dataset loading.
+
+Startup flow:
+
+1. The selected building/simulation comes from `?building=...&simulation=...&optionalLoads=...` or from the picker.
+2. The provider creates dataset states for all required, optional, and internal datasets.
+3. Required files load first: `building.bld`, `displacement_lin.bld`, and `ground_motion.bld`.
+4. Raw fetched files are cached in IndexedDB database `QuakesCache`, object store `files`.
+5. Required data is decompressed, parsed, and converted into serialized animation data. The app computes story drift, bounding boxes, per-frame/per-story averages, peak node displacement, ground-motion ranges, and bounding geometries.
+6. Processed core data is cached in IndexedDB object store `processed` using a key based on `PROCESSED_CACHE_VERSION`, building, simulation, source paths, and file sizes.
+7. The interface becomes usable once the required core is ready.
+8. Optional datasets load after core data. `beamData` is internal and is automatically queued when `hingeData` is selected.
+9. Optional parsing runs in `optionalDataWorker.ts`, one queued job at a time, then merges into `BuildingAnimationData`.
+
+Default optional load settings are defined in `src/features/animation-data/data-loading/util.ts`:
+
+| Dataset           | Default                                                     |
+| :---------------- | :---------------------------------------------------------- |
+| `hingeData`       | On, only when both `hingeData` and `beamData` are available |
+| `shearData`       | Off                                                         |
+| `displacementRot` | Off                                                         |
+| `velocityLin`     | Off                                                         |
+| `velocityRot`     | Off                                                         |
+| `accelerationLin` | Off                                                         |
+| `accelerationRot` | Off                                                         |
+
+The `optionalLoads` URL parameter is a bitstring in `OPTIONAL_DATASET_KEYS` order:
+
+```
+hingeData, shearData, displacementRot, velocityLin, velocityRot, accelerationLin, accelerationRot
+```
+
+For example, `1000000` requests hinge data only.
+
+## Validation Checklist
+
+Before handoff or commit:
+
+```bash
+pnpm lint
+```
+
+That runs `eslint .` and `tsc --noEmit`; both must pass.
+
+For a data handoff, also verify:
+
+- `data/csv/{building}` has required building files.
+- Every new simulation has `ground_motion.txt` and displacement files.
+- `scripts/generate_binary_data.py --dryrun` accepts the new building/simulation.
+- Generated `data/binary/{building}` contains `building.bld`, required simulation files, and optional files expected by the UI.
+- `src/data/index.json` points to the intended local or R2 locations.
+- The app can load the selection from URL and from the picker.

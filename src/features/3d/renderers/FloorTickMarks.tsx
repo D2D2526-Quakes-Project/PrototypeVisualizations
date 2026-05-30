@@ -2,7 +2,7 @@ import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 import { UNIT_SCALE } from "@/lib/utils";
 import { useGlobalStore } from "@/state";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useCallback, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFloorVisibility } from "../contexts/useFloorVisibility";
@@ -50,8 +50,18 @@ export function FloorTickMarks() {
       if (!visibleFloors.includes(storyId)) continue;
       const z = rawZ * UNIT_SCALE;
       const tickLineVerts = new Float32Array([
-        extX, -extY, z, extX + TICK_LENGTH, -extY, z,
-        -extX, extY, z, -extX, extY + TICK_LENGTH, z,
+        extX,
+        -extY,
+        z,
+        extX + TICK_LENGTH,
+        -extY,
+        z,
+        -extX,
+        extY,
+        z,
+        -extX,
+        extY + TICK_LENGTH,
+        z,
       ]);
       floorData.push({ storyId, elevation: z, tickLineVerts });
     }
@@ -66,7 +76,7 @@ export function FloorTickMarks() {
   }, [animationData.precomputed.boundingBox, animationData.precomputed.storyElevations, visibleFloors]);
 
   const handlePointerOver = useCallback(
-    (e: PointerEvent, storyId: string) => {
+    (e: ThreeEvent<MouseEvent>, storyId: string) => {
       e.stopPropagation();
       setHoveredFloor({ type: "floor", storyId, screenPos: { x: e.offsetX, y: e.offsetY } });
     },
@@ -74,7 +84,7 @@ export function FloorTickMarks() {
   );
 
   const handlePointerOut = useCallback(
-    (e: PointerEvent) => {
+    (e: ThreeEvent<MouseEvent>) => {
       e.stopPropagation();
       setHoveredFloor(null);
     },
@@ -82,7 +92,7 @@ export function FloorTickMarks() {
   );
 
   const handleClick = useCallback(
-    (e: PointerEvent, storyId: string) => {
+    (e: ThreeEvent<MouseEvent>, storyId: string) => {
       e.stopPropagation();
       openFloorPanel(storyId);
     },
@@ -117,8 +127,7 @@ export function FloorTickMarks() {
               position={[extX + TICK_LENGTH / 2, -extY, elevation]}
               onPointerOver={(e) => handlePointerOver(e, storyId)}
               onPointerOut={handlePointerOut}
-              onClick={(e) => handleClick(e, storyId)}
-            >
+              onClick={(e) => handleClick(e, storyId)}>
               <planeGeometry args={[TICK_HIT_SIZE, TICK_HIT_SIZE]} />
               <meshBasicMaterial transparent opacity={0} depthWrite={false} />
             </mesh>
@@ -126,8 +135,7 @@ export function FloorTickMarks() {
               position={[-extX, extY + TICK_LENGTH / 2, elevation]}
               onPointerOver={(e) => handlePointerOver(e, storyId)}
               onPointerOut={handlePointerOut}
-              onClick={(e) => handleClick(e, storyId)}
-            >
+              onClick={(e) => handleClick(e, storyId)}>
               <planeGeometry args={[TICK_HIT_SIZE, TICK_HIT_SIZE]} />
               <meshBasicMaterial transparent opacity={0} depthWrite={false} />
             </mesh>

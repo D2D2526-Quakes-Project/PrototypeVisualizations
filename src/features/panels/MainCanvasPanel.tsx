@@ -37,24 +37,26 @@ export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) =>
           <CanvasWithControls
             overlays={
               <>
-                <div className="pointer-events-none absolute right-1 bottom-1 z-1 flex flex-col items-end gap-1">
-                  <ViewSettingsOverlay />
-                  {isPrimary && <CurrentThresholdSlider />}
-                  {isPrimary && <CanvasMetricSelector />}
-                </div>
+                {exportRenderMode.showTransientUi && (
+                  <div className="pointer-events-none absolute right-1 bottom-1 z-1 flex flex-col items-end gap-1">
+                    <ViewSettingsOverlay />
+                    {isPrimary && <CurrentThresholdSlider />}
+                    {isPrimary && <CanvasMetricSelector />}
+                  </div>
+                )}
                 {isPrimary && exportRenderMode.showTransientUi && !isCurrentMetricStatic && (
                   <div className="absolute bottom-1 left-1 z-50">
                     <SmallPlaybackControls />
                   </div>
                 )}
-                <QuickControls />
+                {exportRenderMode.showTransientUi && <QuickControls />}
               </>
             }>
             <CameraManager />
-            <OrientationArrows />
+            {exportRenderMode.showTransientUi && <OrientationArrows />}
             <BuildingScene />
           </CanvasWithControls>
-          <BoxSelectionOverlay />
+          {exportRenderMode.showTransientUi && <BoxSelectionOverlay />}
         </CanvasPanelProvider>
       </SceneTooltip>
     </div>

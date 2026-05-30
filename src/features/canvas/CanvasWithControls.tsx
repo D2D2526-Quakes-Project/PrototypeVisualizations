@@ -89,7 +89,7 @@ export function CanvasWithControls({ children, overlays }: CanvasWithControlsPro
         }}>
         {overlays}
         <Canvas
-          frameloop="demand"
+          frameloop={exportRenderMode.frameloop}
           linear
           flat
           onCreated={({ scene }) => {

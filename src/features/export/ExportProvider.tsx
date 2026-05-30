@@ -7,12 +7,14 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { rasterizeElementToCanvas } from "@/features/export/domCapture";
+import { captureCanvasDataUrls, rasterizeElementToCanvas } from "@/features/export/domCapture";
 import { canvasToPngBytes, getFfmpegEncoder, type ExportVideoFormat } from "@/features/export/ffmpegEncoder";
 import {
   canEncodeWebmWithMediaRecorder,
   encodeCanvasFramesWithMediaRecorder,
   encodeRealtimeCanvasWithMediaRecorder,
+  estimateHighQualityBitrate,
+  getSupportedWebmMimeType,
 } from "@/features/export/mediaRecorderEncoder";
 import { createZipArchive } from "@/features/export/zip";
 import { usePlayback } from "@/features/playback/usePlayback";
@@ -596,198 +598,306 @@ export function ExportProvider({ children }: { children: ReactNode }) {
         throw new Error("Choose at least one panel to export.");
       }
 
-      const exportCanvas = document.createElement("canvas");
+      const totalFrames = sampledFrames.length;
       const files: Array<{ name: string; data: Uint8Array }> = [];
-      const totalCaptureFrames = targets.length * sampledFrames.length;
-      let completedCaptureFrames = 0;
 
       const container = document.querySelector<HTMLElement>("[data-export-workspace]");
       container?.setAttribute("data-capturing", "true");
 
-      for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
-        if (stopNowRef.current) break;
-        if (signal?.aborted) throw new DOMException("Recording cancelled", "AbortError");
+      const makeFileName = (panelIndex: number, target: PanelCaptureTarget) =>
+        `${String(panelIndex + 1).padStart(2, "0")}-${slugify(target.title || target.panelId)}.${outputFormat}`;
 
-        const target = targets[panelIndex];
-        setStoreFrameIndex(sampledFrames[0] ?? startFrame);
-        await nextAnimationFrame();
+      // Per-panel canvases for parallel capture
+      const canvases = targets.map(() => document.createElement("canvas"));
 
-        const renderFrame = async (frameIdx: number) => {
-          const frame = sampledFrames[frameIdx] ?? startFrame;
-          setStoreFrameIndex(frame);
-          await nextAnimationFrame();
-          await rasterizeElementToCanvas({
-            element: target.element,
-            canvas: exportCanvas,
-            scale,
+      // Seek to first frame once
+      setStoreFrameIndex(sampledFrames[0] ?? startFrame);
+      await nextAnimationFrame();
+
+      if (canEncodeWebmWithMediaRecorder()) {
+        // === MediaRecorder path: create per-panel recorders ===
+        const mimeType = getSupportedWebmMimeType()!;
+        const recorderData = targets.map((_, panelIndex) => {
+          const canvas = canvases[panelIndex];
+          const stream = canvas.captureStream(0);
+          const [track] = stream.getVideoTracks() as CanvasCaptureMediaStreamTrack[];
+          const chunks: Blob[] = [];
+          const recorder = new MediaRecorder(stream, {
+            mimeType,
+            videoBitsPerSecond: estimateHighQualityBitrate(canvas, fixedFps),
           });
-        };
-        const renderElapsedTime = async (elapsedSeconds: number) => {
-          const frame = clamp(startFrame + Math.round(elapsedSeconds / dt), startFrame, endFrame);
-          setStoreFrameIndex(frame);
-          await nextAnimationFrame();
-          await rasterizeElementToCanvas({
-            element: target.element,
-            canvas: exportCanvas,
-            scale,
+          const recorderStopped = new Promise<void>((resolve, reject) => {
+            recorder.ondataavailable = (e) => {
+              if (e.data.size > 0) chunks.push(e.data);
+            };
+            recorder.onerror = () => reject(new Error("WebM recording failed."));
+            recorder.onstop = () => resolve();
           });
-        };
+          return { track, chunks, recorder, recorderStopped, stream };
+        });
 
-        if (canEncodeWebmWithMediaRecorder()) {
-          await (isVariableFps ? renderElapsedTime(0) : renderFrame(0));
-          const recordedVideo = isVariableFps
-            ? await encodeRealtimeCanvasWithMediaRecorder({
-                canvas: exportCanvas,
-                estimatedFps: fixedFps,
-                durationSeconds,
-                renderElapsedTime,
-                signal,
-                stopNowRef,
-                onProgress: ({ phase, progress: captureProgress }) => {
-                  const panelBaseProgress = panelIndex / targets.length;
-                  const panelSpan = 1 / targets.length;
-                  updateExportProgress(
-                    outputFormat === "webm"
-                      ? phase === "recording"
-                        ? (panelBaseProgress + captureProgress * panelSpan) * 0.98
-                        : 0.99
-                      : phase === "recording"
-                        ? (panelBaseProgress + captureProgress * panelSpan) * 0.78
-                        : 0.79,
-                    phase === "recording"
-                      ? `Recording ${target.title} realtime (${Math.round(captureProgress * 100)}%)`
-                      : `Preparing ${target.title}`
-                  );
-                },
-              })
-            : await encodeCanvasFramesWithMediaRecorder({
-                canvas: exportCanvas,
-                fps: fixedFps,
-                totalFrames: sampledFrames.length,
-                renderFrame: async (frameIdx) => {
-                  await renderFrame(frameIdx);
-                  completedCaptureFrames += 1;
-                },
-                signal,
-                stopNowRef,
-                onProgress: ({ phase, progress: captureProgress }) => {
-                  const panelBaseProgress = panelIndex / targets.length;
-                  const panelSpan = 1 / targets.length;
-                  updateExportProgress(
-                    phase === "recording" ? (panelBaseProgress + captureProgress * panelSpan) * 0.78 : 0.79,
-                    phase === "recording"
-                      ? `Recording ${target.title} (${Math.ceil(captureProgress * sampledFrames.length)}/${sampledFrames.length})`
-                      : `Preparing ${target.title}`
-                  );
-                },
+        // Start all recorders
+        for (const rd of recorderData) rd.recorder.start();
+
+        const startedAt = performance.now();
+        const frameDurationMs = 1000 / fixedFps;
+        let renderError: unknown = null;
+
+        try {
+          if (isVariableFps) {
+            // Variable FPS: realtime loop
+            while (true) {
+              if (stopNowRef.current) break;
+              if (signal?.aborted) throw new DOMException("Recording cancelled", "AbortError");
+
+              const elapsedSeconds = (performance.now() - startedAt) / 1000;
+              if (elapsedSeconds > durationSeconds) break;
+
+              const frame = clamp(startFrame + Math.round(elapsedSeconds / dt), startFrame, endFrame);
+              setStoreFrameIndex(frame);
+              await nextAnimationFrame();
+
+              // Synchronously capture all canvas data URLs (avoids WebGL buffer loss between async rasters)
+              const allCanvasDataUrls = targets.map((t) => captureCanvasDataUrls(t.element));
+
+              // Render all panels at this frame
+              for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
+                await rasterizeElementToCanvas({
+                  element: targets[panelIndex].element,
+                  canvas: canvases[panelIndex],
+                  scale,
+                  canvasDataUrls: allCanvasDataUrls[panelIndex],
+                });
+                recorderData[panelIndex].track.requestFrame();
+              }
+
+              updateExportProgress(
+                0.78 * Math.min(1, elapsedSeconds / durationSeconds),
+                `Recording realtime (${Math.round((elapsedSeconds / durationSeconds) * 100)}%)`
+              );
+              await nextAnimationFrame();
+            }
+
+            // Render final frame
+            const finalFrame = clamp(startFrame + Math.round(durationSeconds / dt), startFrame, endFrame);
+            setStoreFrameIndex(finalFrame);
+            await nextAnimationFrame();
+            const finalCanvasDataUrls = targets.map((t) => captureCanvasDataUrls(t.element));
+            for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
+              await rasterizeElementToCanvas({
+                element: targets[panelIndex].element,
+                canvas: canvases[panelIndex],
+                scale,
+                canvasDataUrls: finalCanvasDataUrls[panelIndex],
               });
+              recorderData[panelIndex].track.requestFrame();
+            }
+            updateExportProgress(0.78, "Finalizing recording");
+          } else {
+            // Fixed FPS: deterministic frame loop
+            for (let frameIdx = 0; frameIdx < totalFrames; frameIdx += 1) {
+              if (stopNowRef.current) break;
+              if (signal?.aborted) throw new DOMException("Recording cancelled", "AbortError");
 
-          if (isVariableFps && outputFormat === "webm") {
-            const outputBytes = new Uint8Array(recordedVideo.bytes.byteLength);
-            outputBytes.set(recordedVideo.bytes);
+              const loopStart = performance.now();
+
+              setStoreFrameIndex(sampledFrames[frameIdx] ?? startFrame);
+              await nextAnimationFrame();
+
+              // Synchronously capture all canvas data URLs (avoids WebGL buffer loss between async rasters)
+              const allCanvasDataUrls = targets.map((t) => captureCanvasDataUrls(t.element));
+
+              // Render all panels at this frame
+              for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
+                await rasterizeElementToCanvas({
+                  element: targets[panelIndex].element,
+                  canvas: canvases[panelIndex],
+                  scale,
+                  canvasDataUrls: allCanvasDataUrls[panelIndex],
+                });
+                recorderData[panelIndex].track.requestFrame();
+              }
+
+              updateExportProgress(
+                0.78 * ((frameIdx + 1) / totalFrames),
+                `Recording frame ${frameIdx + 1} of ${totalFrames}`
+              );
+
+              const elapsedMs = performance.now() - loopStart;
+              await sleep(Math.max(0, frameDurationMs - elapsedMs));
+            }
+          }
+        } catch (error) {
+          renderError = error;
+        } finally {
+          for (const rd of recorderData) {
+            if (rd.recorder.state !== "inactive") rd.recorder.stop();
+          }
+        }
+
+        // Wait for all recorders to finish
+        await Promise.all(recorderData.map((rd) => rd.recorderStopped));
+
+        // Cleanup tracks
+        for (const rd of recorderData) {
+          rd.track.stop();
+          rd.stream.getTracks().forEach((t) => t.stop());
+        }
+
+        if (renderError) throw renderError;
+
+        const recordedDuration = (performance.now() - startedAt) / 1000;
+
+        container?.removeAttribute("data-capturing");
+        onCaptureDone?.();
+
+        if (isVariableFps && outputFormat === "webm") {
+          // Direct WebM from MediaRecorder (no transcode needed)
+          for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
+            updateExportProgress(
+              0.8 + (panelIndex / targets.length) * 0.19,
+              `Finalizing ${targets[panelIndex].title}`
+            );
+            const blob = new Blob(recorderData[panelIndex].chunks, { type: mimeType });
+            const bytes = new Uint8Array(await blob.arrayBuffer());
             files.push({
-              name: `${String(panelIndex + 1).padStart(2, "0")}-${slugify(target.title || target.panelId)}.${outputFormat}`,
+              name: makeFileName(panelIndex, targets[panelIndex]),
+              data: bytes,
+            });
+          }
+        } else {
+          // Transcode each panel's recording (speed correction or format conversion)
+          const postprocessEncoder = encoder ?? (await getFfmpegEncoder());
+          setFfmpegReady(true);
+
+          for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
+            const target = targets[panelIndex];
+            updateExportProgress(
+              0.79,
+              isVariableFps ? `Converting ${target.title}` : `Correcting ${target.title} playback speed`
+            );
+
+            const blob = new Blob(recorderData[panelIndex].chunks, { type: mimeType });
+            const webmBytes = new Uint8Array(await blob.arrayBuffer());
+
+            updateExportProgress(
+              0.8 + (panelIndex / targets.length) * 0.18,
+              isVariableFps ? `Converting ${target.title}` : `Correcting ${target.title}`
+            );
+
+            const panelSpan = 1 / targets.length;
+            const encodedVideo = await postprocessEncoder.transcodeRecordedWebm({
+              webm: webmBytes,
+              fps: isVariableFps ? undefined : fixedFps,
+              format: outputFormat,
+              targetDurationSeconds: isVariableFps ? undefined : durationSeconds,
+              recordedDurationSeconds: isVariableFps ? undefined : recordedDuration,
+              onProgress: ({ phase, progress: encodeProgress }) => {
+                const panelBase = panelIndex / targets.length;
+                if (phase === "frames") {
+                  updateExportProgress(0.8 + panelBase * 0.18, `Writing ${target.title}`);
+                  return;
+                }
+                if (phase === "encoding") {
+                  updateExportProgress(
+                    0.8 + (panelBase + encodeProgress * panelSpan) * 0.18,
+                    isVariableFps ? `Converting ${target.title}` : `Correcting ${target.title}`
+                  );
+                  return;
+                }
+                updateExportProgress(0.98 + panelSpan * 0.01, `Finalizing ${target.title}`);
+              },
+            });
+
+            const outputBytes = new Uint8Array(encodedVideo.byteLength);
+            outputBytes.set(encodedVideo);
+            files.push({
+              name: makeFileName(panelIndex, target),
               data: outputBytes,
             });
-            continue;
+          }
+        }
+      } else {
+        // === FFmpeg direct path (no MediaRecorder available) ===
+        if (isVariableFps) {
+          throw new Error("Variable frame rate export requires browser WebM recording support.");
+        }
+        if (!encoder) {
+          throw new Error("MP4 export requires the ffmpeg encoder.");
+        }
+
+        // Accumulate per-panel PNG frames
+        const allFrames: Uint8Array[][] = targets.map(() => []);
+
+        for (let frameIdx = 0; frameIdx < totalFrames; frameIdx += 1) {
+          if (stopNowRef.current) break;
+          if (signal?.aborted) throw new DOMException("Recording cancelled", "AbortError");
+
+          setStoreFrameIndex(sampledFrames[frameIdx] ?? startFrame);
+          await nextAnimationFrame();
+
+          // Synchronously capture all canvas data URLs (avoids WebGL buffer loss between async rasters)
+          const allCanvasDataUrls = targets.map((t) => captureCanvasDataUrls(t.element));
+
+          // Render all panels at this frame
+          for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
+            await rasterizeElementToCanvas({
+              element: targets[panelIndex].element,
+              canvas: canvases[panelIndex],
+              scale,
+              canvasDataUrls: allCanvasDataUrls[panelIndex],
+            });
+            allFrames[panelIndex].push(await canvasToPngBytes(canvases[panelIndex]));
           }
 
           updateExportProgress(
-            0.8,
-            isVariableFps ? `Converting ${target.title}` : `Correcting ${target.title} playback speed`
+            0.68 * ((frameIdx + 1) / totalFrames),
+            `Capturing frame ${frameIdx + 1} of ${totalFrames}`
           );
-          const postprocessEncoder = encoder ?? (await getFfmpegEncoder());
-          setFfmpegReady(true);
-          const encodedVideo = await postprocessEncoder.transcodeRecordedWebm({
-            webm: recordedVideo.bytes,
-            fps: isVariableFps ? undefined : fixedFps,
+          await sleep(0);
+        }
+
+        container?.removeAttribute("data-capturing");
+        onCaptureDone?.();
+
+        // Encode each panel's accumulated frames
+        for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
+          const target = targets[panelIndex];
+          const panelSpan = 1 / targets.length;
+
+          const encodedVideo = await encoder.encodeFrames({
+            frames: allFrames[panelIndex],
+            fps: fixedFps,
             format: outputFormat,
-            targetDurationSeconds: isVariableFps ? undefined : durationSeconds,
-            recordedDurationSeconds: isVariableFps ? undefined : recordedVideo.recordedDurationSeconds,
             onProgress: ({ phase, progress: encodeProgress }) => {
-              const panelBaseProgress = panelIndex / targets.length;
-              const panelSpan = 1 / targets.length;
+              const panelBase = panelIndex / targets.length;
               if (phase === "frames") {
-                updateExportProgress(0.8 + panelBaseProgress * 0.18, `Writing ${target.title}`);
+                updateExportProgress(
+                  0.68 + (panelBase + encodeProgress * 0.35) * 0.28,
+                  `Writing ${target.title}`
+                );
                 return;
               }
               if (phase === "encoding") {
                 updateExportProgress(
-                  0.8 + (panelBaseProgress + encodeProgress * panelSpan) * 0.18,
-                  isVariableFps ? `Converting ${target.title}` : `Correcting ${target.title}`
+                  0.68 + (panelBase + 0.35 + encodeProgress * 0.65) * 0.28,
+                  `Encoding ${target.title}`
                 );
                 return;
               }
-              updateExportProgress(0.98 + panelSpan * 0.01, `Finalizing ${target.title}`);
+              updateExportProgress(0.97 + panelSpan * 0.02, `Finalizing ${target.title}`);
             },
           });
 
           const outputBytes = new Uint8Array(encodedVideo.byteLength);
           outputBytes.set(encodedVideo);
           files.push({
-            name: `${String(panelIndex + 1).padStart(2, "0")}-${slugify(target.title || target.panelId)}.${outputFormat}`,
+            name: makeFileName(panelIndex, target),
             data: outputBytes,
           });
-          continue;
         }
-
-        if (isVariableFps) {
-          throw new Error("Variable frame rate export requires browser WebM recording support.");
-        }
-
-        if (!encoder) {
-          throw new Error("MP4 export requires the ffmpeg encoder.");
-        }
-
-        const encodedFrames: Uint8Array[] = [];
-        for (let frameIdx = 0; frameIdx < sampledFrames.length; frameIdx += 1) {
-          if (stopNowRef.current) break;
-          if (signal?.aborted) throw new DOMException("Recording cancelled", "AbortError");
-          await renderFrame(frameIdx);
-          encodedFrames.push(await canvasToPngBytes(exportCanvas));
-          completedCaptureFrames += 1;
-          updateExportProgress(
-            (completedCaptureFrames / totalCaptureFrames) * 0.68,
-            `Capturing ${target.title} (${frameIdx + 1}/${sampledFrames.length})`
-          );
-          await sleep(0);
-        }
-
-        const encodedVideo = await encoder.encodeFrames({
-          frames: encodedFrames,
-          fps: fixedFps,
-          format: outputFormat,
-          onProgress: ({ phase, progress: encodeProgress }) => {
-            const panelBaseProgress = panelIndex / targets.length;
-            const panelSpan = 1 / targets.length;
-            if (phase === "frames") {
-              updateExportProgress(
-                0.68 + (panelBaseProgress + encodeProgress * 0.35) * 0.28,
-                `Writing ${target.title}`
-              );
-              return;
-            }
-            if (phase === "encoding") {
-              updateExportProgress(
-                0.68 + (panelBaseProgress + 0.35 + encodeProgress * 0.65) * 0.28,
-                `Encoding ${target.title}`
-              );
-              return;
-            }
-            updateExportProgress(0.97 + panelSpan * 0.02, `Finalizing ${target.title}`);
-          },
-        });
-
-        const outputBytes = new Uint8Array(encodedVideo.byteLength);
-        outputBytes.set(encodedVideo);
-        files.push({
-          name: `${String(panelIndex + 1).padStart(2, "0")}-${slugify(target.title || target.panelId)}.${outputFormat}`,
-          data: outputBytes,
-        });
       }
 
-      container?.removeAttribute("data-capturing");
-      onCaptureDone?.();
       updateExportProgress(0.995, "Packaging ZIP archive");
       return {
         bytes: createZipArchive(files),

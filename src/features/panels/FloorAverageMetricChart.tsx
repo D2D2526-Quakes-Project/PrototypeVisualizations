@@ -46,7 +46,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
-  const { availableMetrics } = useMetrics();
+  const { availableMetrics, thresholdHighlighting } = useMetrics();
   const { thresholds } = useThresholds();
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
   const { echartsTheme } = useTheme();
@@ -197,7 +197,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
         },
       };
 
-      if (thresholdValue > 0) {
+      if (thresholdValue > 0 && thresholdHighlighting) {
         const markLineData = [];
         if (metricConfig.hasPositive) {
           markLineData.push({ xAxis: thresholdValue, name: `Threshold +${metricConfig.unit.abbr}` });

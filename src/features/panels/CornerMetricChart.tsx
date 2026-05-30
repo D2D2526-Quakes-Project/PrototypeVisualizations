@@ -131,7 +131,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
   const { thresholds } = useThresholds();
-  const { availableMetrics } = useMetrics();
+  const { availableMetrics, thresholdHighlighting } = useMetrics();
   const chartRef = useRef<ReactECharts>(null);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
   const { echartsTheme } = useTheme();
@@ -381,7 +381,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
         symbolSize: 6,
         z: 2,
         markLine:
-          idx === 0 && thresholdValue > 0
+          idx === 0 && thresholdValue > 0 && thresholdHighlighting
             ? {
                 symbol: "none",
                 data: [{ xAxis: thresholdValue, name: "Threshold" }],
@@ -452,7 +452,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       barCategoryGap: "20%",
       z: 2,
       markLine:
-        idx === 0 && thresholdValue > 0
+        idx === 0 && thresholdValue > 0 && thresholdHighlighting
           ? {
               symbol: "none",
               data: [{ xAxis: thresholdValue, name: "Threshold" }],
@@ -461,7 +461,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
               silent: true,
             }
           : undefined,
-    }));
+      }));
 
     return [...currentSeries, ...peakSeries];
   }, [currentValues, displayMode, peakValues, storyIds, thresholdValue]);

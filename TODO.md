@@ -6,7 +6,7 @@
 
 - [x] Gray out the current threshold in-scene slider when thresholding disabled
 
-- [ ] Current threshold bar in graphs only show when thresholding is enabled
+- [x] Current threshold bar in graphs only show when thresholding is enabled
 
 - [ ] Move some panel information into the panel tab when not in a tab group
 

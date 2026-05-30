@@ -92,6 +92,7 @@ export function CanvasWithControls({ children, overlays }: CanvasWithControlsPro
           frameloop={exportRenderMode.frameloop}
           linear
           flat
+          gl={{ preserveDrawingBuffer: true }}
           onCreated={({ scene }) => {
             scene.fog = null;
           }}>

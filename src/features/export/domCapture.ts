@@ -22,31 +22,42 @@ function collectDocumentCssText(): string {
   return cssChunks.join("\n");
 }
 
-function replaceCanvasWithImages(sourceRoot: HTMLElement, clonedRoot: HTMLElement) {
-  const sourceCanvases = Array.from(sourceRoot.querySelectorAll("canvas"));
+function replaceCanvasesWithDataUrls(clonedRoot: HTMLElement, dataUrls: string[]) {
   const clonedCanvases = Array.from(clonedRoot.querySelectorAll("canvas"));
-
-  sourceCanvases.forEach((canvas, index) => {
+  dataUrls.forEach((dataUrl, index) => {
     const clonedCanvas = clonedCanvases[index];
     if (!clonedCanvas) return;
 
     const image = document.createElement("img");
-    image.setAttribute("src", canvas.toDataURL("image/png"));
-    image.setAttribute("width", clonedCanvas.getAttribute("width") ?? `${canvas.width}`);
-    image.setAttribute("height", clonedCanvas.getAttribute("height") ?? `${canvas.height}`);
-    image.setAttribute("style", clonedCanvas.getAttribute("style") ?? canvas.getAttribute("style") ?? "");
+    image.setAttribute("src", dataUrl);
+    image.setAttribute("width", clonedCanvas.getAttribute("width") ?? "");
+    image.setAttribute("height", clonedCanvas.getAttribute("height") ?? "");
+    image.setAttribute("style", clonedCanvas.getAttribute("style") ?? "");
     image.className = clonedCanvas.className;
     image.alt = "";
     clonedCanvas.replaceWith(image);
   });
 }
 
+function replaceCanvasWithImages(sourceRoot: HTMLElement, clonedRoot: HTMLElement) {
+  const sourceCanvases = Array.from(sourceRoot.querySelectorAll("canvas"));
+  replaceCanvasesWithDataUrls(
+    clonedRoot,
+    sourceCanvases.map((canvas) => canvas.toDataURL("image/png"))
+  );
+}
+
+export function captureCanvasDataUrls(element: HTMLElement): string[] {
+  return Array.from(element.querySelectorAll("canvas")).map((canvas) => canvas.toDataURL("image/png"));
+}
+
 export async function rasterizeElementToCanvas(params: {
   element: HTMLElement;
   canvas: HTMLCanvasElement;
   scale: number;
+  canvasDataUrls?: string[];
 }): Promise<{ width: number; height: number }> {
-  const { element, canvas, scale } = params;
+  const { element, canvas, scale, canvasDataUrls } = params;
   const rect = element.getBoundingClientRect();
   const width = Math.max(1, Math.round(rect.width));
   const height = Math.max(1, Math.round(rect.height));
@@ -56,7 +67,11 @@ export async function rasterizeElementToCanvas(params: {
     "style",
     `${clonedRoot.getAttribute("style") ?? ""};width:${width}px;height:${height}px;box-sizing:border-box;`
   );
-  replaceCanvasWithImages(element, clonedRoot);
+  if (canvasDataUrls) {
+    replaceCanvasesWithDataUrls(clonedRoot, canvasDataUrls);
+  } else {
+    replaceCanvasWithImages(element, clonedRoot);
+  }
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">

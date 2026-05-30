@@ -14,7 +14,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function getSupportedWebmMimeType() {
+export function getSupportedWebmMimeType() {
   if (!("MediaRecorder" in window)) {
     return null;
   }
@@ -22,7 +22,7 @@ function getSupportedWebmMimeType() {
   return WEBM_MIME_TYPES.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? null;
 }
 
-function estimateHighQualityBitrate(canvas: HTMLCanvasElement, fps: number) {
+export function estimateHighQualityBitrate(canvas: HTMLCanvasElement, fps: number) {
   const megapixels = (canvas.width * canvas.height) / 1_000_000;
   const targetBitsPerSecond = megapixels * fps * 950_000;
   return Math.round(Math.min(80_000_000, Math.max(8_000_000, targetBitsPerSecond)));

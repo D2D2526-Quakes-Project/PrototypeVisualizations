@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { useOpenPanels } from "@/features/dockview/useOpenPanels";
 import { useFloorVisibility } from "@/features/3d/contexts/useFloorVisibility";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { slidingWindow3 } from "@/lib/utils";
-import { AlertTriangleIcon, LayersIcon } from "lucide-react";
+import { AlertTriangleIcon, ExternalLinkIcon, LayersIcon } from "lucide-react";
 import { useCallback, useEffect, useState, type KeyboardEvent, type MouseEvent } from "react";
 
 export function FloorVisibilitySection() {
@@ -22,6 +23,7 @@ export function FloorVisibilitySection() {
     isFloorVisible,
     setHiddenFloors,
   } = useFloorVisibility();
+  const { openFloorPanel } = useOpenPanels();
   const [dragVisibility, setDragVisibility] = useState<boolean | null>(null);
   const [draftHiddenFloors, setDraftHiddenFloors] = useState<Set<string> | null>(null);
 
@@ -110,7 +112,7 @@ export function FloorVisibilitySection() {
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 gap-y-px overflow-hidden rounded">
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 gap-y-px overflow-hidden rounded">
         {slidingWindow3(orderedStories).map(([pStoryId, storyId, nStoryId]) => {
           const isVisible = isVisibleLocal(storyId);
           const prevIsVisible = !(pStoryId && isVisibleLocal(pStoryId));
@@ -124,7 +126,7 @@ export function FloorVisibilitySection() {
               onMouseDown={(event) => handleFloorMouseDown(event, storyId)}
               onMouseEnter={() => handleFloorMouseEnter(storyId)}
               onKeyDown={(event) => handleFloorKeyDown(event, storyId)}
-              className={`col-span-3 grid grid-cols-subgrid border border-transparent px-2 text-right font-medium select-none ${
+              className={`col-span-4 grid grid-cols-subgrid border border-transparent px-2 text-right font-medium select-none ${
                 isVisible
                   ? `border-border bg-primary text-primary-foreground border-x ${prevIsVisible && "rounded-t border-t"} ${nextIsVisible && "rounded-b border-b"}`
                   : `bg-background hover:bg-muted ${!prevIsVisible && "rounded-t"} ${!nextIsVisible && "rounded-b"}`
@@ -132,6 +134,23 @@ export function FloorVisibilitySection() {
               <div className="truncate text-left text-xs font-medium">{storyId}</div>
               <div className="text-[11px] whitespace-nowrap">{formatHeight(storyHeights[storyId] ?? 0)}</div>
               <div className="text-[11px] whitespace-nowrap">{isVisible ? "Visible" : "Hidden"}</div>
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={`Open floor panel for ${storyId}`}
+                className={`flex cursor-pointer items-center justify-center ${isVisible ? "text-muted-foreground hover:text-secondary" : "text-muted-foreground hover:text-primary"}`}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  openFloorPanel(storyId);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                    openFloorPanel(storyId);
+                  }
+                }}>
+                <ExternalLinkIcon size={11} />
+              </div>
             </button>
           );
         })}

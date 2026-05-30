@@ -196,6 +196,17 @@ export async function encodeRealtimeCanvasWithMediaRecorder(params: {
   };
 }
 
-function nextAnimationFrame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+function nextAnimationFrame(timeoutMs = 50): Promise<void> {
+  let rafId: number | null = null;
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+  return new Promise<void>((resolve) => {
+    rafId = requestAnimationFrame(() => {
+      if (timerId !== null) clearTimeout(timerId);
+      resolve();
+    });
+    timerId = setTimeout(() => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      resolve();
+    }, timeoutMs);
+  });
 }

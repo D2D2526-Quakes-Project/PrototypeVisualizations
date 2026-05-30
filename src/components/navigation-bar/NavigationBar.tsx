@@ -13,19 +13,19 @@ import {
 } from "@/components/ui/menubar";
 import { useVisibilityWarnings } from "@/features/3d/contexts/useVisibilityWarnings";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
-import { usePlayback } from "@/features/playback/usePlayback";
+import { useExportVideo } from "@/features/export/ExportProvider";
 import { useMetrics } from "@/features/metrics/useMetrics";
+import { usePlayback } from "@/features/playback/usePlayback";
 import { formatNumber } from "@/lib/utils";
 import { useGlobalStore, useLiveStore, useProfileActions, useProfileData } from "@/state";
 import { Button } from "../ui/button";
+import { ModeToggle } from "../ui/mode-toggle";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { DataMenu } from "./DataMenu";
 import { MetricColorsBar } from "./MetricColorsBar";
 import { OptionalDatasetLoader } from "./OptionalDatasetLoader";
 import { ProfileMenu } from "./ProfileMenu";
 import { ShortcutsBar } from "./ShortcutsBar";
-import { ModeToggle } from "../ui/mode-toggle";
-import { useExportVideo } from "@/features/export/ExportProvider";
 
 export function NavigationBar() {
   const location = useLocation();
@@ -42,7 +42,7 @@ export function NavigationBar() {
   const { isCurrentMetricStatic } = useMetrics();
 
   const [activeMenu, setActiveMenu] = useState("");
-  const { openExportPanel } = useExportVideo();
+  const { openExportPanel, exportStatus, exportProgress } = useExportVideo();
   // const [isCopyingLink, setIsCopyingLink] = useState(false);
   const helpDrawerOpen = useLiveStore((s) => s.helpDrawerOpen);
   const setHelpDrawerOpen = useLiveStore((s) => s.setHelpDrawerOpen);
@@ -83,7 +83,15 @@ export function NavigationBar() {
       <div className="flex h-full min-w-0 items-center justify-start gap-3">
         <Menubar className="h-full border-none" value={activeMenu} onValueChange={setActiveMenu}>
           <MenubarMenu>
-            <MenubarTrigger>File</MenubarTrigger>
+            <MenubarTrigger>
+              File
+              {(exportStatus === "recording" || exportStatus === "processing") && (
+                <div className="text-muted-foreground ml-1 flex gap-1 text-xs">
+                  <FilmIcon className="size-4 animate-pulse text-red-400" />
+                  {Math.round(exportProgress * 100)}%
+                </div>
+              )}
+            </MenubarTrigger>
             <MenubarContent>
               <MenubarItem>
                 <AnimatedTitle />

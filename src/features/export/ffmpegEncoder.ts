@@ -23,6 +23,14 @@ export interface FfmpegEncoder {
     format: ExportVideoFormat;
     onProgress?: (progress: EncodeProgress) => void;
   }): Promise<Uint8Array>;
+  transcodeRecordedWebm(params: {
+    webm: Uint8Array;
+    fps?: number;
+    format: ExportVideoFormat;
+    targetDurationSeconds?: number;
+    recordedDurationSeconds?: number;
+    onProgress?: (progress: EncodeProgress) => void;
+  }): Promise<Uint8Array>;
 }
 
 let encoderPromise: Promise<FfmpegEncoder> | null = null;
@@ -31,10 +39,32 @@ function buildOutputArgs(format: ExportVideoFormat, fps: number, outputFile: str
   const inputArgs = ["-framerate", `${fps}`, "-i", "frame-%06d.png"];
 
   if (format === "mp4") {
-    return [...inputArgs, "-c:v", "mpeg4", "-pix_fmt", "yuv420p", outputFile];
+    return [...inputArgs, "-c:v", "mpeg4", "-q:v", "2", "-pix_fmt", "yuv420p", outputFile];
   }
 
-  return [...inputArgs, "-c:v", "libvpx", "-pix_fmt", "yuv420p", "-b:v", "0", "-crf", "32", outputFile];
+  return [...inputArgs, "-c:v", "libvpx", "-pix_fmt", "yuv420p", "-b:v", "0", "-crf", "18", outputFile];
+}
+
+function buildTranscodeArgs(params: {
+  format: ExportVideoFormat;
+  fps?: number;
+  playbackSpeedRatio?: number;
+  outputFile: string;
+}): string[] {
+  const { format, fps, playbackSpeedRatio, outputFile } = params;
+  const inputArgs = ["-i", "recording.webm", "-an"];
+  if (playbackSpeedRatio !== undefined) {
+    inputArgs.push("-filter:v", `setpts=${playbackSpeedRatio.toFixed(6)}*PTS`);
+  }
+  if (fps !== undefined) {
+    inputArgs.push("-r", `${fps}`);
+  }
+
+  if (format === "mp4") {
+    return [...inputArgs, "-c:v", "mpeg4", "-q:v", "2", "-pix_fmt", "yuv420p", outputFile];
+  }
+
+  return [...inputArgs, "-c:v", "libvpx", "-pix_fmt", "yuv420p", "-b:v", "0", "-crf", "18", outputFile];
 }
 
 function frameFileName(index: number): string {
@@ -127,6 +157,65 @@ export async function getFfmpegEncoder(
             for (let index = 0; index < frames.length; index += 1) {
               await ffmpeg.deleteFile(frameFileName(index + 1)).catch(() => undefined);
             }
+            await ffmpeg.deleteFile(outputFile).catch(() => undefined);
+          }
+        },
+        async transcodeRecordedWebm({
+          webm,
+          fps,
+          format,
+          targetDurationSeconds,
+          recordedDurationSeconds,
+          onProgress,
+        }) {
+          const inputFile = "recording.webm";
+          const outputFile = format === "mp4" ? "output.mp4" : "output.webm";
+          const playbackSpeedRatio =
+            targetDurationSeconds !== undefined && recordedDurationSeconds !== undefined
+              ? Math.max(0.001, targetDurationSeconds / recordedDurationSeconds)
+              : undefined;
+          const ffmpegProgressHandler = ({ progress }: { progress: number }) => {
+            onProgress?.({
+              phase: "encoding",
+              progress,
+            });
+          };
+
+          ffmpeg.on("progress", ffmpegProgressHandler);
+
+          try {
+            await ffmpeg.writeFile(inputFile, webm);
+            onProgress?.({
+              phase: "frames",
+              progress: 1,
+            });
+
+            const exitCode = await ffmpeg.exec(
+              buildTranscodeArgs({
+                format,
+                fps,
+                playbackSpeedRatio,
+                outputFile,
+              })
+            );
+            if (exitCode !== 0) {
+              throw new Error(`ffmpeg exited with code ${exitCode}`);
+            }
+
+            onProgress?.({
+              phase: "finalizing",
+              progress: 1,
+            });
+
+            const data = await ffmpeg.readFile(outputFile);
+            if (!(data instanceof Uint8Array)) {
+              throw new Error("ffmpeg returned unexpected output data");
+            }
+
+            return data;
+          } finally {
+            ffmpeg.off("progress", ffmpegProgressHandler);
+            await ffmpeg.deleteFile(inputFile).catch(() => undefined);
             await ffmpeg.deleteFile(outputFile).catch(() => undefined);
           }
         },

@@ -38,6 +38,8 @@
 
 - [ ] You can open a profile that requires data and the data is not avilable for his simulation. It should show a warning / gray it out with a tooltip
 
+- [ ] Recording pauses when unfocused because playback pauses when unfocues. Add an exception for recording.
+
 ---
 
 ### 5.2 Existing Panel Improvements
@@ -96,6 +98,9 @@
   - Validate the current DOM-to-canvas rasterization path against more panel combinations and larger layouts.
   - Add targeted fallbacks only where a specific panel type renders incorrectly in export.
   - Confirm ffmpeg.wasm performance/compatibility across Chrome, Safari, and lower-memory machines.
+- [ ] Investigate WebCodecs + MP4 muxing for fast MP4 export without ffmpeg.wasm
+  - Current fast path uses browser WebM recording; MP4 remains the slower compatibility path.
+  - Compare output support across Chrome, Safari, and Firefox before adding another encoder dependency.
 - [ ] Add panel-only and comparison export modes to the new export workflow
   - Reuse the isolated preview/export session model instead of building a second export path.
   - Split/comparison export should wait on the broader multi-simulation workspace architecture.

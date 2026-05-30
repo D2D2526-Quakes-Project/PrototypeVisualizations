@@ -6,7 +6,7 @@ import { useMetrics } from "../metrics/useMetrics";
 import { Button } from "@/components/ui/button";
 
 export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) {
-  const { playing, togglePlaying, skipToStart, skipToEnd, fps, skippedPerFrame } = usePlayback();
+  const { playing, togglePlaying, skipToStart, skipToEnd, fps } = usePlayback();
   const exportRenderMode = useExportVideo();
   const { isCurrentMetricStatic } = useMetrics();
 
@@ -46,11 +46,11 @@ export function SmallPlaybackControls({ inline = false }: { inline?: boolean }) 
           <span className="text-foreground text-[10px] font-medium" title="Frames per second">
             {fps} fps
           </span>
-          {skippedPerFrame > 0 && (
+          {/* {skippedPerFrame > 0 && (
             <span className="text-destructive text-[10px]" title="Frames skipped this update">
               +{skippedPerFrame}
             </span>
-          )}
+          )} */}
         </div>
       )}
     </div>

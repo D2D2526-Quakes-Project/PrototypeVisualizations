@@ -9,6 +9,11 @@ import { Slider } from "@/components/ui/slider";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { rasterizeElementToCanvas } from "@/features/export/domCapture";
 import { canvasToPngBytes, getFfmpegEncoder, type ExportVideoFormat } from "@/features/export/ffmpegEncoder";
+import {
+  canEncodeWebmWithMediaRecorder,
+  encodeCanvasFramesWithMediaRecorder,
+  encodeRealtimeCanvasWithMediaRecorder,
+} from "@/features/export/mediaRecorderEncoder";
 import { createZipArchive } from "@/features/export/zip";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useLiveStore, useProfileActions } from "@/state";
@@ -16,8 +21,8 @@ import { Download, Film, LoaderCircle, Video } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type ExportMode = "workspace" | "separate-panels";
-type ExportStatus = "idle" | "loading" | "ready" | "recording" | "complete" | "error";
-type ExportFps = 10 | 15 | 24 | 30 | 60;
+export type ExportStatus = "idle" | "loading" | "ready" | "recording" | "processing" | "complete" | "error";
+type ExportFps = "variable" | 10 | 15 | 24 | 30 | 60;
 type ExportScale = 1 | 1.5 | 2 | 3;
 
 interface ExportPanelSelection {
@@ -39,6 +44,9 @@ interface ExportContextValue {
   showTransientUi: boolean;
   showPanelHeaders: boolean;
   frameloop: "always" | "demand";
+  exportStatus: ExportStatus;
+  exportProgress: number;
+  exportStatusLabel: string;
 }
 
 const ExportContext = createContext<ExportContextValue | null>(null);
@@ -92,6 +100,11 @@ function buildSampledFrameSequence(startFrame: number, endFrame: number, sourceF
     const progress = index / (outputFrameCount - 1);
     return Math.round(startFrame + span * progress);
   });
+}
+
+function getSourceDurationSeconds(startFrame: number, endFrame: number, sourceFps: number) {
+  const span = Math.max(0, endFrame - startFrame);
+  return (span + 1) / sourceFps;
 }
 
 function triggerDownload(url: string, name: string) {
@@ -159,6 +172,8 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   const { setFrameIndex: setStoreFrameIndex } = useProfileActions();
   const setStorePlaying = useLiveStore((s) => s._setPlaying);
   const exportStartTimeRef = useRef<number | null>(null);
+  const cancelRef = useRef<AbortController | null>(null);
+  const stopNowRef = useRef(false);
   const dt = animationData.metadata.dt;
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -176,7 +191,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   const [endFrame, setEndFrame] = useState(0);
   const [fps, setFps] = useState<ExportFps>(30);
   const [scale, setScale] = useState<ExportScale>(1.5);
-  const [outputFormat, setOutputFormat] = useState<ExportVideoFormat>("mp4");
+  const [outputFormat, setOutputFormat] = useState<ExportVideoFormat>("webm");
   const [showTransientUi, setShowTransientUi] = useState(false);
   const [showPanelHeaders, setShowPanelHeaders] = useState(false);
 
@@ -190,11 +205,17 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   const [panelSelections, setPanelSelections] = useState<ExportPanelSelection[]>([]);
 
   const sourceFps = useMemo(() => getSourceFrameRate(dt), [dt]);
-  const sampledFrames = useMemo(
-    () => buildSampledFrameSequence(startFrame, endFrame, sourceFps, fps),
-    [startFrame, endFrame, sourceFps, fps]
+  const fixedFps = fps === "variable" ? 30 : fps;
+  const isVariableFps = fps === "variable";
+  const sourceDurationSeconds = useMemo(
+    () => getSourceDurationSeconds(startFrame, endFrame, sourceFps),
+    [startFrame, endFrame, sourceFps]
   );
-  const durationSeconds = useMemo(() => sampledFrames.length / fps, [sampledFrames.length, fps]);
+  const sampledFrames = useMemo(
+    () => buildSampledFrameSequence(startFrame, endFrame, sourceFps, fixedFps),
+    [startFrame, endFrame, sourceFps, fixedFps]
+  );
+  const durationSeconds = isVariableFps ? sourceDurationSeconds : sampledFrames.length / fixedFps;
   const baseDownloadName = useMemo(
     () => getBaseDownloadName(currentBuilding?.folder, currentSimulation?.folder),
     [currentBuilding?.folder, currentSimulation?.folder]
@@ -204,14 +225,16 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   const endSeconds = useMemo(() => frameToTime(endFrame, dt), [endFrame, dt]);
 
   const isRecording = status === "recording";
+  const isExporting = isRecording || status === "processing";
+  const requiresFfmpeg = outputFormat === "mp4" || !canEncodeWebmWithMediaRecorder() || !isVariableFps;
 
   const renderModeValue = useMemo(
     () => ({
-      showPanelHeaders: isSheetOpen || isRecording ? showPanelHeaders : true,
-      showTransientUi: isSheetOpen || isRecording ? showTransientUi : true,
-      frameloop: (isRecording ? "always" : "demand") as "always" | "demand",
+      showPanelHeaders: isSheetOpen || isExporting ? showPanelHeaders : true,
+      showTransientUi: isSheetOpen || isExporting ? showTransientUi : true,
+      frameloop: (isExporting ? "always" : "demand") as "always" | "demand",
     }),
-    [isSheetOpen, isRecording, showPanelHeaders, showTransientUi]
+    [isSheetOpen, isExporting, showPanelHeaders, showTransientUi]
   );
 
   useEffect(() => {
@@ -249,8 +272,8 @@ export function ExportProvider({ children }: { children: ReactNode }) {
     setStartFrame(nextStart);
     setEndFrame(nextEnd);
     setRangeValue([frameToTime(nextStart, dt), frameToTime(nextEnd, dt)]);
-    setStatus(ffmpegReady ? "ready" : "loading");
-    setStatusLabel(ffmpegReady ? "Preview ready" : "Loading encoder");
+    setStatus(requiresFfmpeg && !ffmpegReady ? "loading" : "ready");
+    setStatusLabel(requiresFfmpeg && !ffmpegReady ? "Loading encoder" : "Preview ready");
     setProgress(0);
     setEtaSeconds(null);
     setError(null);
@@ -261,7 +284,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       setDownloadUrl(null);
     }
     setDownloadName(getDownloadName(baseDownloadName, mode, outputFormat));
-  }, [frameIndex, totalFrames, ffmpegReady, baseDownloadName, downloadUrl, mode, outputFormat, dt]);
+  }, [frameIndex, totalFrames, ffmpegReady, requiresFfmpeg, baseDownloadName, downloadUrl, mode, outputFormat, dt]);
 
   const ensureFfmpegReady = useCallback(async () => {
     if (ffmpegReady) return;
@@ -293,21 +316,30 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   }, [ffmpegReady]);
 
   const openExportPanel = useCallback(() => {
+    if (status === "recording" || status === "processing" || status === "complete" || status === "error") {
+      setIsSheetOpen(true);
+      return;
+    }
     refreshPreview();
     setIsSheetOpen(true);
-    void ensureFfmpegReady();
-  }, [ensureFfmpegReady, refreshPreview]);
-
-  const handleSheetOpenChange = useCallback((open: boolean) => {
-    setIsSheetOpen(open);
-    if (!open) {
-      setStatus("idle");
-      setProgress(0);
-      setEtaSeconds(null);
-      setError(null);
-      setAutoDownloaded(false);
+    if (requiresFfmpeg) {
+      void ensureFfmpegReady();
     }
-  }, []);
+  }, [ensureFfmpegReady, refreshPreview, requiresFfmpeg, status]);
+
+  const handleSheetOpenChange = useCallback(
+    (open: boolean) => {
+      setIsSheetOpen(open);
+      if (!open && (status === "idle" || status === "complete" || status === "error")) {
+        setStatus("idle");
+        setProgress(0);
+        setEtaSeconds(null);
+        setError(null);
+        setAutoDownloaded(false);
+      }
+    },
+    [status]
+  );
 
   useEffect(() => {
     if (isSheetOpen && mode === "separate-panels") {
@@ -352,11 +384,14 @@ export function ExportProvider({ children }: { children: ReactNode }) {
   }
 
   const encodeWorkspace = useCallback(
-    async (encoder: Awaited<ReturnType<typeof getFfmpegEncoder>>, onCaptureDone?: () => void) => {
+    async (
+      encoder: Awaited<ReturnType<typeof getFfmpegEncoder>> | null,
+      onCaptureDone?: () => void,
+      signal?: AbortSignal
+    ) => {
       const captureElement = getCaptureElement();
 
       const exportCanvas = document.createElement("canvas");
-      const encodedFrames: Uint8Array[] = [];
       const totalFramesToCapture = sampledFrames.length;
 
       const container = document.querySelector<HTMLElement>("[data-export-workspace]");
@@ -365,8 +400,8 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       setStoreFrameIndex(sampledFrames[0] ?? startFrame);
       await nextAnimationFrame();
 
-      for (let index = 0; index < totalFramesToCapture; index += 1) {
-        const frame = sampledFrames[index];
+      const renderFrame = async (index: number) => {
+        const frame = sampledFrames[index] ?? startFrame;
         setStoreFrameIndex(frame);
         await nextAnimationFrame();
         await rasterizeElementToCanvas({
@@ -374,6 +409,125 @@ export function ExportProvider({ children }: { children: ReactNode }) {
           canvas: exportCanvas,
           scale,
         });
+      };
+      const renderElapsedTime = async (elapsedSeconds: number) => {
+        const frame = clamp(startFrame + Math.round(elapsedSeconds / dt), startFrame, endFrame);
+        setStoreFrameIndex(frame);
+        await nextAnimationFrame();
+        await rasterizeElementToCanvas({
+          element: captureElement,
+          canvas: exportCanvas,
+          scale,
+        });
+      };
+
+      if (canEncodeWebmWithMediaRecorder()) {
+        await (isVariableFps ? renderElapsedTime(0) : renderFrame(0));
+        const recordedVideo = isVariableFps
+          ? await encodeRealtimeCanvasWithMediaRecorder({
+              canvas: exportCanvas,
+              estimatedFps: fixedFps,
+              durationSeconds,
+              renderElapsedTime,
+              signal,
+              stopNowRef,
+              onProgress: ({ phase, progress: captureProgress }) => {
+                updateExportProgress(
+                  outputFormat === "webm"
+                    ? phase === "recording"
+                      ? captureProgress * 0.98
+                      : 0.99
+                    : phase === "recording"
+                      ? captureProgress * 0.82
+                      : 0.83,
+                  phase === "recording"
+                    ? `Recording realtime playback ${Math.round(captureProgress * 100)}%`
+                    : outputFormat === "webm"
+                      ? "Finalizing WebM"
+                      : "Preparing MP4 conversion"
+                );
+              },
+            })
+          : await encodeCanvasFramesWithMediaRecorder({
+              canvas: exportCanvas,
+              fps: fixedFps,
+              totalFrames: totalFramesToCapture,
+              renderFrame,
+              signal,
+              stopNowRef,
+              onProgress: ({ phase, progress: captureProgress }) => {
+                updateExportProgress(
+                  phase === "recording" ? captureProgress * 0.82 : 0.83,
+                  phase === "recording"
+                    ? `Recording frame ${Math.ceil(captureProgress * totalFramesToCapture)} of ${totalFramesToCapture}`
+                    : "Preparing playback speed correction"
+                );
+              },
+            });
+
+        container?.removeAttribute("data-capturing");
+        onCaptureDone?.();
+
+        if (isVariableFps && outputFormat === "webm") {
+          return {
+            bytes: recordedVideo.bytes,
+            downloadName: getDownloadName(baseDownloadName, "workspace", outputFormat),
+            mimeType: "video/webm",
+          };
+        }
+
+        updateExportProgress(
+          0.84,
+          isVariableFps
+            ? `Converting ${outputFormat.toUpperCase()}`
+            : `Correcting ${outputFormat.toUpperCase()} playback speed`
+        );
+        const postprocessEncoder = encoder ?? (await getFfmpegEncoder());
+        setFfmpegReady(true);
+        const encodedVideo = await postprocessEncoder.transcodeRecordedWebm({
+          webm: recordedVideo.bytes,
+          fps: isVariableFps ? undefined : fixedFps,
+          format: outputFormat,
+          targetDurationSeconds: isVariableFps ? undefined : durationSeconds,
+          recordedDurationSeconds: isVariableFps ? undefined : recordedVideo.recordedDurationSeconds,
+          onProgress: ({ phase, progress: encodeProgress }) => {
+            if (phase === "frames") {
+              updateExportProgress(0.85, "Writing recording to encoder");
+              return;
+            }
+            if (phase === "encoding") {
+              updateExportProgress(
+                0.85 + encodeProgress * 0.14,
+                isVariableFps
+                  ? `Converting ${outputFormat.toUpperCase()}`
+                  : `Correcting ${outputFormat.toUpperCase()} playback speed`
+              );
+              return;
+            }
+            updateExportProgress(0.99, "Finalizing video");
+          },
+        });
+
+        return {
+          bytes: encodedVideo,
+          downloadName: getDownloadName(baseDownloadName, "workspace", outputFormat),
+          mimeType: outputFormat === "mp4" ? "video/mp4" : "video/webm",
+        };
+      }
+
+      if (isVariableFps) {
+        throw new Error("Variable frame rate export requires browser WebM recording support.");
+      }
+
+      if (!encoder) {
+        throw new Error("MP4 export requires the ffmpeg encoder.");
+      }
+
+      const encodedFrames: Uint8Array[] = [];
+      for (let index = 0; index < totalFramesToCapture; index += 1) {
+        if (stopNowRef.current) break;
+        if (signal?.aborted) throw new DOMException("Recording cancelled", "AbortError");
+        await renderFrame(index);
         encodedFrames.push(await canvasToPngBytes(exportCanvas));
         updateExportProgress(
           ((index + 1) / totalFramesToCapture) * 0.68,
@@ -387,7 +541,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
 
       const encodedVideo = await encoder.encodeFrames({
         frames: encodedFrames,
-        fps,
+        fps: fixedFps,
         format: outputFormat,
         onProgress: ({ phase, progress: encodeProgress }) => {
           if (phase === "frames") {
@@ -408,11 +562,28 @@ export function ExportProvider({ children }: { children: ReactNode }) {
         mimeType: outputFormat === "mp4" ? "video/mp4" : "video/webm",
       };
     },
-    [baseDownloadName, outputFormat, sampledFrames, fps, scale, startFrame, setStoreFrameIndex, updateExportProgress]
+    [
+      baseDownloadName,
+      outputFormat,
+      sampledFrames,
+      fixedFps,
+      isVariableFps,
+      scale,
+      startFrame,
+      endFrame,
+      dt,
+      durationSeconds,
+      setStoreFrameIndex,
+      updateExportProgress,
+    ]
   );
 
   const encodeSeparatePanels = useCallback(
-    async (encoder: Awaited<ReturnType<typeof getFfmpegEncoder>>, onCaptureDone?: () => void) => {
+    async (
+      encoder: Awaited<ReturnType<typeof getFfmpegEncoder>> | null,
+      onCaptureDone?: () => void,
+      signal?: AbortSignal
+    ) => {
       const workspace = document.querySelector<HTMLElement>("[data-export-workspace]");
       if (!workspace) {
         throw new Error("Could not find workspace element for capture");
@@ -434,13 +605,15 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       container?.setAttribute("data-capturing", "true");
 
       for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
+        if (stopNowRef.current) break;
+        if (signal?.aborted) throw new DOMException("Recording cancelled", "AbortError");
+
         const target = targets[panelIndex];
-        const encodedFrames: Uint8Array[] = [];
         setStoreFrameIndex(sampledFrames[0] ?? startFrame);
         await nextAnimationFrame();
 
-        for (let frameIdx = 0; frameIdx < sampledFrames.length; frameIdx += 1) {
-          const frame = sampledFrames[frameIdx];
+        const renderFrame = async (frameIdx: number) => {
+          const frame = sampledFrames[frameIdx] ?? startFrame;
           setStoreFrameIndex(frame);
           await nextAnimationFrame();
           await rasterizeElementToCanvas({
@@ -448,6 +621,129 @@ export function ExportProvider({ children }: { children: ReactNode }) {
             canvas: exportCanvas,
             scale,
           });
+        };
+        const renderElapsedTime = async (elapsedSeconds: number) => {
+          const frame = clamp(startFrame + Math.round(elapsedSeconds / dt), startFrame, endFrame);
+          setStoreFrameIndex(frame);
+          await nextAnimationFrame();
+          await rasterizeElementToCanvas({
+            element: target.element,
+            canvas: exportCanvas,
+            scale,
+          });
+        };
+
+        if (canEncodeWebmWithMediaRecorder()) {
+          await (isVariableFps ? renderElapsedTime(0) : renderFrame(0));
+          const recordedVideo = isVariableFps
+            ? await encodeRealtimeCanvasWithMediaRecorder({
+                canvas: exportCanvas,
+                estimatedFps: fixedFps,
+                durationSeconds,
+                renderElapsedTime,
+                signal,
+                stopNowRef,
+                onProgress: ({ phase, progress: captureProgress }) => {
+                  const panelBaseProgress = panelIndex / targets.length;
+                  const panelSpan = 1 / targets.length;
+                  updateExportProgress(
+                    outputFormat === "webm"
+                      ? phase === "recording"
+                        ? (panelBaseProgress + captureProgress * panelSpan) * 0.98
+                        : 0.99
+                      : phase === "recording"
+                        ? (panelBaseProgress + captureProgress * panelSpan) * 0.78
+                        : 0.79,
+                    phase === "recording"
+                      ? `Recording ${target.title} realtime (${Math.round(captureProgress * 100)}%)`
+                      : `Preparing ${target.title}`
+                  );
+                },
+              })
+            : await encodeCanvasFramesWithMediaRecorder({
+                canvas: exportCanvas,
+                fps: fixedFps,
+                totalFrames: sampledFrames.length,
+                renderFrame: async (frameIdx) => {
+                  await renderFrame(frameIdx);
+                  completedCaptureFrames += 1;
+                },
+                signal,
+                stopNowRef,
+                onProgress: ({ phase, progress: captureProgress }) => {
+                  const panelBaseProgress = panelIndex / targets.length;
+                  const panelSpan = 1 / targets.length;
+                  updateExportProgress(
+                    phase === "recording" ? (panelBaseProgress + captureProgress * panelSpan) * 0.78 : 0.79,
+                    phase === "recording"
+                      ? `Recording ${target.title} (${Math.ceil(captureProgress * sampledFrames.length)}/${sampledFrames.length})`
+                      : `Preparing ${target.title}`
+                  );
+                },
+              });
+
+          if (isVariableFps && outputFormat === "webm") {
+            const outputBytes = new Uint8Array(recordedVideo.bytes.byteLength);
+            outputBytes.set(recordedVideo.bytes);
+            files.push({
+              name: `${String(panelIndex + 1).padStart(2, "0")}-${slugify(target.title || target.panelId)}.${outputFormat}`,
+              data: outputBytes,
+            });
+            continue;
+          }
+
+          updateExportProgress(
+            0.8,
+            isVariableFps ? `Converting ${target.title}` : `Correcting ${target.title} playback speed`
+          );
+          const postprocessEncoder = encoder ?? (await getFfmpegEncoder());
+          setFfmpegReady(true);
+          const encodedVideo = await postprocessEncoder.transcodeRecordedWebm({
+            webm: recordedVideo.bytes,
+            fps: isVariableFps ? undefined : fixedFps,
+            format: outputFormat,
+            targetDurationSeconds: isVariableFps ? undefined : durationSeconds,
+            recordedDurationSeconds: isVariableFps ? undefined : recordedVideo.recordedDurationSeconds,
+            onProgress: ({ phase, progress: encodeProgress }) => {
+              const panelBaseProgress = panelIndex / targets.length;
+              const panelSpan = 1 / targets.length;
+              if (phase === "frames") {
+                updateExportProgress(0.8 + panelBaseProgress * 0.18, `Writing ${target.title}`);
+                return;
+              }
+              if (phase === "encoding") {
+                updateExportProgress(
+                  0.8 + (panelBaseProgress + encodeProgress * panelSpan) * 0.18,
+                  isVariableFps ? `Converting ${target.title}` : `Correcting ${target.title}`
+                );
+                return;
+              }
+              updateExportProgress(0.98 + panelSpan * 0.01, `Finalizing ${target.title}`);
+            },
+          });
+
+          const outputBytes = new Uint8Array(encodedVideo.byteLength);
+          outputBytes.set(encodedVideo);
+          files.push({
+            name: `${String(panelIndex + 1).padStart(2, "0")}-${slugify(target.title || target.panelId)}.${outputFormat}`,
+            data: outputBytes,
+          });
+          continue;
+        }
+
+        if (isVariableFps) {
+          throw new Error("Variable frame rate export requires browser WebM recording support.");
+        }
+
+        if (!encoder) {
+          throw new Error("MP4 export requires the ffmpeg encoder.");
+        }
+
+        const encodedFrames: Uint8Array[] = [];
+        for (let frameIdx = 0; frameIdx < sampledFrames.length; frameIdx += 1) {
+          if (stopNowRef.current) break;
+          if (signal?.aborted) throw new DOMException("Recording cancelled", "AbortError");
+          await renderFrame(frameIdx);
           encodedFrames.push(await canvasToPngBytes(exportCanvas));
           completedCaptureFrames += 1;
           updateExportProgress(
@@ -457,12 +753,9 @@ export function ExportProvider({ children }: { children: ReactNode }) {
           await sleep(0);
         }
 
-        container?.removeAttribute("data-capturing");
-        onCaptureDone?.();
-
         const encodedVideo = await encoder.encodeFrames({
           frames: encodedFrames,
-          fps,
+          fps: fixedFps,
           format: outputFormat,
           onProgress: ({ phase, progress: encodeProgress }) => {
             const panelBaseProgress = panelIndex / targets.length;
@@ -493,6 +786,8 @@ export function ExportProvider({ children }: { children: ReactNode }) {
         });
       }
 
+      container?.removeAttribute("data-capturing");
+      onCaptureDone?.();
       updateExportProgress(0.995, "Packaging ZIP archive");
       return {
         bytes: createZipArchive(files),
@@ -505,16 +800,20 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       outputFormat,
       panelSelections,
       sampledFrames,
-      fps,
+      fixedFps,
+      isVariableFps,
       scale,
       startFrame,
+      endFrame,
+      dt,
+      durationSeconds,
       setStoreFrameIndex,
       updateExportProgress,
     ]
   );
 
   const startRecording = useCallback(async () => {
-    if (!ffmpegReady) {
+    if (requiresFfmpeg && !ffmpegReady) {
       await ensureFfmpegReady();
     }
 
@@ -534,12 +833,30 @@ export function ExportProvider({ children }: { children: ReactNode }) {
     setStatusLabel(mode === "workspace" ? "Preparing workspace export" : "Preparing panel batch export");
     exportStartTimeRef.current = performance.now();
 
+    cancelRef.current = new AbortController();
+    stopNowRef.current = false;
+    const signal = cancelRef.current.signal;
+
     try {
-      const encoder = await getFfmpegEncoder();
+      const encoder = requiresFfmpeg ? await getFfmpegEncoder() : null;
       const result =
         mode === "workspace"
-          ? await encodeWorkspace(encoder, () => setIsSheetOpen(true))
-          : await encodeSeparatePanels(encoder, () => setIsSheetOpen(true));
+          ? await encodeWorkspace(
+              encoder,
+              () => {
+                setStatus("processing");
+                setIsSheetOpen(true);
+              },
+              signal
+            )
+          : await encodeSeparatePanels(
+              encoder,
+              () => {
+                setStatus("processing");
+                setIsSheetOpen(true);
+              },
+              signal
+            );
 
       const outputBytes = new Uint8Array(result.bytes.byteLength);
       outputBytes.set(result.bytes);
@@ -554,6 +871,9 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       setEtaSeconds(0);
       setStatusLabel(mode === "workspace" ? "Downloaded workspace video" : "Downloaded panel ZIP");
     } catch (recordingError) {
+      if (recordingError instanceof DOMException && recordingError.name === "AbortError" && !stopNowRef.current) {
+        return;
+      }
       console.error(recordingError);
       const message = recordingError instanceof Error ? recordingError.message : "Video export failed";
       setStatus("error");
@@ -561,19 +881,46 @@ export function ExportProvider({ children }: { children: ReactNode }) {
       setStatusLabel(message);
       setIsSheetOpen(true);
     }
-  }, [downloadUrl, encodeSeparatePanels, encodeWorkspace, ensureFfmpegReady, ffmpegReady, mode, setStorePlaying]);
+  }, [
+    downloadUrl,
+    encodeSeparatePanels,
+    encodeWorkspace,
+    ensureFfmpegReady,
+    ffmpegReady,
+    mode,
+    requiresFfmpeg,
+    setStorePlaying,
+  ]);
 
   const handleStartRecording = useCallback(() => {
     setStoreFrameIndex(startFrame);
     void startRecording();
   }, [startFrame, setStoreFrameIndex, startRecording]);
 
+  const handleStopNow = useCallback(() => {
+    stopNowRef.current = true;
+    cancelRef.current?.abort();
+  }, []);
+
+  const handleCancel = useCallback(() => {
+    cancelRef.current?.abort();
+    setIsSheetOpen(true);
+    setStatus("idle");
+    setProgress(0);
+    setEtaSeconds(null);
+    setError(null);
+    setAutoDownloaded(false);
+  }, []);
+
   const contextValue = useMemo<ExportContextValue>(
     () => ({
       openExportPanel,
       ...renderModeValue,
+      exportStatus: status,
+      exportProgress: progress,
+      exportStatusLabel: statusLabel,
     }),
-    [openExportPanel, renderModeValue]
+    [openExportPanel, renderModeValue, status, progress, statusLabel]
   );
 
   return (
@@ -584,14 +931,24 @@ export function ExportProvider({ children }: { children: ReactNode }) {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           style={{ pointerEvents: "auto" }}>
-          <div className="flex items-center gap-3 rounded-lg bg-white px-5 py-3 shadow-lg">
-            <span className="relative flex size-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex size-3 rounded-full bg-red-600" />
-            </span>
-            <span className="text-sm font-medium text-neutral-900">
-              {etaSeconds !== null ? `Recording \u2022 ETA ${formatDuration(etaSeconds)}` : "Recording..."}
-            </span>
+          <div className="flex flex-col items-center gap-4 rounded-lg bg-white px-6 py-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <span className="relative flex size-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex size-3 rounded-full bg-red-600" />
+              </span>
+              <span className="text-sm font-medium text-neutral-900">
+                {etaSeconds !== null ? `Recording \u2022 ETA ${formatDuration(etaSeconds)}` : "Recording..."}
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <Button type="button" variant="default" size="sm" onClick={handleStopNow}>
+                Stop Now
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={handleCancel}>
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -608,14 +965,14 @@ export function ExportProvider({ children }: { children: ReactNode }) {
         [data-capturing] {
           scrollbar-width: none !important;
         }
-        [data-export-preview="true"] ::-webkit-scrollbar,
-        [data-export-preview="true"] {
+        [data-export-workspace] ::-webkit-scrollbar,
+        [data-export-workspace] {
           scrollbar-width: none !important;
         }
         ${
           contextValue.showPanelHeaders
             ? ""
-            : `[data-export-preview="true"] .dv-groupview > .dv-tabs-and-actions-container {
+            : `[data-export-workspace] .dv-groupview > .dv-tabs-and-actions-container {
           display: none !important;
           height: 0 !important;
           min-height: 0 !important;
@@ -640,7 +997,8 @@ export function ExportProvider({ children }: { children: ReactNode }) {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+            <div
+              className={`flex flex-1 flex-col gap-4 overflow-y-auto p-4 ${isExporting ? "pointer-events-none opacity-50" : ""}`}>
               <div className="space-y-1">
                 <Label htmlFor="export-mode">Mode</Label>
                 <NativeSelect
@@ -656,13 +1014,26 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                 </NativeSelect>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-[auto_auto_auto] gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="export-fps">FPS</Label>
                   <NativeSelect
                     id="export-fps"
                     value={`${fps}`}
-                    onChange={(event) => setFps(Number(event.target.value) as ExportFps)}>
+                    onChange={(event) => {
+                      const nextFps =
+                        event.target.value === "variable" ? "variable" : (Number(event.target.value) as ExportFps);
+                      setFps(nextFps);
+                      if (nextFps !== "variable" || outputFormat === "mp4" || !canEncodeWebmWithMediaRecorder()) {
+                        setStatus(ffmpegReady ? "ready" : "loading");
+                        setStatusLabel(ffmpegReady ? "Preview ready" : "Loading encoder");
+                        void ensureFfmpegReady();
+                      } else {
+                        setStatus("ready");
+                        setStatusLabel("Preview ready");
+                      }
+                    }}>
+                    <NativeSelectOption value="variable">Variable</NativeSelectOption>
                     <NativeSelectOption value="10">10 fps</NativeSelectOption>
                     <NativeSelectOption value="15">15 fps</NativeSelectOption>
                     <NativeSelectOption value="24">24 fps</NativeSelectOption>
@@ -691,17 +1062,35 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                       const nextFormat = event.target.value as ExportVideoFormat;
                       setOutputFormat(nextFormat);
                       setDownloadName(getDownloadName(baseDownloadName, mode, nextFormat));
+                      if (nextFormat === "mp4" || fps !== "variable" || !canEncodeWebmWithMediaRecorder()) {
+                        setStatus(ffmpegReady ? "ready" : "loading");
+                        setStatusLabel(ffmpegReady ? "Preview ready" : "Loading encoder");
+                        void ensureFfmpegReady();
+                      } else {
+                        setStatus("ready");
+                        setStatusLabel("Preview ready");
+                      }
                     }}>
-                    <NativeSelectOption value="mp4">MP4</NativeSelectOption>
                     <NativeSelectOption value="webm">WebM</NativeSelectOption>
+                    <NativeSelectOption value="mp4">MP4</NativeSelectOption>
                   </NativeSelect>
                 </div>
               </div>
 
               <div className="text-xs whitespace-nowrap text-neutral-600">
-                {fps} fps output from {sourceFps.toFixed(0)} fps source
+                {isVariableFps ? "Variable fps realtime capture" : `${fps} fps output`} from {sourceFps.toFixed(0)} fps
+                source
                 <br />
-                scale {scale}x, {outputFormat.toUpperCase()}
+                scale {scale}x,{" "}
+                {isVariableFps && outputFormat === "webm" && canEncodeWebmWithMediaRecorder()
+                  ? "realtime WebM recording"
+                  : outputFormat === "webm" && canEncodeWebmWithMediaRecorder()
+                    ? "browser capture + speed correction"
+                    : outputFormat === "mp4" && isVariableFps && canEncodeWebmWithMediaRecorder()
+                      ? "realtime recording + MP4 conversion"
+                      : outputFormat === "mp4" && canEncodeWebmWithMediaRecorder()
+                        ? "browser capture + MP4 conversion"
+                        : `${outputFormat.toUpperCase()} via ffmpeg`}
               </div>
 
               <div className="space-y-1">
@@ -726,8 +1115,8 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                   <div>{durationSeconds.toFixed(2)} s</div>
                 </div>
                 <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3">
-                  <div className="font-medium text-neutral-900">Output frames</div>
-                  <div>{sampledFrames.length}</div>
+                  <div className="font-medium text-neutral-900">{isVariableFps ? "Frame rate" : "Output frames"}</div>
+                  <div>{isVariableFps ? "As fast as possible" : sampledFrames.length}</div>
                 </div>
               </div>
 
@@ -816,15 +1205,17 @@ export function ExportProvider({ children }: { children: ReactNode }) {
               <Button
                 type="button"
                 onClick={handleStartRecording}
-                disabled={status === "recording" || status === "loading"}>
+                disabled={status === "recording" || status === "processing" || status === "loading"}>
                 <Video className="size-4" />
                 {status === "loading"
                   ? "Loading ffmpeg..."
                   : status === "recording"
                     ? `Encoding ${outputFormat.toUpperCase()}...`
-                    : mode === "workspace"
-                      ? `Export ${outputFormat.toUpperCase()}`
-                      : `Export panel ZIP`}
+                    : status === "processing"
+                      ? "Processing..."
+                      : mode === "workspace"
+                        ? `Export ${outputFormat.toUpperCase()}`
+                        : `Export panel ZIP`}
               </Button>
               <Button type="button" variant="outline" onClick={handleDownload} disabled={!downloadUrl}>
                 <Download className="size-4" />

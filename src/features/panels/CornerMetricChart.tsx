@@ -464,7 +464,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       }));
 
     return [...currentSeries, ...peakSeries];
-  }, [currentValues, displayMode, peakValues, storyIds, thresholdValue]);
+  }, [currentValues, displayMode, peakValues, storyIds, thresholdHighlighting, thresholdValue]);
 
   const xAxisExtent = useMemo(() => {
     let maxValue = MIN_X_AXIS_MAX;

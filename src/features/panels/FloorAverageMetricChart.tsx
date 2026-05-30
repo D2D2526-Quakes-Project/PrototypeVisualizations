@@ -363,6 +363,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     metricStoryData,
     metricPaletteOverrides,
     storyRows,
+    thresholdHighlighting,
     thresholds,
   ]);
 

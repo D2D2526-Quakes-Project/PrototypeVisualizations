@@ -15,6 +15,7 @@ import {
   encodeRealtimeCanvasWithMediaRecorder,
   estimateHighQualityBitrate,
   getSupportedWebmMimeType,
+  nextAnimationFrame,
 } from "@/features/export/mediaRecorderEncoder";
 import { createZipArchive } from "@/features/export/zip";
 import { usePlayback } from "@/features/playback/usePlayback";
@@ -146,21 +147,6 @@ function syncPanelSelections(previous: ExportPanelSelection[], nextTargets: Pane
     title: target.title,
     enabled: previousMap.get(target.panelId) ?? true,
   }));
-}
-
-function nextAnimationFrame(timeoutMs = 50): Promise<void> {
-  let rafId: number | null = null;
-  let timerId: ReturnType<typeof setTimeout> | null = null;
-  return new Promise<void>((resolve) => {
-    rafId = requestAnimationFrame(() => {
-      if (timerId !== null) clearTimeout(timerId);
-      resolve();
-    });
-    timerId = setTimeout(() => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      resolve();
-    }, timeoutMs);
-  });
 }
 
 export function useExportVideo(): ExportContextValue {
@@ -765,10 +751,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
         if (isVariableFps && outputFormat === "webm") {
           // Direct WebM from MediaRecorder (no transcode needed)
           for (let panelIndex = 0; panelIndex < targets.length; panelIndex += 1) {
-            updateExportProgress(
-              0.8 + (panelIndex / targets.length) * 0.19,
-              `Finalizing ${targets[panelIndex].title}`
-            );
+            updateExportProgress(0.8 + (panelIndex / targets.length) * 0.19, `Finalizing ${targets[panelIndex].title}`);
             const blob = new Blob(recorderData[panelIndex].chunks, { type: mimeType });
             const bytes = new Uint8Array(await blob.arrayBuffer());
             files.push({
@@ -883,10 +866,7 @@ export function ExportProvider({ children }: { children: ReactNode }) {
             onProgress: ({ phase, progress: encodeProgress }) => {
               const panelBase = panelIndex / targets.length;
               if (phase === "frames") {
-                updateExportProgress(
-                  0.68 + (panelBase + encodeProgress * 0.35) * 0.28,
-                  `Writing ${target.title}`
-                );
+                updateExportProgress(0.68 + (panelBase + encodeProgress * 0.35) * 0.28, `Writing ${target.title}`);
                 return;
               }
               if (phase === "encoding") {

@@ -277,9 +277,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       },
       xAxis: {
         type: "value",
-        name: "Time (s)",
-        nameLocation: "middle",
-        nameGap: 25,
+
         // nameTextStyle: {
         //   // color: "#374151",
         //   fontSize: 11,

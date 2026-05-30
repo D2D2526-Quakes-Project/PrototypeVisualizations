@@ -196,7 +196,7 @@ export async function encodeRealtimeCanvasWithMediaRecorder(params: {
   };
 }
 
-function nextAnimationFrame(timeoutMs = 50): Promise<void> {
+export function nextAnimationFrame(timeoutMs = 50): Promise<void> {
   let rafId: number | null = null;
   let timerId: ReturnType<typeof setTimeout> | null = null;
   return new Promise<void>((resolve) => {

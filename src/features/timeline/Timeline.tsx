@@ -322,6 +322,7 @@ export function Timeline({ api }: IDockviewPanelProps) {
           show: isLast,
           fontSize: 10,
           margin: 8,
+          formatter: (value: number) => `${formatNumber(value)}s`,
         },
         axisTick: {
           show: isLast,

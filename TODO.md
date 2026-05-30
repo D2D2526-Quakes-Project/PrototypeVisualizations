@@ -4,41 +4,19 @@
 
 ---
 
-- [x] Gray out the current threshold in-scene slider when thresholding disabled
-
-- [x] Current threshold bar in graphs only show when thresholding is enabled
-
 - [ ] Move some panel information into the panel tab when not in a tab group
 
 - [ ] Floor panels story drift section should use the metric row graph vis component. Same for the node panel and cross section panels.
 
-- [x] Timeline X axis need 's' suffix for seconds
-
-- [x] Remove X axis label on the Floor Waveform panel
-
-- [x] Hide "Show Hidden Metrics" button
-
 - [ ] The camera default position is different from the "home position" from the Home button.
-
-- [x] Tooltips on small playback controls
-
-- [x] Make the floor tick marks interactable to open floors
 
 - [ ] Floor panels / Cross section panels visualizations should zoom on hover or click to open popup enlarged
 
-- [x] Floor visibility list needs buttons to open floor panels
-
-- [ ] New tab & split buttons in magic panel should popover ask which panel to open
-
-- [x] Show threshold on hinge histograms
-
 - [ ] Using the precomputed data, show the hovered floor's average value for the current metric in the scene tooltip
 
-- [x] Profiles nav bar menu can wrap text while spinning and it creates layout shifts
+- [ ] Individual panel export button for quick access to export single panel image and video
 
-- [x] You can open a profile that requires data and the data is not avilable for his simulation. It should show a warning / gray it out with a tooltip
-
-- [x] Recording pauses when the window is unfocused because playback pauses when unfocues. Add an exception for recording.
+- [ ] Add filled regions to the floor waveform chart for areas above the current threshold (check image in the archive page)
 
 ---
 

@@ -8,13 +8,21 @@ interface StaticHingeHistogramProps {
   maxHistogram: HingeHistogramResult | null;
   minHistogram: HingeHistogramResult | null;
   height?: number;
+  thresholdValue?: number;
+  showThreshold?: boolean;
 }
 
 function getCenter(bin: { x0: number; x1: number }) {
   return (bin.x0 + bin.x1) / 2;
 }
 
-export function StaticHingeHistogram({ maxHistogram, minHistogram, height = 180 }: StaticHingeHistogramProps) {
+export function StaticHingeHistogram({
+  maxHistogram,
+  minHistogram,
+  height = 180,
+  thresholdValue,
+  showThreshold,
+}: StaticHingeHistogramProps) {
   const { echartsTheme } = useTheme();
   const option = useMemo((): EChartsOption => {
     const xValues = Array.from(
@@ -32,6 +40,8 @@ export function StaticHingeHistogram({ maxHistogram, minHistogram, height = 180 
       });
       return xValues.map((center) => countsByCenter.get(center) ?? 0);
     };
+
+    const showThresholdLine = showThreshold && thresholdValue != null && thresholdValue > 0;
 
     return {
       animation: false,
@@ -79,6 +89,17 @@ export function StaticHingeHistogram({ maxHistogram, minHistogram, height = 180 
           data: buildSeriesValues(maxHistogram),
           itemStyle: { color: "#d97706" },
           barGap: "10%",
+          ...(showThresholdLine
+            ? {
+                markLine: {
+                  symbol: "none",
+                  data: [{ xAxis: thresholdValue!.toFixed(3), name: "Threshold" }],
+                  lineStyle: { color: "#9ca3af", width: 2, type: "dashed" as const },
+                  label: { show: false },
+                  silent: true,
+                },
+              }
+            : {}),
         },
         {
           name: "Min Rotation",
@@ -89,7 +110,7 @@ export function StaticHingeHistogram({ maxHistogram, minHistogram, height = 180 
         },
       ],
     };
-  }, [maxHistogram, minHistogram]);
+  }, [maxHistogram, minHistogram, thresholdValue, showThreshold]);
 
   return (
     <ReactECharts

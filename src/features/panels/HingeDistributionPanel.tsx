@@ -9,6 +9,8 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/ThemeProvider";
+import { useThresholds } from "../metrics/useThresholds";
+import { useMetrics } from "../metrics/useMetrics";
 
 type HingeDistributionPanelState = {
   binCount: number;
@@ -43,12 +45,18 @@ interface HingeHistogramResult {
   mean: number;
 }
 
-function buildHingeHistogramOption(metric: MetricHistogram, clipPercentile: number, logScale: boolean): EChartsOption {
+function buildHingeHistogramOption(
+  metric: MetricHistogram,
+  clipPercentile: number,
+  logScale: boolean,
+  thresholdValue: number,
+  thresholdHighlighting: boolean
+): EChartsOption {
   if (!metric.histogram) {
     return {
       animation: false,
       legend: { data: [] },
-      xAxis: { type: "category", data: [] },
+      xAxis: { type: "value" },
       yAxis: { type: "value" },
       series: [],
     };
@@ -59,11 +67,11 @@ function buildHingeHistogramOption(metric: MetricHistogram, clipPercentile: numb
   const histogram = metric.histogram;
   const metricLabelWithUnit = metricUnit ? `${metricLabel} (${metricUnit})` : metricLabel;
 
-  const xLabels = histogram.bins.map((bin) => `${bin.x0.toFixed(2)}-${bin.x1.toFixed(2)}`);
+  const xData = histogram.bins.map((bin) => (bin.x0 + bin.x1) / 2);
   const counts = histogram.bins.map((bin) => bin.count);
   const clipCount = getClipCountFromPercentile(counts, clipPercentile);
   const hasClippedData = counts.some((value) => value > clipCount);
-  const yData = counts.map((count) => Math.min(count, clipCount));
+  const showThreshold = thresholdHighlighting && thresholdValue > 0 && metric.key === "r3Abs";
 
   return {
     animation: false,
@@ -95,18 +103,22 @@ function buildHingeHistogramOption(metric: MetricHistogram, clipPercentile: numb
       },
     },
     xAxis: {
-      type: "category",
-      data: xLabels,
+      type: "value",
       name: `Range (${metricUnit || "metric"})`,
       nameLocation: "middle",
       nameGap: 45,
       nameTextStyle: { color: "#737373", fontSize: 11 },
       axisLabel: {
-        rotate: 45,
         color: "#525252",
         fontSize: 10,
+        formatter: (value: number) => {
+          const bin = histogram.bins.find((b) => Math.abs((b.x0 + b.x1) / 2 - value) < 0.001);
+          return bin ? `${bin.x0.toFixed(2)}-${bin.x1.toFixed(2)}` : value.toFixed(2);
+        },
       },
       axisLine: { lineStyle: { color: "#d4d4d4" } },
+      min: histogram.bins.length > 0 ? histogram.bins[0].x0 : undefined,
+      max: histogram.bins.length > 0 ? histogram.bins[histogram.bins.length - 1].x1 : undefined,
     },
     yAxis: {
       type: logScale ? "log" : "value",
@@ -118,9 +130,20 @@ function buildHingeHistogramOption(metric: MetricHistogram, clipPercentile: numb
       {
         type: "bar",
         name: "Hinge number",
-        data: yData,
+        data: counts.map((c, i) => [xData[i], Math.min(c, clipCount)]),
         itemStyle: { color: "#000000", borderRadius: [3, 3, 0, 0] },
         barMaxWidth: 20,
+        ...(showThreshold
+          ? {
+              markLine: {
+                symbol: "none",
+                data: [{ xAxis: thresholdValue, name: "Threshold" }],
+                lineStyle: { color: "#9ca3af", width: 2, type: "dashed" as const },
+                label: { show: false },
+                silent: true,
+              },
+            }
+          : {}),
       },
     ],
     graphic:
@@ -152,6 +175,8 @@ type MetricHistogram = {
 export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
   const { animationData } = useAnimationData();
   const hingeData = animationData.hingeData;
+  const { thresholds } = useThresholds();
+  const { thresholdHighlighting } = useMetrics();
   const { echartsTheme } = useTheme();
 
   const { state: savedState, setState: setSavedState } = usePanelState<HingeDistributionPanelState>({
@@ -283,7 +308,8 @@ export function HingeDistributionPanel({ api }: IDockviewPanelProps) {
           <div className="space-y-3">
             {histograms.map((metric) => {
               const { key } = metric;
-              const option = buildHingeHistogramOption(metric, clipPercentile, logScale);
+              const thresholdValue = thresholds.hingeRotation ?? 0;
+              const option = buildHingeHistogramOption(metric, clipPercentile, logScale, thresholdValue, thresholdHighlighting);
 
               return (
                 <div key={key} className="border-border bg-background rounded border p-2">

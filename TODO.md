@@ -26,17 +26,17 @@
 
 - [ ] Floor panels / Cross section panels visualizations should zoom on hover or click to open popup enlarged
 
-- [ ] Floor visibility list needs buttons to open floor panels
+- [x] Floor visibility list needs buttons to open floor panels
 
 - [ ] New tab & split buttons in magic panel should popover ask which panel to open
 
-- [ ] Show threshold on hinge histograms
+- [x] Show threshold on hinge histograms
 
 - [ ] Using the precomputed data, show the hovered floor's average value for the current metric in the scene tooltip
 
 - [x] Profiles nav bar menu can wrap text while spinning and it creates layout shifts
 
-- [ ] You can open a profile that requires data and the data is not avilable for his simulation. It should show a warning / gray it out with a tooltip
+- [x] You can open a profile that requires data and the data is not avilable for his simulation. It should show a warning / gray it out with a tooltip
 
 - [x] Recording pauses when the window is unfocused because playback pauses when unfocues. Add an exception for recording.
 

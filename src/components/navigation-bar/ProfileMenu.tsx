@@ -2,9 +2,8 @@ import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { useProfileIds, useProfileData, useProfileActions, useStoreSaving } from "@/state";
 import { BUILT_IN_PROFILE_DEFINITIONS, PROFILE_LABELS, type BuiltInProfileId } from "@/state/default";
 import { MenubarContent, MenubarMenu, MenubarRadioGroup, MenubarRadioItem, MenubarTrigger } from "../ui/menubar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DATASET_LABELS, type OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
-import { LoaderCircleIcon } from "lucide-react";
+import { AlertTriangleIcon, LoaderCircleIcon } from "lucide-react";
 
 export function ProfileMenu() {
   const profileId = useProfileData((s) => s.profileId);
@@ -52,28 +51,25 @@ export function ProfileMenu() {
             {availableProfileIds.map((profile) => {
               const available = isProfileAvailable(profile);
               const missing = unavailableDatasets(profile);
-              const item = (
+              const tooltip = available
+                ? undefined
+                : `Requires ${missing.map((k) => DATASET_LABELS[k as keyof typeof DATASET_LABELS]).join(", ")} — not available for this simulation`;
+
+              return (
                 <MenubarRadioItem
                   key={profile}
                   value={profile}
                   disabled={!available}
+                  title={tooltip}
                   className="justify-between"
                   onSelect={(e) => {
                     if (!available) e.preventDefault();
                   }}>
-                  {PROFILE_LABELS[profile] ?? profile}
+                  <span className="flex items-center gap-1.5">
+                    {!available && <AlertTriangleIcon size={11} className="text-warning -ml-5.5 shrink-0" />}
+                    {PROFILE_LABELS[profile] ?? profile}
+                  </span>
                 </MenubarRadioItem>
-              );
-
-              if (available) return item;
-
-              return (
-                <Tooltip key={profile}>
-                  <TooltipTrigger asChild>{item}</TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-60">
-                    Requires {missing.map((k) => DATASET_LABELS[k as keyof typeof DATASET_LABELS]).join(", ")} &mdash; not available for this simulation
-                  </TooltipContent>
-                </Tooltip>
               );
             })}
           </MenubarRadioGroup>

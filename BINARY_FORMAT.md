@@ -1,8 +1,8 @@
 # BLD Binary Format Specification
 
-**Project:** Quakes building simulation visualization
-**Current writer:** `scripts/generate_binary_data.py`
-**Current reader:** `src/features/animation-data/data-loading/incrementalData.ts`
+For reference the code is here:\
+_Writer:_ `scripts/generate_binary_data.py` \
+_CReader:_ `src/features/animation-data/data-loading/incrementalData.ts`
 
 All `.bld` files are gzip-compressed binary containers with a JSON metadata header and a Float32 body.
 
@@ -17,6 +17,15 @@ After gzip decompression, every file has this layout:
 | `0x04 + L`     | space padding             | 0-3 ASCII space bytes so the body starts on a 4-byte boundary.            |
 | aligned offset | `float32[]` little-endian | Binary body. All offsets in code are relative to this aligned body start. |
 
+Writer behavior:
+
+```py
+f.write(struct.pack("<I", len(header_bytes)))
+f.write(header_bytes)
+f.write(b" " * padding_len)
+f.write(binary_data)
+```
+
 Reader behavior:
 
 ```ts
@@ -25,15 +34,6 @@ const metadata = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 4, h
 let bodyOffset = 4 + headerLen;
 if (bodyOffset % 4 !== 0) bodyOffset += 4 - (bodyOffset % 4);
 const bodyView = new Float32Array(buffer, bodyOffset);
-```
-
-Writer behavior:
-
-```py
-f.write(struct.pack("<I", len(header_bytes)))
-f.write(header_bytes)
-f.write(b" " * padding_len)
-f.write(binary_data)
 ```
 
 ## Building File
@@ -324,9 +324,3 @@ acceleration_rot.bld
 ```
 
 Raw files are cached in IndexedDB `QuakesCache/files`. Parsed/serialized core and optional payloads are cached in `QuakesCache/processed`, keyed by `PROCESSED_CACHE_VERSION`, selection, dataset key, source path, and file-size fingerprints.
-
-## Compatibility Notes
-
-- The current project is under active development and does not require backwards compatibility.
-- Header fields are the contract between `generate_binary_data.py` and TypeScript loaders. When adding fields, update `src/lib/types.ts`, `incrementalData.ts`, this file, and `DATA_DOCUMENTATION.md`.
-- All visualization-facing plots/charts still need titles, axis labels, legends or color bars, and tooltips per project requirements.

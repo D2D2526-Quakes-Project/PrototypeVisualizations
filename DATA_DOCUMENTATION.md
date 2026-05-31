@@ -9,76 +9,73 @@ The current data source root is `data/`, not `public/data/`. `public/data/` is g
 ```
 data/
 ├── csv/
-│   ├── 15story/
-│   │   ├── node_data.csv
-│   │   ├── building_height.csv
-│   │   ├── beam_data.csv
-│   │   ├── corner_positions.csv
-│   │   ├── hidden_floors.csv
-│   │   ├── name.txt
-│   │   ├── station3138/
-│   │   └── station3139/
-│   ├── 52story/
-│   │   ├── node_data.csv
-│   │   ├── building_height.csv
-│   │   ├── beam_data.csv
-│   │   ├── corner_positions.csv
-│   │   ├── hidden_floors.csv
-│   │   ├── name.txt
-│   │   ├── station3138/
-│   │   └── station3139/
-│   └── 73story/
+│   └── {building}/
 │       ├── node_data.csv
 │       ├── building_height.csv
+│       ├── beam_data.csv
+│       ├── corner_positions.csv
+│       ├── hidden_floors.csv
 │       ├── name.txt
-│       ├── station3138/
-│       └── station3139/
+│       ├── {simulation1}/
+│       │   ├── Accelerations/
+│       │   │   ├── A_H1T_Entire.txt
+│       │   │   ├── A_H2T_Entire.txt
+│       │   │   └── A_VT_Entire.txt
+│       │   ├── Displacements/
+│       │   │   ├── D_H1T_Entire.txt
+│       │   │   ├── D_H2T_Entire.txt
+│       │   │   └── D_VT_Entire.txt
+│       │   ├── Hinge results/
+│       │   │   └── hinge_data.csv
+│       │   ├── Shears/
+│       │   │   ├── Shears/*_H1M.txt
+│       │   │   ├── Shears/*_H2M.txt
+│       │   │   └── shear_data.csv
+│       │   ├── Velocities/
+│       │   │   ├── V_H1T_Entire.txt
+│       │   │   ├── V_H2T_Entire.txt
+│       │   │   └── V_VT_Entire.txt
+│       │   ├── name.txt
+│       │   └── ground_motion.txt
+│       │
+│       └── {...simulationN}/
 ├── binary/
-│   ├── 15story/
-│   ├── 52story/
-│   └── 73story/
+│   └── {building}/
 └── old15/
 ```
 
-Current compiled coverage:
-
-| Building  | Nodes | Stories | Building-level compiled files   | Simulation coverage                                                                                                 |
-| :-------- | ----: | ------: | :------------------------------ | :------------------------------------------------------------------------------------------------------------------ |
-| `15story` | 4,109 |      19 | `building.bld`, `beam_data.bld` | `station3138` and `station3139`: displacement, velocity, acceleration, rotations, ground motion, hinge, shear       |
-| `52story` | 2,121 |      54 | `building.bld`, `beam_data.bld` | `station3138` and `station3139`: displacement, velocity, acceleration, rotations, ground motion, hinge, shear       |
-| `73story` | 4,650 |      89 | `building.bld`                  | `station3138`: displacement linear/rotation and ground motion; `station3139`: displacement linear and ground motion |
-
-The app catalog lives in `src/data/index.json`. Local path entries are relative to `/data/{building}` or `/data/{building}/{simulation}`. R2 entries are full public URLs. `src/data/index.local.json` is a local-reference variant.
+The app catalog lives in `src/data/index.json`. R2 links are full public URLs.
 
 ## Raw Building Files
 
 Every processable building folder in `data/csv/{building}` must contain:
 
-| File                   | Required                             | Purpose                                       | Important columns                                                                       |
-| :--------------------- | :----------------------------------- | :-------------------------------------------- | :-------------------------------------------------------------------------------------- |
-| `node_data.csv`        | Yes                                  | Node IDs, coordinates, and restraint columns. | `Node ID`, `H1`, `H2`, `V`; restraint columns are preserved in source but not compiled. |
-| `building_height.csv`  | Yes                                  | Story labels and per-story heights.           | `Story level`, `Story Height (ft)`                                                      |
-| `name.txt`             | No                                   | Display name used by `generate_index.py`.     | Plain text, first/only line.                                                            |
-| `beam_data.csv`        | No, required for hinge visualization | Member connectivity and group names.          | `Group Name`, `Group ID`, `Element ID`, `I-Node ID`, `J-Node ID`                        |
-| `corner_positions.csv` | No                                   | Overrides auto-detected story corner nodes.   | `Corner`, `X Pos`, `Y Pos`, optional `Story`                                            |
-| `hidden_floors.csv`    | No                                   | Floors hidden by default in the interface.    | `Story` or `Story level`                                                                |
+| File                   | Required for Processing | Purpose                                     | Important columns                                                |
+| :--------------------- | :---------------------- | :------------------------------------------ | :--------------------------------------------------------------- |
+| `node_data.csv`        | Yes                     | Inform Node IDs, coordinates, and columns.  | `Node ID`, `H1`, `H2`, `V`.                                      |
+| `building_height.csv`  | Yes                     | Story labels and per-story heights.         | `Story level`, `Story Height (ft)`                               |
+| `name.txt`             | No                      | Display name used by `generate_index.py`.   | Plain text, first/only line.                                     |
+| `beam_data.csv`        | No, required for hinges | Member connectivity and group names.        | `Group Name`, `Group ID`, `Element ID`, `I-Node ID`, `J-Node ID` |
+| `corner_positions.csv` | No                      | Overrides auto-detected story corner nodes. | `Corner`, `X Pos`, `Y Pos`, optional `Story`                     |
+| `hidden_floors.csv`    | No                      | Floors hidden by default in the interface.  | Single column, no header                                         |
 
-`node_mapping.csv`, `building_center.csv`, and original `.xlsx` workbooks may exist as references, but the current compiler reads the CSV files listed above.
+Some files were originally `.xlsx` files, and converted to CSVs before processing. The XLSX files have extra header lines that are manually removed.
+`node_data.csv` was `Node_Data.xlsx`, `beam_data.csv` was `Element_Data.xlsx`/`Beam_Element_Data.xlsx`, and `building_height.csv` was `Building height.xlsx`.
 
 ### Units
 
 All compiled building geometry and metadata use inches.
 
-| Source value                    | Source unit                    | Compiled unit      | Notes                                                                                        |
-| :------------------------------ | :----------------------------- | :----------------- | :------------------------------------------------------------------------------------------- |
-| `node_data.csv` `H1`, `H2`, `V` | Inches or feet                 | Inches             | The compiler auto-detects scale `1` or `12` by matching node elevations to story elevations. |
-| `building_height.csv`           | Feet                           | Inches             | Stored as per-story heights in `building.bld`.                                               |
-| Response translations           | Inches                         | Inches             | Linear displacement, velocity, and acceleration keep source units.                           |
-| Response rotations              | Radians                        | Radians            | Rotation, rotation velocity, and rotation acceleration keep source units.                    |
-| Ground motion                   | Source acceleration components | Same source values | Stored as three float components per frame.                                                  |
-| Shear                           | Kip                            | Kip                | Stored after story alignment and cumulative top-down summing.                                |
+| Source value                    | Source unit    | Compiled unit  |
+| :------------------------------ | :------------- | :------------- |
+| `node_data.csv` `H1`, `H2`, `V` | Inches or feet | Inches         |
+| `building_height.csv`           | Feet           | Inches         |
+| Response translations           | Inches         | Inches         |
+| Response rotations              | Radians        | Radians        |
+| Ground motion                   | Acceleration/G | Acceleration/G |
+| Shear                           | Kip            | Kip            |
 
-The source coordinate system is H1/H2/V, mapped to X/Y/Z in compiled data. Three.js rendering uses a root rotation to display Z-up model data in a Y-up renderer.
+The source coordinate system is H1/H2/V, mapped to X/Y/Z in compiled data. Three.js rendering uses a root rotation to display Z-up model data, by default Threejs is a Y-up renderer.
 
 ## Raw Simulation Formats
 
@@ -134,7 +131,7 @@ D_H2_Grid_36.txt
 D_V_Grid_11.txt
 ```
 
-For grid files, all matching grid fragments are loaded, sorted by grid identifier, and merged by node ID into one dense array. Partial coverage is preserved. Current 52-story compiled response files record `1903` missing node indices because only selected grid lines are represented in the raw files.
+For grid files, all matching grid fragments are loaded, sorted by grid identifier, and merged by node ID into one dense array. Partial coverage is preserved.
 
 ### Ground Motion
 
@@ -142,7 +139,7 @@ For grid files, all matching grid fragments are loaded, sorted by grid identifie
 
 ### Hinge Results
 
-Current hinge parsing supports `Hinge results/hinge_data.csv`. `.xlsx` files may be present as source/reference exports, but `scripts/generate_binary_data.py` currently skips unsupported hinge formats unless a normalized CSV exists.
+Current hinge parsing supports `Hinge results/hinge_data.csv`.
 
 Required columns:
 
@@ -183,7 +180,7 @@ The compiler aligns shear rows to `building.bld` `story_order`, fills missing so
 
 ## Compiled Binary Files
 
-All `.bld` files are gzip-compressed containers with a 4-byte little-endian JSON header length, UTF-8 JSON metadata, 0-3 space bytes of padding to align the body, and a little-endian Float32 body. See `binaryformat.md` for the byte-level specification.
+All `.bld` files are gzip-compressed containers with a 4-byte little-endian JSON header length, UTF-8 JSON metadata, 0-3 space bytes of padding to align the body, and a little-endian Float32 body. See `BINARY_FORMAT.md` for the byte-level specification.
 
 Building-level files:
 

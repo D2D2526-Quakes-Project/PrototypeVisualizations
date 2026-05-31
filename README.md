@@ -1,314 +1,153 @@
-# Quakes Visualization Project
+# Quakes
 
-## Project Overview
+**Interactive seismic response visualization for tall building structural simulations**
 
-This is a comprehensive earthquake simulation visualization tool designed to extract maximum insight from structural analysis data. The project enables engineers and researchers to explore, analyze, and understand building behavior during seismic events through multiple synchronized views and visualization techniques.
+Quakes is a research tool for exploring time-history structural response data from building simulations. It renders building models in an interactive 3D scene, animates node displacements frame-by-frame, and shows a variety of metrics including interstory drift, story shear, and hinge demand summaries, across and interactive interface.
 
-## Core Philosophy
+![Quakes interface screenshot](./public/demo.png)
 
-The goal of this project is **maximum insight extraction** from simulation data. This means:
+## Features
 
-- Calculating distributions of all values
-- Inspecting individual values in detail
-- Viewing time series data
-- Narrowing down to cross sections or filtered node selections
-- Watching everything play in real-time with synchronized timelines
-- Viewing peak values and average values
-- Selecting specific time ranges for analysis
-- Different views for elevation and floor plan
-- Thresholding data for targeted flagging and spatial pattern detection
-- Many more creative visualization tools to show data in as many ways as possible
+**3D animated building response**
+A visualization of the building showing nodes, beam connections, floor slabs, and hinges. Moves in realtime to watch the simulation data. Toggleable floors and building slice visibility to narrow in on one part of the building. Scalable node displacement and positions to get better visibility on the motion. Quick camera presets and full orbit controls allow viewing the building from any angle. Visualize any metric across the entire building and set thresholds to highlight area of interest for values that get too high.
 
-## Project Structure
+**Dockable analysis panels**
+The interface uses a dockview layout that can be arranged freely. Available panels include:
 
-The codebase uses a feature-first structure:
+- _Floor waveform_ — time-series waveforms showing the average value of each floor
+- _Hinge distribution_ — histograms for showing peak hinge rotational distributions
+- _Corner metric chart_ — showing the a metric value at each corner on every floor
+- _Node/Floor/Cross Section Panels_ — view data and graphs for individual nodes, floors, and X/Y cross-sections of the building
 
-```text
-src/
-├── pages/                         # Route entry files only
-├── features/
-│   ├── view-3d/
-│   │   ├── components/            # Dock/panel wiring, canvas controls, render helpers
-│   │   ├── contexts/              # View-3D-specific contexts
-│   │   ├── hooks/                 # View-3D-specific hooks
-│   │   ├── lib/                   # View-3D-specific persistence/interaction helpers
-│   │   ├── panels/                # Dockview panel implementations
-│   │   ├── scenes/                # Three.js scene implementations
-│   │   └── page.tsx               # View3D feature page
-│   ├── view-volumes/
-│   │   ├── VolumeScene.tsx
-│   │   └── page.tsx
-│   ├── damage-threshold/
-│   │   ├── ThresholdBuilding.tsx
-│   │   └── page.tsx
-│   └── playback/                  # Shared playback/timeline behavior and controls
-├── state/                         # Global Zustand store
-├── data/                          # Data index and animation data provider/loading hook
-├── components/
-│   ├── ui/                        # Reusable UI primitives (shadcn)
-│   ├── NavigationBar.tsx
-│   ├── ErrorPage.tsx
-│   └── resizable.tsx
-└── lib/                           # Cross-feature utilities/types (metrics, parser, colors, utils)
+**Export**
+The interface supports exporting video of the 3D building playback and data graphs. Both DOM capture and canvas-native paths are supported.
+
+**Data profiles**
+Named profiles (Displacements, Hinges, Shear, Story Drifts) for easy switching between both panel layout and datasets. With on demand data loading, the browser loads only the three required startup files before the interface becomes usable. Optional datasets are fetched and parsed incrementally with a background worker.
+
+## Data pipeline
+
+Before the data is loaded into the viewer, it gets processed to remove uneccessary data and reduce file sizes. The processing pipeline converts raw structural analysis output (PERFORM-3D / LADWP text exports, hinge CSVs, data csvs) into compact gzip-compressed binary files (`.bld`) served from Cloudflare R2.
+
+### Data Processing
+
+```mermaid
+flowchart LR
+  subgraph SRC["Raw source data"]
+    direction LR
+    A1["node_data.csv<br>building_height.csv<br>beam_data.csv"]
+    A2["D_*.txt / V_*.txt / A_*.txt<br>(Entire or Grid format)"]
+    A3["ground_motion.txt"]
+    A4["hinge_data.csv<br>Shears/*_H1M.txt<br>Shears/*_H2M.txt"]
+  end
+
+  subgraph COMP["Binary compiler"]
+    direction TB
+    B1["Parse nodes<br>unit detect & normalise"]
+    B2["Parse beam connectivity"]
+    B3["Merge Entire/Grid files<br>align to node index"]
+    B4["Parse ground_motion.txt<br>store 3-component Float32 array"]
+    B5["Filter Group 2 / Perf Level 1<br>resolve I/J beam ends"]
+    B6["Align stories, top-down sum"]
+  end
+
+  subgraph OUT["Compiled output"]
+    direction TB
+    D1["building.bld"]
+    D2["beam_data.bld"]
+    D3["displacement_lin.bld<br>displacement_rot.bld"]
+    D4["velocity_lin.bld<br>velocity_rot.bld"]
+    D5["acceleration_lin.bld<br>acceleration_rot.bld"]
+    D6["ground_motion.bld"]
+    D7["hinge_data.bld"]
+    D8["shear_data.bld"]
+    D9(["index.json"])
+  end
+
+  B1-->|Compress| D1
+  B2-->|Compress| D2
+  B3-->|Compress| D3 & D4 & D5
+  B4-->|Compress| D6
+  B5-->|Compress| D7
+  B6-->|Compress| D8
+
+  A1 --> B1
+  A1 --> B2
+  A2 --> B3
+  A3 --> B4
+  A4 --> B5
+  A4 --> B6
+
+  classDef input fill:#E1F5EE,stroke:#0F6E56,color:#04342C
+  classDef compiler fill:#E0EFF9,stroke:#4F7B6B,color:#1F3D3A
+  classDef out fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
+
+  class A1,A2,A3,A4 input
+  class B1,B2,B3,B4,B5,B6,B7 compiler
+  class D1,D2,D3,D4,D5,D6,D7,D8,D9 out
+	style SRC fill:#FFFFFF,stroke-width:0px
+	style OUT fill:#FFFFFF,stroke-width:0px
+	style COMP fill:#FFFFFF,stroke-width:2px,stroke-dasharray:5 5
 ```
-
-### Organization Rules
-
-1. If a file is only used by one feature, keep it in that feature folder.
-2. Keep `src/pages` thin: route wiring only.
-3. Keep `src/state`, `src/data`, and `src/lib` for truly cross-feature concerns.
-4. Keep `src/components/ui` for reusable presentational primitives only.
-
-## Key Values System
-
-The project tracks and visualizes numerous key values, each with threshold controls for targeted analysis:
-
-### Displacement Values
-
-| Value                  | Description                            | Unit |
-| ---------------------- | -------------------------------------- | ---- |
-| Displacement X         | Horizontal displacement in X direction | in   |
-| Displacement Y         | Horizontal displacement in Y direction | in   |
-| Displacement Z         | Vertical displacement (elevation)      | in   |
-| Displacement Magnitude | Combined displacement magnitude        | in   |
-| Rotation RX            | Rotation about X axis                  | rad  |
-| Rotation RY            | Rotation about Y axis                  | rad  |
-| Rotation RZ            | Rotation about Z axis                  | rad  |
-| Rotation Magnitude     | Combined rotation magnitude            | rad  |
-| Displacement Peaks     | Maximum displacement values            | in   |
-| Displacement Average   | Mean displacement across selection     | in   |
-
-### Velocity Values
-
-| Value              | Description                         | Unit  |
-| ------------------ | ----------------------------------- | ----- |
-| Velocity X         | Velocity in X direction             | in/s  |
-| Velocity Y         | Velocity in Y direction             | in/s  |
-| Velocity Z         | Velocity in Z direction             | in/s  |
-| Velocity Magnitude | Combined velocity magnitude         | in/s  |
-| Velocity RX        | Angular velocity about X axis       | rad/s |
-| Velocity RY        | Angular velocity about Y axis       | rad/s |
-| Velocity RZ        | Angular velocity about Z axis       | rad/s |
-| Velocity Magnitude | Combined angular velocity magnitude | rad/s |
-| Velocity Peaks     | Maximum velocity values             | in/s  |
-| Velocity Average   | Mean velocity across selection      | in/s  |
-
-### Acceleration Values
-
-| Value                  | Description                             | Unit   |
-| ---------------------- | --------------------------------------- | ------ |
-| Acceleration X         | Acceleration in X direction             | in/s²  |
-| Acceleration Y         | Acceleration in Y direction             | in/s²  |
-| Acceleration Z         | Acceleration in Z direction             | in/s²  |
-| Acceleration Magnitude | Combined acceleration magnitude         | in/s²  |
-| Acceleration RX        | Angular acceleration about X axis       | rad/s² |
-| Acceleration RY        | Angular acceleration about Y axis       | rad/s² |
-| Acceleration RZ        | Angular acceleration about Z axis       | rad/s² |
-| Acceleration Magnitude | Combined angular acceleration magnitude | rad/s² |
-| Acceleration Peaks     | Maximum acceleration values             | in/s²  |
-| Acceleration Average   | Mean acceleration across selection      | in/s²  |
-
-### Interstory Drift Values
-
-| Value                    | Description                         | Unit |
-| ------------------------ | ----------------------------------- | ---- |
-| Interstory Drift Peaks   | Maximum interstory drift ratios     | %    |
-| Interstory Drift Average | Mean interstory drift across floors | %    |
-
-### Story Drift (Damage Threshold)
-
-- Warning threshold for story drift ratio
-- Per-corner tracking (NW, NE, SW, SE)
-- Time to warning (when each corner crosses threshold)
-
-## Context Synchronization
-
-All values across the project must be synchronized through React context:
-
-### Time Context
-
-- Current frame index
-- Playback state (playing, paused, speed)
-- Time range selection for analysis
-- Total simulation time
-
-### Selection Context
-
-- Floor/Story selection (visible floors)
-- Node selection (individual nodes or groups)
-- Cross-section selection (slice planes)
-
-### View Context
-
-- View mode (All Nodes, Floor Slabs, Corners Only, Vertical Connections, Damage Threshold)
-- Color metric (what values to visualize on the 3D model)
-- Camera position and orientation
-
-### Threshold Context
-
-- All threshold values for each key metric
-- Color mappings for threshold visualization
-
-### Data Context
-
-- Animation data (positions, velocities, accelerations)
-- Precomputed statistics (peaks, averages, distributions)
-- Node metadata (stories, corners, connections)
-
-## Current Features
-
-### 3D Visualization
-
-- Interactive 3D building model with orbit controls
-- Multiple view modes:
-  - All Nodes
-  - Floor Slabs
-  - Corners Only
-  - Vertical Connections
-  - Damage Threshold (color-coded drift visualization)
-- Perspective and orthographic camera modes
-- Exploded view for interior visibility
-- Displacement visualization with scale controls
-- Slice/clip planes for cross-section analysis
-
-### Timeline & Playback
-
-- Frame-by-frame navigation
-- Play/pause controls
-- Playback speed adjustment
-- Time-based scrubbing
-- Small timeline for quick navigation
-
-### Data Panels
-
-- Interstory Drift Chart
-- Floor Displacement Chart
-- Velocity Time Series
-- Story Drift Heatmap
-- Histogram distributions
-- Peak Values display
-- Data Table with detailed values
-- Statistics Panel
-- Correlation Matrix
-- Damage Threshold Panel (floors, corners, warning times)
-
-### Controls
-
-- View preset buttons (North, East, South, West, Top, Bottom)
-- Camera type toggle (Perspective/Orthographic)
-- Smoothing toggle
-- Floor visibility controls
-- Node selection (click and box selection)
-
-## Future Endeavors
-
-### 1. Hinge/Beam Element Data
-
-**Priority: High**
-
-Parse and handle hinge and beam element data from the data folder. This requires:
-
-- Python parsing scripts for binary format
-- JavaScript parsing for web consumption
-- Binary data construction for efficient storage
-- Visualization of element forces, plastic hinges, yielding
-- Connection behavior visualization
-
-### 2. Multi-Simulation Comparison
-
-**Priority: High**
-
-Side-by-side comparison views enabling:
-
-- Opening two simulation datasets simultaneously
-- Synchronized timeline playback
-- Difference visualization between simulations
-- Parameter comparison (different earthquake inputs, different building configurations)
-- Split-screen or overlay modes
-
-### 3. Export Functionality
-
-**Priority: Medium**
-
-Export capabilities for sharing and publication:
-
-- High-resolution image exports of all canvases
-- Animated GIF exports of playback sequences
-- Video recording (MP4/WebM) of animations
-- Plot and chart exports (PNG, SVG, PDF)
-- Data table exports (CSV, Excel)
-
-## Scientific Visualization Standards
-
-All visualizations must be designed for scientific accuracy and publication quality:
-
-### Requirements
-
-- **Detailed Keys**: All color maps must have legends with units
-- **Axis Labels**: All charts must have labeled axes with units
-- **Descriptions**: Each visualization should have a title and description
-- **Color Bars**: Continuous value visualizations need color scale bars
-- **Units**: All values must display appropriate units (in, in/s, in/s², rad, etc.)
-- **Descriptions**: Tooltips and labels explaining what values represent
-
-### Color Mapping Standards
-
-- Use perceptually uniform color scales where possible
-- Provide color bar legends for all continuous mappings
-- Ensure accessibility (colorblind-friendly palettes)
-- Maintain consistent color meanings across all views
-
-### Plot Standards
-
-- Proper axis scaling and ticks
-- Grid lines where appropriate
-- Clear legends for multi-series plots
-- Descriptive titles
-- Source/location metadata when applicable
-
-## Architecture Notes
-
-### State and Providers
-
-- Global state is managed in `src/state` via Zustand.
-- View-specific provider/context logic lives under `src/features/view-3d/contexts`.
-- Playback behavior and controls live under `src/features/playback`.
-
-### Data Flow
-
-1. Animation data loaded from parsed simulation files
-2. Precomputed statistics calculated during load
-3. Context providers distribute data to all components
-4. 3D view, charts, and panels all react to context changes
-5. User interactions update context, triggering re-renders
-
-### Panel System
-
-The project uses a dockview-based panel system allowing:
-
-- Flexible panel layouts
-- Drag and drop positioning
-- Multiple panels of the same type
-- Panel minimize/maximize/close controls
-
-## Data Sources
-
-Simulation data is expected in the data folder with:
-
-- Node positions and connectivity
-- Time series of displacements, velocities, accelerations
-- Story and corner metadata
-- Peak values and statistics
-- (Future) Element data (hinges, beams, connections)
-
-## Development Guidelines
-
-1. **Feature First**: Place code in feature folders unless it is truly cross-feature
-2. **Scientific Accuracy**: Always include units, labels, and legends
-3. **Synchronization**: All views must sync to the same timeline/selection
-4. **Performance**: Use memoization and efficient data structures
-5. **Extensibility**: Design panels and views to be composable
 
 ---
 
-_Last Updated: February 2026_
+## Primary Technology
+
+- _Rendering_ - Three.js, React Three Fiber, React Three Drei
+- _Charts_ - Apache ECharts
+- _UI framework_ - React 19, Tailwind CSS v4, shadcn/ui, Radix UI
+- _Export_ - @ffmpeg/ffmpeg (WASM), MediaRecorder API, JSZip
+
+---
+
+## Building & Running
+
+**Python pipeline** (data preparation only)
+
+```
+python >= 3.9
+numpy
+pandas
+```
+
+Install with `pip install -r scripts/requirements.txt`.
+
+Run the build script: `python3 scripts/generate_binary_data.py`
+
+**JavaScript / browser app**
+
+Install dependencies: `pnpm install`
+
+Run locally: `pnpm dev`
+
+Build: `pnpm build`
+
+---
+
+<!--
+## Citation
+
+If you use this tool or the associated datasets in published research, please cite:
+
+```
+
+[Author(s)]. (Year). Quakes: Interactive seismic response visualization
+for tall building structural simulations [Software].
+[Institution/Repository URL]
+
+```
+
+---
+
+## License
+
+[Add license here]
+
+---
+
+## Contact
+
+```
+
+``` -->

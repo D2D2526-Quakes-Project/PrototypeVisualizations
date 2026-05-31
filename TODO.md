@@ -18,6 +18,8 @@
 
 - [ ] Add filled regions to the floor waveform chart for areas above the current threshold (check image in the archive page)
 
+- [ ] Make the hinges section on the side panels have grayscale min and max bars and split the legend so that min is on the left and max is on the right
+
 ---
 
 ### 5.2 Existing Panel Improvements

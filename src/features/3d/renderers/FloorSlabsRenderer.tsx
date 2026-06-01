@@ -51,7 +51,7 @@ const FloorSlab = memo(function FloorSlab({
   const { floorOpacity } = useNodeRendering();
   const { openFloorPanel } = useOpenPanels();
 
-  const nodeIds = useMemo(() => stories[storyId], [storyId, stories]);
+  const nodeIds = useMemo(() => stories[storyId] ?? [], [storyId, stories]);
   const isHoveredRef = useRef(isHovered);
   useEffect(() => {
     isHoveredRef.current = isHovered;

@@ -23,7 +23,7 @@ export function OpenPanelNodesRenderer() {
     });
   }, [nodeIds, frameIndex, getNodeVisualPosition]);
 
-  const size = camera.orthographic ? (camera.cameraZoom ?? 1) * 4 : 8;
+  const size = camera.orthographic ? (camera.cameraZoom ?? 1) * 2 : 8;
 
   return (
     <Points frustumCulled={false}>

@@ -834,9 +834,13 @@ def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
     """Infer whether node elevations are in inches or feet by matching normalized story elevations."""
     candidate_scales = [1.0, 12.0]
     tolerance_in = 0.5
+    minV = node_elevations_in.min()
+    node_elevations_in = node_elevations_in - minV
 
     node_elevations = np.asarray(node_elevations_in, dtype=np.float64)
     story_elevations = np.asarray(story_elevations_in, dtype=np.float64)
+    # Normalize both to start at 0 so they share the same reference frame
+    story_elevations = story_elevations - np.min(story_elevations)
 
     if node_elevations.size == 0 or story_elevations.size == 0:
         return 1.0
@@ -845,6 +849,7 @@ def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
     best_scale = 1.0
     best_matched = -1
     best_mean_delta = np.inf
+    low_match_threshold = max(5, len(story_elevations) * 0.2)
 
     for scale in candidate_scales:
         scaled_elev = unique_node_elevations * scale
@@ -855,7 +860,16 @@ def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
 
         print(f"Scale check ({scale:.1f}): matched {matched_count}/{len(story_elevations)} " f"story elevations (mean abs delta={mean_delta:.3f} in).")
 
-        if matched_count > best_matched or (matched_count == best_matched and mean_delta < best_mean_delta):
+        is_better = False
+        if matched_count > best_matched:
+            if matched_count >= low_match_threshold:
+                is_better = True
+            elif best_matched < low_match_threshold and mean_delta < best_mean_delta:
+                is_better = True
+        elif matched_count == best_matched and mean_delta < best_mean_delta:
+            is_better = True
+
+        if is_better:
             best_scale = scale
             best_matched = matched_count
             best_mean_delta = mean_delta
@@ -868,12 +882,20 @@ def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scal
     stories = {}
     unmatched_nodes = []
 
+    # Precompute story range boundaries (in top-to-bottom CSV order).
+    # story_elevations[i] is the TOP of story i.
+    # The bottom of story i = story_elevations[i+1] (next story's top), or 0 for the lowest.
+    n = len(story_elevations)
+    story_bottoms = np.zeros(n, dtype=np.float64)
+    story_bottoms[:-1] = story_elevations[1:]
+
     for _, row in df_nodes.iterrows():
         x = row["H1"] * node_scale
         y = row["H2"] * node_scale
         z = row["V"] * node_scale - min_v
-        matches = np.where(np.isclose(story_elevations, z, atol=tol))[0]
-        if len(matches) == 0:
+
+        exact_matches = np.where(np.isclose(story_elevations, z, atol=tol))[0]
+        if len(exact_matches) == 0:
             unmatched_nodes.append(
                 {
                     "node_id": row["Node ID"],
@@ -884,7 +906,7 @@ def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scal
             )
             continue
 
-        stidx = int(matches[0])
+        stidx = int(exact_matches[0])
         story = story_levels[stidx]
         stories.setdefault(story, []).append(row["Node ID"] if pd.notna(row["Node ID"]) else None)
 
@@ -894,13 +916,13 @@ def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scal
     return stories, unmatched_nodes
 
 
-def _warn_unmatched_nodes(building_name, unmatched_nodes, story_elevations):
+def _warn_unmatched_nodes(building_name, unmatched_nodes, total_nodes, story_elevations):
     if not unmatched_nodes:
         print(f"✓ All nodes were assigned to story elevations for {building_name}.")
         return
 
     unmatched_count = len(unmatched_nodes)
-    print(f"\n⚠ WARNING: {unmatched_count} nodes in {building_name} were not assigned to any story elevation.")
+    print(f"\n⚠ WARNING: {unmatched_count}/{total_nodes} nodes in {building_name} were not assigned to any story elevation.")
     print("      These nodes often indicate non-floor nodes (e.g., hinges, connectors, auxiliary points) or mismatched unit scale.")
     print("      node_id, x(in), y(in), z(in):")
 
@@ -1155,16 +1177,14 @@ def process_building(building):
     node_to_inches_scale = _infer_node_to_inches_scale(df_nodes["V"].values, story_elevations_array)
 
     # 3. Prepare Binary Buffer (Only XYZ), always written in inches.
+    min_v = df_nodes["V"].min() * node_to_inches_scale
     buffer = np.zeros(count_nodes * 3, dtype=np.float32)
     for _, row in df_nodes.iterrows():
         idx = id_to_index.get(row["Node ID"])
         if idx is not None:
             buffer[idx * 3 + 0] = row["H1"] * node_to_inches_scale
             buffer[idx * 3 + 1] = row["H2"] * node_to_inches_scale
-            buffer[idx * 3 + 2] = row["V"] * node_to_inches_scale
-
-    # Write node positions in inches
-    min_v = df_nodes["V"].min() * node_to_inches_scale
+            buffer[idx * 3 + 2] = row["V"] * node_to_inches_scale - min_v
     story_levels = list(storiesElevations.keys())
     story_elevations = story_elevations_array
 
@@ -1175,7 +1195,7 @@ def process_building(building):
         node_to_inches_scale,
         min_v,
     )
-    _warn_unmatched_nodes(building_name, unmatched_nodes, story_elevations)
+    _warn_unmatched_nodes(building_name, unmatched_nodes, len(df_nodes), story_elevations)
 
     # Convert discovered floor Node IDs to zero-based geometry indices used by parser/binary output
     stories = {story: [id_to_index[nid] for nid in node_indices if nid in id_to_index] for story, node_indices in stories.items()}
@@ -2084,29 +2104,6 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_index_by
     # Process static per-floor shear data
     if simulation.get("has_shear_data") and should_process_metric("shear"):
         process_shear_data(files_config, simulation_output_dir, story_order)
-
-
-def process_complete_building(building):
-    """Process a complete building with all its simulations (for multiprocessing)"""
-    try:
-        building_name = building["name"]
-
-        # Discover simulations for this building
-        simulations = discover_simulations(building["folder"])
-
-        if not simulations:
-            return (building_name, "skipped", "no simulations found")
-
-        # Process building (creates building.bld)
-        id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order = process_building(building)
-
-        # Process each simulation (can also be parallelized per simulation)
-        for simulation in simulations:
-            process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order)
-
-        return (building_name, "success", f"processed {len(simulations)} simulation(s)")
-    except Exception as e:
-        return (building["name"], "error", e)
 
 
 # --- MAIN ---

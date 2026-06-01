@@ -756,17 +756,17 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
       const belowIdx = metadata.nodeToBelow[nodeIdx];
       if (belowIdx === null || belowIdx < 0) continue; // ground floor or no match
 
-      // Current node 3D magnitude
+      // Current node 2D magnitude
       const nX = dispLin[frameOffset + nodeIdx * 3] ?? 0;
       const nY = dispLin[frameOffset + nodeIdx * 3 + 1] ?? 0;
-      const nZ = dispLin[frameOffset + nodeIdx * 3 + 2] ?? 0;
-      const currentMag = Math.sqrt(nX * nX + nY * nY + nZ * nZ);
+      // const nZ = dispLin[frameOffset + nodeIdx * 3 + 2] ?? 0;
+      const currentMag = Math.sqrt(nX * nX + nY * nY);
 
-      // Node directly below 3D magnitude
+      // Node directly below 2D magnitude
       const bX = dispLin[frameOffset + belowIdx * 3] ?? 0;
       const bY = dispLin[frameOffset + belowIdx * 3 + 1] ?? 0;
-      const bZ = dispLin[frameOffset + belowIdx * 3 + 2] ?? 0;
-      const belowMag = Math.sqrt(bX * bX + bY * bY + bZ * bZ);
+      // const bZ = dispLin[frameOffset + belowIdx * 3 + 2] ?? 0;
+      const belowMag = Math.sqrt(bX * bX + bY * bY);
 
       const height = nodeToStoryHeight[nodeIdx] || 1;
 

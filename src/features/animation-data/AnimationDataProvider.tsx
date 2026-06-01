@@ -20,7 +20,6 @@ import {
   DATASET_KEYS,
   DATASET_LABELS,
   getDatasetAvailability,
-  INTERNAL_DATASET_KEYS,
   isOptionalDatasetKey,
   OPTIONAL_DATASET_KEYS,
   REQUIRED_DATASET_KEYS,
@@ -60,8 +59,7 @@ function buildDatasetStates(
   return Object.fromEntries(
     DATASET_KEYS.map((key) => {
       const required = (REQUIRED_DATASET_KEYS as readonly string[]).includes(key);
-      const internal = (INTERNAL_DATASET_KEYS as readonly string[]).includes(key);
-      const selected = required || internal || (isOptionalDatasetKey(key) ? optionalLoads[key] : false);
+      const selected = required || (isOptionalDatasetKey(key) ? optionalLoads[key] : false);
       return [
         key,
         {

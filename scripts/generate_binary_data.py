@@ -934,33 +934,32 @@ def _warn_unmatched_nodes(building_name, unmatched_nodes, total_nodes, story_ele
         print(f"      ... and {unmatched_count - len(sample)} more.")
 
 
-def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, index_to_id, node_to_inches_scale, xz_tolerance=0.1):
+def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, index_to_id, node_to_inches_scale, xy_tolerance=32):
     """
     Compute node-to-below mapping for ISD calculation.
     For each node on each story (except ground), find the node directly below it
-    based on matching XZ position (within tolerance).
+    based on matching XY position (within tolerance) and closest height below.
 
     Returns:
         node_to_below: list where node_to_below[nodeIdx] = belowNodeIdx or -1 if no match
         unmatched_nodes: list of nodes that couldn't find a target below
     """
-    print(f"\n--- Computing Node-to-Below Mapping (XZ tolerance: {xz_tolerance} in) ---")
+    print(f"\n--- Computing Node-to-Below Mapping (XY tolerance: {xy_tolerance} in) ---")
 
     node_to_below = [-1] * len(id_to_index)
     unmatched_nodes = []
-    missing_columns = set()
 
-    # Build lookup: (x, y) -> nodeIdx for each story
+    # Build lookup: list of (x, y, z, node_idx) for each story
     story_positions = {}
     for story, node_indices in stories.items():
-        positions = {}
+        positions = []
         for node_idx in node_indices:
             node_id = index_to_id[node_idx]
             row = df_nodes[df_nodes["Node ID"] == node_id].iloc[0]
             x = row["H1"] * node_to_inches_scale
             y = row["H2"] * node_to_inches_scale
-            # Round to avoid floating point issues
-            positions[(round(x, 4), round(y, 4))] = node_idx
+            z = row["V"] * node_to_inches_scale
+            positions.append((x, y, z, node_idx))
         story_positions[story] = positions
 
     # Process stories from bottom up (skip ground floor for finding below)
@@ -969,34 +968,30 @@ def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, 
             continue  # Ground floor has no story below
         story_below = story_order[i - 1]
 
-        current_positions = story_positions.get(story, {})
-        below_positions = story_positions.get(story_below, {})
+        current_positions = story_positions.get(story, [])
+        below_positions = story_positions.get(story_below, [])
 
         if not current_positions:
             continue
 
         matched_count = 0
-        for (x, y), node_idx in current_positions.items():
-            # Find exact match in story below (with tolerance via rounding)
-            if (x, y) in below_positions:
-                below_idx = below_positions[(x, y)]
-                node_to_below[node_idx] = below_idx
+        for x, y, z, node_idx in current_positions:
+            # Find candidates on the floor below within XY tolerance
+            candidates = [(bz, bidx) for (bx, by, bz, bidx) in below_positions if abs(bx - x) < xy_tolerance and abs(by - y) < xy_tolerance and bz < z]
+
+            if candidates:
+                # Pick the closest by height below (largest bz = smallest gap)
+                best = max(candidates, key=lambda c: c[0])
+                node_to_below[node_idx] = best[1]
                 matched_count += 1
             else:
-                # Check for nearby nodes (for logging missing columns)
-                nearby = False
-                for bx, by in below_positions.keys():
-                    if abs(bx - x) < xz_tolerance and abs(by - y) < xz_tolerance:
-                        nearby = True
-                        break
-                if not nearby:
-                    missing_columns.add((story, x, y))
                 unmatched_nodes.append(
                     {
                         "node_idx": node_idx,
                         "story": story,
                         "x": x,
                         "y": y,
+                        "z": z,
                     }
                 )
 
@@ -1004,25 +999,16 @@ def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, 
 
     # Report unmatched nodes
     if unmatched_nodes:
-        print(f"\n⚠ WARNING: {len(unmatched_nodes)} nodes could not find exact match below:")
+        print(f"\n⚠ WARNING: {len(unmatched_nodes)} nodes could not find a match below:")
         sample = unmatched_nodes[:15]
         for node in sample:
-            print(f"      Node {node['node_idx']} at story {node['story']}: ({node['x']:.3f}, {node['y']:.3f})")
+            print(f"      Node {node['node_idx']} at story {node['story']}: ({node['x']:.3f}, {node['y']:.3f}, z={node['z']:.3f})")
         if len(unmatched_nodes) > len(sample):
             print(f"      ... and {len(unmatched_nodes) - len(sample)} more")
 
-    # Report missing columns
-    if missing_columns:
-        print(f"\n⚠ WARNING: {len(missing_columns)} column positions have no exact match below:")
-        sample = list(missing_columns)[:10]
-        for story, x, y in sample:
-            print(f"      Story {story}: ({x:.3f}, {y:.3f})")
-        if len(missing_columns) > len(sample):
-            print(f"      ... and {len(missing_columns) - len(sample)} more")
-
     print(f"✓ Node-to-below mapping complete: {sum(1 for x in node_to_below if x >= 0)}/{len(node_to_below)} nodes mapped")
 
-    return node_to_below, unmatched_nodes, missing_columns
+    return node_to_below, unmatched_nodes
 
 
 def _compute_cross_sections(df_nodes, id_to_index, node_scale, tol=6.0):
@@ -1319,7 +1305,7 @@ def process_building(building):
     print(f"Story order: {storyOrder}")
 
     # 3b. Compute node-to-below mapping for ISD calculation
-    node_to_below, unmatched_nodes, missing_columns = _compute_node_to_below_mapping(stories, storyOrder, df_nodes, id_to_index, index_to_id, node_to_inches_scale, xz_tolerance=0.1)
+    node_to_below, unmatched_nodes = _compute_node_to_below_mapping(stories, storyOrder, df_nodes, id_to_index, index_to_id, node_to_inches_scale)
 
     # 3c. Compute X/Y cross_sections for cross-sections
     cross_sections_x, cross_sections_y = _compute_cross_sections(df_nodes, id_to_index, node_to_inches_scale, tol=6.0)

@@ -2,7 +2,8 @@ import type { BinaryBuilding, BinarySimulation } from "@/lib/types";
 import type { OptionalDataLoadOptions } from "./loadingTypes";
 
 export const DEFAULT_OPTIONAL_DATA_LOAD_OPTIONS: OptionalDataLoadOptions = {
-  hingeData: true,
+  beamData: true,
+  hingeData: false,
   shearData: false,
   displacementRot: false,
   velocityLin: false,
@@ -23,6 +24,7 @@ export function getAvailableOptionalDataLoadOptions(
   simulation: BinarySimulation
 ): OptionalDataLoadOptions {
   return {
+    beamData: Boolean(building.beamData),
     hingeData: Boolean(simulation.hingeData) && Boolean(building.beamData),
     shearData: Boolean(simulation.shearData),
     displacementRot: Boolean(simulation.displacementRot),
@@ -42,6 +44,7 @@ export function getEffectiveOptionalDataLoadOptions(
   const available = getAvailableOptionalDataLoadOptions(building, simulation);
 
   return {
+    beamData: normalized.beamData && available.beamData,
     hingeData: normalized.hingeData && available.hingeData,
     shearData: normalized.shearData && available.shearData,
     displacementRot: normalized.displacementRot && available.displacementRot,

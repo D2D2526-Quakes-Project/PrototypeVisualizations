@@ -101,6 +101,7 @@
           "groundMotion": "ground_motion.bld"
         }
       ],
+      "beamData": "beam_data.bld",
       "size": 1440779499
     }
   ],

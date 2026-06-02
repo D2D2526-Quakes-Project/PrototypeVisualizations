@@ -136,6 +136,17 @@
 
 - [ ] Multiple places define an order for the optional data (NavigationBar, Main Menu, optionalLoads query param). This should be centralized and made consistent.
 
+### BRB Implementation
+- [x] Generate `brb_data.bld` from `BRB/BRB_data.csv` + `BRB_properties.csv`
+- [x] Add BRB data discovery, mapping, and ratio computation in binary generator
+- [x] Add `brbData` to simulation index types, schema, and optional dataset keys
+- [x] Auto-load `beam_data.bld` when `brbData` is requested
+- [x] Add `BrbDataAccessor`, `BrbMetadata`, row types, parser, stats merge
+- [x] Add `brbRatioAbs`, `brbTensionRatio`, `brbCompressionRatio` metrics with `brbRatio` threshold (default 5)
+- [x] Render BRB lines with Drei `<Line>`, threshold-aware thickness, and metric coloring
+- [x] Add BRB hover/tooltip support
+- [x] Update `BINARY_FORMAT.md` and `DATA_DOCUMENTATION.md` with BRB documentation
+
 ## Unsorted Things:
 
 - [ ] Data Explorer should be virtualized list so there are no pages, just infinite scroll

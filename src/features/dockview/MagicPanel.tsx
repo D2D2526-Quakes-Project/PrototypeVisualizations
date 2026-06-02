@@ -31,6 +31,7 @@ import { CornerMetricChart } from "../panels/CornerMetricChart";
 import { DataExplorerPanel } from "../panels/DataExplorerPanel";
 import { FloorAverageMetricChart } from "../panels/FloorAverageMetricChart";
 import { FloorWaveformPanel } from "../panels/FloorWaveformPanel";
+import { BrbDistributionPanel } from "../panels/BrbDistributionPanel";
 import { HingeDistributionPanel } from "../panels/HingeDistributionPanel";
 import { StatisticsPanel } from "../panels/StatisticsPanel";
 import { Timeline } from "../timeline/Timeline";
@@ -54,6 +55,7 @@ type PanelDefinition = {
 type PanelDataKey =
   | "hingeData"
   | "shearData"
+  | "brbData"
   | "displacementRot"
   | "velocityLin"
   | "velocityRot"
@@ -121,6 +123,14 @@ const PANEL_DEFINITIONS = check({
     requiredOptionalData: ["hingeData"],
     optionalEnhancementData: [],
   },
+  "BRB Distribution": {
+    component: BrbDistributionPanel,
+    category: "Distributions",
+    icon: ChartColumnIcon,
+    description: "Global static BRB ratio histogram",
+    requiredOptionalData: ["brbData"],
+    optionalEnhancementData: [],
+  },
   // "ISD Threshold": {
   //   component: ISDThresholdPanel,
   //   category: "Core Analysis",
@@ -142,6 +152,7 @@ const PANEL_DEFINITIONS = check({
 const PANEL_DATA_LABELS: Record<PanelDataKey, string> = {
   hingeData: "hinge data",
   shearData: "shear data",
+  brbData: "BRB data",
   displacementRot: "rotational displacement data",
   velocityLin: "linear velocity data",
   velocityRot: "rotational velocity data",

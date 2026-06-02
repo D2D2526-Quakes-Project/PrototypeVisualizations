@@ -93,7 +93,8 @@
         {
           "name": "Station 3138",
           "folder": "station3138",
-          "size": 914570711,
+          "size": 914571494,
+          "brbData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3138/brb_data.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3138/displacement_lin.bld",
           "displacementRot": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3138/displacement_rot.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3138/ground_motion.bld"
@@ -101,14 +102,15 @@
         {
           "name": "Station 3139",
           "folder": "station3139",
-          "size": 526683864,
+          "size": 526684650,
+          "brbData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3139/brb_data.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3139/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/station3139/ground_motion.bld"
         }
       ],
-      "size": 1441313677,
+      "size": 1441315246,
       "beamData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/beam_data.bld"
     }
   ],
-  "size": 5943547237
+  "size": 5943548806
 }

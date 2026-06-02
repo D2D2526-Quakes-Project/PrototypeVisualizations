@@ -21,6 +21,11 @@ export function useHover() {
     return null;
   }, [hoveredItem]);
 
+  const hoveredBrb = useMemo(() => {
+    if (hoveredItem && hoveredItem.type === "brb") return hoveredItem;
+    return null;
+  }, [hoveredItem]);
+
   const setHoveredNode = useCallback(
     (hoverItem: HoverItem | null) => {
       const store = appStoreState();
@@ -51,14 +56,26 @@ export function useHover() {
     [setHoveredItem]
   );
 
+  const setHoveredBrb = useCallback(
+    (hoverItem: HoverItem | null) => {
+      const store = appStoreState();
+      const hoveredItemState = store.hoveredItem;
+      if (hoverItem === null && hoveredItemState !== null && hoveredItemState.type !== "brb") return;
+      setHoveredItem(hoverItem);
+    },
+    [setHoveredItem]
+  );
+
   return {
     hoveredItem,
     hoveredNode,
     hoveredCrossSection,
     hoveredFloor,
+    hoveredBrb,
     setHoveredItem,
     setHoveredNode,
     setHoveredCrossSection,
     setHoveredFloor,
+    setHoveredBrb,
   };
 }

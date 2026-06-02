@@ -13,9 +13,10 @@ import { OpenPanelCrossSectionsRenderer } from "./renderers/OpenPanelCrossSectio
 import { OpenPanelFloorsRenderer } from "./renderers/OpenPanelFloorsRenderer";
 import { OpenPanelNodesRenderer } from "./renderers/OpenPanelNodesRenderer";
 import { VerticalConnectionsRenderer } from "./renderers/VerticalConnectionsRenderer";
+import { BrbLinesRenderer } from "./renderers/BrbLinesRenderer";
 
 export function BuildingScene() {
-  const { isCurrentMetricHinge: renderHingeNodes } = useMetrics();
+  const { isCurrentMetricHinge: renderHingeNodes, isCurrentMetricBrb: renderBrbLines } = useMetrics();
   const {
     renderNodes,
     renderFloorSlabs,
@@ -39,6 +40,7 @@ export function BuildingScene() {
         {renderHorizontalConnections && <HorizontalConnectionsRenderer />}
         {renderNodes && <NodesRenderer />}
         {renderHingeNodes && <HingeNodesRenderer />}
+        {renderBrbLines && <BrbLinesRenderer />}
         <OpenPanelNodesRenderer />
         <OpenPanelFloorsRenderer />
         <OpenPanelCrossSectionsRenderer />

@@ -25,13 +25,16 @@ data/
 │       │   │   ├── D_H1T_Entire.txt
 │       │   │   ├── D_H2T_Entire.txt
 │       │   │   └── D_VT_Entire.txt
-│       │   ├── Hinge results/
-│       │   │   └── hinge_data.csv
-│       │   ├── Shears/
-│       │   │   ├── Shears/*_H1M.txt
-│       │   │   ├── Shears/*_H2M.txt
-│       │   │   └── shear_data.csv
-│       │   ├── Velocities/
+│   │   ├── Hinge results/
+│   │   │   └── hinge_data.csv
+│   │   ├── Shears/
+│   │   │   ├── Shears/*_H1M.txt
+│   │   │   ├── Shears/*_H2M.txt
+│   │   │   └── shear_data.csv
+│   │   ├── BRB/
+│   │   │   └── BRB_data.csv
+│   │   ├── BRB_properties.csv
+│   │   ├── Velocities/
 │       │   │   ├── V_H1T_Entire.txt
 │       │   │   ├── V_H2T_Entire.txt
 │       │   │   └── V_VT_Entire.txt
@@ -165,6 +168,43 @@ Compiler behavior:
 - Resolves component side per beam. Singleton component `2` maps to the I end; singleton `3`, `4`, or `5` maps to the J end; multi-component beams use `2/3 -> I` and `4/5 -> J`.
 - Stores one row per beam with I/J Max/Min values for `M3` and `R3`. DCR columns are validated and read but are not currently emitted into `hinge_data.bld`.
 
+### BRB Results
+
+Current BRB parsing expects a simulation-level CSV and a building-level properties file:
+
+```
+{building}/BRB/BRB_data.csv
+{building}/BRB_properties.csv
+```
+
+Required columns in `BRB_data.csv`:
+
+```
+Group Name
+Element ID
+Step Type
+Component Type
+Axial Force
+Axial Deformation
+```
+
+Required columns in `BRB_properties.csv`:
+
+```
+Name
+Tension Dy (in)
+Compression Dy (in)
+```
+
+Compiler behavior:
+
+- Filters to `Component Type == "Buckling Restrained Brace"` and `Step Type` in `Max | Min`.
+- Requires unique rows by `Group Name`, `Element ID`, `Step Type`.
+- Maps each BRB row to `beam_data.csv` using `Group Name + Element ID`, then uses the beam's `Property Name` to look up building-level `BRB_properties.csv`.
+- Computes `tensionRatio = axialDeformationMax / Tension Dy (in)` and `compressionRatio = axialDeformationMin / Compression Dy (in)`, preserving compression as negative.
+- Stores one row per mapped beam. Beams without BRB data are omitted.
+- Outputs `brb_data.bld` with stride 8 fields: `beamIndex, axialForceMax, axialForceMin, axialDeformationMax, axialDeformationMin, tensionRatio, compressionRatio, ratioAbs`.
+
 ### Shear Results
 
 Current shear parsing expects a pair of files in `Shears/`:
@@ -191,17 +231,18 @@ Building-level files:
 
 Simulation-level files:
 
-| File                   | Required by app | Body layout                                                                            | Notes                                   |
-| :--------------------- | :-------------- | :------------------------------------------------------------------------------------- | :-------------------------------------- |
-| `displacement_lin.bld` | Yes             | Frame-major `[x, y, z]` per node                                                       | Main animation and core stats.          |
-| `ground_motion.bld`    | Yes             | `[x, y, z]` per frame                                                                  | Ground motion charts and summary stats. |
-| `displacement_rot.bld` | Optional        | Frame-major `[rx, ry, rz]` per node                                                    | Loaded on demand.                       |
-| `velocity_lin.bld`     | Optional        | Frame-major `[x, y, z]` per node                                                       | Loaded on demand.                       |
-| `velocity_rot.bld`     | Optional        | Frame-major `[rx, ry, rz]` per node                                                    | Loaded on demand.                       |
-| `acceleration_lin.bld` | Optional        | Frame-major `[x, y, z]` per node                                                       | Loaded on demand.                       |
-| `acceleration_rot.bld` | Optional        | Frame-major `[rx, ry, rz]` per node                                                    | Loaded on demand.                       |
-| `hinge_data.bld`       | Optional        | `[beamIndex, endMask, iM3Max, iM3Min, iR3Max, iR3Min, jM3Max, jM3Min, jR3Max, jR3Min]` | Requires `beam_data.bld`.               |
-| `shear_data.bld`       | Optional        | `[h1Max, h1Min, h2Max, h2Min]` per story                                               | Story order is in the file header.      |
+| File                   | Required by app | Body layout                                                                                                                     | Notes                                              |
+| :--------------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------- |
+| `displacement_lin.bld` | Yes             | Frame-major `[x, y, z]` per node                                                                                                | Main animation and core stats.                     |
+| `ground_motion.bld`    | Yes             | `[x, y, z]` per frame                                                                                                           | Ground motion charts and summary stats.            |
+| `displacement_rot.bld` | Optional        | Frame-major `[rx, ry, rz]` per node                                                                                             | Loaded on demand.                                  |
+| `velocity_lin.bld`     | Optional        | Frame-major `[x, y, z]` per node                                                                                                | Loaded on demand.                                  |
+| `velocity_rot.bld`     | Optional        | Frame-major `[rx, ry, rz]` per node                                                                                             | Loaded on demand.                                  |
+| `acceleration_lin.bld` | Optional        | Frame-major `[x, y, z]` per node                                                                                                | Loaded on demand.                                  |
+| `acceleration_rot.bld` | Optional        | Frame-major `[rx, ry, rz]` per node                                                                                             | Loaded on demand.                                  |
+| `hinge_data.bld`       | Optional        | `[beamIndex, endMask, iM3Max, iM3Min, iR3Max, iR3Min, jM3Max, jM3Min, jR3Max, jR3Min]`                                          | Requires `beam_data.bld`.                          |
+| `shear_data.bld`       | Optional        | `[h1Max, h1Min, h2Max, h2Min]` per story                                                                                        | Story order is in the file header.                 |
+| `brb_data.bld`         | Optional        | `[beamIndex, axialForceMax, axialForceMin, axialDeformationMax, axialDeformationMin, tensionRatio, compressionRatio, ratioAbs]` | Requires `beam_data.bld` and `BRB_properties.csv`. |
 
 Required app startup data is intentionally small enough to load first: `building.bld`, `displacement_lin.bld`, and `ground_motion.bld`. Other datasets are optional and can be queued by URL state, profiles, or the data loader UI.
 
@@ -240,6 +281,7 @@ acceleration
 ground_motion
 hinge
 shear
+brb
 ```
 
 The interactive wrapper is:
@@ -334,25 +376,27 @@ Startup flow:
 5. Required data is decompressed, parsed, and converted into serialized animation data. The app computes story drift, bounding boxes, per-frame/per-story averages, peak node displacement, ground-motion ranges, and bounding geometries.
 6. Processed core data is cached in IndexedDB object store `processed` using a key based on `PROCESSED_CACHE_VERSION`, building, simulation, source paths, and file sizes.
 7. The interface becomes usable once the required core is ready.
-8. Optional datasets load after core data. `beamData` is internal and is automatically queued when `hingeData` is selected.
+8. Optional datasets load after core data. `beamData` is internal and is automatically queued when `hingeData` or `brbData` is selected.
 9. Optional parsing runs in `optionalDataWorker.ts`, one queued job at a time, then merges into `BuildingAnimationData`.
 
 Default optional load settings are defined in `src/features/animation-data/data-loading/util.ts`:
 
-| Dataset           | Default                                                     |
-| :---------------- | :---------------------------------------------------------- |
-| `hingeData`       | On, only when both `hingeData` and `beamData` are available |
-| `shearData`       | Off                                                         |
-| `displacementRot` | Off                                                         |
-| `velocityLin`     | Off                                                         |
-| `velocityRot`     | Off                                                         |
-| `accelerationLin` | Off                                                         |
-| `accelerationRot` | Off                                                         |
+| Dataset           | Default |
+| :---------------- | :------ |
+| `beamData`        | On      |
+| `hingeData`       | Off     |
+| `shearData`       | Off     |
+| `brbData`         | Off     |
+| `displacementRot` | Off     |
+| `velocityLin`     | Off     |
+| `velocityRot`     | Off     |
+| `accelerationLin` | Off     |
+| `accelerationRot` | Off     |
 
 The `optionalLoads` URL parameter is a bitstring in `OPTIONAL_DATASET_KEYS` order:
 
 ```
-hingeData, shearData, displacementRot, velocityLin, velocityRot, accelerationLin, accelerationRot
+hingeData, shearData, brbData, displacementRot, velocityLin, velocityRot, accelerationLin, accelerationRot
 ```
 
 For example, `1000000` requests hinge data only.

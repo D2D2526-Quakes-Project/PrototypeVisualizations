@@ -294,6 +294,49 @@ xAbs = max(abs(h1Max), abs(h1Min));
 yAbs = max(abs(h2Max), abs(h2Min));
 ```
 
+## BRB Data File
+
+**Path:** `{building}/{simulation}/brb_data.bld`
+
+**Purpose:** Non-time-series BRB (Buckling Restrained Brace) demand summary by beam/member. Requires `beam_data.bld` and building-level `BRB_properties.csv` for interpretation.
+
+### Source Requirements
+
+- `BRB/BRB_data.csv` per simulation with columns: `Group Name`, `Element ID`, `Step Type`, `Component Type`, `Axial Force`, `Axial Deformation`
+- `BRB_properties.csv` per building with columns: `Name`, `Tension Dy (in)`, `Compression Dy (in)`
+
+### Compiler Behavior
+
+- Filters to `Component Type == "Buckling Restrained Brace"` and `Step Type` in `Max | Min`.
+- Maps each BRB row to `beam_data.csv` by `Group Name + Element ID`, then uses the beam row's `Property Name` to look up `BRB_properties.csv.Name`.
+- Computes `tensionRatio = axialDeformationMax / Tension Dy (in)` and `compressionRatio = axialDeformationMin / Compression Dy (in)` (compression remains signed negative).
+- `ratioAbs` is the max absolute value of available ratios.
+
+### Header
+
+```json
+{
+  "count_rows": 120,
+  "stride": 8,
+  "fields": ["beamIndex", "axialForceMax", "axialForceMin", "axialDeformationMax", "axialDeformationMin", "tensionRatio", "compressionRatio", "ratioAbs"],
+  "units": {
+    "axialForce": "source",
+    "axialDeformation": "in",
+    "ratio": "dimensionless"
+  }
+}
+```
+
+### Body
+
+Float32 array, stride 8:
+
+```
+[beamIndex, axialForceMax, axialForceMin, axialDeformationMax, axialDeformationMin, tensionRatio, compressionRatio, ratioAbs]
+```
+
+Missing values are encoded as `NaN`.
+
 ## Dense Node Indexing
 
 Compiled files use dense zero-based node indices. Original source `Node ID` values are not stored in `.bld` files.
@@ -316,6 +359,7 @@ Optional parse:
 beam_data.bld
 hinge_data.bld
 shear_data.bld
+brb_data.bld
 displacement_rot.bld
 velocity_lin.bld
 velocity_rot.bld

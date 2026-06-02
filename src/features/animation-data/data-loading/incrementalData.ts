@@ -8,6 +8,9 @@ import type {
   AnimationMetadata,
   BeamDataAccessor,
   BeamDataMetadata,
+  BrbDataAccessor,
+  BrbMetadata,
+  BrbRow,
   BuildingAnimationData,
   BuildingMetadata,
   ComputedStats,
@@ -24,7 +27,7 @@ import type {
 } from "@/lib/types";
 import Delaunay from "delaunator";
 
-export const PROCESSED_CACHE_VERSION = 6;
+export const PROCESSED_CACHE_VERSION = 7;
 
 export interface SerializedStoryDrift {
   data: Float32Array;
@@ -136,12 +139,15 @@ export interface OptionalStatsDelta {
   maxShearYMax?: number;
   maxShearYMin?: number;
   maxShearYAbs?: number;
+  maxBrbTensionRatio?: number;
+  maxBrbCompressionRatio?: number;
+  maxBrbRatioAbs?: number;
 }
 
 export interface SerializedOptionalDatasetResult {
   key: OptionalDatasetKey | "beamData";
-  kind: "timeSeries" | "beamData" | "hingeData" | "shearData";
-  metadata: SimulationMetadata | BeamDataMetadata | HingeMetadata | ShearMetadata;
+  kind: "timeSeries" | "beamData" | "hingeData" | "shearData" | "brbData";
+  metadata: SimulationMetadata | BeamDataMetadata | HingeMetadata | ShearMetadata | BrbMetadata;
   data: Float32Array;
   statsDelta: OptionalStatsDelta;
 }
@@ -350,6 +356,38 @@ function makeShearAccessor(metadata: ShearMetadata, body: Float32Array): ShearDa
       if (index === undefined) return undefined;
       return buildRow(index);
     },
+  };
+}
+
+function makeBrbAccessor(metadata: BrbMetadata, body: Float32Array): BrbDataAccessor {
+  const stride = metadata.stride;
+  const count = metadata.count_rows;
+  const data = body.subarray(0, count * stride);
+  const valueAt = (row: Float32Array, index: number): number => row[index] ?? Number.NaN;
+  const buildRow = (idx: number): BrbRow => {
+    const row = data.subarray(idx * stride, (idx + 1) * stride);
+
+    return {
+      beamIndex: Math.trunc(valueAt(row, 0)),
+      axialForceMax: valueAt(row, 1),
+      axialForceMin: valueAt(row, 2),
+      axialDeformationMax: valueAt(row, 3),
+      axialDeformationMin: valueAt(row, 4),
+      tensionRatio: valueAt(row, 5),
+      compressionRatio: valueAt(row, 6),
+      ratioAbs: valueAt(row, 7),
+    };
+  };
+
+  return {
+    data,
+    stride,
+    count,
+    metadata,
+    at(idx: number) {
+      return data.subarray(idx * stride, (idx + 1) * stride);
+    },
+    getRow: buildRow,
   };
 }
 
@@ -860,6 +898,8 @@ export function mergeOptionalDatasetIntoAnimationData(
     nextAnimationData.hingeData = makeHingeAccessor(result.metadata as HingeMetadata, result.data);
   } else if (result.key === "shearData") {
     nextAnimationData.shearData = makeShearAccessor(result.metadata as ShearMetadata, result.data);
+  } else if (result.key === "brbData") {
+    nextAnimationData.brbData = makeBrbAccessor(result.metadata as BrbMetadata, result.data);
   } else {
     const accessor = makeTimeAccessor(result.data, animationData.metadata.nodeCount);
     if (result.key === "displacementRot") nextAnimationData.displacementRot = accessor;
@@ -932,6 +972,18 @@ export async function parseOptionalDatasetFromRawBuffer(
     };
   }
 
+  if (request.key === "brbData") {
+    const parsed = parseBlob<BrbMetadata>(buffer);
+    const data = parsed.bodyView.subarray(0, parsed.metadata.count_rows * parsed.metadata.stride);
+    return {
+      key: request.key,
+      kind: "brbData",
+      metadata: parsed.metadata,
+      data,
+      statsDelta: calculateBrbStats(parsed.metadata, data),
+    };
+  }
+
   const parsed = parseBlob<SimulationMetadata>(buffer);
   if (parsed.metadata.count_nodes !== request.baseMetadata.nodeCount) {
     throw new Error(
@@ -946,6 +998,35 @@ export async function parseOptionalDatasetFromRawBuffer(
     metadata: parsed.metadata,
     data: parsed.bodyView.subarray(0),
     statsDelta,
+  };
+}
+
+function calculateBrbStats(metadata: BrbMetadata, body: Float32Array): OptionalStatsDelta {
+  let maxBrbTensionRatio = 0;
+  let maxBrbCompressionRatio = 0;
+  let maxBrbRatioAbs = 0;
+
+  for (let rowIdx = 0; rowIdx < metadata.count_rows; rowIdx++) {
+    const offset = rowIdx * metadata.stride;
+    const tensionRatio = body[offset + 5];
+    const compressionRatio = body[offset + 6];
+    const ratioAbs = body[offset + 7];
+
+    if (Number.isFinite(tensionRatio)) {
+      maxBrbTensionRatio = Math.max(maxBrbTensionRatio, Math.abs(tensionRatio));
+    }
+    if (Number.isFinite(compressionRatio)) {
+      maxBrbCompressionRatio = Math.max(maxBrbCompressionRatio, Math.abs(compressionRatio));
+    }
+    if (Number.isFinite(ratioAbs)) {
+      maxBrbRatioAbs = Math.max(maxBrbRatioAbs, Math.abs(ratioAbs));
+    }
+  }
+
+  return {
+    maxBrbTensionRatio,
+    maxBrbCompressionRatio,
+    maxBrbRatioAbs,
   };
 }
 
@@ -991,7 +1072,7 @@ function calculateShearStats(metadata: ShearMetadata, body: Float32Array): Optio
 }
 
 function calculateOptionalTimeSeriesStats(
-  key: Exclude<OptionalDatasetKey, "beamData" | "hingeData" | "shearData">,
+  key: Exclude<OptionalDatasetKey, "beamData" | "hingeData" | "shearData" | "brbData">,
   metadata: AnimationMetadata,
   body: Float32Array
 ): OptionalStatsDelta {

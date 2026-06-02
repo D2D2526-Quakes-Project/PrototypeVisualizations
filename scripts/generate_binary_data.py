@@ -45,7 +45,7 @@ Examples:
     parser.add_argument(
         "--metrics",
         nargs="+",
-        choices=["displacement", "velocity", "acceleration", "ground_motion", "hinge", "shear", "building", "all"],
+        choices=["displacement", "velocity", "acceleration", "ground_motion", "hinge", "shear", "brb", "building", "all"],
         default=["all"],
         help="Data types to generate (default: all)",
     )
@@ -87,8 +87,10 @@ def check_outputs_exist(building_name, simulation_name=None):
             expected_files.append("hinge_data.bld")
         if "all" in metrics or "shear" in metrics:
             expected_files.append("shear_data.bld")
+        if "all" in metrics or "brb" in metrics:
+            expected_files.append("brb_data.bld")
     else:
-        expected_files = ["building.bld", "displacement_lin.bld", "velocity_lin.bld", "acceleration_lin.bld", "ground_motion.bld", "hinge_data.bld", "shear_data.bld"]
+        expected_files = ["building.bld", "displacement_lin.bld", "velocity_lin.bld", "acceleration_lin.bld", "ground_motion.bld", "hinge_data.bld", "shear_data.bld", "brb_data.bld"]
 
     for fname in expected_files:
         if not os.path.exists(os.path.join(simulation_output_dir, fname)):
@@ -126,6 +128,19 @@ HINGE_COMPONENT_TO_SIDE = {
     4: "J",
     5: "J",
 }
+
+BRB_REQUIRED_COLUMNS = [
+    "Group ID",
+    "Element ID",
+    "Step Type",
+    "Component Type",
+    "Axial Force",
+    "Axial Deformation",
+]
+
+BRB_NUMERIC_COLUMNS = ["Group ID", "Element ID", "Axial Force", "Axial Deformation"]
+
+BRB_PROPERTIES_REQUIRED_COLUMNS = ["Name", "Tension Dy (in)", "Compression Dy (in)"]
 
 
 def discover_buildings():
@@ -238,6 +253,19 @@ def discover_shear_files(simulation_path):
     }
 
 
+def discover_brb_file(simulation_path):
+    """Locate a BRB result file in the simulation folder."""
+    brb_dir = os.path.join(simulation_path, "BRB")
+    if not os.path.exists(brb_dir):
+        return None
+
+    preferred_csv = os.path.join(brb_dir, "BRB_data.csv")
+    if os.path.exists(preferred_csv):
+        return preferred_csv
+
+    return None
+
+
 def discover_simulations(building_folder):
     """Discover all simulations for a building (subdirectories with data files)"""
     simulations = []
@@ -269,6 +297,7 @@ def discover_simulations(building_folder):
                 "has_ground_motion": False,
                 "has_hinge_data": False,
                 "has_shear_data": False,
+                "has_brb_data": False,
                 "file_pattern": None,  # "Entire" or "Grid"
             }
 
@@ -335,17 +364,25 @@ def discover_simulations(building_folder):
                 print(f"      shear H1 file: {shear_files['h1']}")
                 print(f"      shear H2 file: {shear_files['h2']}")
 
+            # Check for BRB demand summaries
+            brb_file = discover_brb_file(item_path)
+            print(f"      BRB results: {'✓' if brb_file else '✗ not found'}")
+            if brb_file:
+                sim_data["has_brb_data"] = True
+                sim_data["brb_file"] = brb_file
+                print(f"      BRB file: {brb_file}")
+
             # Only add if it has at least some data
-            if sim_data["has_displacement"] or sim_data["has_velocity"] or sim_data["has_acceleration"] or sim_data["has_hinge_data"] or sim_data["has_shear_data"]:
+            if sim_data["has_displacement"] or sim_data["has_velocity"] or sim_data["has_acceleration"] or sim_data["has_hinge_data"] or sim_data["has_shear_data"] or sim_data["has_brb_data"]:
                 simulations.append(sim_data)
                 print(f"    → Simulation ACCEPTED: {item}")
                 print(
                     f"      Displacement: {sim_data['has_displacement']}, Velocity: {sim_data['has_velocity']}, "
                     f"Acceleration: {sim_data['has_acceleration']}, Ground Motion: {sim_data['has_ground_motion']}, "
-                    f"Hinge: {sim_data['has_hinge_data']}, Shear: {sim_data['has_shear_data']}"
+                    f"Hinge: {sim_data['has_hinge_data']}, Shear: {sim_data['has_shear_data']}, BRB: {sim_data['has_brb_data']}"
                 )
             else:
-                print(f"    → Simulation REJECTED: {item} " f"(no displacement, velocity, acceleration, hinge, or shear data found)")
+                print(f"    → Simulation REJECTED: {item} " f"(no displacement, velocity, acceleration, hinge, shear, or BRB data found)")
 
     print(f"\n  Found {len(simulations)} simulation(s) for {building_folder}")
     return simulations
@@ -529,7 +566,7 @@ def compute_missing_node_indices(num_nodes, id_to_index, *coverage_sources):
 
 def get_simulation_files(building_folder, simulation):
     """Get file paths for a simulation based on detected pattern"""
-    files: dict = {"displacement": None, "velocity": None, "acceleration": None, "ground_motion": None, "hinge": None, "shear": None}
+    files: dict = {"displacement": None, "velocity": None, "acceleration": None, "ground_motion": None, "hinge": None, "shear": None, "brb": None}
 
     sim_path = simulation["path"]
     pattern = simulation.get("file_pattern", "Entire")
@@ -753,6 +790,13 @@ def get_simulation_files(building_folder, simulation):
             for axis, path in shear_files.items():
                 exists = "✓" if path and os.path.exists(path) else "✗"
                 print(f"      {axis.upper()}: {exists} {path}")
+
+    if simulation.get("has_brb_data"):
+        print(f"\n    BRB results file:")
+        brb_file = simulation.get("brb_file")
+        files["brb"] = brb_file
+        exists = "✓" if brb_file and os.path.exists(brb_file) else "✗"
+        print(f"      {exists} {brb_file}")
 
     return files
 
@@ -1332,12 +1376,12 @@ def process_building(building):
 
     # 5. Write beam/member connectivity (optional, required for hinge data)
     if "beam_data" in building:
-        beam_index_by_group2_element_id = process_beam_data(building, id_to_index, building_output_dir)
+        beam_lookup_maps = process_beam_data(building, id_to_index, building_output_dir)
     else:
         print(f"    Skipping beam_data.bld: beam_data.csv not available")
-        beam_index_by_group2_element_id = None
+        beam_lookup_maps = None
 
-    return id_to_index, beam_index_by_group2_element_id, building_output_dir, storyOrder
+    return id_to_index, beam_lookup_maps, building_output_dir, storyOrder
 
 
 def process_response_file(file_key, type_name, id_to_index, files_config, simulation_output_dir):
@@ -1673,7 +1717,7 @@ def build_hinge_side_lookup_by_beam(normalized_hinge_rows):
 
 
 def process_beam_data(building, id_to_index, building_output_dir):
-    """Process building-level beam connectivity and return hinge beam lookup by Element ID (Group 2 only)."""
+    """Process building-level beam connectivity and return source-to-beam lookup maps."""
     beam_file = building.get("beam_data")
     if not beam_file or not os.path.exists(beam_file):
         raise FileNotFoundError(f"beam_data.csv not found for building {building['name']}: {beam_file}")
@@ -1706,6 +1750,7 @@ def process_beam_data(building, id_to_index, building_output_dir):
     encoded = np.zeros((row_count, stride), dtype=np.float32)
 
     beam_index_by_group2_element_id = {}
+    beam_info_by_group_id_element_id = {}
     missing_node_refs = []
     unique_group_names = sorted(df_beams["Group Name"].unique().tolist())
     unique_group_ids = sorted(df_beams["Group ID"].unique().tolist())
@@ -1734,6 +1779,17 @@ def process_beam_data(building, id_to_index, building_output_dir):
                 raise ValueError(f"Duplicate beam Element ID within Group ID 2: {element_id} " f"(rows {existing_index} and {beam_index})")
             beam_index_by_group2_element_id[element_id] = beam_index
 
+        property_name = str(row["Property Name"]).strip() if "Property Name" in df_beams.columns and pd.notna(row.get("Property Name")) else ""
+        brb_key = (group_id, element_id)
+        if brb_key in beam_info_by_group_id_element_id:
+            existing = beam_info_by_group_id_element_id[brb_key]["beamIndex"]
+            raise ValueError(f"Duplicate beam row for Group ID + Element ID {brb_key}: rows {existing} and {beam_index}")
+        beam_info_by_group_id_element_id[brb_key] = {
+            "beamIndex": beam_index,
+            "propertyName": property_name,
+            "groupId": group_id,
+        }
+
     if missing_node_refs:
         raise ValueError(f"beam_data.csv contains {len(missing_node_refs)} row(s) referencing unknown node IDs. " f"Sample: {missing_node_refs[:5]}")
 
@@ -1746,7 +1802,10 @@ def process_beam_data(building, id_to_index, building_output_dir):
     }
 
     write_bld_file("beam_data.bld", header, encoded.flatten().tobytes(), building_output_dir)
-    return beam_index_by_group2_element_id
+    return {
+        "hinge_by_group2_element_id": beam_index_by_group2_element_id,
+        "by_group_id_element_id": beam_info_by_group_id_element_id,
+    }
 
 
 def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2_element_id):
@@ -1891,6 +1950,192 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
     }
 
     write_bld_file("hinge_data.bld", header, encoded.flatten().tobytes(), simulation_output_dir)
+
+
+def load_brb_properties(building):
+    """Load building-level BRB property deformation capacities keyed by property name."""
+    building_path = os.path.join(CSV_DIR, building["folder"])
+    properties_file = os.path.join(building_path, "BRB_properties.csv")
+    if not os.path.exists(properties_file):
+        print(f"BRB properties file not found, skipping BRB data: {properties_file}")
+        return None
+
+    df_props = pd.read_csv(properties_file)
+    df_props.columns = [str(c).strip() for c in df_props.columns]
+    missing_columns = [column for column in BRB_PROPERTIES_REQUIRED_COLUMNS if column not in df_props.columns]
+    if missing_columns:
+        raise ValueError(f"BRB_properties.csv missing required columns: {missing_columns}")
+
+    df_props = df_props[BRB_PROPERTIES_REQUIRED_COLUMNS].copy()
+    df_props["Name"] = df_props["Name"].fillna("").astype(str).str.strip()
+    for column in ["Tension Dy (in)", "Compression Dy (in)"]:
+        df_props[column] = pd.to_numeric(df_props[column], errors="coerce")
+
+    invalid_rows = df_props["Name"].eq("") | df_props[["Tension Dy (in)", "Compression Dy (in)"]].isna().any(axis=1)
+    invalid_count = int(invalid_rows.sum())
+    if invalid_count > 0:
+        print(f"⚠ Dropping {invalid_count} invalid BRB property row(s)")
+        df_props = df_props.loc[~invalid_rows].copy()
+
+    duplicate_count = int(df_props.duplicated(subset=["Name"]).sum())
+    if duplicate_count > 0:
+        raise ValueError(f"BRB_properties.csv has {duplicate_count} duplicate Name row(s)")
+
+    return {
+        str(row["Name"]): {
+            "tensionDy": float(row["Tension Dy (in)"]),
+            "compressionDy": float(row["Compression Dy (in)"]),
+        }
+        for _, row in df_props.iterrows()
+    }
+
+
+def process_brb_data(files_config, simulation_output_dir, beam_lookup, brb_properties):
+    """Process non-time-series BRB data for a simulation into beam/member demand rows."""
+    print("\n--- Processing BRB Data ---")
+    brb_file = files_config.get("brb")
+    if not brb_file or not os.path.exists(brb_file):
+        print("BRB data file not found, skipping.")
+        return
+    if not beam_lookup:
+        print("BRB data requires beam_data.csv, skipping.")
+        return
+    if not brb_properties:
+        print("BRB data requires BRB_properties.csv, skipping.")
+        return
+
+    df_brb = pd.read_csv(brb_file)
+    df_brb.columns = [str(c).strip() for c in df_brb.columns]
+
+    missing_columns = [column for column in BRB_REQUIRED_COLUMNS if column not in df_brb.columns]
+    if missing_columns:
+        raise ValueError(f"BRB data file missing required columns: {missing_columns}")
+
+    normalized = df_brb[BRB_REQUIRED_COLUMNS].copy()
+    normalized["Group ID"] = normalized["Group ID"].fillna("").astype(str).str.strip()
+    normalized["Step Type"] = normalized["Step Type"].fillna("").astype(str).str.strip()
+    normalized["Component Type"] = normalized["Component Type"].fillna("").astype(str).str.strip()
+    for column in BRB_NUMERIC_COLUMNS:
+        normalized[column] = pd.to_numeric(normalized[column], errors="coerce")
+
+    invalid_rows = normalized["Step Type"].eq("") | normalized[BRB_NUMERIC_COLUMNS].isna().any(axis=1)
+    invalid_count = int(invalid_rows.sum())
+    if invalid_count > 0:
+        print(f"⚠ Dropping {invalid_count} invalid BRB row(s) from: {brb_file}")
+        normalized = normalized.loc[~invalid_rows].copy()
+
+    normalized = normalized.loc[normalized["Component Type"] == "Buckling Restrained Brace"].copy()
+    if normalized.empty:
+        print("⚠ No Buckling Restrained Brace rows found; skipping BRB data.")
+        return
+
+    unsupported_steps = sorted(set(normalized["Step Type"].unique().tolist()) - {"Max", "Min"})
+    if unsupported_steps:
+        raise ValueError(f"Unsupported Step Type values in BRB data: {unsupported_steps}")
+
+    normalized["Element ID"] = normalized["Element ID"].round().astype(np.int32)
+
+    duplicate_count = int(normalized.duplicated(subset=["Group ID", "Element ID", "Step Type"]).sum())
+    if duplicate_count > 0:
+        raise ValueError(f"BRB data has {duplicate_count} duplicate row(s) for the same (Group ID, Element ID, Step Type)")
+
+    records_by_beam = {}
+    missing_beams = []
+    missing_properties = []
+
+    for _, row in normalized.sort_values(["Group ID", "Element ID", "Step Type"], kind="stable").iterrows():
+        group_id = int(row["Group ID"])
+        element_id = int(row["Element ID"])
+        step_type = str(row["Step Type"])
+        beam_info = beam_lookup.get((group_id, element_id))
+        if beam_info is None:
+            missing_beams.append((group_id, element_id))
+            continue
+
+        property_name = beam_info.get("propertyName", "")
+        property_info = brb_properties.get(property_name)
+        if property_info is None:
+            missing_properties.append(property_name)
+            continue
+
+        beam_index = int(beam_info["beamIndex"])
+        record = records_by_beam.get(beam_index)
+        if record is None:
+            record = {
+                "beamIndex": beam_index,
+                "axialForceMax": np.float32(np.nan),
+                "axialForceMin": np.float32(np.nan),
+                "axialDeformationMax": np.float32(np.nan),
+                "axialDeformationMin": np.float32(np.nan),
+                "tensionRatio": np.float32(np.nan),
+                "compressionRatio": np.float32(np.nan),
+                "ratioAbs": np.float32(np.nan),
+            }
+            records_by_beam[beam_index] = record
+
+        axial_force = float(row["Axial Force"])
+        axial_deformation = float(row["Axial Deformation"])
+        if step_type == "Max":
+            tension_dy = float(property_info["tensionDy"])
+            if tension_dy == 0:
+                raise ValueError(f"BRB property {property_name} has zero Tension Dy")
+            record["axialForceMax"] = np.float32(axial_force)
+            record["axialDeformationMax"] = np.float32(axial_deformation)
+            record["tensionRatio"] = np.float32(axial_deformation / tension_dy) * 100.0
+        elif step_type == "Min":
+            compression_dy = float(property_info["compressionDy"])
+            if compression_dy == 0:
+                raise ValueError(f"BRB property {property_name} has zero Compression Dy")
+            record["axialForceMin"] = np.float32(axial_force)
+            record["axialDeformationMin"] = np.float32(axial_deformation)
+            record["compressionRatio"] = np.float32(axial_deformation / compression_dy) * 100.0
+
+    if missing_beams:
+        unique_missing = sorted(set(missing_beams))[:10]
+        raise ValueError(f"{len(missing_beams)} BRB row(s) could not map to beam_data.csv rows. Sample: {unique_missing}")
+    if missing_properties:
+        unique_missing = sorted({name for name in missing_properties if name})[:10]
+        raise ValueError(f"{len(missing_properties)} BRB row(s) could not map to BRB_properties.csv rows. Sample: {unique_missing}")
+
+    if not records_by_beam:
+        print("⚠ No BRB records were mapped; skipping.")
+        return
+
+    for record in records_by_beam.values():
+        ratios = [record["tensionRatio"], record["compressionRatio"]]
+        finite_ratios = [float(ratio) for ratio in ratios if np.isfinite(ratio)]
+        if finite_ratios:
+            record["ratioAbs"] = np.float32(max(abs(value) for value in finite_ratios))
+
+    fields = [
+        "beamIndex",
+        "axialForceMax",
+        "axialForceMin",
+        "axialDeformationMax",
+        "axialDeformationMin",
+        "tensionRatio",
+        "compressionRatio",
+        "ratioAbs",
+    ]
+    stride = len(fields)
+    sorted_beam_indices = sorted(records_by_beam.keys())
+    encoded = np.full((len(sorted_beam_indices), stride), np.nan, dtype=np.float32)
+    for row_idx, beam_index in enumerate(sorted_beam_indices):
+        record = records_by_beam[beam_index]
+        encoded[row_idx, :] = np.array([record[field] for field in fields], dtype=np.float32)
+
+    header = {
+        "count_rows": len(sorted_beam_indices),
+        "stride": stride,
+        "fields": fields,
+        "units": {
+            "axialForce": "source",
+            "axialDeformation": "in",
+            "ratio": "dimensionless",
+        },
+    }
+
+    write_bld_file("brb_data.bld", header, encoded.flatten().tobytes(), simulation_output_dir)
 
 
 SHEAR_STORY_ALIASES = {
@@ -2039,7 +2284,7 @@ def process_simulation_response_type(args):
         return (type_name, "error", e)
 
 
-def process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order, max_workers=3):
+def process_simulation_parallel(building, simulation, id_to_index, beam_lookup_maps, building_output_dir, story_order, max_workers=3):
     """Process a single simulation with parallel response type processing"""
     simulation_name = simulation["name"]
     simulation_output_dir = os.path.join(building_output_dir, simulation_name)
@@ -2050,7 +2295,7 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_index_by
     print(
         f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, "
         f"Acceleration: {simulation['has_acceleration']}, Hinge: {simulation.get('has_hinge_data', False)}, "
-        f"Shear: {simulation.get('has_shear_data', False)}"
+        f"Shear: {simulation.get('has_shear_data', False)}, BRB: {simulation.get('has_brb_data', False)}"
     )
     print(f"{'-'*60}")
 
@@ -2082,14 +2327,22 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_index_by
 
     # Process non-time-series hinge data (requires beam_data.csv)
     if simulation.get("has_hinge_data") and should_process_metric("hinge"):
-        if beam_index_by_group2_element_id is not None:
-            process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2_element_id)
+        if beam_lookup_maps is not None:
+            process_hinge_data(files_config, simulation_output_dir, beam_lookup_maps["hinge_by_group2_element_id"])
         else:
             print("    Skipping hinge data: beam_data.csv not available for this building")
 
     # Process static per-floor shear data
     if simulation.get("has_shear_data") and should_process_metric("shear"):
         process_shear_data(files_config, simulation_output_dir, story_order)
+
+    # Process static BRB demand data
+    if simulation.get("has_brb_data") and should_process_metric("brb"):
+        if beam_lookup_maps is not None:
+            brb_properties = load_brb_properties(building)
+            process_brb_data(files_config, simulation_output_dir, beam_lookup_maps["by_group_id_element_id"], brb_properties)
+        else:
+            print("    Skipping BRB data: beam_data.csv not available for this building")
 
 
 # --- MAIN ---
@@ -2183,7 +2436,7 @@ if __name__ == "__main__":
                 results.append((building_name, "skipped", "no simulations found"))
                 continue
 
-            id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order = process_building(building)
+            id_to_index, beam_lookup_maps, building_output_dir, story_order = process_building(building)
 
             for simulation in simulations:
                 sim_name = simulation["name"]
@@ -2194,7 +2447,7 @@ if __name__ == "__main__":
                         results.append((building_name, "skipped", f"{sim_name} outputs exist"))
                         continue
 
-                process_simulation_parallel(building, simulation, id_to_index, beam_index_by_group2_element_id, building_output_dir, story_order)
+                process_simulation_parallel(building, simulation, id_to_index, beam_lookup_maps, building_output_dir, story_order)
 
             results.append((building_name, "success", f"processed {len(simulations)} simulation(s)"))
         except Exception as e:

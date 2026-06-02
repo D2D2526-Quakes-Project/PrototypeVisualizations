@@ -99,6 +99,10 @@ export type HoverItem = (
       type: "floor";
       storyId: string;
     }
+  | {
+      type: "brb";
+      brbIdx: number;
+    }
 ) & { screenPos?: { x: number; y: number } };
 
 export const LIVE_STATE_KEYS = [

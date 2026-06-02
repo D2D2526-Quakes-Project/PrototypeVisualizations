@@ -91,14 +91,16 @@
           "size": 914061740,
           "displacementLin": "displacement_lin.bld",
           "displacementRot": "displacement_rot.bld",
-          "groundMotion": "ground_motion.bld"
+          "groundMotion": "ground_motion.bld",
+          "brbData": "brb_data.bld"
         },
         {
           "name": "Station 3139",
           "folder": "station3139",
           "size": 526662648,
           "displacementLin": "displacement_lin.bld",
-          "groundMotion": "ground_motion.bld"
+          "groundMotion": "ground_motion.bld",
+          "brbData": "brb_data.bld"
         }
       ],
       "beamData": "beam_data.bld",

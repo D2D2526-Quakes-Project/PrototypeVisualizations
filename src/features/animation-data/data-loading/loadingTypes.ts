@@ -6,6 +6,7 @@ export const OPTIONAL_DATASET_KEYS = [
   "beamData",
   "hingeData",
   "shearData",
+  "brbData",
   "displacementRot",
   "velocityLin",
   "velocityRot",
@@ -25,6 +26,7 @@ export interface OptionalDataLoadOptions {
   beamData: boolean;
   hingeData: boolean;
   shearData: boolean;
+  brbData: boolean;
   displacementRot: boolean;
   velocityLin: boolean;
   velocityRot: boolean;
@@ -51,6 +53,7 @@ export const DATASET_LABELS: Record<DatasetKey, string> = {
   beamData: "Beam Data",
   hingeData: "Hinge Data",
   shearData: "Shear Data",
+  brbData: "BRB Data",
   displacementRot: "Displacement (Rotational)",
   velocityLin: "Velocity (Translational)",
   velocityRot: "Velocity (Rotational)",
@@ -73,6 +76,7 @@ export function getDatasetAvailability(
     beamData: Boolean(building.beamData),
     hingeData: Boolean(simulation.hingeData),
     shearData: Boolean(simulation.shearData),
+    brbData: Boolean(simulation.brbData),
     displacementRot: Boolean(simulation.displacementRot),
     velocityLin: Boolean(simulation.velocityLin),
     velocityRot: Boolean(simulation.velocityRot),

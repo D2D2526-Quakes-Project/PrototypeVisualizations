@@ -50,6 +50,8 @@ export type BinarySimulation = BaseSimulation & {
   hingeData?: string;
   /** Path to shear data file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
   shearData?: string;
+  /** Path to BRB data file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https) */
+  brbData?: string;
 };
 
 export type Simulation = BinarySimulation;
@@ -107,6 +109,12 @@ export interface ShearMetadata {
   fields: string[];
   story_order: string[];
   units: "kip";
+}
+
+export interface BrbMetadata {
+  count_rows: number;
+  stride: number;
+  fields: string[];
 }
 
 // -------------------------------- Animation Data ------------------------------
@@ -227,6 +235,13 @@ export interface BuildingAnimationData {
   shearData?: ShearDataAccessor;
 
   /**
+   * BRB Data (non-time-series), paired by beam/member.
+   * Layout per row:
+   * [beamIndex, axialForceMax, axialForceMin, axialDeformationMax, axialDeformationMin, tensionRatio, compressionRatio, ratioAbs]
+   */
+  brbData?: BrbDataAccessor;
+
+  /**
    * Story Drift Data.
    * Layout: Frame -> Node -> [d]
    * Size: frameCount * nodeCount * 1
@@ -312,6 +327,26 @@ export interface ShearDataAccessor {
   at: (idx: number) => Float32Array;
   getRow: (idx: number) => ShearRow;
   getByStory: (storyId: string) => ShearRow | undefined;
+}
+
+export interface BrbRow {
+  beamIndex: number;
+  axialForceMax: number;
+  axialForceMin: number;
+  axialDeformationMax: number;
+  axialDeformationMin: number;
+  tensionRatio: number;
+  compressionRatio: number;
+  ratioAbs: number;
+}
+
+export interface BrbDataAccessor {
+  data: Float32Array;
+  stride: number;
+  count: number;
+  metadata: BrbMetadata;
+  at: (idx: number) => Float32Array;
+  getRow: (idx: number) => BrbRow;
 }
 
 export interface BoundingGeometry {
@@ -499,6 +534,11 @@ export interface ComputedStats {
   maxShearYMax?: number;
   maxShearYMin?: number;
   maxShearYAbs?: number;
+
+  // BRB SUMMARY (if BRB data exists)
+  maxBrbTensionRatio?: number;
+  maxBrbCompressionRatio?: number;
+  maxBrbRatioAbs?: number;
 
   // CROSS-SECTIONS
   numCrossSectionsX: number;

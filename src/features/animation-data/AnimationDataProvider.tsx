@@ -311,14 +311,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
     ) => {
       if (sessionIdRef.current !== sessionId) return;
 
-      const sourcePath =
-        key === "beamData"
-          ? building.beamData
-          : key === "hingeData"
-            ? simulation.hingeData
-            : key === "shearData"
-              ? simulation.shearData
-              : simulation[key];
+      const sourcePath = key === "beamData" ? building.beamData : simulation[key];
       if (!sourcePath) return;
 
       const selectionKey = `${building.folder}::${simulation.folder}`;
@@ -438,7 +431,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
 
         OPTIONAL_DATASET_KEYS.forEach((key) => {
           if (optionalLoads[key]) {
-            if (key === "hingeData") {
+            if (key === "hingeData" || key === "brbData") {
               void loadOptionalDataset(sessionId, building, simulation, "beamData", Promise.resolve(serialized)).catch(
                 (error) => {
                   if (sessionIdRef.current !== sessionId) return;
@@ -560,7 +553,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
       };
 
       queueDataset(key);
-      if (key === "hingeData" && currentBuilding.beamData) {
+      if ((key === "hingeData" || key === "brbData") && currentBuilding.beamData) {
         queueDataset("beamData");
       }
 
@@ -612,7 +605,7 @@ export function AnimationDataProvider({ children }: { children: React.ReactNode 
         });
       });
 
-      if (key === "hingeData" && currentBuilding.beamData) {
+      if ((key === "hingeData" || key === "brbData") && currentBuilding.beamData) {
         void loadOptionalDataset(
           sessionId,
           currentBuilding,

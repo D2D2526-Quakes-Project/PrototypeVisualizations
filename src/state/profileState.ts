@@ -379,6 +379,7 @@ export const DEFAULT_THRESHOLDS: ThresholdState = {
   rotationAcceleration: 0.5,
   interstoryDrift: 2,
   hingeRotation: 0.06,
+  brbRatio: 500,
   shear: 1000,
   inf: 0,
 };

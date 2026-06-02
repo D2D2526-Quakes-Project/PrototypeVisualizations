@@ -26,12 +26,14 @@ fi
 # Choose buildings
 echo
 BUILDING_CHOICES=$(ls "$SCRIPT_DIR/../data/csv" 2>/dev/null || echo "")
-if [ -n "$BUILDING_CHOICES" ]; then
-  BUILDINGS=$(echo "$BUILDING_CHOICES" | gum filter --placeholder="Select buildings (Enter to skip)" --no-limit)
-else
+if [ -z "$BUILDING_CHOICES" ]; then
   echo "⚠️  No building folders found in data/csv"
   exit 1
 fi
+while [ -z "$BUILDINGS" ]; do
+  BUILDINGS=$(echo "$BUILDING_CHOICES" | gum choose --no-limit --header="Select buildings (required)")
+  [ -z "$BUILDINGS" ] && echo "⚠️  At least one building must be selected."
+done
 
 # Choose simulations (if buildings selected)
 if [ -n "$BUILDINGS" ]; then
@@ -44,13 +46,16 @@ if [ -n "$BUILDINGS" ]; then
   done
 
   if [ -n "$SIM_CHOICES" ]; then
-    SIMULATIONS=$(echo "$SIM_CHOICES" | gum filter --placeholder="Select simulations (Enter to skip)" --no-limit)
+    while [ -z "$SIMULATIONS" ]; do
+      SIMULATIONS=$(echo "$SIM_CHOICES" | gum choose --no-limit --header="Select simulations (required)")
+      [ -z "$SIMULATIONS" ] && echo "⚠️  At least one simulation must be selected."
+    done
   fi
 fi
 
 # Choose metrics
 echo
-METRICS=$(gum choose --limit=1 "all" "displacement" "velocity" "acceleration" "ground_motion" "hinge" "shear" "building" --header="Select metrics to generate")
+METRICS=$(gum choose --no-limit "all" "displacement" "velocity" "acceleration" "ground_motion" "hinge" "shear" "brb" "building" --header="Select metrics to generate")
 
 # Build command
 CMD="python $SCRIPT_DIR/generate_binary_data.py"

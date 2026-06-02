@@ -30,6 +30,9 @@ export type Metric =
   | "hingeRotationAbs"
   | "hingeRotationMax"
   | "hingeRotationMin"
+  | "brbRatioAbs"
+  | "brbTensionRatio"
+  | "brbCompressionRatio"
   | "shearXMax"
   | "shearXMin"
   | "shearXAbs"
@@ -46,10 +49,17 @@ export function isHingeMetric(metric: Metric) {
   return metric === "hingeRotationMax" || metric === "hingeRotationMin" || metric === "hingeRotationAbs";
 }
 
+export function isBrbMetric(metric: Metric) {
+  return metric === "brbRatioAbs" || metric === "brbTensionRatio" || metric === "brbCompressionRatio";
+}
+
 const STATIC_METRICS: ReadonlySet<Metric> = new Set<Metric>([
   "hingeRotationMax",
   "hingeRotationMin",
   "hingeRotationAbs",
+  "brbRatioAbs",
+  "brbTensionRatio",
+  "brbCompressionRatio",
   "shearXMax",
   "shearXMin",
   "shearXAbs",
@@ -71,6 +81,7 @@ export type ThresholdKey =
   | "rotationAcceleration"
   | "interstoryDrift"
   | "hingeRotation"
+  | "brbRatio"
   | "shear"
   | "inf";
 
@@ -650,6 +661,13 @@ export const THRESHOLD_CONFIGS: Record<ThresholdKey, ThresholdConfig> = {
     unit: UNITS["radians"],
     getPrecomputedMax: (animationData) => animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
     isAvailable: (animationData) => !!animationData.precomputed.hingeNodeMetrics,
+  },
+  brbRatio: {
+    key: "brbRatio",
+    label: "BRB Ratio",
+    unit: UNITS["percent"],
+    getPrecomputedMax: (animationData) => animationData.precomputed.maxBrbRatioAbs ?? 0,
+    isAvailable: (animationData) => !!animationData.brbData,
   },
   shear: {
     key: "shear",
@@ -1259,6 +1277,57 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
       return undefined;
     },
   },
+  brbRatioAbs: {
+    metric: "brbRatioAbs",
+    thresholdKey: "brbRatio",
+    label: "BRB Ratio (Abs)",
+    shortLabel: "BRB Abs",
+    unit: UNITS["percent"],
+    defaultPalette: "red",
+    hasPositive: true,
+    hasNegative: false,
+    hiddenByDefault: false,
+    getPrecomputedMax: get("maxBrbRatioAbs"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.brbData),
+    getValue: (animationData: BuildingAnimationData, frameIndex: number, brbIdx: number) => {
+      if (frameIndex == 0) return undefined;
+      return animationData.brbData!.getRow(brbIdx)["ratioAbs"];
+    },
+  },
+  brbTensionRatio: {
+    metric: "brbTensionRatio",
+    thresholdKey: "brbRatio",
+    label: "BRB Tension Ratio",
+    shortLabel: "BRB Tens",
+    unit: UNITS["percent"],
+    defaultPalette: "orange",
+    hasPositive: true,
+    hasNegative: false,
+    hiddenByDefault: true,
+    getPrecomputedMax: get("maxBrbTensionRatio"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.brbData),
+    getValue: (animationData: BuildingAnimationData, frameIndex: number, brbIdx: number) => {
+      if (frameIndex == 0) return undefined;
+      return animationData.brbData!.getRow(brbIdx)["tensionRatio"];
+    },
+  },
+  brbCompressionRatio: {
+    metric: "brbCompressionRatio",
+    thresholdKey: "brbRatio",
+    label: "BRB Compression Ratio",
+    shortLabel: "BRB Comp",
+    unit: UNITS["percent"],
+    defaultPalette: "teal",
+    hasPositive: false,
+    hasNegative: true,
+    hiddenByDefault: true,
+    getPrecomputedMax: get("maxBrbCompressionRatio"),
+    isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.brbData),
+    getValue: (animationData: BuildingAnimationData, frameIndex: number, brbIdx: number) => {
+      if (frameIndex == 0) return undefined;
+      return animationData.brbData!.getRow(brbIdx)["compressionRatio"];
+    },
+  },
   shearXMax: {
     metric: "shearXMax",
     thresholdKey: "shear",
@@ -1463,6 +1532,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
 export const THRESHOLD_KEY_ORDER: ThresholdKey[] = [
   "interstoryDrift",
   "hingeRotation",
+  "brbRatio",
   "shear",
   "displacement",
   "rotation",

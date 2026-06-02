@@ -76,6 +76,10 @@
         "shearData": {
           "type": "string",
           "description": "Path to shear data file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
+        },
+        "brbData": {
+          "type": "string",
+          "description": "Path to BRB data file (relative to /data/{folder}/{simulation.folder}/) or full URL (http/https)"
         }
       },
       "required": ["name", "folder", "size", "displacementLin", "groundMotion"]

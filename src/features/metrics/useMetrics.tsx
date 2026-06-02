@@ -3,7 +3,7 @@ import { interpolate } from "culori";
 import { useCallback, useMemo } from "react";
 import * as THREE from "three";
 import { useAnimationData } from "../animation-data/useAnimationData";
-import { getMetricColorScale, isHingeMetric, isStaticMetric, METRIC_CONFIGS, type Metric } from "./metrics";
+import { getMetricColorScale, isBrbMetric, isHingeMetric, isStaticMetric, METRIC_CONFIGS, type Metric } from "./metrics";
 import { interpolateColor } from "./colors";
 import type { FindColorByMode } from "./colors/colorUtils";
 
@@ -175,6 +175,7 @@ export function useMetrics() {
     availableMetrics,
     isCurrentMetricStatic: isStaticMetric(currentMetric),
     isCurrentMetricHinge: isHingeMetric(currentMetric),
+    isCurrentMetricBrb: isBrbMetric(currentMetric),
     currentMetricColorScale: getMetricColorScale(currentMetric, metricPaletteOverrides),
     metricPaletteOverrides,
     setMetricPalette,

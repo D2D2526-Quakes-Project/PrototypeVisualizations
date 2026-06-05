@@ -97,7 +97,7 @@ function HoverTooltip({ story, frame, dt, unit }: { story: StorySeries; frame: n
         <span className="text-neutral-500">Peak time</span>
         <span className="font-mono text-neutral-800">{formatNumber(peakTime, 2)} s</span>
         <span className="text-neutral-500">Elevation</span>
-        <span className="font-mono text-neutral-800">{formatNumber(story.elevationIn, 1)} in</span>
+        <span className="font-mono text-neutral-800">{formatNumber(story.elevationIn / 12, 1)} ft</span>
       </div>
     </div>
   );
@@ -213,7 +213,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   const option = useMemo(() => {
     if (storySeries.length === 0) return {};
 
-    const elevationValues = storySeries.map((story) => story.elevationIn);
+    const elevationValues = storySeries.map((story) => story.elevationIn / 12);
     const minElevation = elevationValues.length > 0 ? Math.min(...elevationValues) : 0;
     const maxElevation = elevationValues.length > 0 ? Math.max(...elevationValues) : 1;
 
@@ -253,7 +253,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
             position: "start",
             distance: 12,
             formatter:
-              panelState.placementMode === "elevation" ? `${Math.round(story.elevationIn)} in` : story.floorLabel,
+              panelState.placementMode === "elevation" ? `${Math.round(story.elevationIn / 12)} ft` : story.floorLabel,
             color: echartsTheme == "my_dark_theme" ? "#A1A1A1" : "#737373",
             fontSize: 10,
           },
@@ -295,10 +295,10 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       },
       yAxis: {
         type: "value",
-        name: panelState.placementMode === "elevation" ? "Story Elevation (in)" : "Floor",
+        name: panelState.placementMode === "elevation" ? "Story Elevation (ft)" : "Floor",
         nameLocation: "middle",
         nameGap: 50,
-        // nameTextStyle: { color: "#374151", fontSize: 11 },
+        nameTextStyle: { color: echartsTheme == "my_dark_theme" ? "#E5E5E5" : "#0A0A0A", fontSize: 11 },
         min: "dataMin",
         max: "dataMax",
         axisLabel: { show: false },
@@ -380,7 +380,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       let nearestIndex = 0;
       let nearestDistance = Number.POSITIVE_INFINITY;
       storySeries.forEach((story, index) => {
-        const baselineY = panelState.placementMode === "elevation" ? story.elevationIn : index * 10;
+      const baselineY = panelState.placementMode === "elevation" ? story.elevationIn / 12 : index * 10;
         const dist = Math.abs(elevationY - baselineY);
         if (dist < nearestDistance) {
           nearestDistance = dist;

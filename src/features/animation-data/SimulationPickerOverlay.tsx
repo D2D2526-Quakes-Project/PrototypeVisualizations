@@ -174,7 +174,8 @@ export function SimulationPickerOverlay({
             })}
           </div>
 
-          <div className="border-border bg-background/60 sticky top-4 w-80 shrink-0 rounded-lg border p-2 pb-1">
+          <div className="border-border bg-background/60 sticky top-4 w-80 shrink-0 rounded-lg border px-2 py-1">
+            <span className="text-muted-foreground text-xs">M-7.8 2023 Turkey Earthquake</span>
             <div className="relative">
               <img
                 className="border-border overflow-hidden rounded-sm border bg-contain"

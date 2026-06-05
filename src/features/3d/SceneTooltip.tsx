@@ -60,8 +60,8 @@ export function SceneTooltip({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col gap-1">
           <div className="font-semibold">BRB Beam {brbRow.beamIndex}</div>
           <div>Ratio Abs: {formatNumber(brbRow.ratioAbs, 2)}</div>
-          <div>Tension Ratio: {formatNumber(brbRow.tensionRatio, 2)}</div>
-          <div>Compression Ratio: {formatNumber(brbRow.compressionRatio, 2)}</div>
+          <div>Tension Ratio: {formatNumber(brbRow.tensionRatio, 2)} %</div>
+          <div>Compression Ratio: {formatNumber(brbRow.compressionRatio, 2)} %</div>
           {/* <div>Force Max: {formatNumber(brbRow.axialForceMax, 2)}</div> */}
           {/* <div>Force Min: {formatNumber(brbRow.axialForceMin, 2)}</div> */}
           {/* <div>Deform Max: {formatNumber(brbRow.axialDeformationMax, 2)} in</div> */}

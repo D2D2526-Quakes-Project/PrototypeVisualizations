@@ -102,9 +102,22 @@ export function CanvasPanelProvider({
   const { animationData } = useAnimationData();
   const boundingBox = animationData.precomputed.boundingBox;
   const buildingVerticalCenter = (boundingBox.center[2] - boundingBox.min[2]) * UNIT_SCALE;
+  const cameraDistance = boundingBox.radius * 1.5 * UNIT_SCALE;
+  const defaultCameraPos: [number, number, number] = [
+    -cameraDistance,
+    -cameraDistance,
+    buildingVerticalCenter + cameraDistance * 0.5,
+  ];
+  const defaultCameraTarget: [number, number, number] = [0, 0, buildingVerticalCenter];
+  const dx = defaultCameraPos[0] - defaultCameraTarget[0];
+  const dy = defaultCameraPos[1] - defaultCameraTarget[1];
+  const dz = defaultCameraPos[2] - defaultCameraTarget[2];
+  const defaultCameraZoom = Math.sqrt(dx * dx + dy * dy + dz * dz);
   const defaultState: CanvasPanelState = {
     ...DEFAULT_CANVAS_PANEL_STATE,
-    cameraTarget: [0, 0, buildingVerticalCenter],
+    cameraPosition: defaultCameraPos,
+    cameraTarget: defaultCameraTarget,
+    cameraZoom: defaultCameraZoom,
     sliceXRange: [boundingBox.min[0], boundingBox.max[0]],
     sliceYRange: [boundingBox.min[1], boundingBox.max[1]],
     sliceZRange: [boundingBox.min[2], boundingBox.max[2]],
@@ -168,8 +181,6 @@ export function CanvasPanelProvider({
 
   // Camera controls
 
-  const cameraDistance = animationData.precomputed.boundingBox.radius * 2.5 * UNIT_SCALE;
-
   const viewPositions = useMemo(
     () => ({
       top: [0, 0, cameraDistance],
@@ -196,7 +207,11 @@ export function CanvasPanelProvider({
   );
 
   const resetHomeView = useCallback(() => {
-    const pos: [number, number, number] = [-cameraDistance, -cameraDistance, buildingVerticalCenter + cameraDistance];
+    const pos: [number, number, number] = [
+      -cameraDistance,
+      -cameraDistance,
+      buildingVerticalCenter + cameraDistance * 0.5,
+    ];
     const tgt: [number, number, number] = [0, 0, buildingVerticalCenter];
 
     panelState.setCameraTarget(tgt);

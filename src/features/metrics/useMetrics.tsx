@@ -3,13 +3,20 @@ import { interpolate } from "culori";
 import { useCallback, useMemo } from "react";
 import * as THREE from "three";
 import { useAnimationData } from "../animation-data/useAnimationData";
-import { getMetricColorScale, isBrbMetric, isHingeMetric, isStaticMetric, METRIC_CONFIGS, type Metric } from "./metrics";
+import {
+  getMetricColorScale,
+  isBrbMetric,
+  isHingeMetric,
+  isStaticMetric,
+  METRIC_CONFIGS,
+  type Metric,
+} from "./metrics";
 import { interpolateColor } from "./colors";
 import type { FindColorByMode } from "./colors/colorUtils";
 
 const grayColor = new THREE.Color(0.5, 0.5, 0.5);
 // const magentaColor = new THREE.Color(1, 0, 1);
-const darkGrayColor = new THREE.Color(0.4, 0.4, 0.4);
+const darkGrayColor = new THREE.Color(0.6, 0.6, 0.6);
 const ERROR_MAGENTA = interpolate(["magenta"], "oklab");
 
 export function useMetrics() {

@@ -149,5 +149,15 @@ for tall building structural simulations [Software].
 ## Contact
 
 ```
+```
+ -->
 
-``` -->
+---
+
+## Acknowledgments
+
+This project was developed as part of the **JPL/Caltech/ArtCenter Data to Discovery Program**, in collaboration with **NASA JPL**.
+
+- **Aidan Schmitigal** — Primary development
+- **Esther Suh** — Design
+- **Monica Kohler** & **Viviana Vela** — Research & data

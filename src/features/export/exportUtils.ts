@@ -1,3 +1,5 @@
+import type { ExportPanelSelection, PanelCaptureTarget } from "./types";
+
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -61,6 +63,36 @@ export function triggerDownload(url: string, name: string) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
+}
+
+export function getPanelCaptureTargets(root: HTMLElement): PanelCaptureTarget[] {
+  const panelRoots = Array.from(root.querySelectorAll<HTMLElement>("[data-export-panel-root='true']"));
+  return panelRoots
+    .map((panelRoot) => {
+      const panelId = panelRoot.dataset.exportPanelId;
+      const title = panelRoot.dataset.exportPanelTitle;
+      if (!panelId || !title) return null;
+      const captureElement = panelRoot;
+      const rect = captureElement.getBoundingClientRect();
+      if (rect.width < 4 || rect.height < 4) return null;
+      return {
+        panelId,
+        title,
+        element: captureElement,
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      };
+    })
+    .filter((target): target is PanelCaptureTarget => Boolean(target));
+}
+
+export function syncPanelSelections(previous: ExportPanelSelection[], nextTargets: PanelCaptureTarget[]) {
+  const previousMap = new Map(previous.map((selection) => [selection.panelId, selection.enabled]));
+  return nextTargets.map((target) => ({
+    panelId: target.panelId,
+    title: target.title,
+    enabled: previousMap.get(target.panelId) ?? true,
+  }));
 }
 
 export function frameToTime(frameIndex: number, dt: number) {

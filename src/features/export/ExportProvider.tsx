@@ -22,147 +22,39 @@ import { usePlayback } from "@/features/playback/usePlayback";
 import { useLiveStore, useProfileActions } from "@/state";
 import { Download, Film, LoaderCircle, Video } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-
-type ExportMode = "workspace" | "separate-panels";
-export type ExportStatus = "idle" | "loading" | "ready" | "recording" | "processing" | "complete" | "error";
-type ExportFps = "variable" | 10 | 15 | 24 | 30 | 60;
-type ExportScale = 1 | 1.5 | 2 | 3;
-
-interface ExportPanelSelection {
-  panelId: string;
-  title: string;
-  enabled: boolean;
-}
-
-interface PanelCaptureTarget {
-  panelId: string;
-  title: string;
-  element: HTMLElement;
-  width: number;
-  height: number;
-}
-
-interface ExportContextValue {
-  openExportPanel: () => void;
-  showTransientUi: boolean;
-  showPanelHeaders: boolean;
-  frameloop: "always" | "demand";
-  exportStatus: ExportStatus;
-  exportProgress: number;
-  exportStatusLabel: string;
-}
+import type {
+  ExportContextValue,
+  ExportFps,
+  ExportMode,
+  ExportPanelSelection,
+  ExportScale,
+  ExportStatus,
+  PanelCaptureTarget,
+} from "./types";
+import {
+  buildSampledFrameSequence,
+  clamp,
+  formatDuration,
+  frameToTime,
+  getBaseDownloadName,
+  getDownloadName,
+  getPanelCaptureTargets,
+  getSourceDurationSeconds,
+  getSourceFrameRate,
+  sleep,
+  slugify,
+  syncPanelSelections,
+  timeToFrame,
+  triggerDownload,
+} from "./exportUtils";
 
 const ExportContext = createContext<ExportContextValue | null>(null);
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-");
-}
-
-function formatDuration(seconds: number) {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0 s";
-  if (seconds < 60) return `${Math.round(seconds)} s`;
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.round(seconds % 60);
-  return `${minutes}m ${remainingSeconds}s`;
-}
-
-function getBaseDownloadName(buildingSlug?: string | null, simulationSlug?: string | null) {
-  return `${buildingSlug ?? "building"}-${simulationSlug ?? "simulation"}`;
-}
-
-function getDownloadName(baseName: string, mode: ExportMode, format: ExportVideoFormat) {
-  return mode === "workspace" ? `${baseName}-workspace.${format}` : `${baseName}-panels.zip`;
-}
-
-function getSourceFrameRate(dt: number) {
-  return dt > 0 ? 1 / dt : 30;
-}
-
-function buildSampledFrameSequence(startFrame: number, endFrame: number, sourceFps: number, outputFps: number) {
-  const span = Math.max(0, endFrame - startFrame);
-  const sourceDurationSeconds = (span + 1) / sourceFps;
-  const outputFrameCount = Math.max(1, Math.round(sourceDurationSeconds * outputFps));
-
-  if (outputFrameCount === 1) {
-    return [startFrame];
-  }
-
-  return Array.from({ length: outputFrameCount }, (_, index) => {
-    const progress = index / (outputFrameCount - 1);
-    return Math.round(startFrame + span * progress);
-  });
-}
-
-function getSourceDurationSeconds(startFrame: number, endFrame: number, sourceFps: number) {
-  const span = Math.max(0, endFrame - startFrame);
-  return (span + 1) / sourceFps;
-}
-
-function triggerDownload(url: string, name: string) {
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-}
-
-function getPanelCaptureTargets(root: HTMLElement): PanelCaptureTarget[] {
-  const panelRoots = Array.from(root.querySelectorAll<HTMLElement>("[data-export-panel-root='true']"));
-  return panelRoots
-    .map((panelRoot) => {
-      const panelId = panelRoot.dataset.exportPanelId;
-      const title = panelRoot.dataset.exportPanelTitle;
-      if (!panelId || !title) return null;
-      const captureElement = panelRoot;
-      const rect = captureElement.getBoundingClientRect();
-      if (rect.width < 4 || rect.height < 4) return null;
-      return {
-        panelId,
-        title,
-        element: captureElement,
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
-      };
-    })
-    .filter((target): target is PanelCaptureTarget => Boolean(target));
-}
-
-function syncPanelSelections(previous: ExportPanelSelection[], nextTargets: PanelCaptureTarget[]) {
-  const previousMap = new Map(previous.map((selection) => [selection.panelId, selection.enabled]));
-  return nextTargets.map((target) => ({
-    panelId: target.panelId,
-    title: target.title,
-    enabled: previousMap.get(target.panelId) ?? true,
-  }));
-}
-
 export function useExportVideo(): ExportContextValue {
   const context = useContext(ExportContext);
   if (!context) {
     throw new Error("useExportVideo must be used within ExportProvider");
   }
   return context;
-}
-
-function frameToTime(frameIndex: number, dt: number) {
-  return frameIndex * dt;
-}
-
-function timeToFrame(seconds: number, dt: number) {
-  return Math.round(seconds / dt);
 }
 
 export function ExportProvider({ children }: { children: ReactNode }) {

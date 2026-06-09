@@ -90,84 +90,28 @@
 ## 7. View Modes & Visualization
 
 - [ ] Add distance / metric markers numbers on the grid in the building scene.
-- [ ] Show the slice view cutting planes as planes in the building scene. Also show per axis a line filling with the visible area along that axis.
-- [ ] Add node labels (story/floor IDs)
-
-## 8. Performance Optimization
-
-- [ ] Optimize large node count rendering
-- [ ] Optimize rerenders
 
 ---
 
 - [ ] Add tooltips to all controls
-- [ ] Link the main evidence views more tightly so a finding in one panel drives the others
-  - Selecting a story/corner/time range in the heatmap or threshold panel should focus the 3D view, floor panel, and hinge summaries on the same target.
-  - Reduce the need for manual cross-referencing between separate panels.
-
-- Currently floor slabs highlight in a different color than nodes when hovered
-
-- [ ] Add floor highlighting when a floor tab is opened in the sidebar
-  - When user clicks on a floor tab (e.g., in the slice panel), the corresponding floor slab in the 3D view should highlight
-  - Should mirror the existing node highlighting behavior when nodes are selected
-  - Add floor-to-slab mapping and highlight state management
-  - Consider adding a toggle to enable/disable this auto-highlight behavior
-
 - [ ] Ensure selected nodes highlight correctly in all view modes
 
 - [ ] Remove magnitude metrics (hide by default, add "Show Magnitude Metrics" setting)
 
-- [ ] Add displacement scale option for pinning one corner to see rotation without displacement
-
 - [ ] Fix rotation panel and all rotation displays
-
-- Remove `Floor` prefix
-- Render numeric floor names as ordinals (e.g., `1st`, `5th`, `11th`) and preserve existing non-numeric floor labels
-
-- [ ] Add sort features to all panels with tables (sort by floor, peak, max current)
-
-- [ ] Preserve and expose hinge Performance Level from source data
 - [ ] Reduce precision on all numbers - keep at 1 or 2 decimal places instead of 4
-- [ ] Building should come with default floor hiding settings
 - [ ] Create dedicated settings menu
-- [ ] Make default view simpler with fewer tabs and panels
-- [x] Add charts showing all floors with line chart per floor for same metrics like ISD
-  - Added a `Floor Waveforms` panel with metric selection, threshold-aware coloring, floor-vs-elevation placement, and tooltip/playhead support.
 
 - [ ] Multiple places define an order for the optional data (NavigationBar, Main Menu, optionalLoads query param). This should be centralized and made consistent.
 
-### BRB Implementation
-
-- [x] Generate `brb_data.bld` from `BRB/BRB_data.csv` + `BRB_properties.csv`
-- [x] Add BRB data discovery, mapping, and ratio computation in binary generator
-- [x] Add `brbData` to simulation index types, schema, and optional dataset keys
-- [x] Auto-load `beam_data.bld` when `brbData` is requested
-- [x] Add `BrbDataAccessor`, `BrbMetadata`, row types, parser, stats merge
-- [x] Add `brbRatioAbs`, `brbTensionRatio`, `brbCompressionRatio` metrics with `brbRatio` threshold (default 5)
-- [x] Render BRB lines with Drei `<Line>`, threshold-aware thickness, and metric coloring
-- [x] Add BRB hover/tooltip support
-- [x] Update `BINARY_FORMAT.md` and `DATA_DOCUMENTATION.md` with BRB documentation
-
 ## Unsorted Things:
 
-- [ ] Data Explorer should be virtualized list so there are no pages, just infinite scroll
-- [ ] Add the NW, NE, SW, SE, N, E, S, W directions colors to the metrics.ts so their colors are constant for use in graphs and in the 3d scene
-- [ ] Clicking the colorbar box in the collapsed view menu should open the view menu to the colorbar option dropdown
 - [ ] Clicking floors in ISD chart or other charts / panels should open that floor
 - [ ] Clicking reference nodes in any panels (corners included) should open that node panel
 - [ ] Node panel should link / reference have buttons for the 3 cross sections its in (floor, x, y)
-- [ ] Inset numbers mode for color bar to put the number inside the color bar
-- [ ] FFTs on the motion, maybe
-- [ ] Laplace transforms on the motion, maybe
-- [ ] Make cursor + on timeline
 
 ## 25. Known Issues
 
-- [x] When the view menu is docked, the ctrl+drag selection box is visually offset
-- [x] While in Floor Slabs view mode with Story Drift color by, the floors look gray because its the values include the nodes with no data
 - [ ] When loading the app and the previously selected color by metric was from optional data and that data is no longer loaded, then it doesn't default back to ISD instead its in a weird broken state.
-- [x] Hinge to assignment allocation is wrong
-  - Updated hinge binary generation to resolve singleton component `3` beams to the `J` end and keep paired beams on the existing `2/3 -> I`, `4/5 -> J` pattern.
-- [ ] The topdown motion graph of per-node motion is offset or wrong or not centered or bounds are wrong.
 
 _Last Updated: May 2026_

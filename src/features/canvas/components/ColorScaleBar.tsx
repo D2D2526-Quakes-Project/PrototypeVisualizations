@@ -1,5 +1,8 @@
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DATASET_LABELS, type OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
+import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import {
   getMetricColorScale,
   METRIC_CONFIGS,
@@ -8,6 +11,7 @@ import {
 } from "@/features/metrics/metrics";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { formatNumber } from "@/lib/utils";
+import { CheckIcon } from "lucide-react";
 import { useState } from "react";
 import { getScaleStopsAndLabels } from "./colorScaleUtils";
 
@@ -42,7 +46,13 @@ export function ColorScaleBar({ noLabel, insideLabel }: ColorScaleBarProps) {
     currentMetricConfig: config,
     currentMetricThreshold,
     thresholdHighlighting,
+    isCurrentMetricAvailable,
+    currentMetricRequiredDataset,
   } = useMetrics();
+
+  if (!isCurrentMetricAvailable && currentMetricRequiredDataset) {
+    return <MetricNotAvailableWarning datasetKey={currentMetricRequiredDataset} />;
+  }
 
   const { stops, thresholdRatio } = getScaleStopsAndLabels(
     currentMetricColorScale,
@@ -125,6 +135,7 @@ export function ColorScaleBarTooltip({ noLabel, insideLabel }: ColorScaleBarProp
     currentMetricConfig: config,
     currentMetricThreshold,
     thresholdHighlighting,
+    isCurrentMetricAvailable,
   } = useMetrics();
 
   const unit = config.unit;
@@ -136,38 +147,44 @@ export function ColorScaleBarTooltip({ noLabel, insideLabel }: ColorScaleBarProp
           <ColorScaleBar noLabel={noLabel} insideLabel={insideLabel} />
         </div>
       </TooltipTrigger>
-      <TooltipContent side="bottom" sideOffset={8} className="flex-col">
-        <div className="font-semibold">{config.label}</div>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-          <span className="text-muted-foreground">Max:</span>
-          <span>
-            {config.hasPositive ? (config.hasNegative ? `+${maxValue.toFixed(2)}` : maxValue.toFixed(2)) : "0"}{" "}
-            {unit.abbr}
-          </span>
-          <span className="text-muted-foreground">Min:</span>
-          <span>
-            {config.hasNegative ? `-${maxValue.toFixed(2)}` : "0"} {unit.abbr}
-          </span>
-          {thresholdHighlighting && currentMetricThreshold > 0 && (
-            <>
-              <span className="text-muted-foreground">Threshold:</span>
-              <span>
-                {currentMetricThreshold.toFixed(2)} {unit.abbr}
-              </span>
-            </>
-          )}
-        </div>
-      </TooltipContent>
+      {isCurrentMetricAvailable && (
+        <TooltipContent side="bottom" sideOffset={8} className="flex-col">
+          <div className="font-semibold">{config.label}</div>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+            <span className="text-muted-foreground">Max:</span>
+            <span>
+              {config.hasPositive ? (config.hasNegative ? `+${maxValue.toFixed(2)}` : maxValue.toFixed(2)) : "0"}{" "}
+              {unit.abbr}
+            </span>
+            <span className="text-muted-foreground">Min:</span>
+            <span>
+              {config.hasNegative ? `-${maxValue.toFixed(2)}` : "0"} {unit.abbr}
+            </span>
+            {thresholdHighlighting && currentMetricThreshold > 0 && (
+              <>
+                <span className="text-muted-foreground">Threshold:</span>
+                <span>
+                  {currentMetricThreshold.toFixed(2)} {unit.abbr}
+                </span>
+              </>
+            )}
+          </div>
+        </TooltipContent>
+      )}
     </Tooltip>
   );
 }
 
 function ColorScaleBarPopover({ children }: { children: React.ReactNode }) {
-  const { currentMetric, metricPaletteOverrides, setMetricPalette } = useMetrics();
+  const { currentMetric, metricPaletteOverrides, setMetricPalette, isCurrentMetricAvailable } = useMetrics();
   const activePalette = getMetricColorScale(currentMetric, metricPaletteOverrides);
   const metricConfig = METRIC_CONFIGS[currentMetric];
 
   const [open, setOpen] = useState(false);
+
+  if (!isCurrentMetricAvailable) {
+    return <>{children}</>;
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -208,5 +225,73 @@ function ColorScaleBarPopover({ children }: { children: React.ReactNode }) {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function MetricNotAvailableWarning({ datasetKey }: { datasetKey: OptionalDatasetKey }) {
+  const { datasetStates, requestDatasetLoad, retryDatasetLoad } = useAnimationData();
+  const dataState = datasetStates[datasetKey];
+  const dataAvailable = dataState.available;
+
+  return (
+    <div className="mt-1.5">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="border-border relative flex min-h-5 w-full flex-1 items-center justify-center rounded-md border bg-linear-90 from-white to-neutral-400 py-0.5 text-sm">
+            Data not loaded
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={8} className="flex flex-col">
+          {dataAvailable ? (
+            <>
+              {DATASET_LABELS[datasetKey]} data needs to be loaded to display this metric.
+              <div className="w-full">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2">
+                    {dataState.stage === "ready" ? (
+                      <>
+                        <CheckIcon size={11} /> Loaded
+                      </>
+                    ) : dataState.stage === "error" ? (
+                      "Failed"
+                    ) : dataState.selected ? (
+                      dataState.message
+                    ) : (
+                      "Available"
+                    )}
+                  </span>
+                  <div className="inline-block items-center justify-between gap-2 text-[10px]">
+                    {dataState.stage === "error" ? (
+                      <Button variant="outline" size="xs" className="dark" onClick={() => retryDatasetLoad(datasetKey)}>
+                        <span className="text-xs leading-tight">Retry</span>
+                      </Button>
+                    ) : dataState.stage === "idle" || !dataState.selected ? (
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="dark"
+                        onClick={() => requestDatasetLoad(datasetKey)}>
+                        <span className="text-xs leading-tight">Load data</span>
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+                <span className="flex items-center gap-2">{dataState.error}</span>
+                {dataState.stage === "fetching" || dataState.stage === "parsing" || dataState.stage === "queued" ? (
+                  <div className="bg-muted mt-1 mb-1 h-1.5 overflow-hidden rounded-full">
+                    <div
+                      className="bg-warning h-full rounded-full transition-all"
+                      style={{ width: `${dataState.progress}%` }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <>{DATASET_LABELS[datasetKey]} data is not available for this building</>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </div>
   );
 }

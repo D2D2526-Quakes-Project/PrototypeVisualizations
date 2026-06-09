@@ -9,8 +9,14 @@ import { useState } from "react";
 import { ColorScaleBar } from "../components/ColorScaleBar";
 
 export function CanvasMetricSelector() {
-  const { currentMetric, setCurrentMetric, availableMetrics, thresholdHighlighting, setThresholdHighlighting } =
-    useMetrics();
+  const {
+    currentMetric,
+    setCurrentMetric,
+    availableMetrics,
+    thresholdHighlighting,
+    setThresholdHighlighting,
+    isCurrentMetricAvailable,
+  } = useMetrics();
 
   const [hovering, setHovering] = useState(false);
 
@@ -36,7 +42,8 @@ export function CanvasMetricSelector() {
       <motion.div
         initial={{ height: 0, opacity: 0 }}
         animate={{ height: hovering ? "auto" : 0, opacity: hovering ? 1 : 0 }}
-        exit={{ height: 0, opacity: 0 }}>
+        exit={{ height: 0, opacity: 0 }}
+        className="mb-1">
         <NativeSelect
           value={currentMetric}
           onChange={(e) => setCurrentMetric(e.target.value as Metric)}
@@ -46,6 +53,11 @@ export function CanvasMetricSelector() {
               {METRIC_CONFIGS[metric].label}
             </NativeSelectOption>
           ))}
+          {!isCurrentMetricAvailable && (
+            <NativeSelectOption value={currentMetric} disabled>
+              {METRIC_CONFIGS[currentMetric].label} — not loaded
+            </NativeSelectOption>
+          )}
         </NativeSelect>
       </motion.div>
 
@@ -54,7 +66,7 @@ export function CanvasMetricSelector() {
         initial={{ height: "auto", opacity: 1 }}
         animate={{ height: hovering ? 0 : "auto", opacity: hovering ? 0 : 1 }}
         exit={{ height: "auto", opacity: 1 }}>
-        {METRIC_CONFIGS[currentMetric].label}
+        {METRIC_CONFIGS[currentMetric].label} {isCurrentMetricAvailable ? "" : "— not loaded"}
       </motion.span>
 
       <div className="">

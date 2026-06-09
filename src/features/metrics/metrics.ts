@@ -1,3 +1,4 @@
+import type { OptionalDatasetKey } from "@/features/animation-data/data-loading/loadingTypes";
 import type { BuildingAnimationData, ComputedStats, TimeIndexAccessor } from "@/lib/types";
 import { MATPLOTLIB_PALETTES, type MatplotlibPaletteKey } from "./colors/matplotlibColors";
 import { TAILWIND_PALETTES, type TailwindPaletteKey } from "./colors/tailwindColors";
@@ -332,6 +333,7 @@ export type MetricConfig = {
   hasPositive: boolean;
   hasNegative: boolean;
   hiddenByDefault: boolean;
+  requiredDataset: OptionalDatasetKey | null;
 };
 
 export const METRIC_PALETTES: Record<MetricPaletteKey, MetricPaletteDefinition> = {
@@ -697,6 +699,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: null,
     getPrecomputedMax: get("maxStoryDrift"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -715,6 +718,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: null,
     getPrecomputedMax: get("maxDisplacement"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -734,6 +738,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: null,
     getPrecomputedMax: get("maxDisplacementX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -752,6 +757,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: null,
     getPrecomputedMax: get("maxDisplacementY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -770,6 +776,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: null,
     getPrecomputedMax: get("maxDisplacementZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -788,6 +795,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "velocityLin",
     getPrecomputedMax: get("maxVelocity"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -808,6 +816,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "velocityLin",
     getPrecomputedMax: get("maxVelocityX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -827,6 +836,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "velocityLin",
     getPrecomputedMax: get("maxVelocityY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -846,6 +856,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "velocityLin",
     getPrecomputedMax: get("maxVelocityZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -865,6 +876,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "accelerationLin",
     getPrecomputedMax: get("maxAcceleration"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -885,6 +897,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "accelerationLin",
     getPrecomputedMax: get("maxAccelerationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -904,6 +917,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "accelerationLin",
     getPrecomputedMax: get("maxAccelerationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -923,6 +937,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "accelerationLin",
     getPrecomputedMax: get("maxAccelerationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationLin,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -942,6 +957,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "displacementRot",
     getPrecomputedMax: get("maxRotation"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -962,6 +978,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "displacementRot",
     getPrecomputedMax: get("maxRotationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -981,6 +998,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "displacementRot",
     getPrecomputedMax: get("maxRotationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1000,6 +1018,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "displacementRot",
     getPrecomputedMax: get("maxRotationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.displacementRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1019,6 +1038,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "velocityRot",
     getPrecomputedMax: get("maxRotationVelocity"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1039,6 +1059,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "velocityRot",
     getPrecomputedMax: get("maxRotationVelocityX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1064,6 +1085,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "velocityRot",
     getPrecomputedMax: get("maxRotationVelocityY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1089,6 +1111,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "velocityRot",
     getPrecomputedMax: get("maxRotationVelocityZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.velocityRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1114,6 +1137,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "accelerationRot",
     getPrecomputedMax: get("maxRotationAcceleration"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1134,6 +1158,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "accelerationRot",
     getPrecomputedMax: get("maxRotationAccelerationX"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1159,6 +1184,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "accelerationRot",
     getPrecomputedMax: get("maxRotationAccelerationY"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1184,6 +1210,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: true,
     hiddenByDefault: false,
+    requiredDataset: "accelerationRot",
     getPrecomputedMax: get("maxRotationAccelerationZ"),
     isAvailable: (animationData: BuildingAnimationData) => !!animationData.accelerationRot,
     getValue: (animationData: BuildingAnimationData, frameIndex: number, nodeId: number) => {
@@ -1209,6 +1236,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "hingeData",
     getPrecomputedMax: (animationData: BuildingAnimationData) =>
       Math.max(
         animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
@@ -1237,6 +1265,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: true,
+    requiredDataset: "hingeData",
     getPrecomputedMax: (animationData: BuildingAnimationData) =>
       animationData.precomputed.hingeNodeMetrics?.maxRotationAbsMax ?? 0,
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.hingeData),
@@ -1262,6 +1291,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: false,
     hasNegative: true,
     hiddenByDefault: true,
+    requiredDataset: "hingeData",
     getPrecomputedMax: (animationData: BuildingAnimationData) =>
       animationData.precomputed.hingeNodeMetrics?.minRotationAbsMax ?? 0,
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.hingeData),
@@ -1287,6 +1317,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "brbData",
     getPrecomputedMax: get("maxBrbRatioAbs"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.brbData),
     getValue: (animationData: BuildingAnimationData, frameIndex: number, brbIdx: number) => {
@@ -1304,6 +1335,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: true,
+    requiredDataset: "brbData",
     getPrecomputedMax: get("maxBrbTensionRatio"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.brbData),
     getValue: (animationData: BuildingAnimationData, frameIndex: number, brbIdx: number) => {
@@ -1321,6 +1353,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: false,
     hasNegative: true,
     hiddenByDefault: true,
+    requiredDataset: "brbData",
     getPrecomputedMax: get("maxBrbCompressionRatio"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.brbData),
     getValue: (animationData: BuildingAnimationData, frameIndex: number, brbIdx: number) => {
@@ -1338,6 +1371,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: true,
+    requiredDataset: "shearData",
     getPrecomputedMax: get("maxshearXMax"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
@@ -1353,6 +1387,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: false,
     hasNegative: true,
     hiddenByDefault: true,
+    requiredDataset: "shearData",
     getPrecomputedMax: get("maxShearXMin"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
@@ -1368,6 +1403,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "shearData",
     getPrecomputedMax: get("maxShearXAbs"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
@@ -1383,6 +1419,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: true,
+    requiredDataset: "shearData",
     getPrecomputedMax: get("maxShearYMax"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
@@ -1398,6 +1435,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: false,
     hasNegative: true,
     hiddenByDefault: true,
+    requiredDataset: "shearData",
     getPrecomputedMax: get("maxShearYMin"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>
@@ -1413,6 +1451,7 @@ export const METRIC_CONFIGS: Record<Metric, MetricConfig> = {
     hasPositive: true,
     hasNegative: false,
     hiddenByDefault: false,
+    requiredDataset: "shearData",
     getPrecomputedMax: get("maxShearYAbs"),
     isAvailable: (animationData: BuildingAnimationData) => Boolean(animationData.shearData),
     getValue: (animationData: BuildingAnimationData, _frameIndex: number, nodeId: number) =>

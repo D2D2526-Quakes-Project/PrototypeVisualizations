@@ -16,7 +16,7 @@ export function CurrentThresholdSlider() {
   const setMetricColorsDrawerOpen = useLiveStore((s) => s.setMetricColorsDrawerOpen);
 
   const config = getThresholdConfig(currentMetricConfig.thresholdKey);
-  const max = Math.max(config.getPrecomputedMax(animationData), thresholds[currentMetricConfig.thresholdKey] || 0, 0);
+  const max = Math.max(currentMetricConfig.getPrecomputedMax(animationData) || 0, 0);
   const value = thresholds[currentMetricConfig.thresholdKey];
 
   const [hovering, setHovering] = useState(false);

@@ -161,6 +161,16 @@ export function useMetrics() {
     });
   }, [animationData, showHiddenMetrics]);
 
+  const isCurrentMetricAvailable = useMemo(
+    () => availableMetrics.includes(currentMetric),
+    [availableMetrics, currentMetric]
+  );
+
+  const currentMetricRequiredDataset = useMemo(
+    () => currentMetricResources.config.requiredDataset,
+    [currentMetricResources]
+  );
+
   const getNodeValueForMetric = useCallback(
     (nodeId: number, frameIndex: number, metric: Metric) => {
       const config = METRIC_CONFIGS[metric];
@@ -180,6 +190,8 @@ export function useMetrics() {
     currentMetric,
     setCurrentMetric,
     availableMetrics,
+    isCurrentMetricAvailable,
+    currentMetricRequiredDataset,
     isCurrentMetricStatic: isStaticMetric(currentMetric),
     isCurrentMetricHinge: isHingeMetric(currentMetric),
     isCurrentMetricBrb: isBrbMetric(currentMetric),

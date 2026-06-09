@@ -1,5 +1,39 @@
 import { registerTheme } from "echarts";
 
+const lightAxis = {
+  nameTextStyle: {
+    color: "#0A0A0A",
+  },
+  axisLine: {
+    show: true,
+    lineStyle: {
+      color: "#E5E5E5",
+    },
+  },
+  axisTick: {
+    show: true,
+    lineStyle: {
+      color: "#E5E5E5",
+    },
+  },
+  axisLabel: {
+    show: true,
+    color: "#737373",
+  },
+  splitLine: {
+    show: true,
+    lineStyle: {
+      color: ["#E5E5E5"],
+    },
+  },
+  splitArea: {
+    show: false,
+    areaStyle: {
+      color: ["#E5E5E5"],
+    },
+  },
+};
+
 registerTheme("my_light_theme", {
   backgroundColor: "transparent",
   textStyle: {},
@@ -11,126 +45,10 @@ registerTheme("my_light_theme", {
       color: "#737373",
     },
   },
-  categoryAxis: {
-    axisLine: {
-      show: true,
-      lineStyle: {
-        color: "#E5E5E5",
-      },
-    },
-    axisTick: {
-      show: true,
-      lineStyle: {
-        color: "#E5E5E5",
-      },
-    },
-    axisLabel: {
-      show: true,
-      color: "#737373",
-    },
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: ["#E5E5E5"],
-      },
-    },
-    splitArea: {
-      show: false,
-      areaStyle: {
-        color: ["#E5E5E5"],
-      },
-    },
-  },
-  valueAxis: {
-    axisLine: {
-      show: true,
-      lineStyle: {
-        color: "#E5E5E5",
-      },
-    },
-    axisTick: {
-      show: true,
-      lineStyle: {
-        color: "#E5E5E5",
-      },
-    },
-    axisLabel: {
-      show: true,
-      color: "#737373",
-    },
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: ["#E5E5E5"],
-      },
-    },
-    splitArea: {
-      show: false,
-      areaStyle: {
-        color: ["#E5E5E5"],
-      },
-    },
-  },
-  logAxis: {
-    axisLine: {
-      show: true,
-      lineStyle: {
-        color: "#E5E5E5",
-      },
-    },
-    axisTick: {
-      show: true,
-      lineStyle: {
-        color: "#E5E5E5",
-      },
-    },
-    axisLabel: {
-      show: true,
-      color: "#737373",
-    },
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: ["#E5E5E5"],
-      },
-    },
-    splitArea: {
-      show: false,
-      areaStyle: {
-        color: ["#E5E5E5"],
-      },
-    },
-  },
-  timeAxis: {
-    axisLine: {
-      show: true,
-      lineStyle: {
-        color: "#E5E5E5",
-      },
-    },
-    axisTick: {
-      show: true,
-      lineStyle: {
-        color: "#E5E5E5",
-      },
-    },
-    axisLabel: {
-      show: true,
-      color: "#737373",
-    },
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: ["#E5E5E5"],
-      },
-    },
-    splitArea: {
-      show: false,
-      areaStyle: {
-        color: ["#E5E5E5"],
-      },
-    },
-  },
+  categoryAxis: lightAxis,
+  valueAxis: lightAxis,
+  logAxis: lightAxis,
+  timeAxis: lightAxis,
   tooltip: {
     axisPointer: {
       lineStyle: {
@@ -145,6 +63,39 @@ registerTheme("my_light_theme", {
   },
 });
 
+const darkAxis = {
+  nameTextStyle: {
+    color: "#E5E5E5",
+  },
+  axisLine: {
+    show: true,
+    lineStyle: {
+      color: "#2E2E2E",
+    },
+  },
+  axisTick: {
+    show: true,
+    lineStyle: {
+      color: "#2E2E2E",
+    },
+  },
+  axisLabel: {
+    show: true,
+    color: "#A1A1A1",
+  },
+  splitLine: {
+    show: true,
+    lineStyle: {
+      color: ["#2E2E2E"],
+    },
+  },
+  splitArea: {
+    show: false,
+    areaStyle: {
+      color: ["#2E2E2E"],
+    },
+  },
+};
 registerTheme("my_dark_theme", {
   backgroundColor: "transparent",
   textStyle: {},
@@ -156,126 +107,10 @@ registerTheme("my_dark_theme", {
       color: "#A1A1A1",
     },
   },
-  categoryAxis: {
-    axisLine: {
-      show: true,
-      lineStyle: {
-        color: "#2E2E2E",
-      },
-    },
-    axisTick: {
-      show: true,
-      lineStyle: {
-        color: "#2E2E2E",
-      },
-    },
-    axisLabel: {
-      show: true,
-      color: "#A1A1A1",
-    },
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: ["#2E2E2E"],
-      },
-    },
-    splitArea: {
-      show: false,
-      areaStyle: {
-        color: ["#2E2E2E"],
-      },
-    },
-  },
-  valueAxis: {
-    axisLine: {
-      show: true,
-      lineStyle: {
-        color: "#2E2E2E",
-      },
-    },
-    axisTick: {
-      show: true,
-      lineStyle: {
-        color: "#2E2E2E",
-      },
-    },
-    axisLabel: {
-      show: true,
-      color: "#A1A1A1",
-    },
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: ["#2E2E2E"],
-      },
-    },
-    splitArea: {
-      show: false,
-      areaStyle: {
-        color: ["#2E2E2E"],
-      },
-    },
-  },
-  logAxis: {
-    axisLine: {
-      show: true,
-      lineStyle: {
-        color: "#2E2E2E",
-      },
-    },
-    axisTick: {
-      show: true,
-      lineStyle: {
-        color: "#2E2E2E",
-      },
-    },
-    axisLabel: {
-      show: true,
-      color: "#A1A1A1",
-    },
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: ["#2E2E2E"],
-      },
-    },
-    splitArea: {
-      show: false,
-      areaStyle: {
-        color: ["#2E2E2E"],
-      },
-    },
-  },
-  timeAxis: {
-    axisLine: {
-      show: true,
-      lineStyle: {
-        color: "#2E2E2E",
-      },
-    },
-    axisTick: {
-      show: true,
-      lineStyle: {
-        color: "#2E2E2E",
-      },
-    },
-    axisLabel: {
-      show: true,
-      color: "#A1A1A1",
-    },
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: ["#2E2E2E"],
-      },
-    },
-    splitArea: {
-      show: false,
-      areaStyle: {
-        color: ["#2E2E2E"],
-      },
-    },
-  },
+  categoryAxis: darkAxis,
+  valueAxis: darkAxis,
+  logAxis: darkAxis,
+  timeAxis: darkAxis,
   tooltip: {
     axisPointer: {
       lineStyle: {

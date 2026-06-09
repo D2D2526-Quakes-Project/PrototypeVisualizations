@@ -296,9 +296,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       yAxis: {
         type: "value",
         name: panelState.placementMode === "elevation" ? "Story Elevation (ft)" : "Floor",
-        nameLocation: "middle",
         nameGap: 50,
-        nameTextStyle: { color: echartsTheme == "my_dark_theme" ? "#E5E5E5" : "#0A0A0A", fontSize: 11 },
         min: "dataMin",
         max: "dataMax",
         axisLabel: { show: false },
@@ -380,7 +378,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       let nearestIndex = 0;
       let nearestDistance = Number.POSITIVE_INFINITY;
       storySeries.forEach((story, index) => {
-      const baselineY = panelState.placementMode === "elevation" ? story.elevationIn / 12 : index * 10;
+        const baselineY = panelState.placementMode === "elevation" ? story.elevationIn / 12 : index * 10;
         const dist = Math.abs(elevationY - baselineY);
         if (dist < nearestDistance) {
           nearestDistance = dist;

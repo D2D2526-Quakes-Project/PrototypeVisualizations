@@ -188,21 +188,6 @@ function joinHumanList(items: string[]): string {
   return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
 
-function getPanelRequirementDescriptorText(panelType: PanelType): string {
-  const { requiredOptionalData, optionalEnhancementData } = PANEL_DEFINITIONS[panelType];
-  const parts = ["Data: core simulation data"];
-
-  if (requiredOptionalData.length > 0) {
-    parts.push(`Requires: ${joinHumanList(requiredOptionalData.map((key) => PANEL_DATA_LABELS[key]))}`);
-  }
-
-  if (optionalEnhancementData.length > 0) {
-    parts.push(`Optional: ${joinHumanList(optionalEnhancementData.map((key) => PANEL_DATA_LABELS[key]))}`);
-  }
-
-  return parts.join(" | ");
-}
-
 function getMissingPanelDataRequirements(panelType: PanelType, animationData: BuildingAnimationData): PanelDataKey[] {
   return PANEL_DEFINITIONS[panelType].requiredOptionalData.filter((key) => !animationData[key]);
 }
@@ -217,13 +202,11 @@ function getPanelAvailabilityInfo(
   loading: boolean,
   datasetStates?: Partial<Record<PanelDataKey, DatasetLoadState>>
 ) {
-  const descriptorText = getPanelRequirementDescriptorText(panelType);
   const optionalEnhancementData = PANEL_DEFINITIONS[panelType].optionalEnhancementData;
 
   if (loading || !animationData) {
     return {
       isAvailable: false,
-      descriptorText,
       disabledReason: "This panel is not available yet because simulation data is still loading.",
       optionalNotice: optionalEnhancementData.length
         ? `Optional enhancements: ${joinHumanList(optionalEnhancementData.map((key) => PANEL_DATA_LABELS[key]))}.`
@@ -241,7 +224,7 @@ function getPanelAvailabilityInfo(
           ? `Optional enhancements are loaded: ${joinHumanList(optionalEnhancementData.map((key) => PANEL_DATA_LABELS[key]))}.`
           : null;
 
-    return { isAvailable: true, descriptorText, disabledReason: null as string | null, optionalNotice };
+    return { isAvailable: true, disabledReason: null as string | null, optionalNotice };
   }
 
   const missingLabels = missing.map((key) => PANEL_DATA_LABELS[key]);
@@ -251,7 +234,6 @@ function getPanelAvailabilityInfo(
 
   return {
     isAvailable: false,
-    descriptorText,
     disabledReason: `This panel is not available because it requires ${joinHumanList(missingLabels)}, but ${missing.length === 1 ? "it is" : "they are"} not loaded.`,
     optionalNotice: null as string | null,
     missingStates,
@@ -402,9 +384,6 @@ export function PanelTypePickerMenu({
                   datasetStates
                 );
                 const hasMissingOptionalEnhancements = availability.isAvailable && Boolean(availability.optionalNotice);
-                const buttonTitle = [meta.description, availability.descriptorText, availability.optionalNotice]
-                  .filter(Boolean)
-                  .join("\n");
 
                 const button = (
                   <Button
@@ -418,7 +397,11 @@ export function PanelTypePickerMenu({
                       onRequestClose?.();
                     }}
                     disabled={!availability.isAvailable}
-                    title={availability.isAvailable ? buttonTitle : undefined}>
+                    title={
+                      availability.isAvailable
+                        ? "This panel is available, but some features require additional data to be loaded."
+                        : undefined
+                    }>
                     <Icon className={isActive ? "text-amber-500" : "text-muted-foreground"} />
                     <div className={"min-w-0 flex-1 text-left"}>{panelType}</div>
                     {hasMissingOptionalEnhancements ? (
@@ -441,7 +424,9 @@ export function PanelTypePickerMenu({
                     <TooltipContent side="right" className="max-w-xs flex-col">
                       <div className="font-medium">{panelType}</div>
                       {availability.disabledReason ? <div className="mt-0.5">{availability.disabledReason}</div> : null}
-                      <div className="text-[11px] opacity-90">{availability.descriptorText}</div>
+                      <div className="text-[11px] whitespace-pre-wrap opacity-90">
+                        This panel is available, but some features require additional data to be loaded.
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 );

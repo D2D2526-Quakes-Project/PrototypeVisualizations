@@ -4,6 +4,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ViewControls } from "./ViewControls";
 import { useCanvasState } from "../3d/contexts/CanvasContext";
+import * as THREE from "three";
 
 interface CanvasWithControlsProps {
   children: ReactNode;
@@ -92,9 +93,12 @@ export function CanvasWithControls({ children, overlays }: CanvasWithControlsPro
           frameloop={exportRenderMode.frameloop}
           linear
           flat
+          shadows={false}
           gl={{ preserveDrawingBuffer: true }}
-          onCreated={({ scene }) => {
+          onCreated={({ scene, gl }) => {
             scene.fog = null;
+            gl.toneMapping = THREE.NoToneMapping;
+            gl.shadowMap.enabled = false;
           }}>
           <LayoutSizeSync />
           {children}

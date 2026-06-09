@@ -49,7 +49,7 @@ export function StaticHingeHistogram({
         top: 0,
         right: 0,
         textStyle: { fontSize: 10, color: "#525252" },
-        data: ["Max Rotation", "Min Rotation"],
+        data: ["Min Rotation", "Max Rotation"],
       },
       grid: { left: 0, right: 0, top: 16, bottom: 0 },
       tooltip: {
@@ -73,13 +73,9 @@ export function StaticHingeHistogram({
         data: xValues.map((value) => value.toFixed(3)),
         name: "Hinge Rotation (rad)",
         nameLocation: "middle",
-        nameGap: 30,
-        axisLabel: { color: "#525252", fontSize: 10 },
       },
       yAxis: {
         type: "value",
-        axisLabel: { color: "#525252", fontSize: 10 },
-        splitLine: { lineStyle: { color: "#f0f0f0" } },
         min: 0,
       },
       series: [
@@ -87,13 +83,13 @@ export function StaticHingeHistogram({
           name: "Max Rotation",
           type: "bar",
           data: buildSeriesValues(maxHistogram),
-          itemStyle: { color: "#d97706" },
+          itemStyle: { color: "#000" },
           barGap: "10%",
           ...(showThresholdLine
             ? {
                 markLine: {
                   symbol: "none",
-                  data: [{ xAxis: thresholdValue!.toFixed(3), name: "Threshold" }],
+                  data: [{ xAxis: thresholdValue, name: "Threshold" }],
                   lineStyle: { color: "#9ca3af", width: 2, type: "dashed" as const },
                   label: { show: false },
                   silent: true,
@@ -105,7 +101,7 @@ export function StaticHingeHistogram({
           name: "Min Rotation",
           type: "bar",
           data: buildSeriesValues(minHistogram),
-          itemStyle: { color: "#0f766e" },
+          itemStyle: { color: "#999" },
           barGap: "10%",
         },
       ],

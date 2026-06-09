@@ -1039,7 +1039,9 @@ export function ExportProvider({ children }: { children: ReactNode }) {
                 <span className="relative inline-flex size-3 rounded-full bg-red-600" />
               </span>
               <span className="text-sm font-medium text-neutral-900">
-                {etaSeconds !== null ? `Recording \u2022 ETA ${formatDuration(etaSeconds)}` : "Recording..."}
+                {etaSeconds !== null
+                  ? `Recording \u2022 ${(progress * 100).toFixed(0)}% \u2022 ETA ${formatDuration(etaSeconds)}`
+                  : "Recording..."}
               </span>
             </div>
             <div className="flex gap-3">

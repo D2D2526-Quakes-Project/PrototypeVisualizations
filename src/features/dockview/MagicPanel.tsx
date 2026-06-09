@@ -4,10 +4,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { DatasetLoadState } from "@/features/animation-data/data-loading/loadingTypes";
 import { MainCanvasPanel } from "@/features/panels/MainCanvasPanel";
 import type { BuildingAnimationData } from "@/lib/types";
+import { capturePanelAsPng } from "@/features/export/domCapture";
+import { triggerDownload } from "@/features/export/exportUtils";
 
 import type { IDockviewHeaderActionsProps, IDockviewPanelHeaderProps, IDockviewPanelProps } from "dockview-react";
 import type { LucideIcon } from "lucide-react";
 import {
+  Camera,
   ChartBarIncreasingIcon,
   ChartColumnIcon,
   ChartGanttIcon,
@@ -441,6 +444,7 @@ export function PanelTypePickerMenu({
 
 export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const activePanel = props.activePanel;
   const activePanelType = isPanelType(activePanel?.params?.panelType) ? activePanel.params.panelType : null;
   const isTabGroup = props.panels.length > 1;
@@ -448,6 +452,24 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
   if (!activePanel || !activePanelType || activePanel.api.tabComponent !== "magicPanelTab") {
     return null;
   }
+
+  const handleExportScreenshot = async () => {
+    const panelId = activePanel.id;
+    const panelRoot = document.querySelector<HTMLElement>(`[data-export-panel-id="${panelId}"]`);
+    if (!panelRoot) return;
+
+    setIsExporting(true);
+    try {
+      const blob = await capturePanelAsPng(panelRoot, 2);
+      const name = `${activePanelType.replace(/\s+/g, "-").toLowerCase()}-screenshot.png`;
+      triggerDownload(URL.createObjectURL(blob), name);
+    } catch (error) {
+      console.error("Failed to capture panel screenshot:", error);
+    } finally {
+      setIsExporting(false);
+      setIsMoreOpen(false);
+    }
+  };
 
   const handleDuplicateAsTab = () => {
     const isPrimary = activePanel.params?.isPrimary;
@@ -577,6 +599,16 @@ export const MagicPanelHeaderActions = (props: IDockviewHeaderActionsProps) => {
                   Down
                 </Button>
               </div>
+              <div className="bg-border mx-1 my-1 h-px" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="justify-start"
+                onClick={handleExportScreenshot}
+                disabled={isExporting}>
+                <Camera className="mr-2 h-4 w-4" />
+                {isExporting ? "Exporting..." : "Export Screenshot"}
+              </Button>
               {showPanelPicker ? (
                 <>
                   <div className="bg-border mx-1 my-1 h-px" />

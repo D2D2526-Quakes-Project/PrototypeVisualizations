@@ -51,6 +51,13 @@ export function captureCanvasDataUrls(element: HTMLElement): string[] {
   return Array.from(element.querySelectorAll("canvas")).map((canvas) => canvas.toDataURL("image/png"));
 }
 
+export async function capturePanelAsPng(element: HTMLElement, scale = 2): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  const canvasDataUrls = captureCanvasDataUrls(element);
+  await rasterizeElementToCanvas({ element, canvas, scale, canvasDataUrls });
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob!), "image/png"));
+}
+
 export async function rasterizeElementToCanvas(params: {
   element: HTMLElement;
   canvas: HTMLCanvasElement;

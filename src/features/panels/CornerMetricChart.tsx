@@ -15,6 +15,7 @@ import { getMetricConfig, isHingeMetric, type Metric } from "../metrics/metrics"
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
 import { useTheme } from "@/components/ThemeProvider";
+import { useExportVideo } from "../export/ExportProvider";
 
 interface CornerMetricChartProps {
   api: DockviewPanelApi;
@@ -135,6 +136,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   const chartRef = useRef<ReactECharts>(null);
   const [chartReadyVersion, setChartReadyVersion] = useState(0);
   const { echartsTheme } = useTheme();
+  const exportRenderMode = useExportVideo();
 
   const defaultState = DEFAULT_CORNER_METRIC_CHART_PANEL_STATE;
   const { state: panelState, setState: setPanelState } = usePanelState<CornerMetricChartPanelState>({
@@ -461,7 +463,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
               silent: true,
             }
           : undefined,
-      }));
+    }));
 
     return [...currentSeries, ...peakSeries];
   }, [currentValues, displayMode, peakValues, storyIds, thresholdHighlighting, thresholdValue]);
@@ -572,22 +574,24 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
             );
           })}
         </NativeSelect>
-        <ToggleGroup
-          type="single"
-          size="sm"
-          variant="outline"
-          value={displayMode}
-          onValueChange={(value) => {
-            if (!value) return;
-            setPanelState({
-              visibleCorners: panelState.visibleCorners,
-              metric: panelState.metric,
-              displayMode: value as "bar" | "line",
-            });
-          }}>
-          <ToggleGroupItem value="bar">Bar</ToggleGroupItem>
-          <ToggleGroupItem value="line">Line</ToggleGroupItem>
-        </ToggleGroup>
+        {exportRenderMode.showTransientUi && (
+          <ToggleGroup
+            type="single"
+            size="sm"
+            variant="outline"
+            value={displayMode}
+            onValueChange={(value) => {
+              if (!value) return;
+              setPanelState({
+                visibleCorners: panelState.visibleCorners,
+                metric: panelState.metric,
+                displayMode: value as "bar" | "line",
+              });
+            }}>
+            <ToggleGroupItem value="bar">Bar</ToggleGroupItem>
+            <ToggleGroupItem value="line">Line</ToggleGroupItem>
+          </ToggleGroup>
+        )}
       </div>
     </div>
   );

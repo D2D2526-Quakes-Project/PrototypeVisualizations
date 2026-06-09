@@ -11,7 +11,7 @@ import { useState } from "react";
 
 export function CurrentThresholdSlider() {
   const { animationData } = useAnimationData();
-  const { currentMetricConfig, thresholdHighlighting } = useMetrics();
+  const { currentMetricConfig, thresholdHighlighting, isCurrentMetricAvailable } = useMetrics();
   const { thresholds, setThreshold } = useThresholds();
   const setMetricColorsDrawerOpen = useLiveStore((s) => s.setMetricColorsDrawerOpen);
 
@@ -36,10 +36,11 @@ export function CurrentThresholdSlider() {
         </Button>
       </motion.div>
       <div
-        className={`border-border bg-background grid grid-cols-[1fr_auto] gap-1 rounded-lg border px-1.5 py-1 shadow-lg select-none ${!thresholdHighlighting && "opacity-50"}`}>
+        className={`border-border bg-background grid grid-cols-[1fr_auto] gap-1 rounded-lg border px-1.5 py-1 shadow-lg select-none ${(!thresholdHighlighting || !isCurrentMetricAvailable) && "opacity-50"}`}>
         <div className="border-border flex w-full min-w-32 items-center border-r py-1 pr-2">
           <Slider
             value={[value, max]}
+            disabled={!thresholdHighlighting || !isCurrentMetricAvailable}
             onValueChange={(val) => setThreshold(currentMetricConfig.thresholdKey, val[0])}
             max={max}
             step={0.01}

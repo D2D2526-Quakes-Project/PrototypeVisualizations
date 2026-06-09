@@ -107,6 +107,7 @@ export function DockviewWrapper({
           --dv-drag-over-background-color: color-mix(in srgb, var(--primary) 10%, transparent);
           --dv-active-sash-transition-delay: 0s;
           --dv-border-radius: var(--radius);
+          --dv-group-view-background-color: transparent;
           --dv-activegroup-visiblepanel-tab-background-color: transparent;
           --dv-inactivegroup-visiblepanel-tab-background-color: transparent;
           --dv-activegroup-hiddenpanel-tab-background-color: transparent;

@@ -218,7 +218,7 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex, grayMode = false }: Mi
               <div className="ml-0.5 h-full w-1 rounded-full bg-linear-180 from-red-400 via-yellow-300 to-teal-600"></div>
               <div className="flex flex-col justify-between">
                 <span className="leading-1">
-                  {formatNumber(maxVelocity)} {UNITS["meters/second"].abbr}
+                  {formatNumber(maxVelocity)} {UNITS["inches/second"].abbr}
                 </span>
                 <span className="leading-1">{0}</span>
               </div>

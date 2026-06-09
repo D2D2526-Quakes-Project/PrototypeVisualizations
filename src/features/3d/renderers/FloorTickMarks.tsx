@@ -7,6 +7,7 @@ import { useCallback, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFloorVisibility } from "../contexts/useFloorVisibility";
 import { useHover } from "../lib/useHover";
+import { useCanvasState } from "../contexts/CanvasContext";
 
 const TICK_LENGTH = 4;
 const TICK_HIT_SIZE = 10;
@@ -22,6 +23,7 @@ export function FloorTickMarks() {
   const tickMarksColor = useGlobalStore((s) => s.colorTheme.tickMarks);
   const { hoveredFloor, setHoveredFloor } = useHover();
   const { openFloorPanel } = useOpenPanels();
+  const { panelId } = useCanvasState();
 
   useFrame(() => {
     if (!groupRef.current) return;
@@ -78,9 +80,9 @@ export function FloorTickMarks() {
   const handlePointerOver = useCallback(
     (e: ThreeEvent<MouseEvent>, storyId: string) => {
       e.stopPropagation();
-      setHoveredFloor({ type: "floor", storyId, screenPos: { x: e.offsetX, y: e.offsetY } });
+      setHoveredFloor({ type: "floor", storyId, screenPos: { x: e.offsetX, y: e.offsetY }, source: panelId });
     },
-    [setHoveredFloor]
+    [setHoveredFloor, panelId]
   );
 
   const handlePointerOut = useCallback(

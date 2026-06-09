@@ -9,6 +9,7 @@ import * as THREE from "three";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useHover } from "../lib/useHover";
+import { useCanvasState } from "../contexts/CanvasContext";
 
 export function XCrossSectionSlabsRenderer() {
   return <CrossSectionSlabsRendererImpl crossSectionType="x" />;
@@ -70,6 +71,7 @@ function CrossSectionSlab({
   const { floorOpacity } = useNodeRendering();
   const { hoveredCrossSection, setHoveredCrossSection } = useHover();
   const { openCrossSectionPanel } = useOpenPanels();
+  const { panelId } = useCanvasState();
 
   const topology = useMemo(() => {
     if (nodeIds.length < 3) return null;
@@ -126,6 +128,7 @@ function CrossSectionSlab({
       type: "crossSection",
       crossSectionId: `${crossSectionType}-${crossSectionPos}`,
       screenPos: { x: e.offsetX, y: e.offsetY },
+      source: panelId,
     });
   };
 

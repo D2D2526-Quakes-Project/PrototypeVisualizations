@@ -11,6 +11,7 @@ import { useFloorVisibility } from "../contexts/useFloorVisibility";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useNodeRendering } from "../contexts/useNodeRendering";
 import { useHover } from "../lib/useHover";
+import { useCanvasState } from "../contexts/CanvasContext";
 
 export function FloorSlabsRenderer() {
   const { visibleFloors } = useFloorVisibility();
@@ -50,6 +51,7 @@ const FloorSlab = memo(function FloorSlab({
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { floorOpacity } = useNodeRendering();
   const { openFloorPanel } = useOpenPanels();
+  const { panelId } = useCanvasState();
 
   const nodeIds = useMemo(() => stories[storyId] ?? [], [storyId, stories]);
   const isHoveredRef = useRef(isHovered);
@@ -138,9 +140,9 @@ const FloorSlab = memo(function FloorSlab({
   const handlePointerOver = useCallback(
     (e: PointerEvent) => {
       e.stopPropagation();
-      setHoveredFloor({ type: "floor", storyId, screenPos: { x: e.offsetX, y: e.offsetY } });
+      setHoveredFloor({ type: "floor", storyId, screenPos: { x: e.offsetX, y: e.offsetY }, source: panelId });
     },
-    [setHoveredFloor, storyId]
+    [setHoveredFloor, storyId, panelId]
   );
 
   const handlePointerOut = useCallback(

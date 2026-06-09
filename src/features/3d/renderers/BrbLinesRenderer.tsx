@@ -8,6 +8,7 @@ import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
 import { useNodePositions } from "../contexts/useNodePositions";
 import { useHover } from "../lib/useHover";
+import { useCanvasState } from "../contexts/CanvasContext";
 
 export function BrbLinesRenderer() {
   const { animationData } = useAnimationData();
@@ -15,6 +16,7 @@ export function BrbLinesRenderer() {
   const { getNodeVisualPosition, visibleNodes } = useNodePositions();
   const { getNodeValueForCurrentMetric, getValueColorForCurrentMetric } = useMetrics();
   const { setHoveredBrb } = useHover();
+  const { panelId } = useCanvasState();
 
   const brbSegments = useMemo(() => {
     if (!animationData.brbData || !animationData.beamData) return [];
@@ -71,6 +73,7 @@ export function BrbLinesRenderer() {
               type: "brb",
               brbIdx: segment.brbIdx,
               screenPos: { x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY },
+              source: panelId,
             });
           }}
           onPointerOut={(event) => {

@@ -23,7 +23,7 @@ export function NodesRenderer() {
   const { nodeOpacity, nodeScale, belowThresholdNodeScale } = useNodeRendering();
   const { hoveredNode, setHoveredNode } = useHover();
   const selectedNodeIds = useLiveStore((s) => s.selectedNodeIds);
-  const { nodeInteractionEnabled } = useCanvasState();
+  const { nodeInteractionEnabled, panelId } = useCanvasState();
 
   const boxSelectedIndices = useMemo(() => {
     const indices = new Set<number>();
@@ -92,9 +92,10 @@ export function NodesRenderer() {
         type: "node",
         nodeId,
         screenPos: { x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY },
+        source: panelId,
       });
     },
-    [nodeInteractionEnabled, setHoveredNode, visibleNodes]
+    [nodeInteractionEnabled, setHoveredNode, visibleNodes, panelId]
   );
 
   const handlePointerOut = useCallback(

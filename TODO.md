@@ -137,6 +137,7 @@
 - [ ] Multiple places define an order for the optional data (NavigationBar, Main Menu, optionalLoads query param). This should be centralized and made consistent.
 
 ### BRB Implementation
+
 - [x] Generate `brb_data.bld` from `BRB/BRB_data.csv` + `BRB_properties.csv`
 - [x] Add BRB data discovery, mapping, and ratio computation in binary generator
 - [x] Add `brbData` to simulation index types, schema, and optional dataset keys
@@ -162,10 +163,9 @@
 
 ## 25. Known Issues
 
-- [ ] When the view menu is docked, the ctrl+drag selection box is visually offset
-- [ ] While in Floor Slabs view mode with Story Drift color by, the floors look gray because its the values include the nodes with no data
+- [x] When the view menu is docked, the ctrl+drag selection box is visually offset
+- [x] While in Floor Slabs view mode with Story Drift color by, the floors look gray because its the values include the nodes with no data
 - [ ] When loading the app and the previously selected color by metric was from optional data and that data is no longer loaded, then it doesn't default back to ISD instead its in a weird broken state.
-- [ ] Elevation is off by one story I think. Ground is 0 and 2nd is 0.
 - [x] Hinge to assignment allocation is wrong
   - Updated hinge binary generation to resolve singleton component `3` beams to the `J` end and keep paired beams on the existing `2/3 -> I`, `4/5 -> J` pattern.
 - [ ] The topdown motion graph of per-node motion is offset or wrong or not centered or bounds are wrong.

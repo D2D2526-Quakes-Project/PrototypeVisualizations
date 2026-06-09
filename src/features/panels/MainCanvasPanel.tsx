@@ -50,13 +50,13 @@ export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) =>
                   </div>
                 )}
                 {exportRenderMode.showTransientUi && <QuickControls />}
+                {exportRenderMode.showTransientUi && <BoxSelectionOverlay />}
               </>
             }>
             <CameraManager />
             {exportRenderMode.showTransientUi && <OrientationArrows />}
             <BuildingScene />
           </CanvasWithControls>
-          {exportRenderMode.showTransientUi && <BoxSelectionOverlay />}
         </CanvasPanelProvider>
       </SceneTooltip>
     </div>

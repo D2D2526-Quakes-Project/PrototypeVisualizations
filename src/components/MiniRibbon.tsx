@@ -1,11 +1,11 @@
+import { UNITS } from "@/features/metrics/metrics";
+import { formatNumber } from "@/lib/utils";
 import { motion } from "motion/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { Vector3 } from "three";
 
-// Target maximum number of points to render for performance
 const MAX_POINTS = 400;
 
-// Helper to convert velocity magnitude to color
 function velocityToColor(velocity: number, maxVelocity: number): string {
   const t = Math.min(velocity / maxVelocity, 1);
 
@@ -33,6 +33,7 @@ interface MiniRibbonProps {
   path: Vector3[];
   dt?: number;
   frameIndex: number;
+  grayMode?: boolean;
 }
 
 interface RibbonSegment {
@@ -77,7 +78,7 @@ function CurrentPositionMarker({ point }: { point: RibbonPoint | null }) {
   return <circle cx={point.x} cy={point.z} r="2" className="stroke-primary fill-amber-500" strokeWidth="0.5" />;
 }
 
-export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
+export function MiniRibbon({ path, dt = 0.01, frameIndex, grayMode = false }: MiniRibbonProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [aspectRatio, setAspectRatio] = useState(0.6);
 
@@ -120,7 +121,6 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
     [path.length]
   );
 
-  // Step 2: Calculate bounds - only when downsampledPath changes
   const bounds = useMemo(() => {
     const xCoords = downsampledPath.map((p) => p.x);
     const zCoords = downsampledPath.map((p) => p.z);
@@ -132,7 +132,6 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
     const xRange = maxX - minX || 1;
     const zRange = maxZ - minZ || 1;
 
-    // Add small padding
     const padding = 0.1;
     return {
       minX: minX - xRange * padding,
@@ -144,7 +143,6 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
     };
   }, [downsampledPath]);
 
-  // Step 3: Pre-normalize all coordinates - only when bounds change
   const normalizedPoints = useMemo(() => {
     const { minX, minZ, xRange, zRange } = bounds;
     return downsampledPath.map((p) => ({
@@ -153,21 +151,18 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
     }));
   }, [downsampledPath, bounds, aspectRatio]);
 
-  // Step 4: Calculate segments with colors - only when normalizedPoints or dt changes
-  const segments = useMemo(() => {
-    if (normalizedPoints.length < 2) return [];
+  const { segments, maxVelocity } = useMemo(() => {
+    if (normalizedPoints.length < 2) return { segments: [], maxVelocity: 0 };
 
     const segmentData: Array<{ x1: number; z1: number; x2: number; z2: number; velocity: number }> = [];
     let maxVelocity = 0;
 
-    // First pass: calculate all velocities
     for (let i = 1; i < downsampledPath.length; i++) {
       const prev = downsampledPath[i - 1];
       const curr = downsampledPath[i];
       const dx = curr.x - prev.x;
       const dy = curr.y - prev.y;
       const dz = curr.z - prev.z;
-      // Account for downsampling in velocity calculation
       const actualDt = dt * downsampleStep;
       const velocity = Math.sqrt(dx * dx + dy * dy + dz * dz) / actualDt;
 
@@ -182,18 +177,19 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
       maxVelocity = Math.max(maxVelocity, velocity);
     }
 
-    // Second pass: assign colors using 90th percentile
     const velocities = segmentData.map((s) => s.velocity).sort((a, b) => a - b);
     const percentile90 = velocities[Math.floor(velocities.length * 0.9)] || maxVelocity;
     const colorScaleMax = Math.max(percentile90 * 1.2, 0.1);
 
-    return segmentData.map((seg) => ({
-      ...seg,
-      color: velocityToColor(seg.velocity, colorScaleMax),
-    }));
-  }, [downsampledPath, normalizedPoints, dt, downsampleStep]);
+    return {
+      segments: segmentData.map((seg) => ({
+        ...seg,
+        color: grayMode ? "#888" : velocityToColor(seg.velocity, colorScaleMax),
+      })),
+      maxVelocity,
+    };
+  }, [downsampledPath, normalizedPoints, dt, downsampleStep, grayMode]);
 
-  // Step 5: Calculate current position based on actual frame index
   const currentPos = useMemo(() => {
     if (frameIndex < 0 || frameIndex >= path.length) return null;
 
@@ -209,11 +205,39 @@ export function MiniRibbon({ path, dt = 0.01, frameIndex }: MiniRibbonProps) {
   const viewBoxHeight = aspectRatio * 100;
 
   return (
-    <div ref={containerRef} className="h-20 w-full">
-      <svg className="border-border h-full w-full rounded border" viewBox={`0 0 100 ${viewBoxHeight}`}>
+    <div className="border-border relative h-30 w-full rounded border pl-2">
+      <svg className="h-full w-full" viewBox={`0 0 100 ${viewBoxHeight}`}>
         <StaticRibbonSegments segments={segments} />
         <CurrentPositionMarker point={currentPos} />
       </svg>
+      <div className="text-muted-foreground absolute top-0 bottom-0 left-0 flex flex-col items-start justify-end gap-4">
+        {!grayMode && (
+          <div className="text-muted-foreground flex flex-1 flex-col gap-2 p-0.75 pt-1.75">
+            <span className="leading-1">Velocity</span>
+            <div className="flex flex-1 gap-1">
+              <div className="ml-0.5 h-full w-1 rounded-full bg-linear-180 from-red-400 via-yellow-300 to-teal-600"></div>
+              <div className="flex flex-col justify-between">
+                <span className="leading-1">
+                  {formatNumber(maxVelocity)} {UNITS["meters/second"].abbr}
+                </span>
+                <span className="leading-1">{0}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="items-center justify-center justify-items-stretch gap-x-1">
+          <span className="pl-1">
+            Y<span className="text-muted-foreground text-[8px]">x{(1 / aspectRatio).toFixed(1)}</span>
+          </span>
+          <span className="flex">
+            <div className="flex size-3.5 items-start justify-end">
+              <div className="border-muted-foreground size-2 border-b border-l"></div>
+            </div>
+            <span>X</span>
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

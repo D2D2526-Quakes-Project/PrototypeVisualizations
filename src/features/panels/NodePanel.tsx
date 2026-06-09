@@ -23,6 +23,9 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
   const metricPaletteOverrides = useGlobalStore((s) => s.metricPaletteOverrides);
   const { getNodeColorForMetric } = useMetrics();
 
+  const visualInterpolationEnabled = useProfileData((s) => s.visualInterpolationEnabled);
+  const isMissingNode = animationData.metadata.displacementMissingNodeIndices.includes(nodeId);
+
   const initialPosRaw = animationData.initialPositions.at(nodeId);
   const currentDispRaw = animationData.displacementLin.atFrame(frameIndex).at(nodeId);
 
@@ -38,13 +41,26 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
 
   // RIBBON PATH
   const ribbonPath = useMemo(() => {
+    const accessor = (() => {
+      if (!isMissingNode || !visualInterpolationEnabled) return animationData.displacementLin;
+      const story = animationData.metadata.nodeToStory[nodeId];
+      if (!story) return animationData.displacementLin;
+      const storyIndex = animationData.metadata.storyOrder.indexOf(story);
+      if (storyIndex === -1) return animationData.displacementLin;
+      return {
+        atFrame: (frame: number) => ({
+          at: (_nodeId: number) => animationData.precomputed.avgDisplacementPerStory.atFrame(frame).at(storyIndex),
+        }),
+      };
+    })();
+
     const path = new Array(animationData.metadata.frameCount).fill(null).map(() => new Vector3(0, 0, 0));
     for (let i = 0; i < animationData.metadata.frameCount; i++) {
-      const pos = animationData.displacementLin.atFrame(i).at(nodeId);
+      const pos = accessor.atFrame(i).at(nodeId);
       path[i] = new Vector3(pos[0], pos[1], pos[2]);
     }
     return path;
-  }, [animationData.metadata.frameCount, animationData.displacementLin, nodeId]);
+  }, [animationData, nodeId, isMissingNode, visualInterpolationEnabled]);
 
   const { precomputed, metadata } = animationData;
   const { frameCount, dt } = metadata;
@@ -147,13 +163,25 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
     <div className="flex h-full w-full flex-col">
       <div className="flex-1 space-y-3 overflow-y-auto p-3 text-xs *:border-b *:pb-3">
         {/* RIBBON */}
-        <div className="animate-fade-in">
-          <h3 className="mb-2 text-sm font-bold">Displacement Path</h3>
-          <MiniRibbon path={ribbonPath} dt={dt} frameIndex={frameIndex} />
-          <div className="text-muted-foreground mt-1 flex items-center gap-1 text-[10px] italic">
-            <InfoIcon className="size-2.5" /> Number of points reduced
+        {!(isMissingNode && !visualInterpolationEnabled) && (
+          <div className="animate-fade-in">
+            <h3 className="mb-2 text-sm font-bold">Displacement Path</h3>
+            <>
+              <MiniRibbon
+                path={ribbonPath}
+                dt={dt}
+                frameIndex={frameIndex}
+                grayMode={isMissingNode && visualInterpolationEnabled}
+              />
+              <div className="text-muted-foreground mt-1 flex items-center gap-1 text-[10px] italic">
+                <InfoIcon className="size-2.5" />
+                {isMissingNode && visualInterpolationEnabled
+                  ? "Showing story average displacement"
+                  : "Number of points reduced"}
+              </div>
+            </>
           </div>
-        </div>
+        )}
 
         {/* LOCATION INFO */}
         <div className="animate-fade-in">
@@ -252,110 +280,120 @@ export function NodePanel({ params: { nodeId } }: IDockviewPanelProps<{ nodeId: 
         )}
 
         {/* DISPLACEMENT */}
-        <MetricSection
-          title="Displacement"
-          unit="inches"
-          graphPrefix="disp"
-          nodeId={nodeId}
-          accessor={animationData.displacementLin}
-          peakComponentValues={[
-            precomputed.peakNodeDisplacementX[nodeId],
-            precomputed.peakNodeDisplacementY[nodeId],
-            precomputed.peakNodeDisplacementZ[nodeId],
-          ]}
-        />
-
-        {/* ROTATION */}
-        <MetricSection
-          title="Rotation"
-          unit="radians"
-          graphPrefix="rot"
-          nodeId={nodeId}
-          accessor={animationData.displacementRot}
-        />
-
-        {/* VELOCITY */}
-        <MetricSection
-          title="Velocity"
-          unit="inches/second"
-          graphPrefix="vel"
-          nodeId={nodeId}
-          accessor={animationData.velocityLin}
-        />
-
-        {/* ACCELERATION */}
-        <MetricSection
-          title="Acceleration"
-          unit="inches/second²"
-          graphPrefix="acc"
-          nodeId={nodeId}
-          accessor={animationData.accelerationLin}
-        />
-
-        {/* STORY DRIFT */}
-        {storyDrift && (
-          <div className="animate-fade-in">
-            <h3 className="mb-2 text-sm font-bold">Story Drift Ratio</h3>
-            <div className="mt-2 space-y-1">
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-muted-foreground">Current:</span>
-                <span className="text-foreground flex items-end justify-between font-mono">
-                  <UnitTooltip value={storyDrift.current} unit="percent" />
-                  <Toggle
-                    size="icon-xs"
-                    pressed={nodePanelGraphVisibility["drift"]}
-                    onPressedChange={() => toggleNodePanelGraph("drift")}
-                    title={nodePanelGraphVisibility["drift"] ? "Hide graph" : "Show graph"}>
-                    <ChartNoAxesCombinedIcon
-                      className={`size-4 ${nodePanelGraphVisibility["drift"] ? "text-foreground" : "text-muted-foreground"}`}
-                    />
-                  </Toggle>
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="text-muted-foreground">Peak:</span>
-                <span className="text-foreground flex items-baseline justify-between font-mono">
-                  <UnitTooltip value={storyDrift.peak} unit="percent" />
-                  <span className="text-muted-foreground text-[9px]"> @ {storyDrift.peakTime.toFixed(2)} s</span>
-                </span>
-              </div>
+        {isMissingNode ? (
+          <>
+            <div className="animate-fade-in">
+              <span className="text-muted-foreground text-[10px] italic">Node has no data</span>
             </div>
-            {storyDriftTimeSeries && nodePanelGraphVisibility["drift"] && (
-              <div className="mt-3 space-y-2">
-                <MiniTimeSeries
-                  data={storyDriftTimeSeries.values}
-                  times={storyDriftTimeSeries.times}
-                  color={storyDriftColor}
-                  currentValue={storyDrift.current}
-                  unit="percent"
-                  label="Story Drift"
-                  peakTime={storyDriftTimeSeries.peakTime}
-                />
+          </>
+        ) : (
+          <>
+            <MetricSection
+              title="Displacement"
+              unit="inches"
+              graphPrefix="disp"
+              nodeId={nodeId}
+              accessor={animationData.displacementLin}
+              peakComponentValues={[
+                precomputed.peakNodeDisplacementX[nodeId],
+                precomputed.peakNodeDisplacementY[nodeId],
+                precomputed.peakNodeDisplacementZ[nodeId],
+              ]}
+            />
+
+            {/* ROTATION */}
+            <MetricSection
+              title="Rotation"
+              unit="radians"
+              graphPrefix="rot"
+              nodeId={nodeId}
+              accessor={animationData.displacementRot}
+            />
+
+            {/* VELOCITY */}
+            <MetricSection
+              title="Velocity"
+              unit="inches/second"
+              graphPrefix="vel"
+              nodeId={nodeId}
+              accessor={animationData.velocityLin}
+            />
+
+            {/* ACCELERATION */}
+            <MetricSection
+              title="Acceleration"
+              unit="inches/second²"
+              graphPrefix="acc"
+              nodeId={nodeId}
+              accessor={animationData.accelerationLin}
+            />
+
+            {/* STORY DRIFT */}
+            {storyDrift && (
+              <div className="animate-fade-in">
+                <h3 className="mb-2 text-sm font-bold">Story Drift Ratio</h3>
+                <div className="mt-2 space-y-1">
+                  <div className="grid grid-cols-2 gap-1">
+                    <span className="text-muted-foreground">Current:</span>
+                    <span className="text-foreground flex items-end justify-between font-mono">
+                      <UnitTooltip value={storyDrift.current} unit="percent" />
+                      <Toggle
+                        size="icon-xs"
+                        pressed={nodePanelGraphVisibility["drift"]}
+                        onPressedChange={() => toggleNodePanelGraph("drift")}
+                        title={nodePanelGraphVisibility["drift"] ? "Hide graph" : "Show graph"}>
+                        <ChartNoAxesCombinedIcon
+                          className={`size-4 ${nodePanelGraphVisibility["drift"] ? "text-foreground" : "text-muted-foreground"}`}
+                        />
+                      </Toggle>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <span className="text-muted-foreground">Peak:</span>
+                    <span className="text-foreground flex items-baseline justify-between font-mono">
+                      <UnitTooltip value={storyDrift.peak} unit="percent" />
+                      <span className="text-muted-foreground text-[9px]"> @ {storyDrift.peakTime.toFixed(2)} s</span>
+                    </span>
+                  </div>
+                </div>
+                {storyDriftTimeSeries && nodePanelGraphVisibility["drift"] && (
+                  <div className="mt-3 space-y-2">
+                    <MiniTimeSeries
+                      data={storyDriftTimeSeries.values}
+                      times={storyDriftTimeSeries.times}
+                      color={storyDriftColor}
+                      currentValue={storyDrift.current}
+                      unit="percent"
+                      label="Story Drift"
+                      peakTime={storyDriftTimeSeries.peakTime}
+                    />
+                  </div>
+                )}
               </div>
             )}
-          </div>
+
+            {/* CUMULATIVE STATS */}
+            <div className="animate-fade-in">
+              <h3 className="mb-2 text-sm font-bold">Total Distance Traveled</h3>
+              <div className="text-muted-foreground font-mono">
+                <UnitTooltip value={totalDistanceTraveled} unit="inches" />
+              </div>
+            </div>
+
+            {/* NOT-LOADED NOTICES */}
+            <div>
+              {!animationData.displacementRot && (
+                <div className="text-muted-foreground text-[10px] italic">Rotations not loaded</div>
+              )}
+              {!animationData.velocityLin && (
+                <div className="text-muted-foreground text-[10px] italic">Velocities not loaded</div>
+              )}
+              {!animationData.accelerationLin && (
+                <div className="text-muted-foreground text-[10px] italic">Accelerations not loaded</div>
+              )}
+            </div>
+          </>
         )}
-
-        {/* CUMULATIVE STATS */}
-        <div className="animate-fade-in">
-          <h3 className="mb-2 text-sm font-bold">Total Distance Traveled</h3>
-          <div className="text-muted-foreground font-mono">
-            <UnitTooltip value={totalDistanceTraveled} unit="inches" />
-          </div>
-        </div>
-
-        {/* NOT-LOADED NOTICES */}
-        <div>
-          {!animationData.displacementRot && (
-            <div className="text-muted-foreground text-[10px] italic">Rotations not loaded</div>
-          )}
-          {!animationData.velocityLin && (
-            <div className="text-muted-foreground text-[10px] italic">Velocities not loaded</div>
-          )}
-          {!animationData.accelerationLin && (
-            <div className="text-muted-foreground text-[10px] italic">Accelerations not loaded</div>
-          )}
-        </div>
       </div>
     </div>
   );

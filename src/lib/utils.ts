@@ -11,13 +11,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatNumber(value: number, maxDecimals = 1): string {
+export function formatNumber(value: number, maxDecimals = 1, minDecimals = 0): string {
   if (!Number.isFinite(value)) return String(value);
   if (value === 0) return "0";
 
   const absValue = Math.abs(value);
   const normalizedMaxDecimals = Math.max(0, maxDecimals);
-  const effectiveDecimals =
+  let effectiveDecimals =
     absValue >= 100
       ? 0
       : absValue >= 10
@@ -26,8 +26,10 @@ export function formatNumber(value: number, maxDecimals = 1): string {
           ? Math.max(normalizedMaxDecimals, 2)
           : normalizedMaxDecimals;
 
+  effectiveDecimals = Math.max(minDecimals, effectiveDecimals);
+
   const fixed = value.toFixed(effectiveDecimals);
-  return fixed.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");
+  return fixed.replace(/(\.\d*?[1-9])0+$/u, "$1") /* .replace(/\.0+$/u, "") */;
 }
 
 export const formatFixed3 = (n: number) => `${n >= 0 ? "+" : ""}${formatNumber(Math.abs(n), 2)}`;
@@ -329,4 +331,54 @@ export function getResizeCursor(angle: number) {
   if (deg < 157.5) return "nwse-resize";
 
   return "ew-resize";
+}
+
+export function tooltipPositionFunction(
+  defaultPosition:
+    | [number, number]
+    | {
+        top?: number;
+        left?: number;
+        bottom?: number;
+        right?: number;
+      }
+) {
+  return (
+    point: [number, number],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    _params: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    _dom: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    _rect: any,
+    size: {
+      contentSize: [number, number];
+      viewSize: [number, number];
+    }
+  ):
+    | [number, number]
+    | {
+        top?: number;
+        left?: number;
+        bottom?: number;
+        right?: number;
+      } => {
+    if (!Number.isInteger(point[0])) return defaultPosition;
+
+    const xOffset = 10;
+    let x = point[0] + xOffset;
+
+    // Flip left if the tooltip is going to overflow off the right side
+    if (x + size.contentSize[0] - xOffset * 2 > size.viewSize[0]) {
+      x = point[0] - size.contentSize[0] - xOffset;
+    }
+
+    x = Math.max(0, Math.min(x, size.viewSize[0] - size.contentSize[0]));
+
+    let y = point[1] - size.contentSize[1] / 2;
+    // Constrain y so it doesn't overflow top/bottom
+    y = Math.max(0, Math.min(y, size.viewSize[1] - size.contentSize[1]));
+
+    return [x, y];
+  };
 }

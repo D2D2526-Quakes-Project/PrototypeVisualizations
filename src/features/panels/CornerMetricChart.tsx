@@ -1,21 +1,21 @@
+import { useTheme } from "@/components/ThemeProvider";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePanelState } from "@/features/dockview/usePanelState";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { formatNumber, formatStoryLabel } from "@/lib/utils";
+import { formatNumber, formatStoryLabel, tooltipPositionFunction } from "@/lib/utils";
+import { useLiveStore } from "@/state";
 import type { DockviewPanelApi } from "dockview-react";
 import type { EChartsOption, LegendComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { renderToString } from "react-dom/server";
 import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
-import { useHover } from "../3d/lib/useHover";
+import { useExportVideo } from "../export/ExportProvider";
 import { getMetricConfig, isHingeMetric, type Metric } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
-import { useTheme } from "@/components/ThemeProvider";
-import { useExportVideo } from "../export/ExportProvider";
 
 interface CornerMetricChartProps {
   api: DockviewPanelApi;
@@ -60,44 +60,31 @@ function TooltipContent({
   unitLabel: string;
 }) {
   return (
-    <div style={{ minWidth: "220px" }}>
-      <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "13px" }}>
-        {formatStoryLabel(storyId, elevationIn)}
-      </div>
+    <div className="text-foreground grid min-w-40 grid-cols-[1fr_auto_auto] items-baseline gap-1">
+      <div className="col-span-3 mb-1 text-sm font-bold">{formatStoryLabel(storyId, elevationIn)}</div>
       {corners.map((corner) => {
         const current = currentValues[storyId]?.[corner] || 0;
         const peak = peakValues[storyId]?.[corner] || 0;
 
         return (
-          <div
-            key={corner}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "16px",
-              marginTop: "4px",
-            }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
+          <React.Fragment key={corner}>
+            <div className="flex min-w-12 items-center gap-1">
+              <div
                 style={{
-                  width: "10px",
-                  height: "10px",
-                  borderRadius: "2px",
                   background: cornerColors[corner],
                 }}
+                className="h-2.5 w-2.5 rounded-full"
               />
-              <span style={{ color: "#6b7280", fontSize: "11px" }}>{corner}</span>
+              <span className="text-muted-foreground text-xs">{corner}</span>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <span style={{ fontWeight: 500 }}>
-                {formatNumber(current, 3)} {unitLabel}
-              </span>
-              <span style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "6px" }}>
-                / {formatNumber(peak, 3)} {unitLabel}
-              </span>
-            </div>
-          </div>
+
+            <span className="text-right text-sm">
+              {formatNumber(current, 1, 1)} {unitLabel}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              / {formatNumber(peak, 1, 1)} {unitLabel}
+            </span>
+          </React.Fragment>
         );
       })}
     </div>
@@ -134,7 +121,6 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
   const { thresholds } = useThresholds();
   const { availableMetrics, thresholdHighlighting } = useMetrics();
   const chartRef = useRef<ReactECharts>(null);
-  const [chartReadyVersion, setChartReadyVersion] = useState(0);
   const { echartsTheme } = useTheme();
   const exportRenderMode = useExportVideo();
 
@@ -165,9 +151,40 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
 
   const metricConfig = useMemo(() => getMetricConfig(selectedMetric), [selectedMetric]);
   const thresholdValue = metricConfig.thresholdKey === "inf" ? 0 : (thresholds[metricConfig.thresholdKey] ?? 0);
-  const storyIds = useMemo(() => Array.from(visibleFloors), [visibleFloors]);
 
-  const { setHoveredItem } = useHover();
+  const setHoveredItem = useLiveStore((s) => s.setHoveredItem);
+  const hoveredItem = useLiveStore((s) => {
+    if (s.hoveredItem?.source !== api.id && s.hoveredItem?.type === "floor") return s.hoveredItem;
+    return null;
+  });
+  useEffect(() => {
+    const chart = chartRef.current?.getEchartsInstance();
+    if (!chart) return;
+
+    if (hoveredItem) {
+      const dataIndex = visibleFloors.indexOf(hoveredItem.storyId);
+
+      if (dataIndex !== -1) {
+        chart.dispatchAction({
+          type: "showTip",
+          seriesIndex: 0,
+          dataIndex: dataIndex,
+        });
+        chart.dispatchAction({
+          type: "highlight",
+          seriesIndex: corners.map((_, i) => i),
+          dataIndex: dataIndex,
+        });
+      }
+    } else {
+      chart.dispatchAction({
+        type: "hideTip",
+      });
+      chart.dispatchAction({
+        type: "downplay",
+      });
+    }
+  }, [hoveredItem, visibleFloors, api.id]);
 
   useEffect(() => {
     const chart = chartRef.current?.getEchartsInstance();
@@ -192,20 +209,20 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     return () => {
       chart.off("legendselectchanged", handleLegendChange);
     };
-  }, [chartReadyVersion, api.id, panelState.displayMode, selectedMetric, setPanelState]);
+  }, [api.id, panelState.displayMode, selectedMetric, setPanelState]);
 
   const yAxisData = useMemo(() => {
-    return storyIds.map((storyId) => {
+    return visibleFloors.map((storyId) => {
       const elevationIn =
         animationData.precomputed.storyElevations[storyId] ?? animationData.metadata.storyHeights[storyId] ?? 0;
       return formatStoryLabel(storyId, elevationIn);
     });
-  }, [animationData.metadata.storyHeights, animationData.precomputed.storyElevations, storyIds]);
+  }, [animationData.metadata.storyHeights, animationData.precomputed.storyElevations, visibleFloors]);
 
   const currentValues = useMemo(() => {
     const values: Record<string, Record<CornerKey, number>> = {};
 
-    for (const storyId of storyIds) {
+    for (const storyId of visibleFloors) {
       const cornerNodes = animationData.metadata.cornerNodes[storyId];
       values[storyId] = {
         NW: metricConfig.getValue(animationData, frameIndex, cornerNodes.NW) ?? 0,
@@ -216,13 +233,13 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     }
 
     return values;
-  }, [animationData, frameIndex, metricConfig, storyIds]);
+  }, [animationData, frameIndex, metricConfig, visibleFloors]);
 
   const peakValues = useMemo(() => {
     const values: Record<string, Record<CornerKey, number>> = {};
     const frameCount = animationData.metadata.frameCount;
 
-    for (const storyId of storyIds) {
+    for (const storyId of visibleFloors) {
       const cornerNodes = animationData.metadata.cornerNodes[storyId];
       const storyPeakValues = {} as Record<CornerKey, number>;
 
@@ -249,32 +266,17 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     }
 
     return values;
-  }, [animationData, metricConfig, selectedMetric, storyIds]);
+  }, [animationData, metricConfig, selectedMetric, visibleFloors]);
 
   const baseOption = useMemo((): EChartsOption => {
     return {
       tooltip: {
         trigger: "axis",
-        axisPointer: {
-          type: "shadow",
-          shadowStyle: {
-            color: "rgba(0,0,0,0.05)",
-          },
-        },
-        backgroundColor: "rgba(255, 255, 255, 0.98)",
-        borderColor: "#d1d5db",
-        borderWidth: 1,
-        padding: 12,
-        textStyle: {
-          color: "#374151",
-          fontSize: 12,
-        },
-        transitionDuration: 0,
         formatter: (params) => {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
 
           const storyIdx = params[0].dataIndex;
-          const storyId = storyIds[storyIdx];
+          const storyId = visibleFloors[storyIdx];
           const elevationIn =
             animationData.precomputed.storyElevations[storyId] ?? animationData.metadata.storyHeights[storyId] ?? 0;
 
@@ -289,6 +291,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
             />
           );
         },
+        position: tooltipPositionFunction({ right: 0, bottom: 12 }),
       },
       legend: [
         {
@@ -362,7 +365,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     displayMode,
     metricConfig.unit.abbr,
     peakValues,
-    storyIds,
+    visibleFloors,
     yAxisData,
   ]);
 
@@ -371,7 +374,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       const currentLineSeries = corners.map((corner, idx) => ({
         name: corner,
         type: "line" as const,
-        data: storyIds.map((storyId) => currentValues[storyId]?.[corner] || 0),
+        data: visibleFloors.map((storyId) => currentValues[storyId]?.[corner] || 0),
         itemStyle: {
           color: cornerColors[corner],
         },
@@ -397,7 +400,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       const peakLineSeries = corners.map((corner) => ({
         name: `${corner} Peak`,
         type: "line" as const,
-        data: storyIds.map((storyId) => peakValues[storyId]?.[corner] || 0),
+        data: visibleFloors.map((storyId) => peakValues[storyId]?.[corner] || 0),
         itemStyle: {
           color: cornerColors[corner],
           opacity: 0.5,
@@ -420,7 +423,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       name: corner,
       type: "bar" as const,
       stack: corner,
-      data: storyIds.map((storyId) => {
+      data: visibleFloors.map((storyId) => {
         const peak = peakValues[storyId]?.[corner] || 0;
         const current = currentValues[storyId]?.[corner] || 0;
         if (peak >= 0) {
@@ -445,7 +448,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
       name: corner,
       type: "bar" as const,
       stack: corner,
-      data: storyIds.map((storyId) => currentValues[storyId]?.[corner] || 0),
+      data: visibleFloors.map((storyId) => currentValues[storyId]?.[corner] || 0),
       itemStyle: {
         color: cornerColors[corner],
         borderRadius: [0, 2, 2, 0] as [number, number, number, number],
@@ -466,13 +469,13 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     }));
 
     return [...currentSeries, ...peakSeries];
-  }, [currentValues, displayMode, peakValues, storyIds, thresholdHighlighting, thresholdValue]);
+  }, [currentValues, displayMode, peakValues, visibleFloors, thresholdHighlighting, thresholdValue]);
 
   const xAxisExtent = useMemo(() => {
     let maxValue = MIN_X_AXIS_MAX;
     let minValue = 0;
 
-    for (const storyId of storyIds) {
+    for (const storyId of visibleFloors) {
       for (const corner of corners) {
         const val = currentValues[storyId]?.[corner] ?? 0;
         const peak = peakValues[storyId]?.[corner] ?? 0;
@@ -488,7 +491,7 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     }
 
     return { min: 0, max: Math.max(maxValue * 1.15, MIN_X_AXIS_MAX) };
-  }, [currentValues, metricConfig.hasNegative, peakValues, storyIds]);
+  }, [currentValues, metricConfig.hasNegative, peakValues, visibleFloors]);
 
   const option = useMemo(() => {
     const selected: Record<string, boolean> = {};
@@ -527,6 +530,14 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
     } satisfies EChartsOption;
   }, [baseOption, panelState.visibleCorners, seriesData, xAxisExtent.min, xAxisExtent.max]);
 
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const instance = chartRef.current.getEchartsInstance();
+    instance.on("click", (params) => {
+      console.log(params); // contains echarts usual params
+    });
+  }, []);
+
   return (
     <div className="bg-background relative flex h-full w-full flex-col gap-2">
       <div className="min-h-0 flex-1">
@@ -536,19 +547,21 @@ export function CornerMetricChart({ api }: CornerMetricChartProps) {
           option={option}
           style={{ height: "100%", width: "100%" }}
           opts={{ renderer: "canvas" }}
-          onChartReady={() => setChartReadyVersion((v) => v + 1)}
-          onEvents={{
-            mouseover: (params: { dataIndex?: number }) => {
-              if (params.dataIndex !== undefined && params.dataIndex >= 0) {
-                const storyId = storyIds[params.dataIndex];
+          onChartReady={(echartsInstance) => {
+            echartsInstance.getZr().on("mousemove", (params) => {
+              const pointInPixel = [params.offsetX, params.offsetY];
+              if (echartsInstance.containPixel("grid", pointInPixel)) {
+                const pointInGrid = echartsInstance.convertFromPixel("grid", pointInPixel);
+                const categoryIndex = pointInGrid[1];
+                const storyId = visibleFloors[categoryIndex];
                 if (storyId) {
-                  setHoveredItem({ type: "floor", storyId });
+                  setHoveredItem({ type: "floor", storyId, source: api.id });
                 }
               }
-            },
-            mouseout: () => {
+            });
+            echartsInstance.getZr().on("mouseout", () => {
               setHoveredItem(null);
-            },
+            });
           }}
         />
       </div>

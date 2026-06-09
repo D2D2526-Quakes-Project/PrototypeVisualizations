@@ -103,7 +103,7 @@ export type HoverItem = (
       type: "brb";
       brbIdx: number;
     }
-) & { screenPos?: { x: number; y: number } };
+) & { screenPos?: { x: number; y: number }; source: string };
 
 export const LIVE_STATE_KEYS = [
   "_playing",

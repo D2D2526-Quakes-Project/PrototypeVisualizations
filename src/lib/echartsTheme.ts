@@ -51,15 +51,10 @@ registerTheme("my_light_theme", {
   timeAxis: lightAxis,
   tooltip: {
     axisPointer: {
-      lineStyle: {
-        color: "#E5E5E5",
-        width: "1",
-      },
-      crossStyle: {
-        color: "#E5E5E5",
-        width: "1",
-      },
+      type: "shadow",
     },
+    borderColor: "var(--border)",
+    borderRadius: 10,
   },
 });
 

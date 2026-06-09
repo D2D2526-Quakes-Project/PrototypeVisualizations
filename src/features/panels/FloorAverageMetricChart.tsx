@@ -2,19 +2,19 @@ import { CheckboxSelectPopover } from "@/components/ui/checkbox-select-popover";
 import { useAnimationData } from "@/features/animation-data/useAnimationData";
 import { usePanelState } from "@/features/dockview/usePanelState";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { formatNumber, formatStoryLabel } from "@/lib/utils";
+import { formatNumber, formatStoryLabel, tooltipPositionFunction } from "@/lib/utils";
 
-import { useGlobalStore } from "@/state";
+import { useTheme } from "@/components/ThemeProvider";
+import { useGlobalStore, useLiveStore } from "@/state";
 import type { IDockviewPanelProps } from "dockview-react";
-import type { EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
+import type { Color, EChartsOption, SeriesOption, XAXisComponentOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
+import { renderToString } from "react-dom/server";
 import { useFloorVisibility } from "../3d/contexts/useFloorVisibility";
-import { useHover } from "../3d/lib/useHover";
 import { getMetricConfig, getMetricKeyColor, type Metric } from "../metrics/metrics";
 import { useMetrics } from "../metrics/useMetrics";
 import { useThresholds } from "../metrics/useThresholds";
-import { useTheme } from "@/components/ThemeProvider";
 
 const MIN_X_AXIS_MAX = 0.01;
 type FloorDisplacementChartPanelState = {
@@ -42,7 +42,55 @@ function sanitizeSelectedMetrics(value: unknown, availableMetrics: Metric[]): Me
   return availableMetrics.slice(0, Math.min(2, availableMetrics.length));
 }
 
+function TooltipContent({
+  storyId,
+  elevationIn,
+  params,
+  seriesMetricMap,
+  metricStoryData,
+}: {
+  storyId: string;
+  elevationIn: number;
+  params: { seriesIndex?: number; dataIndex: number; color?: Color }[];
+  seriesMetricMap: (Metric | null)[];
+  metricStoryData: Map<Metric, Array<{ storyId: string; elevationIn: number; value: number }>>;
+}) {
+  return (
+    <div className="text-foreground grid min-w-40 grid-cols-[1fr_auto] items-baseline gap-1">
+      <div className="col-span-2 mb-1 text-sm font-bold">{formatStoryLabel(storyId, elevationIn)}</div>
+      {params.map((param) => {
+        if (typeof param.seriesIndex !== "number") return null;
+        const metric = seriesMetricMap[param.seriesIndex];
+        if (!metric) return null;
+        const metricConfig = getMetricConfig(metric);
+        const metricRows = metricStoryData.get(metric) ?? [];
+        const metricRow = metricRows[param.dataIndex];
+        if (!metricRow) return null;
+
+        return (
+          <React.Fragment key={param.seriesIndex}>
+            <div className="flex min-w-12 items-center gap-1">
+              <div
+                style={{
+                  background: `${param.color}`,
+                }}
+                className="h-2.5 w-2.5 rounded-full"
+              />
+              <span className="text-muted-foreground text-xs">{metricConfig.label}</span>
+            </div>
+
+            <span className="text-right">
+              {formatNumber(metricRow.value, 3)} {metricConfig.unit.abbr}
+            </span>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
+  const chartRef = useRef<ReactECharts>(null);
   const { animationData } = useAnimationData();
   const { frameIndex } = usePlayback();
   const { visibleFloors } = useFloorVisibility();
@@ -57,7 +105,39 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     defaultState: DEFAULT_FLOOR_DISPLACEMENT_CHART_PANEL_STATE,
   });
 
-  const { setHoveredFloor } = useHover();
+  const setHoveredItem = useLiveStore((s) => s.setHoveredItem);
+  const hoveredItem = useLiveStore((s) => {
+    if (s.hoveredItem?.source !== api.id && s.hoveredItem?.type === "floor") return s.hoveredItem;
+    return null;
+  });
+  useEffect(() => {
+    const chart = chartRef.current?.getEchartsInstance();
+    if (!chart) return;
+
+    if (hoveredItem) {
+      const dataIndex = visibleFloors.indexOf(hoveredItem.storyId);
+
+      if (dataIndex !== -1) {
+        chart.dispatchAction({
+          type: "showTip",
+          seriesIndex: 0,
+          dataIndex: dataIndex,
+        });
+        chart.dispatchAction({
+          type: "highlight",
+          seriesIndex: [0, 1],
+          dataIndex: dataIndex,
+        });
+      }
+    } else {
+      chart.dispatchAction({
+        type: "hideTip",
+      });
+      chart.dispatchAction({
+        type: "downplay",
+      });
+    }
+  }, [hoveredItem, visibleFloors, api.id]);
 
   const metricOptions = useMemo(() => {
     const metrics =
@@ -92,10 +172,8 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     });
   }, [effectiveSelectedMetrics, panelState.selectedMetrics, setPanelState]);
 
-  const storyIds = useMemo(() => Array.from(visibleFloors).slice(1), [visibleFloors]);
-
   const storyRows = useMemo(() => {
-    return storyIds.map((storyId) => {
+    return visibleFloors.map((storyId) => {
       const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
       return {
         storyId,
@@ -103,7 +181,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
         label: formatStoryLabel(storyId, elevationIn),
       };
     });
-  }, [animationData, storyIds]);
+  }, [animationData, visibleFloors]);
 
   const metricStoryData = useMemo(() => {
     const results = new Map<
@@ -117,7 +195,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
 
     for (const metric of effectiveSelectedMetrics) {
       const metricConfig = getMetricConfig(metric);
-      const rows = storyIds.map((storyId) => {
+      const rows = visibleFloors.map((storyId) => {
         const nodes = animationData.metadata.stories[storyId] || [];
         const elevationIn = animationData.precomputed.storyElevations[storyId] || 0;
 
@@ -146,7 +224,7 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
     }
 
     return results;
-  }, [animationData, effectiveSelectedMetrics, frameIndex, storyIds]);
+  }, [animationData, effectiveSelectedMetrics, frameIndex, visibleFloors]);
 
   const option = useMemo((): EChartsOption => {
     const anyHasNegative = effectiveSelectedMetrics.some((metric) => getMetricConfig(metric).hasNegative);
@@ -231,9 +309,6 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       return [barSeries];
     });
 
-    // const axisColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b"];
-    // const axisSplitColors = ["#e0e7ff", "#e0f2fe", "#d1fae5", "#fef3c7"];
-
     return {
       legend: {
         data: (series as Array<{ name?: string; markLine?: unknown }>)
@@ -256,40 +331,23 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       },
       tooltip: {
         trigger: "axis",
-        axisPointer: { type: "shadow" },
-        backgroundColor: "rgba(255, 255, 255, 0.98)",
-        borderColor: "#d1d5db",
-        borderWidth: 1,
-        padding: 10,
-        textStyle: { color: "#374151", fontSize: 11 },
         formatter: (params) => {
           if (!params || !Array.isArray(params) || params.length === 0) return "";
           const first = params[0];
           const row = storyRows[first.dataIndex];
           if (!row) return "";
 
-          const lines = [`<div style="font-weight:600;margin-bottom:6px">${row.label}</div>`];
-
-          for (const param of params) {
-            if (typeof param.seriesIndex !== "number") continue;
-            const metric = seriesMetricMap[param.seriesIndex];
-            if (!metric) continue;
-            const metricConfig = getMetricConfig(metric);
-            const metricRows = metricStoryData.get(metric) ?? [];
-            const metricRow = metricRows[param.dataIndex];
-            if (!metricRow) continue;
-
-            lines.push(
-              `<div style="display:flex;align-items:center;gap:8px;margin-top:2px">` +
-                `<span style="width:8px;height:8px;border-radius:9999px;background:${param.color}"></span>` +
-                `<span style="color:#6b7280">${metricConfig.label}:</span>` +
-                `<span style="margin-left:auto;font-weight:600">${formatNumber(metricRow.value, 3)} ${metricConfig.unit.abbr}</span>` +
-                `</div>`
-            );
-          }
-
-          return lines.join("");
+          return renderToString(
+            <TooltipContent
+              storyId={row.storyId}
+              elevationIn={row.elevationIn}
+              params={params}
+              seriesMetricMap={seriesMetricMap}
+              metricStoryData={metricStoryData}
+            />
+          );
         },
+        position: tooltipPositionFunction({ right: 0, bottom: unitGroups.length * 30 + 12 }),
       },
       grid: {
         left: 0,
@@ -380,23 +438,27 @@ export function FloorAverageMetricChart({ api }: IDockviewPanelProps) {
       </div>
       <div className="min-h-0 w-full flex-1">
         <ReactECharts
+          ref={chartRef}
           theme={echartsTheme}
           option={option}
           replaceMerge={["series", "legend", "xAxis"]}
           style={{ height: "100%", width: "100%" }}
           opts={{ renderer: "canvas" }}
-          onEvents={{
-            mouseover: (params: { dataIndex?: number }) => {
-              if (params.dataIndex !== undefined && params.dataIndex >= 0) {
-                const row = storyRows[params.dataIndex];
-                if (row) {
-                  setHoveredFloor({ type: "floor", storyId: row.storyId });
+          onChartReady={(echartsInstance) => {
+            echartsInstance.getZr().on("mousemove", (params) => {
+              const pointInPixel = [params.offsetX, params.offsetY];
+              if (echartsInstance.containPixel("grid", pointInPixel)) {
+                const pointInGrid = echartsInstance.convertFromPixel("grid", pointInPixel);
+                const categoryIndex = pointInGrid[1];
+                const storyId = storyRows[categoryIndex].storyId;
+                if (storyId) {
+                  setHoveredItem({ type: "floor", storyId, source: api.id });
                 }
               }
-            },
-            mouseout: () => {
-              setHoveredFloor(null);
-            },
+            });
+            echartsInstance.getZr().on("mouseout", () => {
+              setHoveredItem(null);
+            });
           }}
         />
       </div>

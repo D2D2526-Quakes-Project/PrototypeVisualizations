@@ -14,7 +14,6 @@ export function SceneTooltip({ children }: { children: React.ReactNode }) {
 
   const tooltipContent = () => {
     if (!hoveredItem) return null;
-    if (!hoveredItem.screenPos) return null;
 
     if (hoveredItem.type === "node") {
       const nodeId = hoveredItem.nodeId;
@@ -74,7 +73,7 @@ export function SceneTooltip({ children }: { children: React.ReactNode }) {
   };
 
   const content = tooltipContent();
-  const position = hoveredItem?.screenPos ?? null;
+  const position = hoveredItem?.screenPos ?? { x: 0, y: 0 };
 
   return (
     <div className="relative h-full w-full">

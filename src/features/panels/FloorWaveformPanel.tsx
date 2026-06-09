@@ -1,3 +1,4 @@
+import { useTheme } from "@/components/ThemeProvider";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Slider } from "@/components/ui/slider";
 import { useFloorVisibility } from "@/features/3d/contexts/useFloorVisibility";
@@ -6,14 +7,12 @@ import { usePanelState } from "@/features/dockview/usePanelState";
 import { getMetricConfig, isHingeMetric, isStaticMetric, type Metric } from "@/features/metrics/metrics";
 import { useMetrics } from "@/features/metrics/useMetrics";
 import { usePlayback } from "@/features/playback/usePlayback";
-import { useProfileData } from "@/state";
-import { formatNumber, getOrdinalSuffix } from "@/lib/utils";
+import { formatNumber, formatStoryLabel, getOrdinalSuffix, tooltipPositionFunction } from "@/lib/utils";
+import { useLiveStore, useProfileData } from "@/state";
 import type { IDockviewPanelProps } from "dockview-react";
+import type { ECharts, EChartsOption, SeriesOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useHover } from "../3d/lib/useHover";
-import type { ECharts } from "echarts";
-import { useTheme } from "@/components/ThemeProvider";
 
 type PlacementMode = "elevation" | "floor";
 
@@ -39,21 +38,14 @@ const DEFAULT_PANEL_STATE: FloorWaveformPanelState = {
   amplitudeScale: 2,
 };
 
-const PLOT_MARGINS = {
-  top: 0,
-  right: 0,
-  bottom: 0,
-  left: 0,
-};
-
-// Amplitude slider: maps 0–100 to a multiplier range of 0.25×–8×
+// Amplitude slider: maps 0–100 to a multiplier range of 0.5×–10×
 // Using a log scale so small values are easy to dial in
 const AMPLITUDE_SLIDER_MIN = 0;
 const AMPLITUDE_SLIDER_MAX = 100;
 function sliderToAmplitude(sliderValue: number): number {
   // log scale: 0 → 0.25, 50 → ~1.41, 100 → 8
-  const minLog = Math.log(0.25);
-  const maxLog = Math.log(8);
+  const minLog = Math.log(0.5);
+  const maxLog = Math.log(10);
   return Math.exp(minLog + (sliderValue / AMPLITUDE_SLIDER_MAX) * (maxLog - minLog));
 }
 function amplitudeToSlider(amplitude: number): number {
@@ -73,32 +65,36 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function HoverTooltip({ story, frame, dt, unit }: { story: StorySeries; frame: number; dt: number; unit: string }) {
+function TooltipContent({
+  story,
+  elevationIn,
+  frame,
+  dt,
+  unit,
+}: {
+  story: StorySeries;
+  elevationIn: number;
+  frame: number;
+  dt: number;
+  unit: string;
+}) {
   const currentValue = story.values[frame] ?? 0;
   const currentTime = frame * dt;
   const peakTime = story.peakFrame * dt;
 
   return (
-    <div className="min-w-44">
-      <div className="mb-2 border-b border-neutral-200 pb-1 text-xs font-semibold text-neutral-900">
-        {story.floorLabel}
-      </div>
-      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
-        <span className="text-neutral-500">Time</span>
-        <span className="font-mono text-neutral-800">{formatNumber(currentTime, 2)} s</span>
-        <span className="text-neutral-500">Current</span>
-        <span className="font-mono text-neutral-800">
-          {formatNumber(currentValue, 3)} {unit}
-        </span>
-        <span className="text-neutral-500">Peak</span>
-        <span className="font-mono text-neutral-800">
-          {formatNumber(story.peakValue, 3)} {unit}
-        </span>
-        <span className="text-neutral-500">Peak time</span>
-        <span className="font-mono text-neutral-800">{formatNumber(peakTime, 2)} s</span>
-        <span className="text-neutral-500">Elevation</span>
-        <span className="font-mono text-neutral-800">{formatNumber(story.elevationIn / 12, 1)} ft</span>
-      </div>
+    <div className="text-foreground grid min-w-40 shrink-0 grid-cols-[auto_auto] items-baseline gap-1 whitespace-nowrap">
+      <div className="mb-1 text-sm font-bold">{formatStoryLabel(story.floorLabel, elevationIn)}</div>
+      <div className="mb-1 text-sm font-bold">{formatNumber(currentTime, 2)}</div>
+      <span className="text-muted-foreground text-xs">Current</span>
+      <span className="text-sm">
+        {formatNumber(currentValue, 3)} {unit}
+      </span>
+      <span className="text-muted-foreground text-xs">Peak</span>
+      <span className="text-sm">
+        {formatNumber(story.peakValue, 3)} {unit}
+        <span className="text-muted-foreground text-xs"> @ {formatNumber(peakTime, 2)} s</span>
+      </span>
     </div>
   );
 }
@@ -109,16 +105,18 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
   const timeRange = useProfileData((s) => s.timeRange);
   const { visibleFloors } = useFloorVisibility();
   const { availableMetrics } = useMetrics();
-  const { setHoveredFloor } = useHover();
   const { echartsTheme } = useTheme();
 
   const echartsRef = useRef<ReactECharts>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
-  const hoverLineRef = useRef<HTMLDivElement>(null);
+  const hoverTooltipRef = useRef<HTMLDivElement>(null);
+
+  const setHoveredItem = useLiveStore((s) => s.setHoveredItem);
 
   const [hoverState, setHoverState] = useState<{
     frame: number;
     storyIndex: number;
+    elevationIn: number;
     x: number;
     y: number;
     containerWidth: number;
@@ -210,7 +208,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
   const amplitudeMultiplier = panelState.amplitudeScale ?? DEFAULT_PANEL_STATE.amplitudeScale;
 
-  const option = useMemo(() => {
+  const option: EChartsOption = useMemo(() => {
     if (storySeries.length === 0) return {};
 
     const elevationValues = storySeries.map((story) => story.elevationIn / 12);
@@ -222,7 +220,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     const dataGap = panelState.placementMode === "elevation" ? avgGap : 10;
     const dataAmplitudeScale = maxAbsValue > 0 ? (dataGap * amplitudeMultiplier) / maxAbsValue : 1;
 
-    const series = storySeries.map((story, index) => {
+    const series: SeriesOption[] = storySeries.map((story, index) => {
       const baselineY = panelState.placementMode === "elevation" ? story.elevationIn : index * 10;
 
       // Populate coordinate array mapping [time, computedY]
@@ -237,6 +235,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         data: data,
         z: 2,
         showSymbol: false,
+        symbol: "none",
         sampling: "lttb",
         animation: false,
         clip: false,
@@ -268,26 +267,31 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     });
 
     return {
-      animation: false,
       grid: {
-        top: PLOT_MARGINS.top,
-        right: PLOT_MARGINS.right,
-        bottom: PLOT_MARGINS.bottom,
-        left: PLOT_MARGINS.left,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      },
+      axisPointer: {
+        handle: {
+          show: false,
+        },
+      },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: {
+          type: "line",
+        },
+        showContent: false,
       },
       xAxis: {
         type: "value",
-
-        // nameTextStyle: {
-        //   // color: "#374151",
-        //   fontSize: 11,
-        // },
         min: timeRange?.start ?? 0,
         max: timeRange?.end ?? (totalDuration > 0 ? totalDuration : 1),
         splitLine: { show: false },
         axisLabel: {
           formatter: (value: number) => `${value.toFixed(1)} s`,
-          // color: "#6b7280",
           fontSize: 10,
         },
         axisLine: { show: false },
@@ -296,7 +300,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       yAxis: {
         type: "value",
         name: panelState.placementMode === "elevation" ? "Story Elevation (ft)" : "Floor",
-        nameGap: 50,
+        nameGap: 0,
         min: "dataMin",
         max: "dataMax",
         axisLabel: { show: false },
@@ -305,7 +309,6 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
         splitLine: { show: false },
       },
       series: series,
-      tooltip: { show: false },
     };
   }, [
     storySeries,
@@ -345,16 +348,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
     }
   }, [frameIndex, dt, storySeries.length]);
 
-  // Handle visual Hover Line positioning
-  useEffect(() => {
-    if (!hoverLineRef.current) return;
-    if (!hoverState) {
-      hoverLineRef.current.style.display = "none";
-      return;
-    }
-    hoverLineRef.current.style.transform = `translateX(${hoverState.x}px)`;
-    hoverLineRef.current.style.display = "block";
-  }, [hoverState]);
+  const posFunc = tooltipPositionFunction([0, 0]);
 
   // Attach directly to ZRender events to map pixel coordinates to Data points
   const handleChartReady = (instance: ECharts) => {
@@ -365,7 +359,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
       if (!instance.containPixel("grid", pointInPixel)) {
         setHoverState(null);
-        setHoveredFloor(null);
+        setHoveredItem(null);
         return;
       }
 
@@ -378,7 +372,7 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
       let nearestIndex = 0;
       let nearestDistance = Number.POSITIVE_INFINITY;
       storySeries.forEach((story, index) => {
-        const baselineY = panelState.placementMode === "elevation" ? story.elevationIn / 12 : index * 10;
+        const baselineY = panelState.placementMode === "elevation" ? story.elevationIn : index * 10;
         const dist = Math.abs(elevationY - baselineY);
         if (dist < nearestDistance) {
           nearestDistance = dist;
@@ -388,20 +382,35 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
 
       const storyId = visibleFloors[nearestIndex];
 
+      const x = e.offsetX;
+      const y = e.offsetY;
+      const containerWidth = instance.getWidth();
+      const containerHeight = instance.getHeight();
+      const tooltipBoundingRect = hoverTooltipRef.current?.getBoundingClientRect();
+      const tooltipWidth = tooltipBoundingRect?.width ?? 0;
+      const tooltipHeight = tooltipBoundingRect?.height ?? 0;
+
+      const position = posFunc([x, y], null, null, null, {
+        contentSize: [tooltipWidth, tooltipHeight],
+        viewSize: [containerWidth, containerHeight],
+      });
+      if (!Array.isArray(position)) return;
+
       setHoverState({
         frame,
         storyIndex: nearestIndex,
-        x: e.offsetX,
-        y: e.offsetY,
+        elevationIn: animationData.precomputed.storyElevations[storyId] || 0,
+        x: position[0],
+        y: position[1],
         containerWidth: instance.getWidth(),
         containerHeight: instance.getHeight(),
       });
-      setHoveredFloor({ type: "floor", storyId });
+      setHoveredItem({ type: "floor", storyId, source: api.id });
     });
 
     zr.on("mouseout", () => {
       setHoverState(null);
-      setHoveredFloor(null);
+      setHoveredItem(null);
     });
   };
 
@@ -477,20 +486,22 @@ export function FloorWaveformPanel({ api }: IDockviewPanelProps) {
               className="pointer-events-none absolute top-0 bottom-9 left-0 z-10 w-px bg-neutral-900/70"
               style={{ display: "none" }}
             />
-            <div
-              ref={hoverLineRef}
-              className="pointer-events-none absolute top-0 bottom-9 left-0 z-10 w-px bg-neutral-400/70"
-              style={{ display: "none" }}
-            />
 
             {hoverState && hoveredStory ? (
               <div
                 className="border-border bg-background text-foreground pointer-events-none absolute z-20 rounded-md border px-3 py-2 shadow-lg"
+                ref={hoverTooltipRef}
                 style={{
-                  left: clamp(hoverState.x + 12, 16, Math.max(16, hoverState.containerWidth - 220)),
-                  top: clamp(hoverState.y - 12, 16, Math.max(16, hoverState.containerHeight - 140)),
+                  left: hoverState.x,
+                  top: hoverState.y,
                 }}>
-                <HoverTooltip story={hoveredStory} frame={hoverState.frame} dt={dt} unit={metricConfig.unit.abbr} />
+                <TooltipContent
+                  story={hoveredStory}
+                  elevationIn={hoverState.elevationIn}
+                  frame={hoverState.frame}
+                  dt={dt}
+                  unit={metricConfig.unit.abbr}
+                />
               </div>
             ) : null}
           </div>

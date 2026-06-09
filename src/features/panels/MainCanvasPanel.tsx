@@ -1,21 +1,21 @@
 import { BuildingScene } from "@/features/3d/BuildingScene";
 import { CanvasWithControls } from "@/features/canvas/CanvasWithControls";
+import { useMetrics } from "@/features/metrics/useMetrics";
 import type { IDockviewPanelProps } from "dockview-react";
 import { useState } from "react";
 import { CanvasPanelProvider } from "../3d/contexts/CanvasContext";
 import { SceneTooltip } from "../3d/SceneTooltip";
 import { CameraManager } from "../canvas/CameraManager";
 import { BoxSelectionOverlay } from "../canvas/components/BoxSelection";
+import { CanvasMetricSelector } from "../canvas/components/CanvasMetricSelector";
+import { CurrentThresholdSlider } from "../canvas/components/CurrentThresholdSlider";
 import { OrientationArrows } from "../canvas/components/OrientationArrows";
+import { QuickControls } from "../canvas/components/QuickControls";
+import { ViewSettingsOverlay } from "../canvas/components/ViewSettingsOverlay";
 import { KeyboardZoomHandler } from "../canvas/KeyboardZoomHandler";
 import type { MagicPanelParams } from "../dockview/MagicPanel";
 import { useExportVideo } from "../export/ExportProvider";
 import { SmallPlaybackControls } from "../playback/PlaybackControls";
-import { ViewSettingsOverlay } from "../canvas/components/ViewSettingsOverlay";
-import { CurrentThresholdSlider } from "../canvas/components/CurrentThresholdSlider";
-import { CanvasMetricSelector } from "../canvas/components/CanvasMetricSelector";
-import { useMetrics } from "@/features/metrics/useMetrics";
-import { QuickControls } from "../canvas/components/QuickControls";
 
 export const MainCanvasPanel = (props: IDockviewPanelProps<MagicPanelParams>) => {
   const panelId = props.api.id;

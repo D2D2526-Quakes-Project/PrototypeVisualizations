@@ -569,8 +569,8 @@ def process_building(building: BuildingInfo, *, args: Args) -> tuple[dict[int, i
     storiesCorners = {}
     for story, node_indices in stories.items():
         story_nodes = df_nodes[df_nodes["Node ID"].isin([index_to_id[idx] for idx in node_indices])]
-        xs = story_nodes["H1"].values * node_to_inches_scale
-        ys = story_nodes["H2"].values * node_to_inches_scale
+        xs = story_nodes["H1"].values * node_to_inches_scale  # pyright: ignore[reportOperatorIssue]
+        ys = story_nodes["H2"].values * node_to_inches_scale  # pyright: ignore[reportOperatorIssue]
 
         target_corners = {}
 

@@ -2,7 +2,7 @@ import { parseOptionalDatasetFromRawBuffer } from "@/features/animation-data/dat
 import type {
   OptionalWorkerRequest,
   OptionalWorkerResponse,
-} from "@/features/animation-data/data-loading/incrementalData";
+} from "@/features/animation-data/data-loading/serializedTypes";
 
 self.onmessage = async (event: MessageEvent<OptionalWorkerRequest>) => {
   try {

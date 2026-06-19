@@ -6,16 +6,18 @@ import {
 } from "@/features/animation-data/data-loading/dataLoader";
 import {
   buildRequiredSerializedAnimationDataFromRaw,
-  createCoreProcessedCacheKey,
-  createOptionalProcessedCacheKey,
   mergeOptionalDatasetIntoAnimationData,
   rebuildAnimationDataFromSerializedCore,
+} from "@/features/animation-data/data-loading/incrementalData";
+import {
+  createCoreProcessedCacheKey,
+  createOptionalProcessedCacheKey,
   type OptionalWorkerRequest,
   type OptionalWorkerResponse,
   type ProcessedCacheRecord,
   type SerializedOptionalDatasetResult,
   type SerializedRequiredAnimationData,
-} from "@/features/animation-data/data-loading/incrementalData";
+} from "@/features/animation-data/data-loading/serializedTypes";
 import {
   DATASET_KEYS,
   DATASET_LABELS,

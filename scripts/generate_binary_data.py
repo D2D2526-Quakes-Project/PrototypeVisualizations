@@ -83,29 +83,29 @@ Examples:
   %(prog)s --building 15story --simulation station3138 station3139 --metrics displacement velocity
         """,
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--dryrun",
         action="store_true",
         help="Print actions without writing files",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--generate-missing-only",
         "--only-missing",
         action="store_true",
         dest="generate_missing_only",
         help="Skip generating binary files that already exist",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--building",
         nargs="+",
         help="Building folder name(s) to process (e.g., --building 15story 20story)",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--simulation",
         nargs="+",
         help="Simulation name(s) to process (requires --building)",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--metrics",
         nargs="+",
         choices=["displacement", "velocity", "acceleration", "ground_motion", "hinge", "shear", "brb", "building", "all"],
@@ -120,7 +120,7 @@ Examples:
 # ---------------------------------------------------------------------------
 
 
-def check_outputs_exist(building_name, simulation_name=None, *, args):
+def check_outputs_exist(building_name: str, simulation_name: str | None = None, *, args: Args):
     """
     Check whether binary output files already exist for a building/simulation.
 
@@ -192,7 +192,7 @@ def check_outputs_exist(building_name, simulation_name=None, *, args):
 # ---------------------------------------------------------------------------
 
 
-def should_process_metric(metric_name: str, *, args):
+def should_process_metric(metric_name: str, *, args: Args):
     """
     Return True when the given metric should be processed.
 

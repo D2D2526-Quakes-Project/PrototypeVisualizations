@@ -1,0 +1,7 @@
+{
+  "ignore": [
+    "scripts/backup_generate_binary_data.py",
+    "scripts/generate_node_data_from_displacements.py",
+  ],
+  "reportUnusedCallResult": "none",
+}

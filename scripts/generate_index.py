@@ -15,9 +15,10 @@ import os
 import sys
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Protocol, TypedDict
 
 import boto3
+from types_boto3_s3 import S3Client
 from dotenv import load_dotenv
 
 
@@ -35,6 +36,10 @@ def read_display_name(csv_dir: Path, folder: str) -> str | None:
     return None
 
 
+class Args(Protocol):
+    local: str | None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate index.json from R2 bucket or local files")
     parser.add_argument(
@@ -45,7 +50,7 @@ def main():
         default=None,
         help="Generate index from local files. Optional: specify local data directory path (default: data/binary)",
     )
-    args = parser.parse_args()
+    args: Args = parser.parse_args()  # pyright: ignore[reportAssignmentType]
 
     is_local = args.local is not None
     source_dir = args.local if args.local and args.local != "default" else None
@@ -54,6 +59,33 @@ def main():
         generate_local_index(source_dir)
     else:
         generate_r2_index()
+
+
+class Simulation(TypedDict):
+    name: str
+    folder: str
+    size: int
+
+
+class Building(TypedDict):
+    data_type: str
+    name: str
+    folder: str
+    building_data: str | None
+    building_data_size: int
+    simulations: list[Simulation]
+    size: int
+    extra_building_files_size: int
+
+
+Index = TypedDict(
+    "Index",
+    {
+        "$schema": str,
+        "buildings": list[Building],
+        "size": int,
+    },
+)
 
 
 def generate_local_index(source_dir: str | None = None):
@@ -94,7 +126,7 @@ def generate_local_index(source_dir: str | None = None):
 
     csv_dir = project_root / "data" / "csv"
 
-    buildings: Dict[str, dict] = {}
+    buildings: dict[str, Building] = {}
     total_files = 0
 
     for building_dir in sorted(data_dir.iterdir()):
@@ -110,15 +142,16 @@ def generate_local_index(source_dir: str | None = None):
             continue
 
         building_size = building_file.stat().st_size
-        buildings[building_folder] = {
-            "data_type": "binary",
-            "name": building_display,
-            "folder": building_folder,
-            "building_data": "building.bld",
-            "building_data_size": building_size,
-            "simulations": [],
-            "size": 0,
-        }
+        buildings[building_folder] = Building(
+            data_type="binary",
+            name=building_display,
+            folder=building_folder,
+            building_data="building.bld",
+            building_data_size=building_size,
+            simulations=[],
+            size=0,
+            extra_building_files_size=0,
+        )
         print(f"  ✓ Building: {building_folder}/building.bld ({building_size:,} bytes)")
 
         for sim_dir in sorted(building_dir.iterdir()):
@@ -143,7 +176,8 @@ def generate_local_index(source_dir: str | None = None):
                 sim_files[file_type] = file_name
 
             if sim_files:
-                sim_entry = {"name": sim_display, "folder": sim_folder, "size": sim_size, **sim_files}
+                # sim_entry: {"name": sim_display, "folder": sim_folder, "size": sim_size, **sim_files}
+                sim_entry = Simulation(name=sim_display, folder=sim_folder, size=sim_size, **sim_files)
                 buildings[building_folder]["simulations"].append(sim_entry)
                 print(f"  ✓ Simulation: {building_folder}/{sim_folder}/ ({sim_size:,} bytes)")
 
@@ -155,7 +189,7 @@ def generate_local_index(source_dir: str | None = None):
     for building in buildings.values():
         building["size"] = building["building_data_size"] + sum(s["size"] for s in building["simulations"])
 
-    index = {"$schema": "./index.schema.json", "buildings": list(buildings.values()), "size": sum(b["size"] for b in buildings.values())}
+    index: Index = {"$schema": "./index.schema.json", "buildings": list(buildings.values()), "size": sum(b["size"] for b in buildings.values())}
 
     output_file = index_out_dir / "index.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -197,7 +231,7 @@ def generate_r2_index():
 
     # Create S3 client
     print(f"Connecting to R2...")
-    s3 = boto3.client("s3", endpoint_url=endpoint, aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name="auto")
+    s3: S3Client = boto3.client("s3", endpoint_url=endpoint, aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name="auto")  # pyright: ignore[reportUnknownMemberType]
 
     # Construct public URL base
     base_url = public_endpoint.rstrip("/")
@@ -212,8 +246,8 @@ def generate_r2_index():
     project_root = script_dir.parent if script_dir.name == "scripts" else script_dir
     csv_dir = project_root / "data" / "csv"
 
-    buildings: Dict[str, dict] = {}
-    continuation_token = None
+    buildings: dict[str, Building] = {}
+    continuation_token: str | None = None
     total_objects = 0
 
     while True:
@@ -229,11 +263,13 @@ def generate_r2_index():
         print(f"Processing {len(objects)} objects...")
 
         for obj in objects:
-            key = obj["Key"]
-            size = obj["Size"]
+            key: str = obj.get("Key", "")
+            size: int = obj.get("Size", 0)
+            if not key or not size:
+                continue
             url = f"{base_url}/{key}"
 
-            parts = key.split("/")
+            parts: list[str] = key.split("/")
 
             # Skip non-.bld files
             if not key.endswith(".bld"):
@@ -246,16 +282,16 @@ def generate_r2_index():
                 building_display = read_display_name(csv_dir, building_folder) or building_folder
 
                 if building_folder not in buildings:
-                    buildings[building_folder] = {
-                        "data_type": "binary",
-                        "name": building_display,
-                        "folder": building_folder,
-                        "building_data": None,
-                        "building_data_size": 0,
-                        "extra_building_files_size": 0,
-                        "simulations": [],
-                        "size": 0,
-                    }
+                    buildings[building_folder] = Building(
+                        data_type="binary",
+                        name=building_display,
+                        folder=building_folder,
+                        building_data=None,
+                        building_data_size=0,
+                        extra_building_files_size=0,
+                        simulations=[],
+                        size=0,
+                    )
 
                 buildings[building_folder]["building_data"] = url
                 buildings[building_folder]["building_data_size"] = size
@@ -268,19 +304,19 @@ def generate_r2_index():
                 building_display = read_display_name(csv_dir, building_folder) or building_folder
 
                 if building_folder not in buildings:
-                    buildings[building_folder] = {
-                        "data_type": "binary",
-                        "name": building_display,
-                        "folder": building_folder,
-                        "building_data": None,
-                        "building_data_size": 0,
-                        "extra_building_files_size": 0,
-                        "simulations": [],
-                        "size": 0,
-                    }
+                    buildings[building_folder] = Building(
+                        data_type="binary",
+                        name=building_display,
+                        folder=building_folder,
+                        building_data=None,
+                        building_data_size=0,
+                        extra_building_files_size=0,
+                        simulations=[],
+                        size=0,
+                    )
 
                 file_type = to_camel_case(file_name.replace(".bld", ""))
-                buildings[building_folder][file_type] = url
+                buildings[building_folder][file_type] = url  # type: ignore[index]
                 buildings[building_folder]["extra_building_files_size"] = buildings[building_folder].get("extra_building_files_size", 0) + size
                 print(f"  ✓ Building extra: {building_folder}/{file_name} ({size:,} bytes)")
 
@@ -295,28 +331,28 @@ def generate_r2_index():
 
                 # Ensure building exists
                 if building_folder not in buildings:
-                    buildings[building_folder] = {
-                        "data_type": "binary",
-                        "name": building_display,
-                        "folder": building_folder,
-                        "building_data": None,
-                        "building_data_size": 0,
-                        "extra_building_files_size": 0,
-                        "simulations": [],
-                        "size": 0,
-                    }
+                    buildings[building_folder] = Building(
+                        data_type="binary",
+                        name=building_display,
+                        folder=building_folder,
+                        building_data=None,
+                        building_data_size=0,
+                        extra_building_files_size=0,
+                        simulations=[],
+                        size=0,
+                    )
 
                 # Find or create simulation
                 sim = next((s for s in buildings[building_folder]["simulations"] if s["folder"] == sim_folder), None)
                 if not sim:
-                    sim = {"name": sim_display, "folder": sim_folder, "size": 0}
+                    sim = Simulation(name=sim_display, folder=sim_folder, size=0)
                     buildings[building_folder]["simulations"].append(sim)
 
                 # Determine file type from filename and convert to camelCase
-                file_type = to_camel_case(file_name.replace(".bld", ""))
+                file_type: str = to_camel_case(file_name.replace(".bld", ""))
 
                 # Add URL to simulation
-                sim[file_type] = url
+                sim[file_type] = url  # type: ignore[index]
                 sim["size"] = sim.get("size", 0) + size
 
                 print(f"  ✓ Simulation: {building_folder}/{sim_folder}/{file_name} ({size:,} bytes)")
@@ -326,7 +362,7 @@ def generate_r2_index():
 
         # Check if there are more objects to list
         if response.get("IsTruncated"):
-            continuation_token = response.get("NextContinuationToken")
+            continuation_token = response.get("NextContinuationToken")  # type: ignore[assignment]
         else:
             break
 
@@ -341,7 +377,7 @@ def generate_r2_index():
         building.pop("extra_building_files_size", None)
 
     # Create index structure
-    index = {"$schema": "./index.schema.json", "buildings": list(buildings.values()), "size": sum(b["size"] for b in buildings.values())}
+    index: Index = {"$schema": "./index.schema.json", "buildings": list(buildings.values()), "size": sum(b["size"] for b in buildings.values())}
 
     # Save to file
     output_file = project_root / "src" / "data" / "index.json"

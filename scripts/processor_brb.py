@@ -63,14 +63,18 @@ processor_building.process_beam_data().  The ``beam_lookup`` argument
 """
 
 import os
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
 
-from .shared import BRB_REQUIRED_COLUMNS, BRB_NUMERIC_COLUMNS, BRB_PROPERTIES_REQUIRED_COLUMNS, CSV_DIR, write_bld_file
+from .shared import BRB_REQUIRED_COLUMNS, BRB_NUMERIC_COLUMNS, BRB_PROPERTIES_REQUIRED_COLUMNS, CSV_DIR, BuildingInfo, SimulationFilesConfig, write_bld_file
+
+if TYPE_CHECKING:
+    from .shared import Args
 
 
-def load_brb_properties(building):
+def load_brb_properties(building: BuildingInfo) -> dict[str, dict[str, float]] | None:
     """
     Load BRB_properties.csv for a building.
 
@@ -134,7 +138,9 @@ def load_brb_properties(building):
     }
 
 
-def process_brb_data(files_config, simulation_output_dir, beam_lookup, brb_properties, *, args):
+def process_brb_data(
+    files_config: SimulationFilesConfig, simulation_output_dir: str, beam_lookup: dict[tuple[int, int], dict[str, object]], brb_properties: dict[str, dict[str, float]] | None, *, args: Args
+):
     """
     Process BRB demand data and write brb_data.bld.
 
@@ -209,11 +215,11 @@ def process_brb_data(files_config, simulation_output_dir, beam_lookup, brb_prope
 
     duplicate_count = int(normalized.duplicated(subset=["Group ID", "Element ID", "Step Type"]).sum())
     if duplicate_count > 0:
-        raise ValueError(f"BRB data has {duplicate_count} duplicate row(s) for the same " f"(Group ID, Element ID, Step Type)")
+        raise ValueError(f"BRB data has {duplicate_count} duplicate row(s) for the same " + f"(Group ID, Element ID, Step Type)")
 
-    records_by_beam = {}
-    missing_beams = []
-    missing_properties = []
+    records_by_beam: dict[int, dict[str, int | np.float32]] = {}
+    missing_beams: list[tuple[int, int]] = []
+    missing_properties: list[str] = []
 
     for _, row in normalized.sort_values(["Group ID", "Element ID", "Step Type"], kind="stable").iterrows():
         group_id = int(row["Group ID"])
@@ -224,13 +230,13 @@ def process_brb_data(files_config, simulation_output_dir, beam_lookup, brb_prope
             missing_beams.append((group_id, element_id))
             continue
 
-        property_name = beam_info.get("propertyName", "")
+        property_name = str(beam_info.get("propertyName", ""))
         property_info = brb_properties.get(property_name)
         if property_info is None:
             missing_properties.append(property_name)
             continue
 
-        beam_index = int(beam_info["beamIndex"])
+        beam_index = cast("int", beam_info["beamIndex"])
         record = records_by_beam.get(beam_index)
         if record is None:
             record = {
@@ -264,10 +270,10 @@ def process_brb_data(files_config, simulation_output_dir, beam_lookup, brb_prope
 
     if missing_beams:
         unique_missing = sorted(set(missing_beams))[:10]
-        raise ValueError(f"{len(missing_beams)} BRB row(s) could not map to beam_data.csv rows. " f"Sample: {unique_missing}")
+        raise ValueError(f"{len(missing_beams)} BRB row(s) could not map to beam_data.csv rows. " + f"Sample: {unique_missing}")
     if missing_properties:
         unique_missing = sorted({name for name in missing_properties if name})[:10]
-        raise ValueError(f"{len(missing_properties)} BRB row(s) could not map to BRB_properties.csv rows. " f"Sample: {unique_missing}")
+        raise ValueError(f"{len(missing_properties)} BRB row(s) could not map to BRB_properties.csv rows. " + f"Sample: {unique_missing}")
 
     if not records_by_beam:
         print("⚠ No BRB records were mapped; skipping.")

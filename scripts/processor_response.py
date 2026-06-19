@@ -43,6 +43,7 @@ Input file patterns
 """
 
 import os
+from typing import cast
 
 import numpy as np
 
@@ -52,10 +53,12 @@ from .shared import (
     merge_grid_data,
     compute_missing_node_indices,
     write_bld_file,
+    ComponentGridFiles,
+    SimulationFilesConfig,
 )
 
 
-def process_response_file(file_key, type_name, id_to_index, files_config, simulation_output_dir, dryrun):
+def process_response_file(file_key: str, type_name: str, id_to_index: dict[int, int], files_config: SimulationFilesConfig, simulation_output_dir: str, dryrun: bool):
     """
     Generic processor for displacement, velocity, or acceleration data.
 
@@ -86,14 +89,15 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
     print(f"PROCESSING RESPONSE FILE: {type_name}")
     print(f"{'='*70}")
 
-    file_list = files_config.get(file_key)
-    if not file_list:
+    raw_list = files_config.get(file_key)
+    if not raw_list:
         print(f"❌ Skipping {type_name}: Files not available in files_config.")
         print(f"   files_config keys: {list(files_config.keys())}")
         return
+    file_list = cast(ComponentGridFiles, raw_list)
 
-    lin_files = file_list.get("lin", [])
-    rot_files = file_list.get("rot", [])
+    lin_files = file_list["lin"]
+    rot_files = file_list.get("rot")
 
     print(f"Configuration:")
     print(f"  Linear files: {len(lin_files)} component(s)")
@@ -104,9 +108,10 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
 
     if is_grid_format:
         print(f"  Format: Grid (merged from multiple files)")
-        h1_grid_files = lin_files[0] if len(lin_files) > 0 else []
-        h2_grid_files = lin_files[1] if len(lin_files) > 1 else []
-        v_grid_files = lin_files[2] if len(lin_files) > 2 else []
+        lin_grid = cast("list[list[str]]", lin_files)
+        h1_grid_files = lin_grid[0] if len(lin_grid) > 0 else []
+        h2_grid_files = lin_grid[1] if len(lin_grid) > 1 else []
+        v_grid_files = lin_grid[2] if len(lin_grid) > 2 else []
 
         # Verify all grid files exist
         print(f"\nVerifying grid files:")
@@ -137,9 +142,11 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
 
         has_rotation = rot_files is not None and len(rot_files) > 0 and isinstance(rot_files[0], list)
         if has_rotation:
-            h1_rot_files = rot_files[0] if len(rot_files) > 0 else []
-            h2_rot_files = rot_files[1] if len(rot_files) > 1 else []
-            v_rot_files = rot_files[2] if len(rot_files) > 2 else []
+            assert isinstance(rot_files, list) and len(rot_files) > 0 and isinstance(rot_files[0], list)
+            rot_grid = cast("list[list[str]]", rot_files)
+            h1_rot_files = rot_grid[0] if len(rot_grid) > 0 else []
+            h2_rot_files = rot_grid[1] if len(rot_grid) > 1 else []
+            v_rot_files = rot_grid[2] if len(rot_grid) > 2 else []
 
             print(f"\nMerging rotation data:")
             print(f"  H1 rotation from {len(h1_rot_files)} grid file(s)...")
@@ -178,7 +185,8 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
 
         # Verify linear files exist
         print(f"\nVerifying linear files:")
-        for f in lin_files:
+        lin_flat = cast("list[str]", lin_files)
+        for f in lin_flat:
             exists = "✓" if os.path.exists(f) else "✗"
             print(f"  {exists} {f}")
             if not os.path.exists(f):
@@ -186,10 +194,11 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
                 return
 
         # Check rotation files
-        has_rotation = rot_files is not None
-        if has_rotation:
+        rot_flat = cast("list[str]", rot_files) if rot_files is not None else None
+        has_rotation = rot_flat is not None
+        if has_rotation and rot_flat is not None:
             print(f"\nVerifying rotation files:")
-            for f in rot_files:
+            for f in rot_flat:
                 exists = "✓" if os.path.exists(f) else "✗"
                 print(f"  {exists} {f}")
                 if not os.path.exists(f):
@@ -202,7 +211,7 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
 
         print(f"\n--- Loading {type_name} Data ---")
 
-        f_lx, f_ly, f_lz = lin_files[0], lin_files[1], lin_files[2]
+        f_lx, f_ly, f_lz = lin_flat[0], lin_flat[1], lin_flat[2]
 
         col_map_x, _ = parse_ladwp_header(f_lx)
         col_map_y, _ = parse_ladwp_header(f_ly)
@@ -217,9 +226,11 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
         num_nodes = len(id_to_index)
         missing_lin_node_indices = compute_missing_node_indices(num_nodes, id_to_index, col_map_x, col_map_y, col_map_z)
 
-        if has_rotation:
+        if has_rotation and rot_flat is not None:
             print(f"Loading Rotational Data...")
-            f_rx, f_ry, f_rz = rot_files[0], rot_files[1], rot_files[2]
+            f_rx: str = rot_flat[0]
+            f_ry: str = rot_flat[1]
+            f_rz: str = rot_flat[2]
             col_map_rx, _ = parse_ladwp_header(f_rx)
             col_map_ry, _ = parse_ladwp_header(f_ry)
             col_map_rz, _ = parse_ladwp_header(f_rz)
@@ -283,7 +294,7 @@ def process_response_file(file_key, type_name, id_to_index, files_config, simula
         write_bld_file(f"{file_key}_rot.bld", header_rot, buffer_rot.tobytes(), simulation_output_dir, dryrun)
 
 
-def process_simulation_response_type(task):
+def process_simulation_response_type(task: tuple[str, str, dict[int, int], SimulationFilesConfig, str, bool]) -> tuple[str, str, None] | tuple[str, str, Exception]:
     """
     Thin wrapper for parallel execution of process_response_file.
 

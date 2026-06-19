@@ -24,14 +24,18 @@ Output file
 """
 
 import os
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
-from .shared import write_bld_file
+from .shared import SimulationFilesConfig, write_bld_file
+
+if TYPE_CHECKING:
+    from .shared import Args
 
 
-def process_ground_motion(files_config, simulation_output_dir, *, args):
+def process_ground_motion(files_config: SimulationFilesConfig, simulation_output_dir: str, *, args: Args):
     """
     Read ground_motion.txt and write ground_motion.bld.
 

@@ -64,14 +64,18 @@ by that function.
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
 
-from .shared import HINGE_REQUIRED_COLUMNS, HINGE_NUMERIC_COLUMNS, HINGE_COMPONENT_TO_SIDE, write_bld_file
+from .shared import HINGE_REQUIRED_COLUMNS, HINGE_NUMERIC_COLUMNS, HINGE_COMPONENT_TO_SIDE, SimulationFilesConfig, write_bld_file
+
+if TYPE_CHECKING:
+    from .shared import Args
 
 
-def load_hinge_dataframe(hinge_file):
+def load_hinge_dataframe(hinge_file: str) -> pd.DataFrame | None:
     """
     Load hinge_data.csv into a DataFrame.
 
@@ -96,7 +100,7 @@ def load_hinge_dataframe(hinge_file):
     return None
 
 
-def normalize_hinge_dataframe(df_hinge, hinge_file):
+def normalize_hinge_dataframe(df_hinge: pd.DataFrame, hinge_file: str) -> pd.DataFrame | None:
     """
     Validate and normalise a hinge DataFrame to canonical schema.
 
@@ -162,7 +166,7 @@ def normalize_hinge_dataframe(df_hinge, hinge_file):
     return normalized
 
 
-def build_hinge_side_lookup_by_beam(normalized_hinge_rows):
+def build_hinge_side_lookup_by_beam(normalized_hinge_rows: pd.DataFrame) -> dict[tuple[int, int], str]:
     """
     Resolve the hinge end side (I or J) for each (beamIndex, componentNo) pair.
 
@@ -190,13 +194,14 @@ def build_hinge_side_lookup_by_beam(normalized_hinge_rows):
     for component_pattern, count in pattern_counts.items():
         print(f"  Components {component_pattern}: {int(count)} beam(s)")
 
-    for beam_index, component_pattern in component_sets_by_beam.items():
+    for raw_beam_index, component_pattern in component_sets_by_beam.items():
+        beam_index = int(cast("int", raw_beam_index))
         if len(component_pattern) == 1:
             component_no = component_pattern[0]
             if component_no == 2:
-                side_lookup[(int(beam_index), component_no)] = "I"
+                side_lookup[(beam_index, component_no)] = "I"
             elif component_no in (3, 4, 5):
-                side_lookup[(int(beam_index), component_no)] = "J"
+                side_lookup[(beam_index, component_no)] = "J"
             else:
                 raise ValueError(f"Unsupported singleton hinge component pattern for beam {beam_index}: {component_pattern}")
             continue
@@ -206,16 +211,16 @@ def build_hinge_side_lookup_by_beam(normalized_hinge_rows):
             side = HINGE_COMPONENT_TO_SIDE.get(component_no)
             if side is None:
                 raise ValueError(f"Unsupported hinge Component No. value in beam {beam_index}: {component_no}")
-            side_lookup[(int(beam_index), component_no)] = side
+            side_lookup[(beam_index, component_no)] = side
             resolved_sides.append(side)
 
         if len(set(resolved_sides)) != len(component_pattern):
-            raise ValueError(f"Ambiguous multi-component hinge pattern for beam {beam_index}: " f"{component_pattern} resolves to sides {tuple(resolved_sides)}")
+            raise ValueError(f"Ambiguous multi-component hinge pattern for beam {beam_index}: " + f"{component_pattern} resolves to sides {tuple(resolved_sides)}")
 
     return side_lookup
 
 
-def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2_element_id, *, args):
+def process_hinge_data(files_config: SimulationFilesConfig, simulation_output_dir: str, beam_index_by_group2_element_id: dict[int, int], *, args: Args):
     """
     Process non-time-series hinge data and write hinge_data.bld.
 
@@ -257,7 +262,6 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
     if unique_group_ids != [2]:
         raise ValueError(f"Expected hinge Group ID to be [2], got {unique_group_ids}")
 
-    source_row_count = int(len(normalized))
     normalized = normalized.loc[normalized["Performance Level"] == 1].copy()
     if normalized.empty:
         print("⚠ No hinge rows remain after filtering Performance Level == 1; skipping.")
@@ -272,7 +276,7 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
     missing_beam_count = int(missing_beam_rows.sum())
     if missing_beam_count > 0:
         sample_ids = normalized.loc[missing_beam_rows, "Element ID"].dropna().astype(int).unique().tolist()[:10]
-        raise ValueError(f"{missing_beam_count} hinge row(s) could not map to beam_data.bld rows. " f"Sample Element IDs: {sample_ids}")
+        raise ValueError(f"{missing_beam_count} hinge row(s) could not map to beam_data.bld rows. " + f"Sample Element IDs: {sample_ids}")
     normalized["beamIndex"] = normalized["beamIndex"].round().astype(np.int32)
 
     hinge_side_lookup = build_hinge_side_lookup_by_beam(normalized)
@@ -286,11 +290,11 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
 
     duplicate_same_side = int(normalized.duplicated(subset=["beamIndex", "Step Type", "hingeSide"]).sum())
     if duplicate_same_side > 0:
-        raise ValueError(f"Hinge data has {duplicate_same_side} duplicate row(s) for the same " f"(beamIndex, Step Type, hingeSide) after PL=1 filtering")
+        raise ValueError(f"Hinge data has {duplicate_same_side} duplicate row(s) for the same " + f"(beamIndex, Step Type, hingeSide) after PL=1 filtering")
 
-    records_by_beam = {}
+    records_by_beam: dict[int, dict[str, int | np.float32]] = {}
 
-    def init_record(beam_index):
+    def init_record(beam_index: int) -> dict[str, int | np.float32]:
         return {
             "beamIndex": int(beam_index),
             "endMask": 0,
@@ -331,9 +335,9 @@ def process_hinge_data(files_config, simulation_output_dir, beam_index_by_group2
             records_by_beam[beam_index] = record
 
         if side == "I":
-            record["endMask"] |= 0b01
+            record["endMask"] = cast("int", record["endMask"]) | 0b01
         elif side == "J":
-            record["endMask"] |= 0b10
+            record["endMask"] = cast("int", record["endMask"]) | 0b10
         else:
             raise ValueError(f"Unexpected hinge side value: {side}")
 

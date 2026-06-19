@@ -68,18 +68,22 @@ Output files
 """
 
 import os
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
-from .shared import BINARY_DIR, write_bld_file
+from .shared import BINARY_DIR, BeamLookupMaps, BuildingInfo, write_bld_file
+
+if TYPE_CHECKING:
+    from .shared import Args
 
 # ---------------------------------------------------------------------------
 # Private geometry helpers
 # ---------------------------------------------------------------------------
 
 
-def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
+def _infer_node_to_inches_scale(node_elevations_in: pd.Series, story_elevations_in: np.ndarray) -> float:
     """
     Infer whether node elevations are in inches or feet by matching
     normalised story elevations.
@@ -102,7 +106,7 @@ def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
     """
     candidate_scales = [1.0, 12.0]
     tolerance_in = 0.5
-    minV = node_elevations_in.min()
+    minV = float(node_elevations_in.min())
     node_elevations_in = node_elevations_in - minV
 
     node_elevations = np.asarray(node_elevations_in, dtype=np.float64)
@@ -121,11 +125,11 @@ def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
     for scale in candidate_scales:
         scaled_elev = unique_node_elevations * scale
         normalized_elev = scaled_elev - np.min(scaled_elev)
-        min_deltas = np.min(np.abs(normalized_elev[None, :] - story_elevations[:, None]), axis=1)
+        min_deltas = float(np.min(np.abs(normalized_elev[None, :] - story_elevations[:, None]), axis=1))
         matched_count = int(np.count_nonzero(min_deltas <= tolerance_in))
         mean_delta = float(np.mean(min_deltas))
 
-        print(f"Scale check ({scale:.1f}): matched {matched_count}/{len(story_elevations)} " f"story elevations (mean abs delta={mean_delta:.3f} in).")
+        print(f"Scale check ({scale:.1f}): matched {matched_count}/{len(story_elevations)} " + f"story elevations (mean abs delta={mean_delta:.3f} in).")
 
         is_better = False
         if matched_count > best_matched:
@@ -141,11 +145,13 @@ def _infer_node_to_inches_scale(node_elevations_in, story_elevations_in):
             best_matched = matched_count
             best_mean_delta = mean_delta
 
-    print(f"Auto-selected node scale: {best_scale:.1f} " f"(matched {best_matched}/{len(story_elevations)} story elevations)")
+    print(f"Auto-selected node scale: {best_scale:.1f} " + f"(matched {best_matched}/{len(story_elevations)} story elevations)")
     return best_scale
 
 
-def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scale, min_v, tol=0.5):
+def _assign_nodes_to_stories(
+    df_nodes: pd.DataFrame, story_elevations: np.ndarray, story_levels: list[str], node_scale: float, min_v: float, tol: float = 0.5
+) -> tuple[dict[str, list[int | None]], list[dict[str, object]]]:
     """
     Assign each node to a story by matching its scaled Z coordinate to the
     known story elevations within ``tol`` inches.
@@ -172,8 +178,8 @@ def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scal
     unmatched_nodes : list[dict]
         Nodes that could not be matched to any story elevation.
     """
-    stories = {}
-    unmatched_nodes = []
+    stories: dict[str, list[int | None]] = {}
+    unmatched_nodes: list[dict[str, object]] = []
 
     n = len(story_elevations)
     story_bottoms = np.zeros(n, dtype=np.float64)
@@ -205,7 +211,7 @@ def _assign_nodes_to_stories(df_nodes, story_elevations, story_levels, node_scal
     return stories, unmatched_nodes
 
 
-def _warn_unmatched_nodes(building_name, unmatched_nodes, total_nodes, story_elevations):
+def _warn_unmatched_nodes(building_name: str, unmatched_nodes: list[dict[str, object]], total_nodes: int):
     """
     Print a diagnostic warning when nodes could not be matched to any story.
 
@@ -237,7 +243,15 @@ def _warn_unmatched_nodes(building_name, unmatched_nodes, total_nodes, story_ele
         print(f"      ... and {unmatched_count - len(sample)} more.")
 
 
-def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, index_to_id, node_to_inches_scale, xy_tolerance=32):
+def _compute_node_to_below_mapping(
+    stories: dict[str, list[int]],
+    story_order: list[str],
+    df_nodes: pd.DataFrame,
+    id_to_index: dict[int, int],
+    index_to_id: dict[int, int],
+    node_to_inches_scale: float,
+    xy_tolerance: float = 32,
+) -> tuple[list[int], list[dict[str, object]]]:
     """
     Compute the node-to-below mapping used for inter-storey drift (ISD).
 
@@ -269,11 +283,11 @@ def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, 
     print(f"\n--- Computing Node-to-Below Mapping (XY tolerance: {xy_tolerance} in) ---")
 
     node_to_below = [-1] * len(id_to_index)
-    unmatched_nodes = []
+    unmatched_nodes: list[dict[str, object]] = []
 
-    story_positions = {}
+    story_positions: dict[str, list[tuple[float, float, float, int]]] = {}
     for story, node_indices in stories.items():
-        positions = []
+        positions: list[tuple[float, float, float, int]] = []
         for node_idx in node_indices:
             node_id = index_to_id[node_idx]
             row = df_nodes[df_nodes["Node ID"] == node_id].iloc[0]
@@ -328,7 +342,7 @@ def _compute_node_to_below_mapping(stories, story_order, df_nodes, id_to_index, 
     return node_to_below, unmatched_nodes
 
 
-def _compute_cross_sections(df_nodes, id_to_index, node_scale, tol=6.0):
+def _compute_cross_sections(df_nodes: pd.DataFrame, id_to_index: dict[int, int], node_scale: float, tol: float = 6.0) -> tuple[dict[str, list[int]], dict[str, list[int]]]:
     """
     Group nodes into cross-sections (slices) along the X and Y axes.
 
@@ -352,8 +366,8 @@ def _compute_cross_sections(df_nodes, id_to_index, node_scale, tol=6.0):
         Averaged Y coordinate (in) → list of node indices in that Y slice.
     """
     print(f"\n--- Computing X/Y cross_sections (tolerance: {tol} in) ---")
-    x_nodes = []
-    y_nodes = []
+    x_nodes: list[tuple[float, int]] = []
+    y_nodes: list[tuple[float, int]] = []
 
     for _, row in df_nodes.iterrows():
         idx = id_to_index.get(row["Node ID"])
@@ -364,9 +378,9 @@ def _compute_cross_sections(df_nodes, id_to_index, node_scale, tol=6.0):
         x_nodes.append((x, idx))
         y_nodes.append((y, idx))
 
-    def group_1d(val_idx_list):
+    def group_1d(val_idx_list: list[tuple[float, int]]) -> dict[str, list[int]]:
         val_idx_list.sort(key=lambda item: item[0])
-        groups = {}
+        groups: dict[str, list[int]] = {}
         if not val_idx_list:
             return groups
 
@@ -404,7 +418,7 @@ def _compute_cross_sections(df_nodes, id_to_index, node_scale, tol=6.0):
 # ---------------------------------------------------------------------------
 
 
-def process_building(building, *, args):
+def process_building(building: BuildingInfo, *, args: Args) -> tuple[dict[int, int], BeamLookupMaps | None, str, list[str]]:
     """
     Process a building's CSV files and write building.bld (and beam_data.bld).
 
@@ -452,8 +466,8 @@ def process_building(building, *, args):
     df_height = pd.read_csv(building["height"])
 
     # 1b. Load optional corner positions and hidden floors
-    corner_positions = None
-    hidden_floors = []
+    corner_positions: dict[str, dict[str, dict[str, float]]] | None = None
+    hidden_floors: list[str] = []
 
     if "corner_positions" in building:
         corner_csv = building["corner_positions"]
@@ -506,7 +520,7 @@ def process_building(building, *, args):
 
     # 3. Infer unit scale and prepare node binary buffer
     story_elevations_array = np.array(list(storiesElevations.values()), dtype=np.float64)
-    node_to_inches_scale = _infer_node_to_inches_scale(df_nodes["V"].values, story_elevations_array)
+    node_to_inches_scale = _infer_node_to_inches_scale(df_nodes["V"], story_elevations_array)
 
     min_v = df_nodes["V"].min() * node_to_inches_scale
     buffer = np.zeros(count_nodes * 3, dtype=np.float32)
@@ -527,17 +541,16 @@ def process_building(building, *, args):
         node_to_inches_scale,
         min_v,
     )
-    _warn_unmatched_nodes(building_name, unmatched_nodes, len(df_nodes), story_elevations)
+    _warn_unmatched_nodes(building_name, unmatched_nodes, len(df_nodes))
 
     # Convert discovered floor Node IDs to zero-based geometry indices
     stories = {story: [id_to_index[nid] for nid in node_indices if nid in id_to_index] for story, node_indices in stories.items()}
 
     # 4. Find corners per story
-    corner_tolerance = 6.0
     story_order_list = df_height["Story level"].tolist()
     story_order_list = list(reversed(story_order_list))
 
-    def get_corner_xy_for_story(corner_name, target_story):
+    def get_corner_xy_for_story(corner_name: str, target_story: str) -> tuple[float, float] | None:
         """Hierarchical lookup: if target story is absent, use closest story below."""
         if not corner_positions:
             return None
@@ -650,7 +663,7 @@ def process_building(building, *, args):
     return id_to_index, beam_lookup_maps, building_output_dir, storyOrder
 
 
-def process_beam_data(building, id_to_index, building_output_dir, *, args):
+def process_beam_data(building: BuildingInfo, id_to_index: dict[int, int], building_output_dir: str, *, args: Args) -> BeamLookupMaps:
     """
     Process building-level beam connectivity and write beam_data.bld.
 
@@ -759,7 +772,7 @@ def process_beam_data(building, id_to_index, building_output_dir, *, args):
         if group_id == 2:
             if element_id in beam_index_by_group2_element_id:
                 existing_index = beam_index_by_group2_element_id[element_id]
-                raise ValueError(f"Duplicate beam Element ID within Group ID 2: {element_id} " f"(rows {existing_index} and {beam_index})")
+                raise ValueError(f"Duplicate beam Element ID within Group ID 2: {element_id} " + f"(rows {existing_index} and {beam_index})")
             beam_index_by_group2_element_id[element_id] = beam_index
 
         property_name = str(row["Property Name"]).strip() if "Property Name" in df_beams.columns and pd.notna(row.get("Property Name")) else ""
@@ -774,7 +787,7 @@ def process_beam_data(building, id_to_index, building_output_dir, *, args):
         }
 
     if missing_node_refs:
-        raise ValueError(f"beam_data.csv contains {len(missing_node_refs)} row(s) referencing unknown node IDs. " f"Sample: {missing_node_refs[:5]}")
+        raise ValueError(f"beam_data.csv contains {len(missing_node_refs)} row(s) referencing unknown node IDs. " + f"Sample: {missing_node_refs[:5]}")
 
     header = {
         "count_rows": row_count,

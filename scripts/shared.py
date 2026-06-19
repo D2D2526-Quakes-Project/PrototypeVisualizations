@@ -41,7 +41,8 @@ Simulation CSV layout (under CSV_DIR/<building_folder>/<simulation_name>/)
 """
 
 import os
-from typing import Any
+from collections.abc import Mapping
+from typing import NotRequired, Protocol, TypedDict
 
 # ---------------------------------------------------------------------------
 # Directory paths
@@ -124,6 +125,63 @@ SHEAR_STORY_ALIASES = {
     "Int Mezzanine": "Mezzanine",
 }
 
+# ---------------------------------------------------------------------------
+# Type aliases and TypedDicts
+# ---------------------------------------------------------------------------
+
+
+class BuildingInfo(TypedDict):
+    folder: str
+    name: str
+    node_data: str
+    height: str
+    beam_data: NotRequired[str]
+    corner_positions: NotRequired[str]
+    hidden_floors: NotRequired[str]
+
+
+class SimulationInfo(TypedDict):
+    name: str
+    path: str
+    has_displacement: bool
+    has_velocity: bool
+    has_acceleration: bool
+    has_ground_motion: bool
+    has_hinge_data: bool
+    has_shear_data: bool
+    has_brb_data: bool
+    file_pattern: str | None
+    ground_motion_file: NotRequired[str]
+    hinge_file: NotRequired[str]
+    shear_files: NotRequired[dict[str, str]]
+    brb_file: NotRequired[str]
+
+
+class BeamLookupMaps(TypedDict):
+    hinge_by_group2_element_id: dict[int, int]
+    by_group_id_element_id: dict[tuple[int, int], dict[str, object]]
+
+
+class ComponentGridFiles(TypedDict):
+    lin: list[list[str]] | list[str]
+    rot: NotRequired[list[list[str] | None] | list[str] | None]
+
+
+class GridFilesResult(TypedDict):
+    lin: list[str]
+    rot: list[str] | None
+
+
+class SimulationFilesConfig(TypedDict, total=False):
+    displacement: ComponentGridFiles | None
+    velocity: ComponentGridFiles | None
+    acceleration: ComponentGridFiles | None
+    ground_motion: str | None
+    hinge: str | None
+    shear: dict[str, str] | None
+    brb: str | None
+
+
 import json
 import gzip
 import re
@@ -132,12 +190,21 @@ import struct
 import numpy as np
 import pandas as pd
 
+
+class Args(Protocol):
+    dryrun: bool
+    generate_missing_only: bool
+    building: list[str] | None
+    simulation: list[str] | None
+    metrics: list[str]
+
+
 # ---------------------------------------------------------------------------
 # .bld file writer
 # ---------------------------------------------------------------------------
 
 
-def write_bld_file(filename: str, header: dict[str, Any], binary_data: bytes, output_dir: str, dryrun: bool):
+def write_bld_file(filename: str, header: Mapping[str, object], binary_data: bytes, output_dir: str, dryrun: bool):
     """
     Write a JSON header + binary body to a gzip-compressed .bld file.
 
@@ -193,7 +260,7 @@ def write_bld_file(filename: str, header: dict[str, Any], binary_data: bytes, ou
 # ---------------------------------------------------------------------------
 
 
-def parse_ladwp_header(filepath):
+def parse_ladwp_header(filepath: str) -> tuple[dict[int, int], int]:
     """
     Extract the column→node ID mapping from a LADWP response text file.
 
@@ -217,7 +284,7 @@ def parse_ladwp_header(filepath):
         Row index of the first numeric data line (for use with pd.read_csv
         ``skiprows``).
     """
-    col_map = {}  # CSV Column Index (0-based) -> Node ID
+    col_map: dict[int, int] = {}  # CSV Column Index (0-based) -> Node ID
     start_row = 0
     with open(filepath, "r") as f:
         for i, line in enumerate(f):
@@ -231,7 +298,7 @@ def parse_ladwp_header(filepath):
     return col_map, start_row
 
 
-def load_ladwp_data(filepath, col_map, num_frames_expected=None):
+def load_ladwp_data(filepath: str, col_map: dict[int, int], num_frames_expected: int | None = None) -> tuple[np.ndarray, dict[int, int]]:
     """
     Load a single LADWP component file into a float32 numpy array.
 
@@ -274,7 +341,7 @@ def load_ladwp_data(filepath, col_map, num_frames_expected=None):
 # ---------------------------------------------------------------------------
 
 
-def merge_grid_data(file_list, id_to_index):
+def merge_grid_data(file_list: list[str], id_to_index: dict[int, int]) -> tuple[np.ndarray | None, dict[int, int], set[int]]:
     """
     Merge data from multiple grid-fragment files into a single node-aligned array.
 
@@ -303,9 +370,9 @@ def merge_grid_data(file_list, id_to_index):
 
     print(f"    Merging {len(file_list)} grid file(s)...")
 
-    all_col_maps = []
-    all_data = []
-    num_frames = None
+    all_col_maps: list[dict[int, int]] = []
+    all_data: list[np.ndarray] = []
+    num_frames: int | None = None
 
     for i, filepath in enumerate(file_list):
         print(f"      Loading grid file {i+1}/{len(file_list)}: {os.path.basename(filepath)}")
@@ -328,8 +395,8 @@ def merge_grid_data(file_list, id_to_index):
         print(f"        - Nodes: {len(col_map)}, Frames: {len(data)}")
 
     # Merge column maps
-    merged_col_map = {}
-    covered_node_ids = set()
+    merged_col_map: dict[int, int] = {}
+    covered_node_ids: set[int] = set()
     for col_map in all_col_maps:
         merged_col_map.update(col_map)
         covered_node_ids.update(col_map.values())
@@ -355,7 +422,7 @@ def merge_grid_data(file_list, id_to_index):
 # ---------------------------------------------------------------------------
 
 
-def compute_missing_node_indices(num_nodes: int, id_to_index: dict[int, int], *coverage_sources: dict[str, list[int]]) -> list[int]:
+def compute_missing_node_indices(num_nodes: int, id_to_index: dict[int, int], *coverage_sources: dict[int, int] | set[int]) -> list[int]:
     """
     Return node indices that have no coverage in any provided source map.
 
@@ -378,7 +445,7 @@ def compute_missing_node_indices(num_nodes: int, id_to_index: dict[int, int], *c
     list[int]
         Zero-based node indices with no coverage in any source.
     """
-    covered_node_indices = set()
+    covered_node_indices: set[int] = set()
 
     for source in coverage_sources:
         if not source:
@@ -473,7 +540,7 @@ CSV_DIR/
 # ---------------------------------------------------------------------------
 
 
-def discover_buildings() -> list[dict[str, Any]]:
+def discover_buildings() -> list[BuildingInfo]:
     """
     Scan CSV_DIR for building folders that have the minimum required files.
 
@@ -495,7 +562,7 @@ def discover_buildings() -> list[dict[str, Any]]:
           - "corner_positions": str
           - "hidden_floors"   : str
     """
-    buildings = []
+    buildings: list[BuildingInfo] = []
     print(f"\n{'='*70}")
     print(f"DISCOVERING BUILDINGS")
     print(f"{'='*70}")
@@ -533,7 +600,7 @@ def discover_buildings() -> list[dict[str, Any]]:
             print(f"    hidden_floors.csv: {'✓' if has_hidden_floors else '✗'} ({hidden_floors_file})")
 
             if has_node and has_height:
-                building_info = {
+                building_info: BuildingInfo = {
                     "folder": building_folder,
                     "name": building_folder.capitalize() if building_folder.islower() else building_folder,
                     "node_data": node_data_file,
@@ -551,7 +618,7 @@ def discover_buildings() -> list[dict[str, Any]]:
                 buildings.append(building_info)
                 print(f"    → Building ACCEPTED: {building_info['name']}")
             else:
-                missing = []
+                missing: list[str] = []
                 if not has_node:
                     missing.append("node_data.csv")
                 if not has_height:
@@ -572,7 +639,7 @@ def discover_buildings() -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 
-def discover_hinge_file(simulation_path: str):
+def discover_hinge_file(simulation_path: str) -> str | None:
     """
     Locate a hinge results file in the simulation folder.
 
@@ -599,7 +666,7 @@ def discover_hinge_file(simulation_path: str):
     return None
 
 
-def discover_shear_files(simulation_path: str):
+def discover_shear_files(simulation_path: str) -> dict[str, str] | None:
     """
     Locate the paired H1 / H2 shear summary files in a simulation folder.
 
@@ -632,7 +699,7 @@ def discover_shear_files(simulation_path: str):
     }
 
 
-def discover_brb_file(simulation_path: str):
+def discover_brb_file(simulation_path: str) -> str | None:
     """
     Locate a BRB result file in the simulation folder.
 
@@ -659,7 +726,7 @@ def discover_brb_file(simulation_path: str):
     return None
 
 
-def discover_simulations(building_folder):
+def discover_simulations(building_folder: str) -> list[SimulationInfo]:
     """
     Discover all simulations for a building.
 
@@ -692,7 +759,7 @@ def discover_simulations(building_folder):
           - "shear_files"        : dict {"h1": str, "h2": str}
           - "brb_file"           : str
     """
-    simulations = []
+    simulations: list[SimulationInfo] = []
     building_path = os.path.join(CSV_DIR, building_folder)
 
     print(f"\n  DISCOVERING SIMULATIONS for: {building_folder}")
@@ -711,7 +778,7 @@ def discover_simulations(building_folder):
         item_path = os.path.join(building_path, item)
         if os.path.isdir(item_path):
             print(f"\n    Checking simulation folder: {item}")
-            sim_data = {
+            sim_data: SimulationInfo = {
                 "name": item,
                 "path": item_path,
                 "has_displacement": False,
@@ -799,11 +866,11 @@ def discover_simulations(building_folder):
                 print(f"    → Simulation ACCEPTED: {item}")
                 print(
                     f"      Displacement: {sim_data['has_displacement']}, Velocity: {sim_data['has_velocity']}, "
-                    f"Acceleration: {sim_data['has_acceleration']}, Ground Motion: {sim_data['has_ground_motion']}, "
-                    f"Hinge: {sim_data['has_hinge_data']}, Shear: {sim_data['has_shear_data']}, BRB: {sim_data['has_brb_data']}"
+                    + f"Acceleration: {sim_data['has_acceleration']}, Ground Motion: {sim_data['has_ground_motion']}, "
+                    + f"Hinge: {sim_data['has_hinge_data']}, Shear: {sim_data['has_shear_data']}, BRB: {sim_data['has_brb_data']}"
                 )
             else:
-                print(f"    → Simulation REJECTED: {item} " f"(no displacement, velocity, acceleration, hinge, shear, or BRB data found)")
+                print(f"    → Simulation REJECTED: {item} " + "(no displacement, velocity, acceleration, hinge, shear, or BRB data found)")
 
     print(f"\n  Found {len(simulations)} simulation(s) for {building_folder}")
     return simulations
@@ -814,7 +881,7 @@ def discover_simulations(building_folder):
 # ---------------------------------------------------------------------------
 
 
-def discover_grid_files(directory, prefix, has_rotation):
+def discover_grid_files(directory: str, prefix: str, has_rotation: bool) -> GridFilesResult:
     """
     Discover all grid-fragment files in a directory for a given component prefix.
 
@@ -850,8 +917,8 @@ def discover_grid_files(directory, prefix, has_rotation):
         lin_pattern = re.compile(rf"^{re.escape(prefix)}T_Grid_(.+)\.txt$")
         rot_pattern = re.compile(rf"^{re.escape(prefix)}R_Grid_(.+)\.txt$")
 
-        lin_files = []
-        rot_files = []
+        lin_files: list[tuple[str, str]] = []
+        rot_files: list[tuple[str, str]] = []
 
         for f in all_files:
             lin_match = lin_pattern.match(f)
@@ -868,7 +935,7 @@ def discover_grid_files(directory, prefix, has_rotation):
         return {"lin": [f[1] for f in lin_files], "rot": [f[1] for f in rot_files] if rot_files else None}
     else:
         pattern = re.compile(rf"^{re.escape(prefix)}_Grid_(.+)\.txt$")
-        files = []
+        files: list[tuple[str, str]] = []
 
         for f in all_files:
             match = pattern.match(f)
@@ -880,7 +947,7 @@ def discover_grid_files(directory, prefix, has_rotation):
         return {"lin": [f[1] for f in files], "rot": None}
 
 
-def detect_grid_rotation_pattern(directory, file_type="D"):
+def detect_grid_rotation_pattern(directory: str, file_type: str = "D") -> bool:
     """
     Detect whether grid files in a directory use the rotation-suffix pattern.
 
@@ -918,7 +985,7 @@ def detect_grid_rotation_pattern(directory, file_type="D"):
 # ---------------------------------------------------------------------------
 
 
-def get_simulation_files(building_folder, simulation):
+def get_simulation_files(_building_folder: str, simulation: SimulationInfo) -> SimulationFilesConfig:
     """
     Resolve all concrete file paths for a simulation based on its detected pattern.
 
@@ -949,7 +1016,7 @@ def get_simulation_files(building_folder, simulation):
         "hinge", "shear", "brb".  Each value is either a path / dict of
         paths, or None when that type is not available.
     """
-    files: dict = {
+    files: SimulationFilesConfig = {
         "displacement": None,
         "velocity": None,
         "acceleration": None,
@@ -985,15 +1052,18 @@ def get_simulation_files(building_folder, simulation):
                 ],
             }
             print(f"    Expected linear displacement files:")
-            if files["displacement"] and files["displacement"].get("lin"):
-                for f in files["displacement"]["lin"]:
-                    exists = "✓" if os.path.exists(f) else "✗"
+            disp_files = files["displacement"]
+            if disp_files and disp_files.get("lin"):
+                for f in disp_files["lin"]:
+                    exists = "✓" if isinstance(f, str) and os.path.exists(f) else "✗"
                     print(f"      {exists} {f}")
             print(f"    Expected rotation displacement files:")
-            if files["displacement"] and files["displacement"].get("rot"):
-                for f in files["displacement"]["rot"]:
-                    exists = "✓" if os.path.exists(f) else "✗"
-                    print(f"      {exists} {f}")
+            if disp_files:
+                rot_files_local = disp_files.get("rot")
+                if rot_files_local:
+                    for f in rot_files_local:
+                        exists = "✓" if isinstance(f, str) and os.path.exists(f) else "✗"
+                        print(f"      {exists} {f}")
         elif pattern == "Grid":
             has_rotation = detect_grid_rotation_pattern(disp_path, "D")
             print(f"    Grid rotation pattern detected: {has_rotation}")
@@ -1003,19 +1073,22 @@ def get_simulation_files(building_folder, simulation):
                 h2_files = discover_grid_files(disp_path, "D_H2", has_rotation=True)
                 v_files = discover_grid_files(disp_path, "D_V", has_rotation=True)
 
+                h1_rot = h1_files["rot"]
+                h2_rot = h2_files["rot"]
+                v_rot = v_files["rot"]
                 files["displacement"] = {
                     "lin": [h1_files["lin"], h2_files["lin"], v_files["lin"]],
-                    "rot": [h1_files["rot"], h2_files["rot"], v_files["rot"]],
+                    "rot": [h1_rot, h2_rot, v_rot],
                 }
 
                 print(f"    Discovered grid files:")
                 print(f"      H1 linear: {len(h1_files['lin'])} file(s)")
                 print(f"      H2 linear: {len(h2_files['lin'])} file(s)")
                 print(f"      V linear: {len(v_files['lin'])} file(s)")
-                if h1_files["rot"]:
-                    print(f"      H1 rotation: {len(h1_files['rot'])} file(s)")
-                    print(f"      H2 rotation: {len(h2_files['rot'])} file(s)")
-                    print(f"      V rotation: {len(v_files['rot'])} file(s)")
+                if h1_rot and h2_rot and v_rot:
+                    print(f"      H1 rotation: {len(h1_rot)} file(s)")
+                    print(f"      H2 rotation: {len(h2_rot)} file(s)")
+                    print(f"      V rotation: {len(v_rot)} file(s)")
             else:
                 h1_files = discover_grid_files(disp_path, "D_H1", has_rotation=False)
                 h2_files = discover_grid_files(disp_path, "D_H2", has_rotation=False)
@@ -1050,15 +1123,18 @@ def get_simulation_files(building_folder, simulation):
                 ],
             }
             print(f"    Expected linear velocity files:")
-            if files["velocity"] and files["velocity"].get("lin"):
-                for f in files["velocity"]["lin"]:
-                    exists = "✓" if os.path.exists(f) else "✗"
+            vel_files = files["velocity"]
+            if vel_files and vel_files.get("lin"):
+                for f in vel_files["lin"]:
+                    exists = "✓" if isinstance(f, str) and os.path.exists(f) else "✗"
                     print(f"      {exists} {f}")
             print(f"    Expected rotation velocity files:")
-            if files["velocity"] and files["velocity"].get("rot"):
-                for f in files["velocity"]["rot"]:
-                    exists = "✓" if os.path.exists(f) else "✗"
-                    print(f"      {exists} {f}")
+            if vel_files:
+                rot_files_local = vel_files.get("rot")
+                if rot_files_local:
+                    for f in rot_files_local:
+                        exists = "✓" if isinstance(f, str) and os.path.exists(f) else "✗"
+                        print(f"      {exists} {f}")
         elif pattern == "Grid":
             has_rotation = detect_grid_rotation_pattern(vel_path, "V")
             print(f"    Grid rotation pattern detected: {has_rotation}")
@@ -1068,9 +1144,12 @@ def get_simulation_files(building_folder, simulation):
                 h2_files = discover_grid_files(vel_path, "V_H2", has_rotation=True)
                 v_files = discover_grid_files(vel_path, "V_V", has_rotation=True)
 
+                h1_rot = h1_files["rot"]
+                h2_rot = h2_files["rot"]
+                v_rot = v_files["rot"]
                 files["velocity"] = {
                     "lin": [h1_files["lin"], h2_files["lin"], v_files["lin"]],
-                    "rot": [h1_files["rot"], h2_files["rot"], v_files["rot"]],
+                    "rot": [h1_rot, h2_rot, v_rot],
                 }
 
                 print(f"    Discovered grid files:")
@@ -1110,15 +1189,18 @@ def get_simulation_files(building_folder, simulation):
                 ],
             }
             print(f"    Expected linear acceleration files:")
-            if files["acceleration"] and files["acceleration"].get("lin"):
-                for f in files["acceleration"]["lin"]:
-                    exists = "✓" if os.path.exists(f) else "✗"
+            acc_files = files["acceleration"]
+            if acc_files and acc_files.get("lin"):
+                for f in acc_files["lin"]:
+                    exists = "✓" if isinstance(f, str) and os.path.exists(f) else "✗"
                     print(f"      {exists} {f}")
             print(f"    Expected rotation acceleration files:")
-            if files["acceleration"] and files["acceleration"].get("rot"):
-                for f in files["acceleration"]["rot"]:
-                    exists = "✓" if os.path.exists(f) else "✗"
-                    print(f"      {exists} {f}")
+            if acc_files:
+                rot_files_local = acc_files.get("rot")
+                if rot_files_local:
+                    for f in rot_files_local:
+                        exists = "✓" if isinstance(f, str) and os.path.exists(f) else "✗"
+                        print(f"      {exists} {f}")
         elif pattern == "Grid":
             has_rotation = detect_grid_rotation_pattern(acc_path, "A")
             print(f"    Grid rotation pattern detected: {has_rotation}")
@@ -1128,9 +1210,13 @@ def get_simulation_files(building_folder, simulation):
                 h2_files = discover_grid_files(acc_path, "A_H2", has_rotation=True)
                 v_files = discover_grid_files(acc_path, "A_V", has_rotation=True)
 
+                h1_rot = h1_files["rot"]
+                h2_rot = h2_files["rot"]
+                v_rot = v_files["rot"]
+
                 files["acceleration"] = {
                     "lin": [h1_files["lin"], h2_files["lin"], v_files["lin"]],
-                    "rot": [h1_files["rot"], h2_files["rot"], v_files["rot"]],
+                    "rot": [h1_rot, h2_rot, v_rot],
                 }
 
                 print(f"    Discovered grid files:")
@@ -1157,7 +1243,7 @@ def get_simulation_files(building_folder, simulation):
         print(f"\n    Ground motion file:")
         gm_file = simulation.get("ground_motion_file")
         files["ground_motion"] = gm_file
-        exists = "✓" if os.path.exists(gm_file) else "✗"
+        exists = "✓" if gm_file and os.path.exists(gm_file) else "✗"
         print(f"      {exists} {gm_file}")
 
     # --- Hinge ---

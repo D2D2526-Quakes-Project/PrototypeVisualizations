@@ -46,9 +46,8 @@ import argparse
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Protocol
 
-from .shared import BINARY_DIR, CSV_DIR, discover_buildings, discover_simulations, get_simulation_files
+from .shared import BINARY_DIR, CSV_DIR, Args, BeamLookupMaps, BuildingInfo, SimulationInfo, SimulationFilesConfig, discover_buildings, discover_simulations, get_simulation_files
 from .processor_building import process_building
 from .processor_response import process_simulation_response_type
 from .processor_ground_motion import process_ground_motion
@@ -59,14 +58,6 @@ from .processor_shear import process_shear_data
 # ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
-
-
-class Args(Protocol):
-    dryrun: bool
-    generate_missing_only: bool
-    building: list[str] | None
-    simulation: list[str] | None
-    metrics: list[str]
 
 
 def create_arg_parser():
@@ -149,8 +140,8 @@ def check_outputs_exist(building_name: str, simulation_name: str | None = None, 
     if not os.path.exists(simulation_output_dir):
         return False
 
-    expected_files = []
-    if args and args.metrics:
+    expected_files: list[str] = []
+    if args.metrics:
         metrics = args.metrics
         if "all" in metrics or "building" in metrics:
             expected_files.append("building.bld")
@@ -198,8 +189,6 @@ def should_process_metric(metric_name: str, *, args: Args):
 
     Respects the ``--metrics`` CLI flag.  Defaults to True when args is None.
     """
-    if args is None:
-        return True
     if not args.metrics:
         return True
     if "all" in args.metrics:
@@ -212,7 +201,9 @@ def should_process_metric(metric_name: str, *, args: Args):
 # ---------------------------------------------------------------------------
 
 
-def process_simulation_parallel(building, simulation, id_to_index, beam_lookup_maps, building_output_dir, story_order, max_workers=3):
+def process_simulation_parallel(
+    building: BuildingInfo, simulation: SimulationInfo, id_to_index: dict[int, int], beam_lookup_maps: BeamLookupMaps | None, building_output_dir: str, story_order: list[str], max_workers: int = 3
+):
     """
     Process a single simulation, running time-series types in parallel.
 
@@ -247,8 +238,8 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_lookup_m
     print(f"Pattern: {simulation.get('file_pattern', 'Unknown')}")
     print(
         f"Displacement: {simulation['has_displacement']}, Velocity: {simulation['has_velocity']}, "
-        f"Acceleration: {simulation['has_acceleration']}, Hinge: {simulation.get('has_hinge_data', False)}, "
-        f"Shear: {simulation.get('has_shear_data', False)}, BRB: {simulation.get('has_brb_data', False)}"
+        + f"Acceleration: {simulation['has_acceleration']}, Hinge: {simulation.get('has_hinge_data', False)}, "
+        + f"Shear: {simulation.get('has_shear_data', False)}, BRB: {simulation.get('has_brb_data', False)}"
     )
     print(f"{'-'*60}")
 
@@ -258,7 +249,7 @@ def process_simulation_parallel(building, simulation, id_to_index, beam_lookup_m
     files_config = get_simulation_files(building["folder"], simulation)
 
     # Build list of parallel tasks for time-series response data
-    tasks = []
+    tasks: list[tuple[str, str, dict[int, int], SimulationFilesConfig, str, bool]] = []
     if simulation["has_displacement"] and should_process_metric("displacement", args=args):
         tasks.append(("displacement", "displacement", id_to_index, files_config, simulation_output_dir, args.dryrun))
     if simulation["has_velocity"] and should_process_metric("velocity", args=args):
@@ -349,7 +340,7 @@ if __name__ == "__main__":
         print("No buildings found. Exiting.")
         exit(1)
 
-    results = []
+    results: list[tuple[str, str, str]] = []
     for building in buildings:
         building_name = building["name"]
 

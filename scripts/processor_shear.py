@@ -58,13 +58,17 @@ Output file
 import csv
 import os
 import re
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .shared import SHEAR_STORY_ALIASES, write_bld_file
+from .shared import SHEAR_STORY_ALIASES, SimulationFilesConfig, write_bld_file
+
+if TYPE_CHECKING:
+    from .shared import Args
 
 
-def normalize_shear_story_label(story_label):
+def normalize_shear_story_label(story_label: str) -> str:
     """
     Map a raw PERFORM story label to its canonical name.
 
@@ -84,7 +88,7 @@ def normalize_shear_story_label(story_label):
     return SHEAR_STORY_ALIASES.get(story, story)
 
 
-def parse_shear_summary_file(filepath):
+def parse_shear_summary_file(filepath: str) -> dict[str, dict[str, np.float32]]:
     """
     Parse a PERFORM-3D shear summary file into story→max/min value pairs.
 
@@ -116,7 +120,7 @@ def parse_shear_summary_file(filepath):
     """
     column_pattern = re.compile(r"^Column,\s*(\d+),\s*=\s*section no\.?,\s*[^,]+,\s*name\s*=\s*,?\s*(.*?)\s*$")
     story_pattern = re.compile(r"^Story\s+(.+?)\s+Bottom\s*-\s*C\s*$")
-    columns = []
+    columns: list[tuple[int, str]] = []
     maximum_values = None
     minimum_values = None
 
@@ -140,8 +144,8 @@ def parse_shear_summary_file(filepath):
     if maximum_values is None or minimum_values is None:
         raise ValueError(f"Shear file missing Maximum/Minimum rows: {filepath}")
 
-    values_by_story = {}
-    duplicate_stories = []
+    values_by_story: dict[str, dict[str, np.float32]] = {}
+    duplicate_stories: list[str] = []
     for column_number, story in columns:
         value_index = column_number - 2
         if value_index < 0 or value_index >= len(maximum_values) or value_index >= len(minimum_values):
@@ -162,7 +166,7 @@ def parse_shear_summary_file(filepath):
     return values_by_story
 
 
-def process_shear_data(files_config, simulation_output_dir, story_order, *, args):
+def process_shear_data(files_config: SimulationFilesConfig, simulation_output_dir: str, story_order: list[str], *, args: Args):
     """
     Process static per-floor shear summaries and write shear_data.bld.
 

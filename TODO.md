@@ -20,6 +20,8 @@
 
 - [ ] Make the hinges section on the side panels have grayscale min and max bars and split the legend so that min is on the left and max is on the right
 
+- [ ] Setting for using SI units instead of ft.
+
 ---
 
 ### 5.2 Existing Panel Improvements

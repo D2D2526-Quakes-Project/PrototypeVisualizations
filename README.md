@@ -29,6 +29,8 @@ Named profiles (Displacements, Hinges, Shear, Story Drifts) for easy switching b
 
 Before the data is loaded into the viewer, it gets processed to remove uneccessary data and reduce file sizes. The processing pipeline converts raw structural analysis output (PERFORM-3D / LADWP text exports, hinge CSVs, data csvs) into compact gzip-compressed binary files (`.bld`) served from Cloudflare R2.
 
+Documentation for how the data should be formatted and what the folder structure should look like can be found in the [data documentation](/DATA_DOCUMENTATION.md).
+
 ### Data Processing
 
 ```mermaid

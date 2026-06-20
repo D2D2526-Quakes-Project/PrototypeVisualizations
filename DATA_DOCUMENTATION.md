@@ -25,16 +25,16 @@ data/
 │       │   │   ├── D_H1T_Entire.txt
 │       │   │   ├── D_H2T_Entire.txt
 │       │   │   └── D_VT_Entire.txt
-│   │   ├── Hinge results/
-│   │   │   └── hinge_data.csv
-│   │   ├── Shears/
-│   │   │   ├── Shears/*_H1M.txt
-│   │   │   ├── Shears/*_H2M.txt
-│   │   │   └── shear_data.csv
-│   │   ├── BRB/
-│   │   │   └── BRB_data.csv
-│   │   ├── BRB_properties.csv
-│   │   ├── Velocities/
+│       │   ├── Hinge results/
+│       │   │   └── hinge_data.csv
+│       │   ├── Shears/
+│       │   │   ├── Shears/*_H1M.txt
+│       │   │   ├── Shears/*_H2M.txt
+│       │   │   └── shear_data.csv
+│       │   ├── BRB/
+│       │   │   └── BRB_data.csv
+│       │   ├── BRB_properties.csv
+│       │   ├── Velocities/
 │       │   │   ├── V_H1T_Entire.txt
 │       │   │   ├── V_H2T_Entire.txt
 │       │   │   └── V_VT_Entire.txt

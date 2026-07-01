@@ -52,7 +52,7 @@
         {
           "name": "Station 2708",
           "folder": "station2708",
-          "size": 526844020,
+          "size": 526936361,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station2708/acceleration_lin.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station2708/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station2708/ground_motion.bld",
@@ -63,7 +63,7 @@
         {
           "name": "Station 3123",
           "folder": "station3123",
-          "size": 630671581,
+          "size": 630787898,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3123/acceleration_lin.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3123/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3123/ground_motion.bld",
@@ -74,7 +74,7 @@
         {
           "name": "Station 3129",
           "folder": "station3129",
-          "size": 630487550,
+          "size": 630605909,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3129/acceleration_lin.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3129/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3129/ground_motion.bld",
@@ -115,7 +115,7 @@
         {
           "name": "Station 3141",
           "folder": "station3141",
-          "size": 627957909,
+          "size": 628072269,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3141/acceleration_lin.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3141/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3141/ground_motion.bld",
@@ -126,7 +126,7 @@
         {
           "name": "Station 3144",
           "folder": "station3144",
-          "size": 505132887,
+          "size": 505233680,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3144/acceleration_lin.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3144/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3144/ground_motion.bld",
@@ -137,7 +137,7 @@
         {
           "name": "Station 3145",
           "folder": "station3145",
-          "size": 561552654,
+          "size": 561652776,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3145/acceleration_lin.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3145/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station3145/ground_motion.bld",
@@ -148,7 +148,7 @@
         {
           "name": "Station 3615",
           "folder": "station4615",
-          "size": 522691669,
+          "size": 522778527,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station4615/acceleration_lin.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station4615/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station4615/ground_motion.bld",
@@ -159,7 +159,7 @@
         {
           "name": "Station 3616",
           "folder": "station4616",
-          "size": 520212882,
+          "size": 520298230,
           "accelerationLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station4616/acceleration_lin.bld",
           "displacementLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station4616/displacement_lin.bld",
           "groundMotion": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station4616/ground_motion.bld",
@@ -168,7 +168,7 @@
           "velocityLin": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/station4616/velocity_lin.bld"
         }
       ],
-      "size": 5965400289,
+      "size": 5966214787,
       "beamData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/52story/beam_data.bld"
     },
     {
@@ -200,5 +200,5 @@
       "beamData": "https://pub-94c7f6b83e1a40e581bd59d50afa1eb9.r2.dev/73story/beam_data.bld"
     }
   ],
-  "size": 11544830181
+  "size": 11545644679
 }

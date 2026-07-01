@@ -68,15 +68,11 @@ Output files
 """
 
 import os
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
-from .shared import BINARY_DIR, BeamLookupMaps, BuildingInfo, write_bld_file
-
-if TYPE_CHECKING:
-    from .shared import Args
+from .shared import BINARY_DIR, BeamLookupMaps, BuildingInfo, write_bld_file, Args
 
 # ---------------------------------------------------------------------------
 # Private geometry helpers

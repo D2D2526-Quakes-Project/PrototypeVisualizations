@@ -58,14 +58,10 @@ Output file
 import csv
 import os
 import re
-from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .shared import SHEAR_STORY_ALIASES, SimulationFilesConfig, write_bld_file
-
-if TYPE_CHECKING:
-    from .shared import Args
+from .shared import SHEAR_STORY_ALIASES, SimulationFilesConfig, write_bld_file, Args
 
 
 def normalize_shear_story_label(story_label: str) -> str:

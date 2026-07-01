@@ -47,9 +47,9 @@ export default defineConfig(({ isSsrBuild }) => ({
     watch: {
       ignored: ["**/*.ottotime", "data/**", "scripts/**", "**/*.md"],
     },
-    fs: {
-      allow: [".."],
-    },
+    // fs: {
+    //   allow: [".."],
+    // },
   },
   optimizeDeps: {
     exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/core"],

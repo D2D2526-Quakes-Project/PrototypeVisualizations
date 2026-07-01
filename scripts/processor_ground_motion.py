@@ -24,15 +24,11 @@ Output file
 """
 
 import os
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
-from .shared import SimulationFilesConfig, write_bld_file
-
-if TYPE_CHECKING:
-    from .shared import Args
+from .shared import SimulationFilesConfig, write_bld_file, Args
 
 
 def process_ground_motion(files_config: SimulationFilesConfig, simulation_output_dir: str, *, args: Args):

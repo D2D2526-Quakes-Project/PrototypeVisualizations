@@ -63,15 +63,12 @@ processor_building.process_beam_data().  The ``beam_lookup`` argument
 """
 
 import os
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import numpy as np
 import pandas as pd
 
-from .shared import BRB_REQUIRED_COLUMNS, BRB_NUMERIC_COLUMNS, BRB_PROPERTIES_REQUIRED_COLUMNS, CSV_DIR, BuildingInfo, SimulationFilesConfig, write_bld_file
-
-if TYPE_CHECKING:
-    from .shared import Args
+from .shared import BRB_REQUIRED_COLUMNS, BRB_NUMERIC_COLUMNS, BRB_PROPERTIES_REQUIRED_COLUMNS, CSV_DIR, BuildingInfo, SimulationFilesConfig, write_bld_file, Args
 
 
 def load_brb_properties(building: BuildingInfo) -> dict[str, dict[str, float]] | None:

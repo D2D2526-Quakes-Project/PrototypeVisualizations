@@ -64,15 +64,12 @@ by that function.
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import numpy as np
 import pandas as pd
 
-from .shared import HINGE_REQUIRED_COLUMNS, HINGE_NUMERIC_COLUMNS, HINGE_COMPONENT_TO_SIDE, SimulationFilesConfig, write_bld_file
-
-if TYPE_CHECKING:
-    from .shared import Args
+from .shared import HINGE_REQUIRED_COLUMNS, HINGE_NUMERIC_COLUMNS, HINGE_COMPONENT_TO_SIDE, SimulationFilesConfig, write_bld_file, Args
 
 
 def load_hinge_dataframe(hinge_file: str) -> pd.DataFrame | None:

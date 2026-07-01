@@ -58,7 +58,7 @@ echo
 METRICS=$(gum choose --no-limit "all" "displacement" "velocity" "acceleration" "ground_motion" "hinge" "shear" "brb" "building" --header="Select metrics to generate")
 
 # Build command
-CMD="python $SCRIPT_DIR/generate_binary_data.py"
+CMD="python -m scripts.generate_binary_data"
 [ "$DRYRUN" = true ] && CMD="$CMD --dryrun"
 [ "$GENERATE_MISSING" = true ] && CMD="$CMD --generate-missing-only"
 [ -n "$BUILDINGS" ] && CMD="$CMD --building $BUILDINGS"

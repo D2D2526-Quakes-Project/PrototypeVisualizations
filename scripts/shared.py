@@ -685,7 +685,9 @@ def discover_shear_files(simulation_path: str) -> dict[str, str] | None:
     """
     shear_dir = os.path.join(simulation_path, "Shears")
     if not os.path.exists(shear_dir):
-        return None
+        shear_dir = os.path.join(simulation_path, "Shear results")
+        if not os.path.exists(shear_dir):
+            return None
 
     txt_files = [f for f in os.listdir(shear_dir) if f.endswith(".txt")]
     h1_files = sorted(f for f in txt_files if re.search(r"_H1M\.txt$", f))

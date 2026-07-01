@@ -121,7 +121,7 @@ def _infer_node_to_inches_scale(node_elevations_in: pd.Series, story_elevations_
     for scale in candidate_scales:
         scaled_elev = unique_node_elevations * scale
         normalized_elev = scaled_elev - np.min(scaled_elev)
-        min_deltas = float(np.min(np.abs(normalized_elev[None, :] - story_elevations[:, None]), axis=1))
+        min_deltas = np.min(np.abs(normalized_elev[None, :] - story_elevations[:, None]), axis=1)
         matched_count = int(np.count_nonzero(min_deltas <= tolerance_in))
         mean_delta = float(np.mean(min_deltas))
 

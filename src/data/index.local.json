@@ -52,26 +52,102 @@
           "folder": "station3138",
           "size": 198874435,
           "accelerationLin": "acceleration_lin.bld",
-          "accelerationRot": "acceleration_rot.bld",
           "displacementLin": "displacement_lin.bld",
-          "displacementRot": "displacement_rot.bld",
           "groundMotion": "ground_motion.bld",
           "hingeData": "hinge_data.bld",
-          "velocityLin": "velocity_lin.bld",
-          "velocityRot": "velocity_rot.bld"
+          "shearData": "shear_data.bld",
+          "velocityLin": "velocity_lin.bld"
         },
         {
           "name": "Station 3139",
           "folder": "station3139",
           "size": 165135984,
           "accelerationLin": "acceleration_lin.bld",
-          "accelerationRot": "acceleration_rot.bld",
           "displacementLin": "displacement_lin.bld",
-          "displacementRot": "displacement_rot.bld",
           "groundMotion": "ground_motion.bld",
           "hingeData": "hinge_data.bld",
           "velocityLin": "velocity_lin.bld",
-          "velocityRot": "velocity_rot.bld",
+          "shearData": "shear_data.bld"
+        }
+,
+        {
+          "name": "Station 2708",
+          "folder": "station2708",
+          "size": 165135984,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "shearData": "shear_data.bld"
+        },
+        {
+          "name": "Station 3123",
+          "folder": "station3123",
+          "size": 165135984,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "shearData": "shear_data.bld"
+        },
+        {
+          "name": "Station 3129",
+          "folder": "station3129",
+          "size": 165135984,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "shearData": "shear_data.bld"
+        },
+        {
+          "name": "Station 3141",
+          "folder": "station3141",
+          "size": 165135984,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "shearData": "shear_data.bld"
+        },
+        {
+          "name": "Station 3144",
+          "folder": "station3144",
+          "size": 165135984,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "shearData": "shear_data.bld"
+        },
+        {
+          "name": "Station 3145",
+          "folder": "station3145",
+          "size": 165135984,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "shearData": "shear_data.bld"
+        },
+        {
+          "name": "Station 4615",
+          "folder": "station4615",
+          "size": 165135984,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
+          "shearData": "shear_data.bld"
+        },
+        {
+          "name": "Station 4616",
+          "folder": "station4616",
+          "size": 165135984,
+          "displacementLin": "displacement_lin.bld",
+          "groundMotion": "ground_motion.bld",
+          "hingeData": "hinge_data.bld",
+          "velocityLin": "velocity_lin.bld",
           "shearData": "shear_data.bld"
         }
       ],

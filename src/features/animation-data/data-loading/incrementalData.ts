@@ -69,17 +69,20 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
   const nodeStoryDrift = new Float32Array(frameCount * nodeCount);
   const dispLin = dispLinData.bodyView;
 
-  // Build a fast lookup for node -> story height
+  // Build a fast lookup for node -> story height. Nodes on the ground story have no
+  // height and stay 0 so they are skipped rather than divided by a placeholder.
   const nodeToStoryHeight = new Float32Array(nodeCount);
   metadata.storyOrder.forEach((storyId) => {
-    const height = metadata.storyHeights[storyId] || 1;
+    const height = metadata.storyHeights[storyId] || 0;
     const nodes = metadata.stories[storyId] || [];
     nodes.forEach((n) => {
-      nodeToStoryHeight[n] = height;
+      if (height > 0) nodeToStoryHeight[n] = height;
     });
   });
 
-  // Loop every frame and every node to calculate drift exactly like the python script
+  // SDR_i(t) = delta_i / h_si, where delta_i is the signed relative displacement
+  // between node i and the node directly below it, evaluated independently in each
+  // horizontal direction and reported as the larger of the two.
   for (let frameIdx = 0; frameIdx < frameCount; frameIdx++) {
     const frameOffset = frameIdx * nodeCount * 3;
     const outOffset = frameIdx * nodeCount;
@@ -88,20 +91,14 @@ export async function buildRequiredSerializedAnimationDataFromRaw(input: {
       const belowIdx = metadata.nodeToBelow[nodeIdx];
       if (belowIdx === null || belowIdx < 0) continue; // ground floor or no match
 
-      // Current node 2D magnitude
-      const nX = dispLin[frameOffset + nodeIdx * 3] ?? 0;
-      const nY = dispLin[frameOffset + nodeIdx * 3 + 1] ?? 0;
-      const currentMag = Math.sqrt(nX * nX + nY * nY);
+      const height = nodeToStoryHeight[nodeIdx];
+      if (!(height > 0)) continue; // no story height assigned to this node
 
-      // Node directly below 2D magnitude
-      const bX = dispLin[frameOffset + belowIdx * 3] ?? 0;
-      const bY = dispLin[frameOffset + belowIdx * 3 + 1] ?? 0;
-      const belowMag = Math.sqrt(bX * bX + bY * bY);
+      const dux = (dispLin[frameOffset + nodeIdx * 3] ?? 0) - (dispLin[frameOffset + belowIdx * 3] ?? 0);
+      const duy = (dispLin[frameOffset + nodeIdx * 3 + 1] ?? 0) - (dispLin[frameOffset + belowIdx * 3 + 1] ?? 0);
 
-      const height = nodeToStoryHeight[nodeIdx] || 1;
-
-      // Calculate % difference
-      nodeStoryDrift[outOffset + nodeIdx] = (Math.abs(currentMag - belowMag) / height) * 100;
+      const delta = Math.max(Math.abs(dux), Math.abs(duy));
+      nodeStoryDrift[outOffset + nodeIdx] = (delta / height) * 100;
     }
   }
 

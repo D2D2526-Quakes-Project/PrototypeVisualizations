@@ -1,7 +1,7 @@
 import type { DatasetKey, OptionalDatasetKey } from "./loadingTypes";
 import type { AnimationMetadata, BeamDataMetadata, BrbMetadata, ComputedStats, HingeMetadata, ShearMetadata, SimulationMetadata } from "@/lib/types";
 
-export const PROCESSED_CACHE_VERSION = 7;
+export const PROCESSED_CACHE_VERSION = 8;
 
 export interface SerializedStoryDrift {
   data: Float32Array;

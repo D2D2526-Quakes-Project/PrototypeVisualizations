@@ -127,32 +127,29 @@ Build: `pnpm build`
 
 ---
 
-<!--
 ## Citation
 
-If you use this tool or the associated datasets in published research, please cite:
+If you use this tool or data in your research or project, please cite it as:
 
+[![DOI](https://zenodo.org/badge/1091470341.svg)](https://doi.org/10.5281/zenodo.23654816)
+
+### APA
+
+> Schmitigal, A., Suh, E., & Data to Discovery Program. (2026). _Quakes: Earthquake Data Visualization_. https://doi.org/10.5281/zenodo.23654816
+
+### BibTeX
+
+```bibtex
+@software{quakes2026,
+  author       = {Aidan Schmitigal, Esther Suh, Data to Discovery Program},
+  title        = {Quakes},
+  year         = {2026},
+  publisher    = {Zenodo},
+  version      = {v1.0.0},
+  doi          = {10.5281/zenodo.23654817},
+  url          = {https://github.com/D2D2526-Quakes-Project/PrototypeVisualizations}
+}
 ```
-
-[Author(s)]. (Year). Quakes: Interactive seismic response visualization
-for tall building structural simulations [Software].
-[Institution/Repository URL]
-
-```
-
----
-
-## License
-
-[Add license here]
-
----
-
-## Contact
-
-```
-```
- -->
 
 ---
 

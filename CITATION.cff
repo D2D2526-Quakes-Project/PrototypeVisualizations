@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Schmitigal"
+    given-names: "Aidan"
+  - family-names: "Suh"
+    given-names: "Esther"
+  - name: "Data to Discovery Program"
+    website: "https://datavis.caltech.edu/"
+title: "Quakes"
+version: 1.0.0
+doi: 10.5281/zenodo.23654817
+date-released: 2026-01-01
+url: "https://github.com/D2D2526-Quakes-Project/PrototypeVisualizations"

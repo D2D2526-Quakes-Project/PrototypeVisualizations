@@ -7,8 +7,8 @@ authors:
     given-names: "Esther"
   - name: "Data to Discovery Program"
     website: "https://datavis.caltech.edu/"
-title: "Quakes"
+title: "Quakes: Earthquake Data Visualization"
 version: 1.0.0
 doi: 10.5281/zenodo.23654817
-date-released: 2026-01-01
+date-released: 2026-06-01
 url: "https://github.com/D2D2526-Quakes-Project/PrototypeVisualizations"

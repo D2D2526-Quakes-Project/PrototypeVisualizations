@@ -135,19 +135,18 @@ If you use this tool or data in your research or project, please cite it as:
 
 ### APA
 
-> Schmitigal, A., Suh, E., & Data to Discovery Program. (2026). _Quakes: Earthquake Data Visualization_. https://doi.org/10.5281/zenodo.23654816
+> Schmitigal, A., Suh, E., & Data to Discovery Program. (2026). Quakes: Earthquake Data Visualization (Version 1.0.0) [Computer software]. https://doi.org/10.5281/zenodo.23654817
 
 ### BibTeX
 
 ```bibtex
-@software{quakes2026,
-  author       = {Aidan Schmitigal, Esther Suh, Data to Discovery Program},
-  title        = {Quakes},
+@software{Quakes_2026,
+  author       = {Schmitigal, Aidan and Suh, Esther and Data to Discovery Program},
+  title        = {Quakes: Earthquake Data Visualization},
   year         = {2026},
-  publisher    = {Zenodo},
-  version      = {v1.0.0},
+  version      = {1.0.0},
   doi          = {10.5281/zenodo.23654817},
-  url          = {https://github.com/D2D2526-Quakes-Project/PrototypeVisualizations}
+  url          = {https://github.com/D2D2526-Quakes-Project/PrototypeVisualizations},
 }
 ```
 
